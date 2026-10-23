@@ -1,8 +1,11 @@
 // Spec 017. Owner: P5. Activities done and money spent week by week (FR-009).
 import type { WeekEntry } from '@agile/domain'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
+import { Button } from '../Button'
 import { Card } from '../Card'
 import { cop, pct, shortDay } from './format'
+
+const RECENT_WEEKS = 4 // the rest behind a button, so the page reaches the budget lines fast on a phone
 
 const W = 320
 const H = 120
@@ -46,13 +49,16 @@ function Legend({ className, children }: { className: string; children: ReactNod
 }
 
 export function WeeklyTimeline({ timeline }: { timeline: WeekEntry[] }) {
+  const [all, setAll] = useState(false)
   if (timeline.length === 0) return null
+  const newestFirst = [...timeline].reverse()
+  const shown = all ? newestFirst : newestFirst.slice(0, RECENT_WEEKS)
   return (
     <Card className="grid gap-5">
       <h2 className="text-heading">Semana a semana</h2>
       <Chart timeline={timeline} />
       <ol className="grid gap-2">
-        {[...timeline].reverse().map((week) => (
+        {shown.map((week) => (
           <li key={week.week_start} className="grid gap-1 rounded-md bg-inset p-4">
             <div className="flex flex-wrap items-baseline justify-between gap-x-3">
               <span className="text-label">Semana del {shortDay(week.week_start)}</span>
@@ -70,6 +76,11 @@ export function WeeklyTimeline({ timeline }: { timeline: WeekEntry[] }) {
           </li>
         ))}
       </ol>
+      {timeline.length > RECENT_WEEKS && (
+        <Button variant="secondary" size="sm" className="justify-self-start" onClick={() => setAll(!all)}>
+          {all ? 'Ver solo las últimas semanas' : `Ver las ${timeline.length} semanas`}
+        </Button>
+      )}
     </Card>
   )
 }
