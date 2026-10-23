@@ -229,7 +229,7 @@ Request headers: `Content-Type: application/json`. A leader edit isn't an agent 
 ### Implementation for User Story 2
 
 - [x] T016 [US2] Extend `GenerateDocuments` to loop over the approved roadmap's epics after `general_spec`, building the derived `epic` and `stories` context per epic
-- [ ] T017 [US2] Group epic specs under their phase in `DocumentsPage`
+- [ ] T017 [US2] Group epic specs under their phase in `DocumentsPage` — handed off to spec 009 (frontend)
 
 **Checkpoint**: User Stories 1 and 2 work independently
 
@@ -280,9 +280,25 @@ Request headers: `Content-Type: application/json`. A leader edit isn't an agent 
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T029 [P] Check SC-001 against Gemini with a 5-epic project; if it's too slow, run the epic specs concurrently with `asyncio.gather` (each one still a separate proposal)
-- [ ] T030 [P] "Approve all" for a batch of document proposals is part of spec 005's proposal UI; make sure document proposals carry what it needs (kind, epic, title)
-- [ ] T031 Update `plan/use-cases.md` (UC-08) if the implementation drifted
+- [ ] T029 [P] Check SC-001 against Gemini with a 5-epic project; if it's too slow, run the epic specs concurrently with `asyncio.gather` (each one still a separate proposal) — pending: needs a real Gemini key (tests never call Gemini); the sequential loop stays until it is measured
+- [x] T030 [P] "Approve all" for a batch of document proposals is part of spec 005's proposal UI; make sure document proposals carry what it needs (kind, epic, title)
+- [x] T031 Update `plan/use-cases.md` (UC-08) if the implementation drifted
+
+---
+
+### Implementation notes (backend)
+
+- **Document key**: a `Document` stores the proposal `key` it comes from (`general_spec`, `epic_spec:EP-2`, `flow_diagram:1`). `DocumentRepository.find(project_id, key)` replaces the planned `find(project_id, kind, epic_key)`: several diagrams share `kind` with no epic, so kind + epic can't tell them apart. The key isn't in the API shapes.
+- **Proposal content per key** (registered in `proposal_schemas.py`): `general_spec` → `GeneralSpec`, `epic_spec:` → `EpicSpec`, `flow_diagram:` → `DiagramProposal` (one `Diagram` plus `rationale`, since each diagram is its own proposal). `DiagramProposal` runs `check_mermaid`, so adjusting a diagram that wouldn't render is a `422 validation_failed` on `content.mermaid`.
+- **Wiring**: `wire_documents()` in `dependencies.py` (called from `main.py` after `wire_planning`) appends `GenerateDocuments.execute` to `on_plan_completed` after `ApplyPlan`, registers `ApplyDocumentProposal` as the `document` applier (decided) and `GenerateDocuments.on_proposal_resolved` for rejections. If `ApplyPlan` fails, the writer doesn't run (the handler list stops).
+- **Agent call**: `run_agent()` was extracted from `RunPlanningStep` (same retry, feedback and logging) and is shared with the writer. A document that still fails after its retry isn't proposed; `DocumentsGenerated.missing` names it and the project stays `ready`. An epic spec whose `epic_key` isn't its epic's is retried with that issue. Running the writer again skips keys that already have a pending or decided proposal.
+- **Rejected documents** follow spec 002's redo rule: rewritten with `{reason, rejected_content}` until 3 rejections in a row, then `StageNeedsLeader` (`stage` = the document key) and the leader adjusts the last proposal (spec 005). A rewritten diagram keeps its key and is picked from the output by title.
+- **Regeneration**: `RegenerateDocument` claims `(project_id, key)` in `GenerateDocuments` (in memory, single process like the event bus) before the 202, so a second request gets `409` while it runs or while its proposal is pending. A failed regeneration publishes `DocumentsGenerated(proposed=0, missing=[key])`. The feedback is spec 002's shape with the document's current content as `rejected_content`.
+- **`GET ?version=n`** returns that version's `content` and `version` (`title`, `outdated` and `versions` are the document's). Editing from an old version then gets `409 version_conflict`.
+- **Validation order** on `PUT`: `404` → `422` (content, then `invalid_diagram`) → `409 version_conflict`. On `POST …/regenerate`: `404` → `422` → `409`. A missing or mistyped field is a `422` from FastAPI before any of them.
+- **Extra events** (besides `DocumentsGenerated`): `DocumentSaved(document_id, key, version, source)` on every new version (approved proposal or leader edit) and `DocumentsOutdated(document_ids)` from `MarkDocumentsOutdated`, so the UI can refresh over SSE.
+- **`MarkDocumentsOutdated(uow_factory, bus).execute(project_id)`** flags every document of the project that isn't outdated yet and returns their ids; `get_mark_documents_outdated` in `dependencies.py` builds it for spec 008. Any new version clears the flag.
+- **Mock agents** write the documents from the context they get (project, roadmap epics, stories, components), so they fit any project; a `feedback.reason` is appended to the Markdown as "Leader's notes".
 
 ---
 
