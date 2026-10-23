@@ -156,12 +156,26 @@ class WeekEntry(BaseModel):
     physical_pct_acc: float
 
 
+PhaseTaskStatus = Literal["done", "in_progress", "pending"]
+
+
+class PhaseTask(BaseModel):
+    """A board task as the public sees it (FR-024): its title and where it stands, nothing about who does it."""
+
+    id: int
+    title: str
+    status: PhaseTaskStatus
+    done_on: dt.date | None = None
+
+
 class SprintProgress(BaseModel):
     name: str
     goal: str
     end_date: dt.date | None
     done_points: int
     total_points: int
+    # Done first (in the order they were finished), then in progress, then pending (in board order).
+    tasks: list[PhaseTask] = []
 
 
 class PortalProject(BaseModel):
@@ -381,6 +395,24 @@ def weekly_timeline(
     return entries
 
 
+def _phase_status(task: Task) -> PhaseTaskStatus:
+    if task.status == "done":
+        return "done"
+    return "in_progress" if task.status in ("in_progress", "review") else "pending"
+
+
+def _phase_tasks(tasks: list[Task]) -> list[PhaseTask]:
+    order = {"done": 0, "in_progress": 1, "pending": 2}
+    rows = sorted(
+        (t for t in tasks if t.id is not None),
+        key=lambda t: (order[_phase_status(t)], t.done_at or dt.datetime.max.replace(tzinfo=dt.timezone.utc), t.position, t.id),
+    )
+    return [
+        PhaseTask(id=t.id, title=t.title, status=_phase_status(t), done_on=t.done_at.date() if t.done_at else None)  # type: ignore[arg-type]
+        for t in rows
+    ]
+
+
 def sprint_progress(sprints: list[Sprint], tasks: list[Task]) -> list[SprintProgress]:
     return [
         SprintProgress(
@@ -389,6 +421,7 @@ def sprint_progress(sprints: list[Sprint], tasks: list[Task]) -> list[SprintProg
             end_date=sprint.end_date,
             done_points=sum(t.points for t in tasks if t.sprint_id == sprint.id and t.status == "done"),
             total_points=sum(t.points for t in tasks if t.sprint_id == sprint.id),
+            tasks=_phase_tasks([t for t in tasks if t.sprint_id == sprint.id]),
         )
         for sprint in sorted(sprints, key=lambda s: s.number)
     ]

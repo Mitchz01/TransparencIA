@@ -1,19 +1,19 @@
 import type { Portal } from '@agile/domain'
 import { EmptyState, SkeletonCard } from '@agile/ui'
 import { Alert02Icon, ViewOffIcon } from '@agile/ui/icons'
-import { AlertList, BudgetLines, EvidenceList, WeeklyTimeline } from '@agile/ui/transparency'
+import { AlertList, BudgetLines, PhaseStrip, WeeklyTimeline, WorkStatus } from '@agile/ui/transparency'
 import type { ReactNode } from 'react'
 import { useParams } from 'react-router-dom'
 import { isApiError } from '../../application/errors'
 import { usePortal } from '../../application/usePortal'
-import { CitizenChat } from '../components/CitizenChat'
+import { ChatLauncher } from '../components/ChatLauncher'
 import { HowToRead } from '../components/HowToRead'
 import { PortalHero } from '../components/PortalHero'
 import { Section } from '../components/Section'
 import { SectionNav, type NavSection } from '../components/SectionNav'
 
 function Page({ children }: { children: ReactNode }) {
-  return <div className="mx-auto grid max-w-2xl grid-cols-[minmax(0,1fr)] gap-8 px-4 py-6">{children}</div>
+  return <div className="mx-auto grid w-full max-w-7xl grid-cols-[minmax(0,1fr)] gap-10 px-4 pt-6 pb-28 md:px-8 md:pt-8 lg:pb-12">{children}</div>
 }
 
 /** A link that doesn't exist or isn't published (spec 017, US3 scenario 5). */
@@ -27,7 +27,7 @@ export function NotPublicPage() {
   )
 }
 
-/** A project's public page (spec 017, US3), phone first. No app shell and no sign-in links. */
+/** A project's public page (spec 017, US3). No app shell and no sign-in links. */
 export function PublicPortalPage() {
   const { slug = '' } = useParams()
   const portal = usePortal(slug)
@@ -36,7 +36,12 @@ export function PublicPortalPage() {
     return (
       <Page>
         <SkeletonCard lines={3} />
-        <SkeletonCard lines={5} />
+        <div className="grid gap-3 lg:grid-cols-3">
+          <SkeletonCard lines={3} />
+          <SkeletonCard lines={3} />
+          <SkeletonCard lines={3} />
+        </div>
+        <SkeletonCard lines={8} />
       </Page>
     )
   }
@@ -53,37 +58,55 @@ export function PublicPortalPage() {
   return <PortalContent slug={slug} portal={portal.data} />
 }
 
+/** Phone: one column with jumps between sections. Desktop: the weeks on the left, each one with what was done and
+ *  the evidence behind it; on the right, what's missing, the alerts and the budget lines. The chat is a button at
+ *  the corner on every size. */
 function PortalContent({ slug, portal }: { slug: string; portal: Portal }) {
   const pending = portal.alerts.filter((alert) => !alert.answer).length
   const sections: NavSection[] = [
-    ...(portal.alerts.length ? [{ id: 'alertas', label: pending ? `Alertas (${pending})` : 'Alertas' }] : []),
     { id: 'semanas', label: 'Semana a semana' },
+    ...(portal.sprints.length ? [{ id: 'falta', label: 'Lo que falta' }] : []),
+    ...(portal.alerts.length ? [{ id: 'alertas', label: pending ? `Alertas (${pending})` : 'Alertas' }] : []),
     { id: 'rubros', label: 'Rubros' },
-    { id: 'evidencias', label: `Evidencias (${portal.expenses.length})` },
-    { id: 'preguntar', label: 'Preguntar' },
   ]
   return (
     <Page>
       <PortalHero portal={portal} />
       <SectionNav sections={sections} />
-      {portal.alerts.length > 0 && (
-        <Section id="alertas" title="Alertas" hint="Las detectan la IA o reglas automáticas para que una persona las revise. El ejecutor puede responderlas, no borrarlas.">
-          <AlertList alerts={portal.alerts} />
+
+      {portal.sprints.length > 0 && (
+        <Section id="fases" title="Fases del plan">
+          <PhaseStrip sprints={portal.sprints} start={portal.project.start_date} />
         </Section>
       )}
-      <Section id="semanas" title="Semana a semana" hint="Qué se terminó y cuánto se gastó cada semana, y cómo van sumando.">
-        <WeeklyTimeline timeline={portal.timeline} />
-      </Section>
-      <Section id="rubros" title="En qué se reparte la plata" hint="Lo usado y lo que queda en cada rubro del presupuesto.">
-        <BudgetLines lines={portal.lines} />
-      </Section>
-      <Section id="evidencias" title="Evidencias" hint="Facturas y fotos de campo que respaldan cada gasto y actividad.">
-        <EvidenceList expenses={portal.expenses} lines={portal.lines} />
-      </Section>
-      <Section id="preguntar" title="Pregúntale al proyecto" hint="Responde con los datos de esta página.">
-        <CitizenChat slug={slug} />
-      </Section>
+
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
+        <Section id="semanas" title="Semana a semana" hint="Qué se terminó, qué se pagó y con qué prueba. Toca una evidencia para verla completa.">
+          <div className="rounded-lg bg-surface p-4 sm:p-6">
+            <WeeklyTimeline timeline={portal.timeline} expenses={portal.expenses} sprints={portal.sprints} lines={portal.lines} end={portal.project.end_date} />
+          </div>
+        </Section>
+
+        <aside className="grid min-w-0 content-start gap-10" aria-label="Para revisar">
+          {portal.sprints.length > 0 && (
+            <Section id="falta" title="Lo que falta">
+              <WorkStatus sprints={portal.sprints} />
+            </Section>
+          )}
+          {portal.alerts.length > 0 && (
+            <Section id="alertas" title="Alertas" hint="Las marca la IA o una regla para que una persona revise. No se pueden borrar.">
+              <div className="rounded-lg bg-surface p-4">
+                <AlertList alerts={portal.alerts} />
+              </div>
+            </Section>
+          )}
+          <Section id="rubros" title="En qué se reparte la plata">
+            <BudgetLines lines={portal.lines} />
+          </Section>
+        </aside>
+      </div>
       <HowToRead />
+      <ChatLauncher slug={slug} />
     </Page>
   )
 }

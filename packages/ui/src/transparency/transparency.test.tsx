@@ -7,6 +7,7 @@ import { BudgetLines } from './BudgetLines'
 import { ProgressBars } from './ProgressBars'
 import { TrafficLight } from './TrafficLight'
 import { WeeklyTimeline } from './WeeklyTimeline'
+import { WorkStatus } from './WorkStatus'
 
 const summary: Summary = {
   spent: 72_000_000, spent_pct: 40, physical_pct: 25, time_pct: 46.2, unallocated: 0, light: 'red',
@@ -70,9 +71,11 @@ describe('WeeklyTimeline', () => {
         ]}
       />,
     )
-    const weeks = screen.getAllByText(/^Semana del/)
-    expect(weeks[0]).toHaveTextContent('10')
+    const weeks = screen.getAllByText(/^Semana \d/)
+    expect(weeks[0]).toHaveTextContent('Semana 2')
+    expect(screen.getByText('Esta semana')).toBeVisible()
     expect(screen.getByText('Diagnóstico del sitio')).toBeVisible()
+    expect(screen.getByText('Se gastaron $ 30.000.000')).toBeVisible()
     expect(screen.getByRole('img', { name: /dinero usado 16,7 %/ })).toBeInTheDocument()
   })
 })
@@ -100,5 +103,29 @@ describe('AlertList', () => {
     render(<AlertList alerts={[{ ...alert, answer: 'Se reclasificó a logística' }]} />)
     expect(screen.getByText('Respuesta del ejecutor')).toBeVisible()
     expect(screen.getByText(alert.reason)).toBeVisible()
+  })
+})
+
+describe('WorkStatus', () => {
+  it('lists what is missing, under way first, with each phase deadline', () => {
+    render(
+      <WorkStatus
+        sprints={[
+          {
+            name: 'Siembra lotes 1–2', goal: 'g', end_date: '2026-10-25', done_points: 3, total_points: 8,
+            tasks: [
+              { id: 1, title: 'Sembrar lote 1 (1 ha)', status: 'done', done_on: '2026-09-15' },
+              { id: 2, title: 'Sembrar lote 2 (1 ha)', status: 'in_progress', done_on: null },
+              { id: 3, title: 'Taller comunitario', status: 'pending', done_on: null },
+            ],
+          },
+        ]}
+      />,
+    )
+    expect(screen.queryByText('Sembrar lote 1 (1 ha)')).not.toBeInTheDocument() // done: it lives in the weekly timeline
+    expect(screen.getByText('Sembrar lote 2 (1 ha)')).toBeVisible()
+    expect(screen.getByText('En curso')).toBeVisible()
+    expect(screen.getByText('Pendiente')).toBeVisible()
+    expect(screen.getByText(/^Hasta el 25/)).toBeVisible()
   })
 })

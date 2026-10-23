@@ -1,5 +1,5 @@
 // Spec 017. Owner: P5. Money, work and time on one shared 0 to 100 scale, so the gap between them is what you see.
-// Money and work keep their colors on every chart of the portal (chart-1, chart-2).
+// Money and work keep their colors on every chart of the portal (chart-money, chart-work).
 import type { Summary } from '@agile/domain'
 import { cn } from '../cn'
 import { copShort, pct } from './format'
@@ -43,7 +43,7 @@ export function Comparison({ summary, contractValue }: { summary: Summary; contr
       <Row
         name="Dinero usado"
         value={summary.spent_pct}
-        fill="bg-chart-1"
+        fill="bg-chart-money"
         over={overspent}
         note={
           overspent
@@ -54,7 +54,7 @@ export function Comparison({ summary, contractValue }: { summary: Summary; contr
       <Row
         name="Trabajo hecho"
         value={summary.physical_pct}
-        fill="bg-chart-2"
+        fill="bg-chart-work"
         note={summary.physical_pct === null ? 'Sin actividades planeadas' : 'Según las tareas terminadas en el tablero'}
       />
       <Row name="Tiempo corrido" value={summary.time_pct} fill="bg-ink-subtle" note="Del plazo del contrato" />

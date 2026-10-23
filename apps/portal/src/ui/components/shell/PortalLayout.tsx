@@ -73,7 +73,7 @@ function TopBar() {
   }, [])
   return (
     <header className={cn('sticky top-0 z-30 transition-[background-color] duration-150', scrolled && 'bg-bg/90 backdrop-blur-md')}>
-      <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-4 py-3 md:px-8">
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 md:px-8">
         <Brand />
         <nav aria-label="Principal" className="hidden md:block">
           <NavLinks />
@@ -101,7 +101,7 @@ function TopBar() {
 
 function Footer() {
   return (
-    <footer className="mx-auto grid w-full max-w-5xl gap-6 px-4 pt-12 pb-10 md:px-8">
+    <footer className="mx-auto grid w-full max-w-7xl gap-6 px-4 pt-12 pb-10 md:px-8">
       <div className="grid gap-6 rounded-lg bg-surface p-6 md:grid-cols-[1.4fr_1fr_1fr]">
         <div className="grid content-start gap-3">
           <Brand />

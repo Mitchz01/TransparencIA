@@ -158,7 +158,8 @@ forbidden` where D15 asks for a leader. Not repeated in each table.
   "lines": [{ "id": "R1", "name": "…", "amount": 45000000, "spent": 30000000, "available": 15000000 }],
   "timeline": [{ "week_start": "2026-05-04", "tasks_done": [{ "id": 41, "title": "…" }], "spent": 1850000,
                  "spent_pct_acc": 1.0, "physical_pct_acc": 4.0 }],
-  "sprints": [{ "name": "…", "goal": "…", "end_date": "…", "done_points": 8, "total_points": 13 }],
+  "sprints": [{ "name": "…", "goal": "…", "end_date": "…", "done_points": 8, "total_points": 13,
+               "tasks": [{ "id": 41, "title": "…", "status": "done|in_progress|pending", "done_on": "2026-09-15" }] }],
   "expenses": [Expense],
   "alerts": [Alert & { "expense_id": 7 }],
   "public_url": "https://…/p/Xk3…"
@@ -422,6 +423,10 @@ Sync points:
 - [x] T034 The team app's texts tell the new product (FR-023): the sign in showcase, the home's agents pill
   (no GitHub: it points at Transparencia), the composer's examples, durations and templates, and the
   project form's placeholders become public projects; sample project names in the fakes stay
+- [x] T035 The portal reads as accountability for the jury (FR-024): one status card (verdict + three numbers),
+  the plan's phases, week by week with each week's evidence next to what it proves (amount, budget line,
+  activity, alerts) and a chart against the contract's time, what's missing (under way first), and the chat
+  as a button at the corner. `SprintProgress.tasks` gives each phase's activities with their state (titles only)
 - [ ] T027 Full demo with the real key and in mock mode; `pytest`, `npm run typecheck`, `npm run lint`
 
 ## Dependencies & Execution Order

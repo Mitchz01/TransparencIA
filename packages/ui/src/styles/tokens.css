@@ -43,6 +43,10 @@
   --chart-3: #6a47db;
   --chart-4: #e3a21a;
   --chart-5: #19a385;
+  /* Spec 017's money and work lines: the chart-1/chart-2 hues stepped so a 2px line reads on the surface
+     (validated with the dataviz checks: lightness band, CVD, 3:1 contrast). */
+  --chart-money: #6a9000;
+  --chart-work: #2f5fe0;
 
   --focus: #2f5fe0;
   --glow: transparent;
@@ -141,6 +145,8 @@
   --chart-3: #ae95fb;
   --chart-4: #f5b83d;
   --chart-5: #45d9b9;
+  --chart-money: #769a12;
+  --chart-work: #5f8af7;
 
   --focus: #c6f432;
   --glow: radial-gradient(60% 120% at 50% 0%, rgb(198 244 50 / 0.10), transparent 70%);
@@ -202,6 +208,8 @@
     --chart-3: #ae95fb;
     --chart-4: #f5b83d;
     --chart-5: #45d9b9;
+    --chart-money: #769a12;
+    --chart-work: #5f8af7;
 
     --focus: #c6f432;
     --glow: radial-gradient(60% 120% at 50% 0%, rgb(198 244 50 / 0.10), transparent 70%);
