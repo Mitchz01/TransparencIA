@@ -2,7 +2,7 @@
 // (spec 009, FR-006). Each event invalidates what it changed, as the contract's
 // "What to refetch per event" table says, and lands at the top of the activity feed.
 
-import { useQuery, useQueryClient, type QueryClient, type QueryKey } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery, useQueryClient, type QueryClient, type QueryKey } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import type { DomainEvent } from '../domain/events'
 import { useGateways } from './gateways'
@@ -84,4 +84,17 @@ export function useLiveUpdates(projectId: number) {
     const after = client.getQueryData<DomainEvent[]>(queryKeys.activity(projectId))?.[0]?.seq ?? 0
     return events.subscribe(projectId, (event) => applyEvent(client, event), { after })
   }, [events, client, projectId, ready])
+}
+
+/** Older events, page by page, below the live feed. Each page starts before the oldest one already shown. */
+export function useActivityHistory(projectId: number, oldestLoaded: number | undefined, enabled: boolean) {
+  const { activity } = useGateways()
+  return useInfiniteQuery({
+    queryKey: [...queryKeys.activity(projectId), 'history', oldestLoaded],
+    queryFn: ({ pageParam }) => activity.list(projectId, { before: pageParam, limit: ACTIVITY_PAGE }),
+    initialPageParam: oldestLoaded ?? 0,
+    getNextPageParam: (page) => (page.length < ACTIVITY_PAGE ? undefined : page[page.length - 1].seq),
+    enabled: enabled && oldestLoaded !== undefined, // only when the person asks for more
+    staleTime: Infinity,
+  })
 }

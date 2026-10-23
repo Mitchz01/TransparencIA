@@ -8,7 +8,7 @@ import type { DomainEvent } from '../../domain/events'
 import type { Connection } from '../../domain/integrations'
 import type { Project } from '../../domain/project'
 import type { Proposal } from '../../domain/proposals'
-import { demoBoard, demoBoardProject, demoBoardProposals, demoProject, demoProposals } from './demoData'
+import { demoBoard, demoBoardProject, demoBoardProposals, demoHistory, demoProject, demoProposals } from './demoData'
 
 type Listener = (event: DomainEvent) => void
 
@@ -40,6 +40,12 @@ export class FakeStore {
     for (const project of [demoBoardProject, demoProject]) this.projects.set(project.id, structuredClone(project))
     for (const proposal of [...demoBoardProposals, ...demoProposals]) this.proposals.set(proposal.id, structuredClone(proposal))
     this.boards.set(demoBoardProject.id, demoBoard(() => this.id()))
+    for (const [event, at] of demoHistory(this.boards.get(demoBoardProject.id)!)) this.record(event, at)
+  }
+
+  /** Stores a past event (demo history) without notifying anyone. */
+  private record(event: NewEvent, at: string): void {
+    this.events.push({ ...event, seq: this.nextSeq++, occurred_at: at } as DomainEvent)
   }
 
   id(): number {

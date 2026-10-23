@@ -3,6 +3,7 @@
 // second project whose plan is complete and whose board is already in use.
 
 import type { BoardView, Task } from '../../domain/board'
+import type { NewEvent } from './store'
 import type { StageKey } from '../../domain/plan'
 import type { Project } from '../../domain/project'
 import type { Proposal } from '../../domain/proposals'
@@ -99,4 +100,21 @@ export function demoBoard(nextId: () => number): BoardView {
     board.tasks.filter((t) => t.sprint_id === sprintOne && t.status === status).forEach((t, i) => (t.position = i))
   }
   return board
+}
+
+/** A short past for the activity feed of both demo projects, oldest first. */
+export function demoHistory(board: BoardView): [NewEvent, string][] {
+  const task = (key: string) => board.tasks.find((t) => t.key === key)!.id
+  const p1 = (minutes: number) => new Date(Date.parse(created) + minutes * 60_000).toISOString()
+  const p2 = (days: number) => new Date(Date.parse(boardCreated) + days * 86_400_000).toISOString()
+  return [
+    [{ type: 'proposal_resolved', project_id: 2, actor: 'person', summary: 'Aprobaste la propuesta de sprints', ref: { kind: 'proposal', id: 205 }, proposal_id: 205, kind: 'plan_stage', key: 'sprints', status: 'approved', auto: false, reason: null }, p2(0)],
+    [{ type: 'plan_applied', project_id: 2, actor: 'system', summary: 'El tablero está listo con 11 tareas', ref: { kind: 'project', id: 2 }, skipped_story_keys: [] }, p2(0)],
+    [{ type: 'task_status_changed', project_id: 2, actor: 'person', summary: 'US-1 pasó a Hecho', ref: { kind: 'task', id: task('US-1') }, task_id: task('US-1'), status: 'done' }, p2(4)],
+    [{ type: 'task_status_changed', project_id: 2, actor: 'person', summary: 'US-2 pasó a En curso', ref: { kind: 'task', id: task('US-2') }, task_id: task('US-2'), status: 'in_progress' }, p2(6)],
+    [{ type: 'task_status_changed', project_id: 2, actor: 'person', summary: 'US-3 pasó a En revisión', ref: { kind: 'task', id: task('US-3') }, task_id: task('US-3'), status: 'review' }, p2(9)],
+    [{ type: 'proposal_resolved', project_id: 1, actor: 'person', summary: 'Aprobaste la propuesta de roadmap', ref: { kind: 'proposal', id: 103 }, proposal_id: 103, kind: 'plan_stage', key: 'roadmap', status: 'approved', auto: false, reason: null }, p1(0)],
+    [{ type: 'agent_started', project_id: 1, actor: 'agent', summary: 'El product owner está trabajando en el backlog', ref: { kind: 'project', id: 1 }, agent: 'backlog', title: 'Product owner' }, p1(1)],
+    [{ type: 'proposal_created', project_id: 1, actor: 'agent', summary: 'El product owner propuso el backlog', ref: { kind: 'proposal', id: 104 }, proposal_id: 104, kind: 'plan_stage', key: 'backlog', agent: 'Product owner' }, p1(2)],
+  ]
 }

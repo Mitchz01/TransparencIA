@@ -242,9 +242,9 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ### Implementation for User Story 5
 
-- [ ] T043 [US5] Create `useActivity` (infinite query with `before`, prepends live events from `useLiveUpdates`)
-- [ ] T044 [US5] Create `ActivityItem` (actor icon, `summary`, time in words, link from `ref`) and `ActivityDrawer` (opened from the top bar on every project screen)
-- [ ] T045 [P] [US5] Test reconnection with `after` and `resync` against the fake stream in `frontend/src/application/liveUpdates.test.ts`
+- [x] T043 [US5] Create `useActivity` (infinite query with `before`, prepends live events from `useLiveUpdates`)
+- [x] T044 [US5] Create `ActivityItem` (actor icon, `summary`, time in words, link from `ref`) and `ActivityDrawer` (opened from the top bar on every project screen)
+- [x] T045 [P] [US5] Test reconnection with `after` and `resync` against the fake stream in `frontend/src/application/liveUpdates.test.ts`
 
 **Checkpoint**: User Stories 1–5 work independently
 

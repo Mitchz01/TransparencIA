@@ -37,6 +37,8 @@ function useBoardParams() {
     }, { replace: true })
   return {
     sprintParam: Number(params.get('sprint')),
+    taskParam: Number(params.get('task')) || null,
+    clearTask: () => update({ task: undefined }),
     filters,
     setSprint: (id: number) => update({ sprint: String(id) }),
     setFilters: (f: TaskFilters) => update({ assignee: f.assignee === undefined ? undefined : String(f.assignee), priority: f.priority, epic: f.epic }),
@@ -47,7 +49,7 @@ export function BoardPage() {
   const project = useCurrentProject()
   const { data: board, isPending } = useBoard(project.id)
   const move = useMoveTask(project.id)
-  const { sprintParam, filters, setSprint, setFilters } = useBoardParams()
+  const { sprintParam, taskParam, clearTask, filters, setSprint, setFilters } = useBoardParams()
   const [openId, setOpenId] = useState<number | null>(null)
 
   if (isPending) {
@@ -77,13 +79,17 @@ export function BoardPage() {
   }
 
   const continuous = board.continuous
-  const sprint = continuous ? null : board.sprints.find((s) => s.id === sprintParam) ?? defaultSprint(board.sprints, board.tasks)
+  // From the activity feed: ?task=<id> opens that task, in its sprint.
+  const linkedTask = board.tasks.find((t) => t.id === taskParam)
+  const sprint = continuous
+    ? null
+    : board.sprints.find((s) => s.id === (linkedTask?.sprint_id ?? sprintParam)) ?? defaultSprint(board.sprints, board.tasks)
   const sprintId = sprint?.id ?? null
   const scope = board.tasks.filter((t) => t.sprint_id === sprintId)
   const visible = filterTasks(scope, filters)
   const epics = [...new Set(scope.map((t) => t.epic_key))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
   const load = sprint?.load ? sprintLoad(board.tasks, sprint.id, sprint.load.capacity) : null
-  const open = board.tasks.find((t) => t.id === openId)
+  const open = board.tasks.find((t) => t.id === (openId ?? taskParam))
   const columns = continuous ? CONTINUOUS_COLUMNS : BOARD_COLUMNS
 
   return (
@@ -94,7 +100,7 @@ export function BoardPage() {
             label="Sprint"
             value={String(sprintId)}
             options={[...board.sprints].sort((a, b) => a.number - b.number).map((s) => ({ value: String(s.id), label: s.name }))}
-            onChange={(id) => setSprint(Number(id))}
+            onChange={(id) => { clearTask(); setSprint(Number(id)) }}
           />
         </TopBarViews>
       )}
@@ -116,7 +122,7 @@ export function BoardPage() {
         onMove={(taskId, status, position) => move.mutate({ taskId, status, position })}
         onOpen={(task) => setOpenId(task.id)}
       />
-      {open && <TaskDrawer key={open.id} projectId={project.id} task={open} members={project.members} columns={columns} onClose={() => setOpenId(null)} />}
+      {open && <TaskDrawer key={open.id} projectId={project.id} task={open} members={project.members} columns={columns} onClose={() => { setOpenId(null); clearTask() }} />}
     </>
   )
 }

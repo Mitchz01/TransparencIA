@@ -1,43 +1,48 @@
-import { useActivityFeed } from '../../../application/liveUpdates'
-import type { Actor } from '../../../domain/events'
-import { timeAgo } from '../../format'
-import { Drawer, EmptyState, Icon, SkeletonCard, type IconGlyph } from '../ds'
-import { Activity01Icon, AiMagicIcon, GithubIcon, Settings01Icon, UserIcon } from '../ds/icons'
+import { useState } from 'react'
+import { ACTIVITY_PAGE, useActivityFeed, useActivityHistory } from '../../../application/liveUpdates'
+import { Button, Drawer, EmptyState, SkeletonCard } from '../ds'
+import { Activity01Icon } from '../ds/icons'
+import { ActivityItem } from './ActivityItem'
 
-const ACTORS: Record<Actor, { icon: IconGlyph; label: string }> = {
-  agent: { icon: AiMagicIcon, label: 'Agente' },
-  person: { icon: UserIcon, label: 'Persona' },
-  github: { icon: GithubIcon, label: 'GitHub' },
-  system: { icon: Settings01Icon, label: 'Sistema' },
-}
-
-/** What's happening in the project, live, newest first. */
+/** What's happening in the project: live at the top, the history below on demand (spec 005). */
 export function ActivityDrawer({ projectId, onClose }: { projectId: number; onClose: () => void }) {
-  const { data: events, isPending } = useActivityFeed(projectId)
+  const { data: live, isPending } = useActivityFeed(projectId)
+  const [wantsMore, setWantsMore] = useState(false)
+  const oldest = live && live.length >= ACTIVITY_PAGE ? live[live.length - 1].seq : undefined
+  const history = useActivityHistory(projectId, oldest, wantsMore)
+  const older = history.data?.pages.flat() ?? []
+  const events = [...(live ?? []), ...older.filter((e) => !live?.some((l) => l.seq === e.seq))]
+  const hasMore = oldest !== undefined && (!wantsMore || history.hasNextPage)
+
   return (
     <Drawer title="Actividad" onClose={onClose}>
       {isPending ? (
         <SkeletonCard lines={4} />
-      ) : !events?.length ? (
+      ) : events.length === 0 ? (
         <EmptyState icon={Activity01Icon} title="Todavía nada" className="bg-inset">
           Aquí aparecen los agentes, las personas y GitHub a medida que trabajan.
         </EmptyState>
       ) : (
-        <ol className="grid gap-1">
-          {events.map((event) => (
-            <li key={event.seq} className="flex gap-3 rounded-md px-2 py-2.5">
-              <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-sm bg-surface-strong text-ink-muted">
-                <Icon icon={ACTORS[event.actor].icon} label={ACTORS[event.actor].label} size={16} />
-              </span>
-              <span className="grid min-w-0">
-                <span className="text-label">{event.summary}</span>
-                <time dateTime={event.occurred_at} className="text-caption text-ink-subtle">
-                  {timeAgo(event.occurred_at)}
-                </time>
-              </span>
-            </li>
-          ))}
-        </ol>
+        <div className="grid gap-3">
+          <ol className="grid gap-1" aria-live="polite">
+            {events.map((event) => (
+              <li key={event.seq}>
+                <ActivityItem event={event} onOpen={onClose} />
+              </li>
+            ))}
+          </ol>
+          {hasMore && (
+            <div>
+              <Button
+                size="sm"
+                loading={history.isFetching}
+                onClick={() => (wantsMore ? history.fetchNextPage() : setWantsMore(true))}
+              >
+                Ver anteriores
+              </Button>
+            </div>
+          )}
+        </div>
       )}
     </Drawer>
   )

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { usePlanning } from '../../application/use-cases/usePlanning'
 import type { StageKey } from '../../domain/plan'
 import { isDecided } from '../../domain/proposals'
@@ -28,7 +29,10 @@ const DESCRIPTIONS = {
 
 export function PlanningPage() {
   const loaded = useCurrentProject()
-  const { project = loaded, steps, start, retryStage } = usePlanning(loaded.id)
+  const { project = loaded, steps, proposals, start, retryStage } = usePlanning(loaded.id)
+  // From the activity feed: ?proposal=<id> opens the stage of that proposal.
+  const [params] = useSearchParams()
+  const linked = proposals?.find((p) => p.id === Number(params.get('proposal')) && p.kind === 'plan_stage')?.key as StageKey | undefined
   const focus = steps ? focusStep(steps) : null
   const [selected, setSelected] = useState<StageKey | null>(null)
   const [followed, setFollowed] = useState(focus?.key)
@@ -39,7 +43,7 @@ export function PlanningPage() {
     setSelected(null)
   }
 
-  const index = steps?.findIndex((s) => s.key === (selected ?? focus?.key)) ?? -1
+  const index = steps?.findIndex((s) => s.key === (selected ?? linked ?? focus?.key)) ?? -1
   const step = steps?.[index]
 
   const actions = (

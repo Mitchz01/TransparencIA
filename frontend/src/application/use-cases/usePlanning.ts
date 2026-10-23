@@ -53,7 +53,7 @@ export function usePlanning(projectId: number) {
       reportError(error, { failure: 'La etapa no se reinició', retry: () => retryStage.mutate(key), refetch: [queryKeys.proposals(projectId)] }),
   })
 
-  return { project: project.data, steps, isPending: project.isPending || proposals.isPending, start, retryStage }
+  return { project: project.data, steps, proposals: proposals.data, isPending: project.isPending || proposals.isPending, start, retryStage }
 }
 
 /** Approve, adjust or reject one proposal. Someone else may have decided first (another tab, auto-approve). */
