@@ -32,6 +32,9 @@ Use cases derived from [context.md](context.md) and how each one would be implem
 | UC-12 | Sync progress from GitHub and close objectives | GitHub | 008 |
 | UC-13 | Replan | Leader / AI agents | 008 |
 | UC-14 | Follow the live activity | Leader / Member | 005 |
+| UC-15 | Sign up, sign in and fill in the profile | Leader / Member | 015 |
+| UC-16 | Invite with a link and join a project | Leader / Member | 015 |
+| UC-17 | Manage the team and its permissions | Leader | 015 |
 
 ## Overview map
 
