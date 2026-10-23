@@ -4,7 +4,8 @@ import type { Member } from '../../../domain/project'
 import { checklistProgress } from '../../../domain/rules'
 import { points } from '../../format'
 import { Avatar, cn, Icon, Pill, ProgressTrack, StateLabel } from '../ds'
-import { CheckListIcon, Flag02Icon, GithubIcon, UserWarning01Icon } from '../ds/icons'
+import { CheckListIcon, Flag02Icon, UserWarning01Icon } from '../ds/icons'
+import { IssueBadge } from '../integrations/IssueBadge'
 import { firstName, PRIORITY_LOOK } from './boardLabels'
 
 interface TaskCardProps {
@@ -42,11 +43,7 @@ export function TaskCard({ task, assignee, overlay = false, onOpen }: TaskCardPr
           </span>
         )}
         <span>{points(task.points)}</span>
-        {task.issue && (
-          <a href={task.issue.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 text-blue">
-            <Icon icon={GithubIcon} size={16} />#{task.issue.number}
-          </a>
-        )}
+        {task.issue && <IssueBadge issue={task.issue} />}
       </div>
       <div className="flex items-center justify-between gap-2">
         {assignee ? (

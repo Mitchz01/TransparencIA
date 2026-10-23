@@ -289,9 +289,9 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ### Implementation for User Story 8
 
-- [ ] T051 [P] [US8] Create `RepositoryForm` (`owner/name` pattern from the contract, write-only token field showing only "Token saved", replace confirmation, `repository_not_accessible` reasons in plain words) and `TestModeBanner`
-- [ ] T052 [US8] Create `MemberGithubUsers` (with the "can't see the repo yet" warning) and the `create_issues` and `request_review` proposal bodies
-- [ ] T053 [US8] Create `IntegrationsPage` at `/projects/:id/integrations` with "Publish pending tasks", and add `IssueBadge` to `TaskCard`
+- [x] T051 [P] [US8] Create `RepositoryForm` (`owner/name` pattern from the contract, write-only token field showing only "Token saved", replace confirmation, `repository_not_accessible` reasons in plain words) and `TestModeBanner`
+- [x] T052 [US8] Create `MemberGithubUsers` (with the "can't see the repo yet" warning) and the `create_issues` and `request_review` proposal bodies
+- [x] T053 [US8] Create `IntegrationsPage` at `/projects/:id/integrations` with "Publish pending tasks", and add `IssueBadge` to `TaskCard`
 
 **Checkpoint**: User Stories 1–8 work independently
 

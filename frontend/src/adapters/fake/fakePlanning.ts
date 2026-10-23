@@ -163,11 +163,33 @@ export function createFakePlanning(store: FakeStore, { stageDelayMs = 1200 }: Fa
     })
   }
 
+  /** In test mode nothing reaches GitHub: each task just gets the next issue number. */
+  function onIssuesApproved(proposal: Proposal) {
+    if (!isDecided(proposal)) return
+    const board = store.boards.get(proposal.project_id)
+    const repository = store.connections.get(proposal.project_id)?.repository
+    if (!board || !repository) return
+    const wanted = new Set((finalContent(proposal) as { tasks: { task_id: number }[] }).tasks.map((t) => t.task_id))
+    let next = Math.max(0, ...board.tasks.map((t) => t.issue?.number ?? 0)) + 1
+    const created: { task_id: number; number: number }[] = []
+    board.tasks = board.tasks.map((t) => {
+      if (!wanted.has(t.id) || t.issue) return t
+      const number = next++
+      created.push({ task_id: t.id, number })
+      return { ...t, issue: { number, url: `https://github.com/${repository}/issues/${number}`, state: 'open', broken: false } }
+    })
+    store.publish({
+      type: 'issues_published', project_id: proposal.project_id, actor: 'github', ref: { kind: 'proposal', id: proposal.id },
+      summary: `Se publicaron ${created.length} issues en ${repository}`, proposal_id: proposal.id, created, failed: [],
+    })
+  }
+
   const unsubscribe = store.subscribeAll((event) => {
     if (event.type !== 'proposal_resolved') return
     const proposal = store.proposals.get(event.proposal_id)
     if (proposal?.kind === 'plan_stage') onStageResolved(proposal)
     if (proposal?.kind === 'document') onDocumentResolved(proposal)
+    if (proposal?.kind === 'github_action' && proposal.key === 'create_issues') onIssuesApproved(proposal)
   })
 
   return {
