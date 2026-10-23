@@ -225,10 +225,11 @@ sequenceDiagram
 
 ### UC-03 · Generate the plan by stages
 
-- **Trigger**: the "start planning" request, or the approval of the previous stage (UC-04).
-- **Result**: one `pending` proposal per stage (or `approved` with auto-approve).
+- **Trigger**: the "start planning" request (`POST /api/projects/{id}/planning`, 202), the resolution of the previous stage's proposal (UC-04), or the retry of a capped stage (`POST .../planning/stages/{key}/retry`).
+- **Result**: one `pending` proposal per stage (or `approved` with auto-approve); after `sprints`, `PlanCompleted` and the board (UC-05).
 - **Stages** (`PLANNING_STAGES`): analysis → methodology → architecture → roadmap → backlog → sprints. The document stages follow (UC-08).
-- **Use cases**: `planning/start_planning.py`, `planning/run_planning_step.py`. They replace the current `RunPlanning`, which runs everything back to back.
+- **Use cases**: `planning/start_planning.py` (from `draft` or `error`, resumes at the first stage without an approved proposal), `planning/run_planning_step.py` (one stage, in the background), `planning/advance_planning.py` (spec 005's `plan_stage` applier: next stage, redo with the rejection reason, or plan completed) and `planning/retry_stage.py`. Context building lives in `planning/context.py`.
+- **Validation**: the output's schema, then `validate_stage_output` (requested methodology, stories in roadmap epics, each story in exactly one iteration, real members, capacity). An invalid output or an agent failure is retried once, with the issues as `feedback`.
 
 ```mermaid
 sequenceDiagram
@@ -237,26 +238,31 @@ sequenceDiagram
     participant UoW
     participant AG as Agents
     participant Bus as EventBus
-    participant AP as ApproveProposal
+    participant AA as AutoApprove
+    participant AV as AdvancePlanning
 
     SP->>UoW: project.status = planning
-    SP->>RS: run(project_id, first stage)
-    RS->>UoW: project and already-resolved proposals
-    RS->>RS: builds the context from stage.inputs (final_content of what was approved)
+    SP->>RS: spawn(project_id, first pending stage)
+    RS->>UoW: project and proposals
+    RS->>RS: builds the context from stage.inputs (final_content of what was approved, capacity, feedback)
     RS->>Bus: publish(AgentStarted)
-    RS->>AG: run_stage(stage, context)
-    alt the agent fails
-        AG-->>RS: error
+    RS->>AG: run_stage(stage, context), retried once if it fails or breaks a rule
+    alt it fails twice
         RS->>UoW: project.status = error
         RS->>Bus: publish(PlanFailed)
     else ok
-        AG-->>RS: output with the stage's schema
-        RS->>UoW: proposals.add(pending Proposal, kind plan_stage)
-        RS->>UoW: commit()
+        RS->>UoW: proposals.add(pending Proposal, kind plan_stage) + commit()
         RS->>Bus: publish(AgentFinished and ProposalCreated)
-        opt project.auto_approve
-            RS->>AP: approve(proposal, auto=true)
-        end
+        RS->>AA: after_created(proposal) (approves it if auto-approve is on)
+    end
+    Note over AV: spec 005's ApplyProposal calls it for every plan_stage resolution
+    alt approved or adjusted
+        AV->>UoW: project.plan[stage] = final_content
+        AV->>RS: next stage, or PlanCompleted + on_plan_completed (ApplyPlan)
+    else rejected, fewer than 3 in a row
+        AV->>RS: same stage with feedback {reason, rejected_content}
+    else rejected 3 times in a row
+        AV->>Bus: publish(StageNeedsLeader)
     end
 ```
 
@@ -633,7 +639,7 @@ What these use cases add to what's already on `main`:
 | `domain/events.py` | `TeamChanged`, `PlanApplied`, `IssuesPublished`, `ObjectiveClosed` |
 | `application/ports/code_host.py` | `check_access`, `register_webhook`, `update_issue`, `get_pull_request_diff`, `comment_on_pull_request` |
 | `application/ports/repositories.py` | `ExternalLinkRepository`, `ObjectiveRepository`; add `proposals`, `documents`, `links` and `objectives` to the `UnitOfWork` |
-| `application/use_cases/planning/` | `RunPlanning` (back to back) is replaced by `StartPlanning` + `RunPlanningStep` |
+| `application/use_cases/planning/` | `RunPlanning` (back to back) is replaced by `StartPlanning` + `RunPlanningStep` + `AdvancePlanning` (done, spec 002) |
 | Background execution | Agents run in `asyncio.create_task` from the HTTP adapter; that task has its own DB session, not the request's |
 
 ## Open questions
