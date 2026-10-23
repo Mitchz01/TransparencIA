@@ -23,12 +23,7 @@ Etapas en orden; cada una es un `LlmAgent` que devuelve JSON con un esquema ([do
 
 Spec → Plan → Tasks → Código. Cada feature vive en `specs/NNN-feature/` con `spec.md`, `plan.md` y `tasks.md` (plantillas: [spec-template.md](specs/spec-template.md) para la spec y [specs/_templates](specs/_templates/) para plan y tasks; principios en [specs/constitution.md](specs/constitution.md)). Las reglas para los asistentes de IA, la estructura y los comandos están en [AGENTS.md](AGENTS.md), que también leen [CLAUDE.md](CLAUDE.md) y [GEMINI.md](GEMINI.md).
 
-| Feature | Carpeta |
-|---|---|
-| Alta de proyecto y equipo | [specs/001-project-team-setup](specs/001-project-team-setup/) |
-| Pipeline de agentes | [specs/002-agent-planning-pipeline](specs/002-agent-planning-pipeline/) |
-| Tablero kanban y sprints | [specs/003-kanban-board](specs/003-kanban-board/) |
-| Roadmap, metodología y arquitectura | [specs/004-roadmap-architecture-views](specs/004-roadmap-architecture-views/) |
+Las 8 specs (001–008), quién escribe y revisa cada una, el orden y los contratos entre specs están en [specs/README.md](specs/README.md).
 
 ## Correr el backend
 
