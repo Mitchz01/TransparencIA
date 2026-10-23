@@ -128,6 +128,63 @@ def test_a_failed_epic_spec_does_not_stop_the_others():
     assert w.bus.of_type("documents_generated")[0].missing == ["Spec of EP-1"]
 
 
+# ---------- US3: flow diagrams ----------
+
+FLOW = {"title": "Checkout", "kind": "flow", "mermaid": 'flowchart TD\n    A["Cart"] --> B["Pay"]'}
+ARCHITECTURE = {"title": "Architecture", "kind": "architecture", "mermaid": 'flowchart LR\n    W["Web"] --> A["API"]'}
+BROKEN = {"title": "Sign-up", "kind": "flow", "mermaid": 'flowchart TD\n    A["Open --> B'}
+
+
+def _diagrams(*diagrams) -> dict:
+    return {"diagrams": list(diagrams), "rationale": "The main journeys."}
+
+
+def test_diagrams_come_last_and_each_one_is_a_proposal():
+    w = writer()
+    w.run()
+
+    assert w.agents.stages()[-1] == "flow_diagrams"
+    diagrams = [p for p in w.proposals() if p.key.startswith("flow_diagram:")]
+    assert [p.key for p in diagrams] == [f"flow_diagram:{n}" for n in range(1, len(diagrams) + 1)]
+    assert diagrams[0].content["kind"] == "architecture"
+    assert all(p.content["kind"] == "flow" for p in diagrams[1:]) and len(diagrams) > 1
+    assert all(p.agent == "Diagram writer" and p.rationale for p in diagrams)
+    assert w.bus.of_type("documents_generated")[0].missing == []
+
+
+def test_the_diagram_context_has_only_its_inputs():
+    w = writer()
+    w.run()
+    assert set(w.agents.context("flow_diagrams")) == set(document_stage("flow_diagrams").inputs)
+
+
+def test_an_invalid_diagram_is_retried_once_with_the_issues():
+    w = writer(ScriptedAgents({"flow_diagrams": [_diagrams(ARCHITECTURE, BROKEN), _diagrams(ARCHITECTURE, FLOW)]}))
+    w.run()
+
+    feedback = w.agents.context("flow_diagrams", 1)["feedback"]
+    assert "Sign-up" in feedback["reason"] and "unclosed quote" in feedback["reason"]
+    assert [p.content["title"] for p in w.proposals() if p.key.startswith("flow_diagram:")] == ["Architecture", "Checkout"]
+    assert w.bus.of_type("documents_generated")[0].missing == []
+
+
+def test_a_diagram_still_invalid_after_the_retry_is_not_proposed_and_is_listed_missing():
+    w = writer(ScriptedAgents({"flow_diagrams": [_diagrams(ARCHITECTURE, BROKEN), _diagrams(ARCHITECTURE, BROKEN, FLOW)]}))
+    w.run()
+
+    diagrams = [p for p in w.proposals() if p.key.startswith("flow_diagram:")]
+    assert [(p.key, p.content["title"]) for p in diagrams] == [("flow_diagram:1", "Architecture"), ("flow_diagram:2", "Checkout")]
+    [generated] = w.bus.of_type("documents_generated")
+    assert generated.missing == ["Sign-up"]
+    assert generated.proposed == 1 + 5 + 2  # general spec, the sample's 5 epics, 2 diagrams
+
+
+def test_without_an_architecture_diagram_it_is_asked_for_on_the_retry():
+    w = writer(ScriptedAgents({"flow_diagrams": [_diagrams(FLOW), _diagrams(ARCHITECTURE, FLOW)]}))
+    w.run()
+    assert "architecture" in w.agents.context("flow_diagrams", 1)["feedback"]["reason"]
+
+
 # ---------- Rejections follow spec 002's redo rule ----------
 
 

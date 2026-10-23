@@ -243,14 +243,14 @@ Request headers: `Content-Type: application/json`. A leader edit isn't an agent 
 
 ### Tests for User Story 3
 
-- [ ] T018 [P] [US3] `check_mermaid` tests (allowed headers `flowchart`/`graph`/`sequenceDiagram`/`stateDiagram-v2`/`erDiagram`; non-empty body; balanced brackets and quotes; no `<script>` or HTML tags) in `backend/tests/unit/domain/test_diagrams.py`
-- [ ] T019 [P] [US3] Tests: an invalid diagram is regenerated once; if it's still invalid, it isn't proposed and `DocumentsGenerated` lists it as missing, in `backend/tests/unit/application/test_generate_documents.py`
+- [x] T018 [P] [US3] `check_mermaid` tests (allowed headers `flowchart`/`graph`/`sequenceDiagram`/`stateDiagram-v2`/`erDiagram`; non-empty body; balanced brackets and quotes; no `<script>` or HTML tags) in `backend/tests/unit/domain/test_diagrams.py`
+- [x] T019 [P] [US3] Tests: an invalid diagram is regenerated once; if it's still invalid, it isn't proposed and `DocumentsGenerated` lists it as missing, in `backend/tests/unit/application/test_generate_documents.py`
 
 ### Implementation for User Story 3
 
-- [ ] T020 [US3] Implement `check_mermaid(source) -> list[str]` in `backend/app/domain/diagrams.py`
-- [ ] T021 [US3] Extend `GenerateDocuments` with `flow_diagrams`: validate each diagram, retry once with the issues as `feedback`, propose each valid diagram as `flow_diagram:<n>`, publish `DocumentsGenerated(missing=[...])`
-- [ ] T022 [US3] Create `MermaidView` (`mermaid.render` with a unique id; on parse error, show the source and a warning) and use it in `DocumentsPage`
+- [x] T020 [US3] Implement `check_mermaid(source) -> list[str]` in `backend/app/domain/diagrams.py`
+- [x] T021 [US3] Extend `GenerateDocuments` with `flow_diagrams`: validate each diagram, retry once with the issues as `feedback`, propose each valid diagram as `flow_diagram:<n>`, publish `DocumentsGenerated(missing=[...])`
+- [ ] T022 [US3] Create `MermaidView` (`mermaid.render` with a unique id; on parse error, show the source and a warning) and use it in `DocumentsPage` — handed off to spec 009 (frontend)
 
 **Checkpoint**: User Stories 1–3 work independently
 

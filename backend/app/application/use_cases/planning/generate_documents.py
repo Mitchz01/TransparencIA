@@ -22,6 +22,7 @@ from app.application.use_cases.planning.context import (
 )
 from app.application.use_cases.planning.run_planning_step import OutputCheck, StageFailed, run_agent
 from app.application.use_cases.proposals.auto_approve import AutoApprove
+from app.domain.diagrams import check_mermaid
 from app.domain.documents import document_kind
 from app.domain.errors import ProjectNotFound
 from app.domain.events import (
@@ -72,6 +73,12 @@ class GenerateDocuments:
                 proposed += 1
             else:
                 missing.append(f"Spec of {epic['key']}")
+
+        # The diagrams come from one call: each one that renders is its own proposal (FR-006).
+        if not any(key.startswith("flow_diagram:") for key in taken):
+            diagrams, broken = await self._diagrams(project, outputs)
+            proposed += diagrams
+            missing += broken
 
         await self._bus.publish(
             DocumentsGenerated(
@@ -152,7 +159,9 @@ class GenerateDocuments:
                 logger.warning("Epic %s isn't in the approved roadmap: %s isn't rewritten", epic_key, key)
                 return False
             return await self._epic_spec(project, outputs, epic, feedback)
-        return False
+        title = str((feedback.get("rejected_content") or {}).get("title", ""))
+        proposed, _ = await self._diagrams(project, outputs, feedback, key=key, title=title)
+        return proposed > 0
 
     # ---------- Each kind of document ----------
 
@@ -180,6 +189,55 @@ class GenerateDocuments:
 
         label = f"the spec of {epic['key']} {epic['title']}"
         return await self._write(project.id, f"epic_spec:{epic['key']}", stage, context, label, check)  # type: ignore[arg-type]
+
+    async def _diagrams(
+        self,
+        project: Project,
+        outputs: dict[str, dict[str, Any]],
+        feedback: dict[str, Any] | None = None,
+        key: str | None = None,
+        title: str = "",
+    ) -> tuple[int, list[str]]:
+        """Proposes each diagram that passes check_mermaid as `flow_diagram:<n>`; the agent gets
+        one retry with the issues as feedback, and what still fails is returned as missing.
+        With `key`, it rewrites that one diagram: the output's diagram with the same title (or
+        the first one) is proposed under it. Returns (proposed, missing titles)."""
+        project_id: int = project.id  # type: ignore[assignment]
+        stage = document_stage("flow_diagrams")
+        context = build_document_context(stage, project, outputs, feedback=feedback)
+
+        def chosen(output: dict[str, Any]) -> list[dict[str, Any]]:
+            diagrams = output["diagrams"]
+            if key is None:
+                return diagrams
+            same = [d for d in diagrams if d["title"].casefold() == title.casefold()]
+            return (same or diagrams)[:1]
+
+        def check(output: dict[str, Any], _: dict[str, Any]) -> list[str]:
+            issues = [f"Diagram '{d['title']}': {issue}" for d in chosen(output) for issue in check_mermaid(d["mermaid"])]
+            if not output["diagrams"]:
+                issues.append("Draw at least the architecture diagram.")
+            elif key is None and not any(d["kind"] == "architecture" for d in output["diagrams"]):
+                issues.append("One of the diagrams must be of kind 'architecture'.")
+            return issues
+
+        label = f"the diagram '{title}'" if key else "the flow and architecture diagrams"
+        await self._started(project_id, stage, label)
+        try:
+            output, _ = await run_agent(self._agents, stage, context, check)
+        except StageFailed:
+            return 0, [title or "Diagrams"]
+        valid = [d for d in chosen(output) if not check_mermaid(d["mermaid"])]
+        missing = [d["title"] for d in chosen(output) if check_mermaid(d["mermaid"])]
+        if missing:
+            logger.warning("Diagrams not proposed, they still don't render after the retry: %s", missing)
+        if not valid:
+            return 0, missing or [title or "Diagrams"]
+        await self._finished(project_id, stage, output, label)
+        for number, diagram in enumerate(valid, 1):
+            content = {**diagram, "rationale": output["rationale"]}
+            await self._propose(project_id, key or f"flow_diagram:{number}", stage, content)
+        return len(valid), missing
 
     def _load(self, project_id: int) -> tuple[Project, dict[str, dict[str, Any]], set[str]]:
         """The project, its approved stage finals, and the document keys already proposed and
