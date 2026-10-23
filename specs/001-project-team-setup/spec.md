@@ -9,7 +9,7 @@
 ## Alcance
 
 - **Incluye**: el servicio (backend) que permite crear, consultar y editar un proyecto con su equipo, validar los datos y dejar el proyecto listo para que arranquen los agentes (UC-03).
-- **No incluye**: pantallas ni formularios (frontend). Las historias se prueban directamente contra el servicio.
+- **Incluye**: las pantallas para crear, ver y editar el proyecto y su equipo. Son el primer paso de la demo (constitución, principio 1), y cada dueño hace su área de punta a punta ([specs/README.md](../README.md)). Las historias también se pueden probar directamente contra el servicio.
 - **No incluye**: la generación del plan (spec 002) ni el pedido de empezar a planificar (spec 002), ni la re-planificación (spec 008). Esta spec deja el proyecto listo y avisa cuando cambia el equipo.
 
 ## User Scenarios & Testing *(mandatory)*
@@ -165,13 +165,13 @@ Cuando el líder cambia el equipo, el sistema guarda el cambio y avisa que el eq
 ### Key Entities *(include if feature involves data)*
 
 - **Proyecto**: lo que el equipo quiere construir. Nombre, descripción, duración en semanas, metodología pedida, auto-aprobar, estado (borrador, planificando, listo, error), equipo y fecha de creación. El plan aprobado y el repo de GitHub se completan en otras specs.
-- **Miembro**: persona del equipo de un proyecto. Nombre, rol, seniority, horas por semana y skills. Pertenece a un solo proyecto.
+- **Miembro**: persona del equipo de un proyecto. Nombre, rol, seniority, horas por semana y skills. Pertenece a un solo proyecto. El usuario de GitHub lo agrega la spec 007, desde Integraciones (007, FR-012).
 - **Aviso "cambió el equipo"**: indica que el equipo de un proyecto cambió, con el detalle de quién entró, quién salió y qué se editó de cada miembro. Lo muestra la actividad en vivo (spec 005) y lo usa la re-planificación (spec 008).
 
-### Contratos con otras specs (a acordar con Mitchz01)
+### Contratos con otras specs (acordados con Mitchz01)
 
 - **001 → 002**: los agentes reciben del proyecto el nombre, la descripción, la duración, la metodología pedida y el equipo completo (nombre, rol, seniority, horas y skills de cada miembro). No reciben auto-aprobar, que solo afecta a las propuestas (spec 005). El pedido de "empezar a planificar" y la regla de una sola planificación activa los define la spec 002.
-- **001 → 008**: el aviso "cambió el equipo" se publica ante cualquier cambio de miembros (altas, bajas y cambios de nombre, rol, seniority, horas o skills). Qué cambios disparan una re-planificación lo decide la spec 008. Queda por decidir qué pasa con auto-aprobar activo: así como está escrito, editar el equipo reorganizaría el tablero solo.
+- **001 → 008**: el aviso "cambió el equipo" se publica ante cualquier cambio de miembros (altas, bajas y cambios de nombre, rol, seniority, horas o skills). Qué cambios disparan una re-planificación lo decide la spec 008: altas, bajas y cambios de rol, seniority u horas; renombrar o cambiar skills no (008, FR-010). Con auto-aprobar activo, editar el equipo **no** reorganiza el tablero solo: las re-planificaciones automáticas siempre esperan al líder (008, FR-016).
 
 ## Success Criteria *(mandatory)*
 
