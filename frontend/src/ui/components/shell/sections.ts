@@ -1,0 +1,17 @@
+import type { IconGlyph } from '../ds'
+import { AiMagicIcon, Calendar03Icon, DashboardSquare01Icon, File01Icon, Plug01Icon } from '../ds/icons'
+
+export interface Section {
+  path: string
+  label: string
+  icon: IconGlyph
+}
+
+/** The project sections, in rail order (spec 009, screen map). Settings sits at the bottom of the rail. */
+export const SECTIONS: Section[] = [
+  { path: 'planning', label: 'Planificación', icon: AiMagicIcon },
+  { path: 'board', label: 'Tablero', icon: DashboardSquare01Icon },
+  { path: 'plan', label: 'Plan', icon: Calendar03Icon },
+  { path: 'documents', label: 'Documentos', icon: File01Icon },
+  { path: 'integrations', label: 'Integraciones', icon: Plug01Icon },
+]

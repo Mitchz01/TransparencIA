@@ -1,6 +1,10 @@
 import type { Gateways } from '../../application/ports'
 import { httpActivityGateway } from './activityGateway'
+import { httpBoardGateway } from './boardGateway'
+import { httpDocumentGateway } from './documentGateway'
 import { httpEventStream } from './eventStream'
+import { httpIntegrationGateway } from './integrationGateway'
+import { httpPlanningGateway } from './planningGateway'
 import { httpProjectGateway } from './projectGateway'
 import { httpProposalGateway } from './proposalGateway'
 
@@ -11,5 +15,9 @@ export function createHttpGateways(): Gateways {
     proposals: httpProposalGateway,
     activity: httpActivityGateway,
     events: httpEventStream,
+    planning: httpPlanningGateway,
+    board: httpBoardGateway,
+    documents: httpDocumentGateway,
+    integrations: httpIntegrationGateway,
   }
 }

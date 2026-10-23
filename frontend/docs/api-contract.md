@@ -4,7 +4,7 @@ Everything the frontend needs to talk to the backend: how to call it, the TypeSc
 
 - **Source of truth**: [plan/api-conventions.md](../../plan/api-conventions.md) and the **API Contract** section of each spec's `plan.md`. This document gathers them for the frontend. If they ever disagree, the plan wins: fix this file in the same PR that changes the plan.
 - **Where it plugs in**: `src/adapters/http/client.ts` implements the calling rules; each gateway in `src/adapters/http/` implements one group of endpoints below (and `src/adapters/fake/` the same ones in memory); `src/domain/*.ts` holds the shapes; `src/application/ports.ts` declares the gateways and `src/application/errors.ts` holds `ApiError`, so pages and hooks can catch it without importing `adapters/`.
-- **Implemented so far**: `ProjectGateway` (incl. `getPlanViews`), `ProposalGateway`, `ActivityGateway` and `EventStream`, with `createHttpGateways()` and `createFakeGateways()` (seeded with a demo project) for `app/container.tsx`.
+- **Implemented so far**: every gateway in section 4 (`ProjectGateway` incl. `getPlanViews`, `ProposalGateway`, `ActivityGateway`, `EventStream`, `PlanningGateway`, `BoardGateway`, `DocumentGateway`, `IntegrationGateway`), with `createHttpGateways()` and `createFakeGateways()` for `app/container.tsx`. The fake one is seeded with demo projects and simulates the agents (`src/adapters/fake/fakePlanning.ts`).
 
 ## Contents
 
@@ -362,6 +362,51 @@ export interface Connection {
   replaced: string | null
 }
 ```
+
+### Proposal content by kind
+
+`Proposal.content` (and `adjusted_content`) by `kind` and `key`, gathered from the plans of 002, 006, 007 and 008. Mirrored in `src/domain/proposalContent.ts`. `adjust` always sends the whole object with the same shape.
+
+| `kind` | `key` | `content` | Spec |
+|---|---|---|---|
+| `plan_stage` | `analysis`, `methodology`, `architecture`, `roadmap`, `backlog`, `sprints` | The stage output (`StageOutputs[key]`, `src/domain/plan.ts`) | 002 |
+| `document` | `general_spec` | `GeneralSpecContent` | 006 |
+| `document` | `epic_spec:<EP-n>` | `EpicSpecContent` | 006 |
+| `document` | `flow_diagram:<n>` | `FlowDiagramContent` | 006 |
+| `github_action` | `create_issues` | `CreateIssuesContent` | 007 |
+| `github_action` | `request_review` | `RequestReviewContent` | 007 |
+| `replan` | `replan` | `ReplanContent` | 008 |
+
+```ts
+export interface GeneralSpecContent { title: string; markdown: string; rationale: string }
+export interface EpicSpecContent extends GeneralSpecContent { epic_key: string }
+export interface FlowDiagramContent { title: string; kind: 'flow' | 'architecture'; mermaid: string }
+
+export interface CreateIssuesContent { tasks: { task_id: number; key: string; title: string }[] }
+
+export interface RequestReviewContent {
+  repository: string
+  pr_number: number
+  reviewers: { member_id: number; username: string; reason: string }[]
+  review: {
+    summary: string
+    findings: { criterion: string; status: 'met' | 'partial' | 'missing'; comment: string }[]
+    risks: string[]
+    reviewed_fully: boolean // false when the diff was too big and got truncated
+    rationale: string
+  }
+}
+
+export type ReplanChange =
+  | { kind: 'move'; task_key: string; to_sprint: number; expected_status: TaskStatus; rationale: string }
+  | { kind: 'reassign'; task_key: string; to_member: string; expected_status: TaskStatus; rationale: string }
+  | { kind: 'add'; new_story: Story; to_sprint: number; rationale: string }
+  | { kind: 'discard'; task_key: string; expected_status: TaskStatus; rationale: string }
+
+export interface ReplanContent { changes: ReplanChange[]; rationale: string }
+```
+
+Dropping replan changes before approving is an `adjust` with the remaining `changes`.
 
 ## 4. Endpoints by gateway
 

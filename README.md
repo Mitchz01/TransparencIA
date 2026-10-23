@@ -59,9 +59,11 @@ With both `PUBLIC_BASE_URL` and `GITHUB_WEBHOOK_URL` empty, repos connect withou
 ```bash
 cd frontend
 npm install
-npm i -D tailwindcss @tailwindcss/vite   # pending: failed because the disk was full
-npm run dev                               # :5173, proxy /api → :8000
+npm run dev                      # :5173, proxy /api → :8000
+VITE_USE_FAKE=true npm run dev   # whole demo without a backend (fake agents)
 ```
+
+Scripts, the fake backend and the checks: [frontend/README.md](frontend/README.md).
 
 ## TODO
 
@@ -73,8 +75,8 @@ npm run dev                               # :5173, proxy /api → :8000
 - [x] Plan views (spec 004): `GET /api/projects/{id}/plan`
 - [ ] Per-stage planning pipeline (spec 002) and its `plan_stage` applier, `PATCH /tasks/{id}` (spec 003)
 - [ ] Persist the approved plan as Sprint and Task
-- [x] GitHub integration backend (spec 007): `PUT/DELETE /api/projects/{id}/repository`, `POST /api/projects/{id}/issues/propose`, `PUT /api/members/{id}/github-username`, `github_action` appliers (hooks into 003 and 008 pending)
+- [x] GitHub integration backend (spec 007): `PUT/DELETE /api/projects/{id}/repository`, `POST /api/projects/{id}/issues/propose`, `PUT /api/members/{id}/github-username`, `github_action` appliers
 - [ ] Generated specs and diagrams (006), sync and replanning (008)
-- [ ] Frontend: project setup, agent progress, kanban, roadmap
-- [ ] Extra: replan ("a dev left, adjust the sprint")
+- [x] Frontend (spec 009): every screen, on the API contract or on the fake backend
+- [x] Extra: replan ("a dev left, adjust the sprint"), on the frontend and its fake backend
 - [ ] Deploy to Cloud Run
