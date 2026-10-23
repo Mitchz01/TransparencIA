@@ -14,3 +14,9 @@ export const pct = (value: number) => `${value.toLocaleString('es-CO', { maximum
 export const day = (iso: string) => dateFormat.format(new Date(`${iso.slice(0, 10)}T00:00:00Z`))
 
 export const shortDay = (iso: string) => shortDateFormat.format(new Date(`${iso.slice(0, 10)}T00:00:00Z`))
+
+/** Large amounts in words a citizen reads at a glance: "$ 32,4 millones". Below a million, the full amount. */
+export const copShort = (amount: number) =>
+  Math.abs(amount) < 1_000_000
+    ? cop(amount)
+    : `$ ${(amount / 1_000_000).toLocaleString('es-CO', { maximumFractionDigits: 1 })} millones`

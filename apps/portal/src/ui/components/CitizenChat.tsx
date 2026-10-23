@@ -36,10 +36,7 @@ export function CitizenChat({ slug }: { slug: string }) {
     : null
 
   return (
-    <Card className="grid gap-4" aria-labelledby="chat-title">
-      <h2 id="chat-title" className="text-heading">
-        Pregúntale al proyecto
-      </h2>
+    <Card className="grid gap-4">
       {turns.length > 0 && (
         <ol className="grid gap-3" aria-live="polite">
           {turns.map((turn, i) => (

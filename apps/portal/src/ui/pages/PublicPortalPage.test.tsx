@@ -30,9 +30,9 @@ describe('PublicPortalPage', () => {
   it('shows the published project with its traffic light, budget lines and evidence', async () => {
     renderAt('/p/Xk3', { getPortal: () => Promise.resolve(portal), ask: notFound })
     expect(await screen.findByRole('heading', { name: portal.project.name })).toBeVisible()
-    expect(screen.getByText(/Fundación Manglares Vivos ejecuta para Corpamag/)).toBeVisible()
+    expect(screen.getByText(/Fundación Manglares Vivos lo ejecuta para Corpamag/)).toBeVisible()
     expect(screen.getByText('En amarillo')).toBeVisible()
-    expect(screen.getByRole('heading', { name: 'Rubros del presupuesto' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'En qué se reparte la plata' })).toBeVisible()
     expect(screen.getByText(portal.expenses[2].citizen_summary)).toBeVisible()
     expect(screen.getByText(/Ley 1712 de 2014/)).toBeVisible()
   })

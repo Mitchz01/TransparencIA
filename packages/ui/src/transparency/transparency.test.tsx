@@ -29,9 +29,9 @@ describe('TrafficLight', () => {
 describe('ProgressBars', () => {
   it('shows the three percentages from the summary', () => {
     render(<ProgressBars summary={summary} />)
-    expect(screen.getByRole('progressbar', { name: /Dinero gastado: 40 %/ })).toBeVisible()
-    expect(screen.getByRole('progressbar', { name: /Avance de actividades: 25 %/ })).toBeVisible()
-    expect(screen.getByRole('progressbar', { name: /Tiempo transcurrido: 46,2 %/ })).toBeVisible()
+    expect(screen.getByRole('progressbar', { name: /Dinero usado: 40 %/ })).toBeVisible()
+    expect(screen.getByRole('progressbar', { name: /Trabajo hecho: 25 %/ })).toBeVisible()
+    expect(screen.getByRole('progressbar', { name: /Tiempo corrido: 46,2 %/ })).toBeVisible()
   })
 
   it('says there are no planned activities instead of 0 %', () => {
@@ -41,7 +41,7 @@ describe('ProgressBars', () => {
 
   it('says when spending goes over the contract', () => {
     render(<ProgressBars summary={{ ...summary, spent_pct: 112 }} />)
-    expect(screen.getByText(/supera el contrato/)).toBeVisible()
+    expect(screen.getByText(/más que el valor del contrato/)).toBeVisible()
   })
 })
 
@@ -55,7 +55,7 @@ describe('BudgetLines', () => {
         ]}
       />,
     )
-    expect(screen.getByText(/Disponible \$\s?15\.000\.000/)).toBeVisible()
+    expect(screen.getByText(/Quedan \$\s?15\.000\.000/)).toBeVisible()
     expect(screen.getByText(/Excedido en \$\s?1\.000\.000/)).toBeVisible()
   })
 })
@@ -73,7 +73,7 @@ describe('WeeklyTimeline', () => {
     const weeks = screen.getAllByText(/^Semana del/)
     expect(weeks[0]).toHaveTextContent('10')
     expect(screen.getByText('Diagnóstico del sitio')).toBeVisible()
-    expect(screen.getByRole('img', { name: /dinero gastado 16,7 %/ })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /dinero usado 16,7 %/ })).toBeInTheDocument()
   })
 })
 
