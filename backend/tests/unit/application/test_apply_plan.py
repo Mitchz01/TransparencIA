@@ -71,3 +71,41 @@ def test_unknown_project_or_incomplete_plan():
         asyncio.run(ApplyPlan(uow.factory(), RecordingEventBus()).execute(saved.id))
     with uow:
         assert uow.sprints.list_by_project(saved.id) == []
+
+
+# ---------- Follow-ups (spec 007: propose publishing the new board as issues) ----------
+
+
+def test_follow_ups_run_once_after_a_new_board():
+    uow, saved = _setup()
+    calls: list[int] = []
+
+    async def follow_up(project_id: int) -> None:
+        with uow:
+            calls.append((project_id, len(uow.tasks.list_by_project(project_id))))
+
+    apply = ApplyPlan(uow.factory(), RecordingEventBus(), [follow_up])
+    asyncio.run(apply.execute(saved.id))
+    asyncio.run(apply.execute(saved.id))  # the board already exists: no follow-up
+    assert calls == [(saved.id, len(MOCK_PLAN["backlog"]["stories"]))]
+
+
+def test_with_a_repo_connected_the_new_board_is_proposed_as_issues():
+    from app.application.use_cases.integrations.propose_issues import ProposePendingIssues
+
+    for repository, expected in (("acme/app", 1), (None, 0)):
+        uow = InMemoryUnitOfWork()
+        saved = uow.projects.add(project(status="planning", plan=MOCK_PLAN, repository=repository))
+        uow.commit()
+        bus = RecordingEventBus()
+        asyncio.run(ApplyPlan(uow.factory(), bus, [ProposePendingIssues(uow.factory(), bus)]).execute(saved.id))
+
+        with uow:
+            proposals = uow.proposals.list_by_project(saved.id)
+            tasks = uow.tasks.list_by_project(saved.id)
+        assert len(proposals) == expected
+        if expected:
+            [proposal] = proposals
+            assert (proposal.kind, proposal.key, proposal.status) == ("github_action", "create_issues", "pending")
+            assert [t["task_id"] for t in proposal.content["tasks"]] == [t.id for t in tasks]
+            assert [e.type for e in bus.events] == ["plan_applied", "proposal_created"]

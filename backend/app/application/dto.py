@@ -16,6 +16,7 @@ from app.domain.board import (
     Task,
     TaskStatus,
 )
+from app.domain.integrations import IssueRef
 from app.domain.plan import WipLimit
 from app.domain.project import (
     Member,
@@ -112,6 +113,12 @@ class SprintView(Sprint):
     load: SprintLoad | None  # None on a continuous (Kanban) board
 
 
+class TaskView(Task):
+    """A task as the API returns it (board and task results)."""
+
+    issue: IssueRef | None = None  # spec 007: the task's GitHub issue, None until published
+
+
 class BoardView(BaseModel):
     project_id: int
     continuous: bool
@@ -119,7 +126,7 @@ class BoardView(BaseModel):
     capacity_override: int | None
     sprints: list[SprintView]
     objectives: list[Objective]
-    tasks: list[Task]
+    tasks: list[TaskView]
 
 
 class _SentFields(BaseModel):
@@ -172,7 +179,7 @@ class ChecklistUpdate(BaseModel):
 
 
 class TaskResult(BaseModel):
-    task: Task
+    task: TaskView
     warnings: list[BoardWarning] = []  # never block (constitution, principle 4)
     suggest_advance: bool = False  # the checklist is complete: offer to move it forward (FR-015)
 

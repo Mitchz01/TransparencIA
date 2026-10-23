@@ -31,7 +31,7 @@ from app.application.use_cases.activity.list_activity import FollowActivity, Lis
 from app.application.use_cases.integrations.close_discarded_issue import CloseDiscardedIssue
 from app.application.use_cases.integrations.connect_repository import ConnectRepository
 from app.application.use_cases.integrations.disconnect_repository import DisconnectRepository
-from app.application.use_cases.integrations.propose_issues import AfterCreated, ProposeIssues
+from app.application.use_cases.integrations.propose_issues import AfterCreated, ProposeIssues, ProposePendingIssues
 from app.application.use_cases.integrations.propose_review import ProposeReview
 from app.application.use_cases.integrations.set_github_username import SetGithubUsername
 from app.application.use_cases.integrations.sync_task_issue import SyncTaskIssue
@@ -235,7 +235,8 @@ def get_sync_task_issue(
     bus: EventBus = Depends(get_event_bus),
     code_hosts: CodeHostFactory = Depends(get_code_host_factory),
 ) -> SyncTaskIssue:
-    """For spec 003: register `.execute(task_id)` as an after_task_changed handler of UpdateTask."""
+    """Spec 003's board use cases call `.on_task_changed` through app.state.after_task_changed
+    (registered in main.py); this is for calling `.execute(task_id)` directly."""
     return SyncTaskIssue(uow_factory, bus, code_hosts)
 
 
@@ -304,6 +305,10 @@ def get_set_capacity(uow: UnitOfWork = Depends(get_uow)) -> SetCapacity:
 # on purpose: a ("plan_stage", "sprints") applier would shadow AdvancePlanning for the last stage,
 # and the approved backlog/sprints only reach project.plan through AdvancePlanning.
 def get_apply_plan(
-    uow_factory: UnitOfWorkFactory = Depends(get_uow_factory), bus: EventBus = Depends(get_event_bus)
+    uow_factory: UnitOfWorkFactory = Depends(get_uow_factory),
+    bus: EventBus = Depends(get_event_bus),
+    auto_approve: AutoApprove = Depends(get_auto_approve),
 ) -> ApplyPlan:
-    return ApplyPlan(uow_factory, bus)
+    # Spec 007 (T019): with a repo connected, the new board's tasks are proposed as issues.
+    # ApplyPlan already runs in the background, so auto-approve applies in that same job.
+    return ApplyPlan(uow_factory, bus, [ProposePendingIssues(uow_factory, bus, auto_approve.after_created)])

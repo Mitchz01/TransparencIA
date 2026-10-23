@@ -4,6 +4,7 @@ returned next to the saved task."""
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+from app.application.dto import TaskView
 from app.application.ports.unit_of_work import UnitOfWork
 from app.domain.board import (
     BoardWarning,
@@ -33,6 +34,12 @@ def load_task(uow: UnitOfWork, task_id: int) -> tuple[Task, Project]:
     if project is None:
         raise ProjectNotFound(task.project_id)
     return task, project
+
+
+def task_view(uow: UnitOfWork, task: Task) -> TaskView:
+    """The saved task with its GitHub issue (spec 007), as the board returns it."""
+    link = uow.links.get_issue(task.id) if task.id is not None else None
+    return TaskView(**task.model_dump(), issue=link.issue_ref() if link else None)
 
 
 def check_task_change(uow: UnitOfWork, project: Project, values: dict[str, Any]) -> None:

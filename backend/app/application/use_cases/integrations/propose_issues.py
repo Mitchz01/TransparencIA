@@ -6,7 +6,7 @@ of spec 003's ApplyPlan / spec 008's ApplyReplan, and when the leader asks for i
 from collections.abc import Awaitable, Callable
 
 from app.application.ports.event_bus import EventBus
-from app.application.ports.unit_of_work import UnitOfWork
+from app.application.ports.unit_of_work import UnitOfWork, UnitOfWorkFactory
 from app.domain.board import Task
 from app.domain.errors import NothingToPublish, ProjectNotFound, PublicationPending, RepositoryNotConnected
 from app.domain.events import EventRef, ProposalCreated
@@ -91,3 +91,18 @@ class ProposeIssues:
             await self.execute(project_id)
         except (NothingToPublish, PublicationPending, RepositoryNotConnected):
             pass
+
+
+class ProposePendingIssues:
+    """Spec 003's ApplyPlan follow-up: once the board is built, propose publishing its tasks
+    if the project has a repo connected. ApplyPlan runs in the background, so this opens its
+    own UnitOfWork."""
+
+    def __init__(self, uow_factory: UnitOfWorkFactory, bus: EventBus, after_created: AfterCreated | None = None):
+        self._uow_factory = uow_factory
+        self._bus = bus
+        self._after_created = after_created
+
+    async def __call__(self, project_id: int) -> None:
+        with self._uow_factory() as uow:
+            await ProposeIssues(uow, self._bus, self._after_created).propose_pending(project_id)

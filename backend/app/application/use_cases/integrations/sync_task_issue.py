@@ -1,16 +1,17 @@
 """Keep a published task's issue in sync with the task (spec 007, FR-021).
 
 No proposal: publishing was already approved, the issue mirrors the task, and the change
-was made by a person (or an approved replan). Meant as an `after_task_changed` handler of
-spec 003's UpdateTask. A GitHub failure never fails the board edit: it's logged and the
-next edit syncs again."""
+was made by a person (or an approved replan). `on_task_changed` is registered as an
+`after_task_changed` handler of spec 003's board use cases (main.py). A GitHub failure never
+fails the board edit: it's logged and the next edit syncs again."""
 
 import logging
 
 from app.application.ports.code_host import CodeHostFactory
 from app.application.ports.event_bus import EventBus
 from app.application.ports.unit_of_work import UnitOfWorkFactory
-from app.domain.events import EventRef, IssueUpdated
+from app.domain.board import Task
+from app.domain.events import DomainEvent, EventRef, IssueUpdated, TaskUpdated
 from app.domain.integrations import OwnWrite, issue_body, issue_labels
 
 logger = logging.getLogger("agile")
@@ -21,6 +22,12 @@ class SyncTaskIssue:
         self._uow_factory = uow_factory
         self._bus = bus
         self._code_hosts = code_hosts
+
+    async def on_task_changed(self, task: Task, event: DomainEvent) -> None:
+        """after_task_changed handler: only edits (data or checklist, `task_updated`) change
+        the issue; a pure move (`task_status_changed`) doesn't."""
+        if isinstance(event, TaskUpdated) and task.id is not None:
+            await self.execute(task.id)
 
     async def execute(self, task_id: int) -> bool:
         """True if the issue was updated (or found deleted and marked broken)."""

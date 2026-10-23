@@ -131,3 +131,25 @@ def test_close_of_an_issue_deleted_on_github_marks_it_broken():
     uow.rollback()
     assert uow.links.get_issue(task_id).broken is True and uow.own_writes.all() == []
     assert bus.events == []
+
+
+# ---------- after_task_changed handler (spec 003 board use cases) ----------
+
+
+def test_handler_syncs_on_edits_but_not_on_pure_moves():
+    from app.domain.events import EventRef, TaskStatusChanged, TaskUpdated
+
+    uow, task_id, bus, hosts = _setup()
+    task = uow.tasks.get(task_id)
+    ref = EventRef(kind="task", id=task_id)
+    sync = SyncTaskIssue(uow.factory(), bus, hosts)
+
+    moved = TaskStatusChanged(project_id=task.project_id, summary="moved", ref=ref, task_id=task_id, status="in_progress")
+    run(sync.on_task_changed(task, moved))
+    assert hosts.host.calls == [] and bus.events == []
+
+    edited = TaskUpdated(project_id=task.project_id, summary="edited", ref=ref, task_id=task_id, fields=["title"])
+    run(sync.on_task_changed(task, edited))
+    [update] = hosts.host.called("update_issue")
+    assert (update["number"], update["title"]) == (12, "Login (edited)")
+    assert [e.type for e in bus.events] == ["issue_updated"]

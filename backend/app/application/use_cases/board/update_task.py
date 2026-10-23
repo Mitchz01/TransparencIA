@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from app.application.dto import TaskEdit, TaskMove, TaskResult
 from app.application.ports.event_bus import EventBus
 from app.application.ports.unit_of_work import UnitOfWork
-from app.application.use_cases.board.common import TaskChangedHandler, board_warnings, check_task_change, load_task
+from app.application.use_cases.board.common import TaskChangedHandler, board_warnings, check_task_change, load_task, task_view
 from app.application.use_cases.board.move_task import MoveTask
 from app.domain.board import edit_task
 from app.domain.events import EventRef, TaskUpdated
@@ -49,4 +49,4 @@ class UpdateTask:
             await handler(saved, event)
         if move is not None:
             await self._move_task.notify(saved)
-        return TaskResult(task=saved, warnings=board_warnings(project, self._uow.tasks.list_by_project(project.id), saved))  # type: ignore[arg-type]
+        return TaskResult(task=task_view(self._uow, saved), warnings=board_warnings(project, self._uow.tasks.list_by_project(project.id), saved))  # type: ignore[arg-type]

@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from app.application.dto import TaskMove, TaskResult
 from app.application.ports.event_bus import EventBus
 from app.application.ports.unit_of_work import UnitOfWork
-from app.application.use_cases.board.common import TaskChangedHandler, board_warnings, check_task_change, load_task
+from app.application.use_cases.board.common import TaskChangedHandler, board_warnings, check_task_change, load_task, task_view
 from app.domain.board import Task, is_continuous, reorder
 from app.domain.events import EventRef, TaskStatusChanged
 from app.domain.project import Project
@@ -24,7 +24,7 @@ class MoveTask:
         moved = self.apply(project, task, move)
         self._uow.commit()
         await self.notify(moved)
-        return TaskResult(task=moved, warnings=board_warnings(project, self._uow.tasks.list_by_project(project.id), moved))  # type: ignore[arg-type]
+        return TaskResult(task=task_view(self._uow, moved), warnings=board_warnings(project, self._uow.tasks.list_by_project(project.id), moved))  # type: ignore[arg-type]
 
     def apply(self, project: Project, task: Task, move: TaskMove) -> Task:
         """Writes an already validated move without committing (UpdateTask reuses it when a

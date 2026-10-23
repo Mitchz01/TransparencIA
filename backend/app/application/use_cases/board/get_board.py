@@ -1,10 +1,11 @@
-"""UC-06 · The board read model (spec 003): sprints with their load, objectives and tasks.
-Empty lists until the plan is applied."""
+"""UC-06 · The board read model (spec 003): sprints with their load, objectives and tasks,
+each task with its GitHub issue (spec 007). Empty lists until the plan is applied."""
 
-from app.application.dto import BoardView, SprintView
+from app.application.dto import TaskView, BoardView, SprintView
 from app.application.ports.unit_of_work import UnitOfWork
 from app.domain.board import Sprint, Task, is_continuous, sprint_capacity, sprint_load, wip_limits
 from app.domain.errors import ProjectNotFound
+from app.domain.integrations import IssueRef
 from app.domain.project import Project
 
 
@@ -27,6 +28,10 @@ class GetBoard:
             raise ProjectNotFound(project_id)
         sprints = self._uow.sprints.list_by_project(project_id)
         tasks = self._uow.tasks.list_by_project(project_id)
+        # Ordered oldest first: a task's newest issue link wins (an older one may be broken).
+        issues: dict[int, IssueRef] = {
+            link.task_id: link.issue_ref() for link in self._uow.links.list_by_project(project_id, kind="issue")
+        }
         return BoardView(
             project_id=project_id,
             continuous=is_continuous(project),
@@ -34,5 +39,5 @@ class GetBoard:
             capacity_override=project.sprint_capacity_override,
             sprints=sprint_views(project, sprints, tasks),
             objectives=self._uow.objectives.list_by_project(project_id),
-            tasks=tasks,
+            tasks=[TaskView(**t.model_dump(), issue=issues.get(t.id or 0)) for t in tasks],
         )

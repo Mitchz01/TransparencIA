@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from app.application.dto import TaskResult
 from app.application.ports.event_bus import EventBus
 from app.application.ports.unit_of_work import UnitOfWork
-from app.application.use_cases.board.common import TaskChangedHandler, load_task
+from app.application.use_cases.board.common import TaskChangedHandler, load_task, task_view
 from app.domain.board import ChecklistItem, checklist_errors, suggest_advance
 from app.domain.errors import ValidationFailed
 from app.domain.events import EventRef, TaskUpdated
@@ -40,4 +40,4 @@ class UpdateChecklist:
         await self._bus.publish(event)
         for handler in self._handlers:
             await handler(saved, event)
-        return TaskResult(task=saved, suggest_advance=suggest_advance(saved))
+        return TaskResult(task=task_view(self._uow, saved), suggest_advance=suggest_advance(saved))

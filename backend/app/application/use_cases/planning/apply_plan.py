@@ -2,7 +2,12 @@
 
 Runs once the sprints stage is approved (an `on_plan_completed` handler of spec 002), in the
 background with its own UnitOfWork. Idempotent: a project that already has a board is left
-as it is (planning again is a replan, spec 008)."""
+as it is (planning again is a replan, spec 008).
+
+Follow-ups run after a new board is saved and announced, with the project id: spec 007
+registers "propose publishing the tasks as issues" (when a repo is connected)."""
+
+from collections.abc import Awaitable, Callable, Sequence
 
 from app.application.ports.event_bus import EventBus
 from app.application.ports.unit_of_work import UnitOfWorkFactory
@@ -11,11 +16,16 @@ from app.domain.errors import ProjectNotFound, ValidationFailed
 from app.domain.events import EventRef, PlanApplied
 from app.domain.plan import Backlog, SprintPlanning
 
+PlanAppliedFollowUp = Callable[[int], Awaitable[None]]
+
 
 class ApplyPlan:
-    def __init__(self, uow_factory: UnitOfWorkFactory, bus: EventBus):
+    def __init__(
+        self, uow_factory: UnitOfWorkFactory, bus: EventBus, follow_ups: Sequence[PlanAppliedFollowUp] = ()
+    ):
         self._uow_factory = uow_factory
         self._bus = bus
+        self._follow_ups = list(follow_ups)
 
     async def execute(self, project_id: int) -> None:
         with self._uow_factory() as uow:
@@ -57,3 +67,5 @@ class ApplyPlan:
                 skipped_story_keys=board.skipped,
             )
         )
+        for follow_up in self._follow_ups:
+            await follow_up(project_id)

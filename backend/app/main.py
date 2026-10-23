@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.adapters.inbound.http import activity, board, health, integrations, projects, proposals
+from app.adapters.inbound.http.background import spawn
 from app.adapters.inbound.http.dependencies import open_uow
 from app.adapters.inbound.http.errors import register_error_handlers
 from app.adapters.outbound.code_host.fake import FakeCodeHost
@@ -13,8 +14,11 @@ from app.adapters.outbound.events.in_memory_bus import InMemoryEventBus
 from app.adapters.outbound.events.persistent_bus import PersistentEventBus
 from app.application.use_cases.integrations.apply_review import ApplyReview
 from app.application.use_cases.integrations.publish_issues import PublishIssues
+from app.application.use_cases.integrations.sync_task_issue import SyncTaskIssue
 from app.application.use_cases.proposals.apply_proposal import ApplierRegistry
 from app.adapters.outbound.persistence.db import create_db
+from app.domain.board import Task
+from app.domain.events import DomainEvent
 from app.application.ports.agents import PlanningAgents
 from app.application.ports.code_host import CodeHost, CodeHostFactory
 from app.config import CORS_ORIGINS, GEMINI_MODEL, GITHUB_TOKEN, MOCK_AGENTS, MOCK_GITHUB_FORCED
@@ -67,6 +71,14 @@ async def lifespan(app: FastAPI):
     app.state.appliers.register("github_action", apply_review.execute, key="request_review")
     app.state.on_team_changed = []  # spec 008 registers its drift-replan handler here
     app.state.after_task_changed = []  # spec 007 registers issue sync, spec 008 objective evaluation
+    # Spec 007 (FR-021): editing a published task updates its issue, without a proposal.
+    # It talks to GitHub, so it runs in the background and never slows down the board edit.
+    sync_task_issue = SyncTaskIssue(open_uow, app.state.event_bus, app.state.code_host_factory)
+
+    async def sync_issue_in_background(task: Task, event: DomainEvent) -> None:
+        spawn(sync_task_issue.on_task_changed(task, event))
+
+    app.state.after_task_changed.append(sync_issue_in_background)
     yield
 
 
