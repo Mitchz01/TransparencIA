@@ -146,7 +146,7 @@ Si un agente falla (el servicio no responde o devuelve algo inválido), el líde
 - **FR-007**: El sistema DEBE avisar en vivo cuándo empieza, termina o falla cada etapa y qué agente la corre (lo muestra la spec 005).
 - **FR-008**: Si el líder eligió una metodología, la etapa de metodología DEBE respetarla. Si no, DEBE recomendar una y justificar al menos dos alternativas descartadas.
 - **FR-009**: Cada historia del backlog DEBE pertenecer a una épica del roadmap aprobado y estar en exactamente una iteración.
-- **FR-010**: Las asignaciones DEBEN referirse a miembros reales del equipo; el trabajo de cada iteración NO DEBE superar la capacidad estimada del equipo según sus horas y seniority.
+- **FR-010**: Las asignaciones DEBEN referirse a miembros reales del equipo; el trabajo de cada iteración NO DEBE superar la capacidad estimada del equipo según sus horas y seniority. Esa estimación usa la misma regla que el aviso de sobrecarga del tablero (spec 003, FR-017), para que un plan recién generado nunca aparezca sobrecargado.
 - **FR-011**: Al rechazar una propuesta con motivo, el sistema DEBE rehacer esa etapa automáticamente, sin que el líder lo pida, usando como contexto el motivo y la propuesta rechazada. Después de 3 rechazos seguidos de la misma etapa, deja de rehacerla sola y espera a que el líder la reintente o escriba la versión que quiere ajustando la última propuesta.
 - **FR-012**: Si una etapa falla, el proyecto DEBE quedar en error indicando la etapa, y el líder DEBE poder reintentarla sin rehacer las etapas aprobadas.
 - **FR-013**: Solo PUEDE haber una planificación activa por proyecto.

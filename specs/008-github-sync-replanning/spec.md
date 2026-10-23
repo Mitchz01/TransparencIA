@@ -19,7 +19,8 @@ A medida que el equipo trabaja en GitHub, las tareas se mueven solas en el table
 | Se abre un PR que cierra la issue | En curso |
 | El PR queda listo para revisión | En revisión |
 | Se mergea el PR | Hecha, con el checklist completo |
-| Se cierra la issue sin PR | Hecha |
+| Se cierra la issue sin PR (como completada) | Hecha |
+| Se cierra la issue como "no planificada" en GitHub | No cambia; se avisa en la actividad para que el líder decida |
 | Se reabre la issue | Por hacer |
 
 **Why this priority**: es lo que hace que el plan "se mantenga vivo" sin trabajo manual, y se ve muy bien en la demo.
@@ -74,7 +75,7 @@ El líder pide re-planificar con un motivo ("se fue un dev", "entró un cliente 
 
 ### User Story 3 - Objetivos que se cierran solos (Priority: P2)
 
-Cada fase o sprint tiene objetivos. Cuando todas las tareas de un objetivo están hechas, el objetivo se marca como cumplido sin que nadie lo cierre a mano.
+Cada sprint tiene un objetivo: su meta y sus tareas (lo crea la spec 003 al armar el tablero). Cuando todas las tareas de un objetivo están hechas, el objetivo se marca como cumplido sin que nadie lo cierre a mano.
 
 **Why this priority**: da sensación de avance, pero el tablero ya muestra el progreso tarea por tarea.
 
@@ -118,7 +119,9 @@ El sistema detecta cuándo el plan se desvió de la realidad (un sprint terminó
 - ¿Qué pasa si una tarea ya está "hecha" (movida a mano) y llega un aviso de PR abierto? No retrocede: los avisos de GitHub nunca sacan una tarea de "hecha", salvo que se reabra la issue.
 - ¿Qué pasa si se pide (o se detecta) una re-planificación con otra pendiente? Se genera una nueva que suma los motivos de las dos y reemplaza a la anterior, que queda descartada en el historial.
 - ¿Qué pasa si el tablero cambió entre que se generó la propuesta y se aprobó? Los cambios que se refieren a tareas que ya no están en el estado esperado se descartan, y el resto se aplica; el líder ve cuáles se descartaron.
-- ¿Qué pasa si la re-planificación agrega tareas y el proyecto tiene repo conectado? Las tareas nuevas siguen el flujo de publicación de issues de la spec 007.
+- ¿Qué pasa si la re-planificación agrega tareas y el proyecto tiene repo conectado? Al aprobarla se propone publicarlas como issues (spec 007, FR-006).
+- ¿Qué pasa si la re-planificación descarta una tarea que ya tiene issue? La issue se cierra como "no planificada" (spec 007, FR-022), y ese cierre no la marca como hecha.
+- ¿Qué pasa con los avisos de cambios que hizo el propio sistema en GitHub (crear, editar o cerrar issues)? Se ignoran (FR-015).
 
 ## Requirements *(mandatory)*
 
@@ -138,12 +141,13 @@ El sistema detecta cuándo el plan se desvió de la realidad (un sprint terminó
 - **FR-012**: Al aprobar una re-planificación, sus cambios DEBEN aplicarse todos juntos o ninguno, salvo los descartados por el caso borde del tablero cambiado, que se informan.
 - **FR-013**: El líder DEBE poder quitar cambios individuales de la propuesta antes de aprobarla.
 - **FR-014**: Solo PUEDE haber una re-planificación pendiente por proyecto.
+- **FR-015**: Los avisos de GitHub provocados por acciones del propio sistema NO DEBEN volver a aplicarse al tablero (regla compartida con la spec 007, FR-023).
 
 ### Key Entities
 
 - **Aviso de GitHub**: un cambio en un PR o una issue del repo conectado. Indica qué issues afecta y qué pasó.
 - **Vínculo tarea ↔ issue**: relaciona cada tarea con su issue. Lo crea la spec 007; esta spec solo lo lee.
-- **Objetivo**: meta de una fase o sprint con sus tareas; queda cumplido cuando todas están hechas.
+- **Objetivo**: meta de un sprint con sus tareas (lo crea la spec 003); queda cumplido cuando todas están hechas.
 - **Propuesta de re-planificación**: el motivo, la lista de cambios con su justificación y su estado. Su ciclo de vida lo define la spec 005.
 
 ## Success Criteria *(mandatory)*
