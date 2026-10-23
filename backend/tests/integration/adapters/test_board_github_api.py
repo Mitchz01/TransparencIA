@@ -13,6 +13,7 @@ from app.adapters.outbound.persistence.db import engine
 from app.adapters.outbound.persistence.tables import ExternalLinkTable, ProjectTable
 from app.application.use_cases.planning.apply_plan import ApplyPlan
 from tests.fakes import RecordingEventBus
+from tests.api import create_project
 
 REPO = "acme/agile-app"
 PROJECT = {
@@ -23,7 +24,7 @@ PROJECT = {
 
 
 def _project_with_plan(client) -> int:
-    pid = client.post("/api/projects", json=PROJECT).json()["id"]
+    pid = create_project(client, PROJECT)["id"]
     with Session(engine) as session:
         row = session.get(ProjectTable, pid)
         row.plan = MOCK_PLAN

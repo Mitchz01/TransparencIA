@@ -7,13 +7,21 @@ from fastapi import Depends, Request
 from sqlmodel import Session
 
 from app.adapters.inbound.http.background import spawn
+from app.adapters.inbound.http.session_cookie import read_token
 from app.adapters.outbound.persistence.db import engine, get_session
 from app.adapters.outbound.persistence.unit_of_work import SqlUnitOfWork
 from app.config import DOCUMENTS_CONCURRENCY, GITHUB_WEBHOOK_SECRET, GITHUB_WEBHOOK_URL, PUBLIC_BASE_URL
 from app.application.ports.agents import PlanningAgents
 from app.application.ports.code_host import CodeHost, CodeHostFactory
 from app.application.ports.event_bus import EventBus
+from app.application.ports.security import PasswordHasher
 from app.application.ports.unit_of_work import UnitOfWork, UnitOfWorkFactory
+from app.application.use_cases.accounts.authenticate import Authenticate
+from app.application.use_cases.accounts.authorize import AuthorizeAccess, Resource
+from app.application.use_cases.accounts.sign_in import SignIn
+from app.application.use_cases.accounts.sign_out import SignOut
+from app.application.use_cases.accounts.sign_up import SignUp
+from app.application.use_cases.accounts.update_profile import UpdateProfile
 from app.application.use_cases.board.close_sprint import CloseSprint
 from app.application.use_cases.board.common import TaskChangedHandler
 from app.application.use_cases.board.create_task import CreateTask
@@ -38,7 +46,14 @@ from app.application.use_cases.planning.start_planning import StartPlanning
 from app.application.use_cases.projects.create_project import CreateProject
 from app.application.use_cases.projects.get_plan_views import GetPlanViews
 from app.application.use_cases.projects.get_project import GetProject
+from app.application.use_cases.projects.invitation import (
+    DisableInvitation,
+    GetInvitation,
+    PreviewInvitation,
+    RenewInvitation,
+)
 from app.application.use_cases.projects.list_projects import ListProjects
+from app.application.use_cases.projects.team import JoinProject, RemoveMember, TeamChangedHandler, UpdateMember
 from app.application.use_cases.projects.update_project import UpdateProject
 from app.application.use_cases.activity.list_activity import FollowActivity, ListActivity
 from app.application.use_cases.integrations.close_discarded_issue import CloseDiscardedIssue
@@ -63,6 +78,8 @@ from app.application.use_cases.proposals.resolve_proposal import (
     ApproveProposal,
     RejectProposal,
 )
+from app.domain.accounts import Account, ProjectAction
+from app.domain.project import Member
 from app.domain.sync import PullRequestOpened
 
 
@@ -112,11 +129,111 @@ def get_list_projects(uow: UnitOfWork = Depends(get_uow)) -> ListProjects:
     return ListProjects(uow)
 
 
-def get_update_project(
-    request: Request, uow: UnitOfWork = Depends(get_uow), bus: EventBus = Depends(get_event_bus)
-) -> UpdateProject:
+def get_update_project(uow: UnitOfWork = Depends(get_uow)) -> UpdateProject:
+    return UpdateProject(uow)
+
+
+# ---------- Accounts, access and the team (spec 015) ----------
+
+
+def get_password_hasher(request: Request) -> PasswordHasher:
+    return request.app.state.password_hasher
+
+
+def get_on_team_changed(request: Request) -> list[TeamChangedHandler]:
     # Spec 008 adds its drift handler to app.state.on_team_changed in main.py.
-    return UpdateProject(uow, bus, getattr(request.app.state, "on_team_changed", ()))
+    return getattr(request.app.state, "on_team_changed", [])
+
+
+def get_authenticate(uow: UnitOfWork = Depends(get_uow)) -> Authenticate:
+    return Authenticate(uow)
+
+
+def current_account(request: Request, authenticate: Authenticate = Depends(get_authenticate)) -> Account:
+    """401 not_authenticated without a valid session cookie (FR-004)."""
+    return authenticate.execute(read_token(request))
+
+
+def optional_account(request: Request, authenticate: Authenticate = Depends(get_authenticate)) -> Account | None:
+    return authenticate.optional(read_token(request))
+
+
+def get_authorize_access(uow: UnitOfWork = Depends(get_uow)) -> AuthorizeAccess:
+    return AuthorizeAccess(uow)
+
+
+def allow(action: ProjectAction, resource: Resource = "project"):  # type: ignore[no-untyped-def]
+    """Route guard: the caller's member in the project of `{resource}_id` from the path, if they
+    may do `action` (US5). Declared on each route: `dependencies=[Depends(allow("manage"))]`."""
+
+    def guard(
+        request: Request,
+        account: Account = Depends(current_account),
+        authorize: AuthorizeAccess = Depends(get_authorize_access),
+    ) -> Member:
+        return authorize.execute(account, resource, int(request.path_params[f"{resource}_id"]), action)
+
+    return guard
+
+
+def get_sign_up(uow: UnitOfWork = Depends(get_uow), hasher: PasswordHasher = Depends(get_password_hasher)) -> SignUp:
+    return SignUp(uow, hasher)
+
+
+def get_sign_in(uow: UnitOfWork = Depends(get_uow), hasher: PasswordHasher = Depends(get_password_hasher)) -> SignIn:
+    return SignIn(uow, hasher)
+
+
+def get_sign_out(uow: UnitOfWork = Depends(get_uow)) -> SignOut:
+    return SignOut(uow)
+
+
+def get_update_profile(
+    uow: UnitOfWork = Depends(get_uow),
+    bus: EventBus = Depends(get_event_bus),
+    handlers: list[TeamChangedHandler] = Depends(get_on_team_changed),
+) -> UpdateProfile:
+    return UpdateProfile(uow, bus, handlers)
+
+
+def get_join_project(
+    uow: UnitOfWork = Depends(get_uow),
+    bus: EventBus = Depends(get_event_bus),
+    handlers: list[TeamChangedHandler] = Depends(get_on_team_changed),
+) -> JoinProject:
+    return JoinProject(uow, bus, handlers)
+
+
+def get_update_member(
+    uow: UnitOfWork = Depends(get_uow),
+    bus: EventBus = Depends(get_event_bus),
+    handlers: list[TeamChangedHandler] = Depends(get_on_team_changed),
+) -> UpdateMember:
+    return UpdateMember(uow, bus, handlers)
+
+
+def get_remove_member(
+    uow: UnitOfWork = Depends(get_uow),
+    bus: EventBus = Depends(get_event_bus),
+    handlers: list[TeamChangedHandler] = Depends(get_on_team_changed),
+) -> RemoveMember:
+    return RemoveMember(uow, bus, handlers)
+
+
+def get_get_invitation(uow: UnitOfWork = Depends(get_uow)) -> GetInvitation:
+    return GetInvitation(uow)
+
+
+def get_renew_invitation(uow: UnitOfWork = Depends(get_uow)) -> RenewInvitation:
+    return RenewInvitation(uow)
+
+
+def get_disable_invitation(uow: UnitOfWork = Depends(get_uow)) -> DisableInvitation:
+    return DisableInvitation(uow)
+
+
+def get_preview_invitation(uow: UnitOfWork = Depends(get_uow)) -> PreviewInvitation:
+    return PreviewInvitation(uow)
 
 
 # ---------- Proposals and activity (spec 005) ----------

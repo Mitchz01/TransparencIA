@@ -15,6 +15,7 @@ from app.adapters.outbound.persistence.db import engine
 from app.adapters.outbound.persistence.tables import ExternalLinkTable, ProjectTable
 from app.application.use_cases.planning.apply_plan import ApplyPlan
 from tests.fakes import RecordingEventBus
+from tests.api import create_project
 
 FIXTURES = Path(__file__).resolve().parents[2] / "fixtures" / "github"
 SECRET = "test-webhook-secret"  # conftest.py
@@ -43,7 +44,7 @@ def post(client, body: bytes, event: str | None = "pull_request", delivery: str 
 
 def _board(client) -> tuple[int, dict]:
     """A connected project with its board; US-2 is linked to issue #12 (the fixtures' issue)."""
-    pid = client.post("/api/projects", json=PROJECT).json()["id"]
+    pid = create_project(client, PROJECT)["id"]
     with Session(engine) as session:
         row = session.get(ProjectTable, pid)
         row.plan = MOCK_PLAN

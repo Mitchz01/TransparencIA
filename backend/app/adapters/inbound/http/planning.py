@@ -21,7 +21,7 @@ def _accept(run: StageRun, run_step: RunPlanningStep) -> PlanningAccepted:
     return PlanningAccepted(project_id=run.project_id, stage=run.stage)
 
 
-@router.post("/{project_id}/planning", status_code=status.HTTP_202_ACCEPTED, response_model=PlanningAccepted)
+@router.post("/{project_id}/planning", status_code=status.HTTP_202_ACCEPTED, response_model=PlanningAccepted, dependencies=[Depends(deps.allow("manage"))])
 async def start_planning(
     project_id: int,
     use_case: StartPlanning = Depends(deps.get_start_planning),
@@ -34,6 +34,7 @@ async def start_planning(
     "/{project_id}/planning/stages/{stage_key}/retry",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=PlanningAccepted,
+    dependencies=[Depends(deps.allow("manage"))],
 )
 async def retry_stage(
     project_id: int,
@@ -44,7 +45,7 @@ async def retry_stage(
     return _accept(use_case.execute(project_id, stage_key), run_step)
 
 
-@router.post("/{project_id}/replan", status_code=status.HTTP_202_ACCEPTED, response_model=ReplanAccepted)
+@router.post("/{project_id}/replan", status_code=status.HTTP_202_ACCEPTED, response_model=ReplanAccepted, dependencies=[Depends(deps.allow("manage"))])
 async def replan(project_id: int, body: ReplanRequest, use_case: Replan = Depends(deps.get_replan)) -> ReplanAccepted:
     """Spec 008 (US2): the result arrives as a `replan` proposal, decided through spec 005's API."""
     run = use_case.prepare(project_id, body.reason)

@@ -12,6 +12,7 @@ from app.adapters.outbound.persistence.db import engine
 from app.adapters.outbound.persistence.tables import ProjectTable
 from app.application.use_cases.planning.apply_plan import ApplyPlan
 from tests.fakes import RecordingEventBus
+from tests.api import as_new_user, create_project, invite_token, join
 
 PROJECT = {
     "name": "Agile Planner",
@@ -22,7 +23,7 @@ PROJECT = {
 
 
 def _ready(client) -> tuple[int, dict]:
-    pid = client.post("/api/projects", json=PROJECT).json()["id"]
+    pid = create_project(client, PROJECT)["id"]
     with Session(engine) as session:
         row = session.get(ProjectTable, pid)
         row.plan = MOCK_PLAN
@@ -114,22 +115,26 @@ def test_moving_a_task_into_a_closed_sprint_is_a_conflict(client):
 def test_a_team_change_with_an_applied_plan_proposes_an_automatic_replan(client):
     pid, _ = _ready(client)
     ana, leo = client.get(f"/api/projects/{pid}").json()["members"]
-    # Renaming (or changing skills) doesn't matter for the plan; `members` is the whole new team
-    renamed = [{"id": ana["id"], "name": "Ana Gómez", "skills": ["Python"]}, {"id": leo["id"]}]
-    assert client.patch(f"/api/projects/{pid}", json={"members": renamed}).status_code == 200
+    # Renaming (or changing skills) doesn't matter for the plan
+    renamed = {"name": "Ana Gómez", "skills": ["Python"]}
+    assert client.patch(f"/api/projects/{pid}/members/{ana['id']}", json=renamed).status_code == 200
     time.sleep(0.05)
     assert _replans(client, pid) == []
 
-    response = client.patch(f"/api/projects/{pid}", json={"members": [{"id": ana["id"]}, {"name": "Sofía", "role": "QA"}]})
-    assert response.status_code == 200
-    [replan] = _wait_for(lambda: _replans(client, pid))
-    assert replan["origin"] == "automatic" and replan["status"] == "pending"
-    assert replan["content"]["reason"] == "The team changed: Sofía joined; Leo left."
+    # Spec 015: Sofía joins with the link (one replan), then the leader removes Leo
+    join(as_new_user(client, "Sofía", role="QA"), invite_token(client, pid))
+    [first] = _wait_for(lambda: _replans(client, pid))
+    assert first["content"]["reason"] == "The team changed: Sofía joined."
+    assert client.delete(f"/api/projects/{pid}/members/{leo['id']}").status_code == 204
+    # The second supersedes the first and keeps both reasons (spec 008, FR-014)
+    replan = _wait_for(lambda: [r for r in _replans(client, pid) if r["status"] == "pending" and r["id"] != first["id"]])[0]
+    assert replan["origin"] == "automatic"
+    assert replan["content"]["reason"] == "The team changed: Sofía joined.\nThe team changed: Leo left."
 
 
 def test_a_team_change_before_the_plan_is_applied_proposes_nothing(client):
-    pid = client.post("/api/projects", json=PROJECT).json()["id"]
-    leo_less = [{"id": client.get(f"/api/projects/{pid}").json()["members"][0]["id"]}]
-    assert client.patch(f"/api/projects/{pid}", json={"members": leo_less}).status_code == 200
+    pid = create_project(client, PROJECT)["id"]
+    leo = client.get(f"/api/projects/{pid}").json()["members"][1]
+    assert client.delete(f"/api/projects/{pid}/members/{leo['id']}").status_code == 204
     time.sleep(0.05)
     assert _replans(client, pid) == []

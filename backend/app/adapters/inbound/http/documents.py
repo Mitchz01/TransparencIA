@@ -20,12 +20,12 @@ from app.application.use_cases.planning.generate_documents import GenerateDocume
 router = APIRouter(prefix="/api", tags=["documents"])
 
 
-@router.get("/projects/{project_id}/documents", response_model=list[DocumentSummary])
+@router.get("/projects/{project_id}/documents", response_model=list[DocumentSummary], dependencies=[Depends(deps.allow("view"))])
 def list_documents(project_id: int, use_case: ListDocuments = Depends(deps.get_list_documents)) -> list[DocumentSummary]:
     return use_case.execute(project_id)
 
 
-@router.get("/documents/{document_id}", response_model=DocumentView)
+@router.get("/documents/{document_id}", response_model=DocumentView, dependencies=[Depends(deps.allow("view", "document"))])
 def get_document(
     document_id: int,
     version: int | None = Query(None, ge=1),
@@ -34,7 +34,7 @@ def get_document(
     return use_case.execute(document_id, version)
 
 
-@router.post("/documents/{document_id}/regenerate", status_code=status.HTTP_202_ACCEPTED, response_model=RegenerationAccepted)
+@router.post("/documents/{document_id}/regenerate", status_code=status.HTTP_202_ACCEPTED, response_model=RegenerationAccepted, dependencies=[Depends(deps.allow("manage", "document"))])
 async def regenerate_document(
     document_id: int,
     body: DocumentRegenerate,
@@ -46,7 +46,7 @@ async def regenerate_document(
     return RegenerationAccepted(document_id=document_id)
 
 
-@router.put("/documents/{document_id}", response_model=DocumentView)
+@router.put("/documents/{document_id}", response_model=DocumentView, dependencies=[Depends(deps.allow("work", "document"))])
 async def edit_document(
     document_id: int, body: DocumentEdit, use_case: EditDocument = Depends(deps.get_edit_document)
 ) -> DocumentView:

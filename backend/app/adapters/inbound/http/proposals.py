@@ -14,7 +14,7 @@ from app.domain.proposals import Proposal, ProposalStatus
 router = APIRouter(prefix="/api", tags=["proposals"])
 
 
-@router.get("/projects/{project_id}/proposals", response_model=list[Proposal])
+@router.get("/projects/{project_id}/proposals", response_model=list[Proposal], dependencies=[Depends(deps.allow("view"))])
 def list_proposals(
     project_id: int,
     status: ProposalStatus | None = Query(None),
@@ -23,12 +23,12 @@ def list_proposals(
     return use_case.execute(project_id, status)
 
 
-@router.get("/proposals/{proposal_id}", response_model=Proposal)
+@router.get("/proposals/{proposal_id}", response_model=Proposal, dependencies=[Depends(deps.allow("view", "proposal"))])
 def get_proposal(proposal_id: int, use_case: GetProposal = Depends(deps.get_get_proposal)) -> Proposal:
     return use_case.execute(proposal_id)
 
 
-@router.post("/proposals/{proposal_id}/approve", response_model=Proposal)
+@router.post("/proposals/{proposal_id}/approve", response_model=Proposal, dependencies=[Depends(deps.allow("manage", "proposal"))])
 async def approve(
     proposal_id: int,
     use_case: ApproveProposal = Depends(deps.get_approve_proposal),
@@ -39,7 +39,7 @@ async def approve(
     return proposal
 
 
-@router.post("/proposals/{proposal_id}/adjust", response_model=Proposal)
+@router.post("/proposals/{proposal_id}/adjust", response_model=Proposal, dependencies=[Depends(deps.allow("manage", "proposal"))])
 async def adjust(
     proposal_id: int,
     body: ProposalAdjust,
@@ -51,7 +51,7 @@ async def adjust(
     return proposal
 
 
-@router.post("/proposals/{proposal_id}/reject", response_model=Proposal)
+@router.post("/proposals/{proposal_id}/reject", response_model=Proposal, dependencies=[Depends(deps.allow("manage", "proposal"))])
 async def reject(
     proposal_id: int,
     body: ProposalReject,
@@ -63,7 +63,7 @@ async def reject(
     return proposal
 
 
-@router.post("/proposals/{proposal_id}/apply", status_code=status.HTTP_202_ACCEPTED)
+@router.post("/proposals/{proposal_id}/apply", status_code=status.HTTP_202_ACCEPTED, dependencies=[Depends(deps.allow("manage", "proposal"))])
 async def retry_apply(
     proposal_id: int,
     use_case: RetryApply = Depends(deps.get_retry_apply),
@@ -74,7 +74,7 @@ async def retry_apply(
     return {"proposal_id": proposal_id, "status": "applying"}
 
 
-@router.post("/projects/{project_id}/proposals/approve", response_model=list[BulkResult])
+@router.post("/projects/{project_id}/proposals/approve", response_model=list[BulkResult], dependencies=[Depends(deps.allow("manage"))])
 async def approve_many(
     project_id: int,
     body: BulkApprove,

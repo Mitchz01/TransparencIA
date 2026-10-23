@@ -5,12 +5,13 @@ from sqlmodel import Session
 from app.adapters.outbound.agents.mock.data import MOCK_PLAN
 from app.adapters.outbound.persistence.db import engine
 from app.adapters.outbound.persistence.tables import ProjectTable, ProposalTable, TaskTable
+from tests.api import create_project
 
 PROJECT = {"name": "Agile Planner", "description": "Plans the work.", "members": [{"name": "Ana", "role": "Backend"}]}
 
 
 def test_plan_views(client):
-    pid = client.post("/api/projects", json=PROJECT).json()["id"]
+    pid = create_project(client, PROJECT)["id"]
 
     empty = client.get(f"/api/projects/{pid}/plan").json()
     assert empty["roadmap"] == {"status": "not_generated", "origin": None, "content": None}

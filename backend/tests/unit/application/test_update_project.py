@@ -1,12 +1,9 @@
-import asyncio
-
 import pytest
 
-from app.application.dto import MemberUpsert, ProjectUpdate
+from app.application.dto import ProjectUpdate
 from app.application.use_cases.projects.update_project import UpdateProject
-from app.domain.board import Task
 from app.domain.errors import MethodologyLocked, ProjectNotFound, ValidationFailed
-from tests.fakes import InMemoryUnitOfWork, RecordingEventBus, project
+from tests.fakes import InMemoryUnitOfWork, project
 
 
 def _setup(**overrides):
@@ -16,68 +13,36 @@ def _setup(**overrides):
     return uow, saved
 
 
-def _run(use_case: UpdateProject, project_id: int, body: ProjectUpdate):
-    return asyncio.run(use_case.execute(project_id, body))
-
-
-def test_partial_change_publishes_nothing():
+def test_partial_change_keeps_the_rest():
     uow, saved = _setup()
-    bus = RecordingEventBus()
-    result = _run(UpdateProject(uow, bus), saved.id, ProjectUpdate(auto_approve=True))
-    assert result.auto_approve and result.members == saved.members
-    assert bus.events == []
+    result = UpdateProject(uow).execute(saved.id, ProjectUpdate(auto_approve=True))
+    assert result.auto_approve and result.members == saved.members and result.name == saved.name
 
 
-def test_one_event_for_join_leave_and_edit():
+def test_the_team_isnt_edited_here():
+    """Spec 015: `members` isn't a field any more; the team changes member by member."""
     uow, saved = _setup()
-    ana, leo = saved.members
-    bus = RecordingEventBus()
-    received = []
-
-    async def handler(event):
-        received.append(event)
-
-    body = ProjectUpdate(members=[MemberUpsert(id=ana.id, hours_per_week=25), MemberUpsert(name="Sofía Paz", role="QA")])
-    result = _run(UpdateProject(uow, bus, [handler]), saved.id, body)
-
-    assert [m.name for m in result.members] == ["Ana Gómez", "Sofía Paz"]
-    [event] = bus.events
-    assert event.type == "team_changed" and event.joined == ["Sofía Paz"] and event.left == ["Leo Ruiz"]
-    assert [(c.member_id, c.fields) for c in event.changed] == [(ana.id, ["hours_per_week"])]
-    assert "Sofía Paz joined" in event.summary
-    assert [e.type for e in received] == ["team_changed"]
-
-
-def test_removed_member_pending_tasks_are_unassigned():
-    uow, saved = _setup()
-    leo = saved.members[1]
-    pending = uow.tasks.add(Task(project_id=saved.id, key="US-1", title="Login", assignee_id=leo.id, status="in_progress"))
-    done = uow.tasks.add(Task(project_id=saved.id, key="US-2", title="Signup", assignee_id=leo.id, status="done"))
-    uow.commit()
-
-    _run(UpdateProject(uow, RecordingEventBus()), saved.id, ProjectUpdate(members=[MemberUpsert(id=saved.members[0].id)]))
-
-    assert uow.tasks.get(pending.id).assignee_id is None
-    assert uow.tasks.get(done.id).assignee_id == leo.id
+    body = ProjectUpdate.model_validate({"name": "New", "members": []})
+    assert UpdateProject(uow).execute(saved.id, body).members == saved.members
 
 
 def test_invalid_edit_changes_nothing():
     uow, saved = _setup()
-    bus = RecordingEventBus()
     with pytest.raises(ValidationFailed):
-        _run(UpdateProject(uow, bus), saved.id, ProjectUpdate(members=[]))
-    assert uow.projects.get(saved.id) == saved and bus.events == []
+        UpdateProject(uow).execute(saved.id, ProjectUpdate(duration_weeks=0))
+    with pytest.raises(ValidationFailed):
+        UpdateProject(uow).execute(saved.id, ProjectUpdate())
+    assert uow.projects.get(saved.id) == saved
 
 
 def test_methodology_locked_and_unknown_project():
     uow, saved = _setup(status="planning")
     with pytest.raises(MethodologyLocked):
-        _run(UpdateProject(uow, RecordingEventBus()), saved.id, ProjectUpdate(requested_methodology="xp"))
+        UpdateProject(uow).execute(saved.id, ProjectUpdate(requested_methodology="xp"))
     with pytest.raises(ProjectNotFound):
-        _run(UpdateProject(uow, RecordingEventBus()), 99, ProjectUpdate(name="X"))
+        UpdateProject(uow).execute(99, ProjectUpdate(name="X"))
 
 
 def test_editing_while_planning_is_allowed():
     uow, saved = _setup(status="planning")
-    result = _run(UpdateProject(uow, RecordingEventBus()), saved.id, ProjectUpdate(members=[MemberUpsert(id=saved.members[0].id)]))
-    assert len(result.members) == 1
+    assert UpdateProject(uow).execute(saved.id, ProjectUpdate(name="Renamed")).name == "Renamed"

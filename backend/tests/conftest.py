@@ -18,9 +18,23 @@ from app.adapters.outbound.persistence.db import engine  # noqa: E402
 
 @pytest.fixture
 def client():
+    """Signed in as "Ana" (spec 015: every /api call needs a session). tests/api.py has the rest."""
+    from app.adapters.outbound.security.password_hasher import ScryptPasswordHasher
     from app.main import app
+    from tests.api import sign_up
 
     SQLModel.metadata.drop_all(engine)
     SQLModel.metadata.create_all(engine)
     with TestClient(app, raise_server_exceptions=False) as test_client:
+        # Cheap scrypt: API tests sign up many people; test_accounts_persistence covers the real cost.
+        app.state.password_hasher = ScryptPasswordHasher(n=2**8)
+        sign_up(test_client, "Ana")
         yield test_client
+
+
+@pytest.fixture
+def anonymous(client):
+    """Nobody signed in, on the same app as `client`."""
+    from tests.api import new_client
+
+    return new_client(client)

@@ -11,6 +11,7 @@ from app.adapters.outbound.persistence.db import engine
 from app.adapters.outbound.persistence.tables import ProjectTable
 from app.application.use_cases.planning.apply_plan import ApplyPlan
 from tests.fakes import RecordingEventBus
+from tests.api import create_project
 
 PROJECT = {
     "name": "Agile Planner",
@@ -24,7 +25,7 @@ KANBAN = {**MOCK_PLAN, "methodology": {**MOCK_PLAN["methodology"], "methodology"
 
 
 def _create(client, **overrides) -> int:
-    return client.post("/api/projects", json={**PROJECT, **overrides}).json()["id"]
+    return create_project(client, {**PROJECT, **overrides})["id"]
 
 
 def _with_board(client, plan=MOCK_PLAN) -> tuple[int, dict]:

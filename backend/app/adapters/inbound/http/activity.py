@@ -8,7 +8,9 @@ from sse_starlette.sse import EventSourceResponse
 
 from app.adapters.inbound.http import dependencies as deps
 from app.application.use_cases.activity.list_activity import DEFAULT_LIMIT, FollowActivity, ListActivity
-from app.application.use_cases.projects.get_project import GetProject
+from app.application.ports.unit_of_work import UnitOfWorkFactory
+from app.application.use_cases.accounts.authorize import AuthorizeAccess
+from app.domain.accounts import Account
 from app.domain.errors import ValidationFailed
 from app.domain.events import DomainEvent
 
@@ -17,7 +19,7 @@ router = APIRouter(prefix="/api/projects", tags=["activity"])
 PING_SECONDS = 15
 
 
-@router.get("/{project_id}/activity", response_model=list[DomainEvent])
+@router.get("/{project_id}/activity", response_model=list[DomainEvent], dependencies=[Depends(deps.allow("view"))])
 def list_activity(
     project_id: int,
     before: int | None = Query(None),
@@ -49,15 +51,23 @@ async def events(
     request: Request,
     after: int | None = Query(None),
     last_event_id: str | None = Header(None),
-    get_project: GetProject = Depends(deps.get_get_project),
+    account: Account = Depends(deps.current_account),
+    authorize: AuthorizeAccess = Depends(deps.get_authorize_access),
+    uow_factory: UnitOfWorkFactory = Depends(deps.get_uow_factory),
     follow: FollowActivity = Depends(deps.get_follow_activity),
 ) -> EventSourceResponse:
-    get_project.execute(project_id)  # 404 as JSON before the stream starts
+    authorize.execute(account, "project", project_id, "view")  # 404 as JSON before the stream starts
     start = _start_after(last_event_id, after)
+
+    def still_member() -> bool:
+        # Spec 015 (FR-014): a removed member stops receiving events. The request's session is
+        # closed once the stream starts, so each check opens its own unit of work.
+        with uow_factory() as uow:
+            return AuthorizeAccess(uow).allows(account, "project", project_id, "view")
 
     async def stream() -> AsyncIterator[dict[str, str]]:
         async for event in follow.stream(project_id, start):
-            if await request.is_disconnected():
+            if await request.is_disconnected() or not still_member():
                 break
             yield sse_message(event)
 

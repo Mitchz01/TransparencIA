@@ -8,6 +8,7 @@ from app.adapters.outbound.agents.mock.data import MOCK_PLAN
 from app.adapters.outbound.persistence.db import engine
 from app.adapters.outbound.persistence.tables import ProjectTable, ProposalTable
 from app.domain.plan import PLANNING_STAGES
+from tests.api import create_project
 
 STAGE_KEYS = [stage.key for stage in PLANNING_STAGES]
 PROJECT = {
@@ -21,7 +22,7 @@ PROJECT = {
 
 
 def _create(client, **overrides) -> int:
-    return client.post("/api/projects", json={**PROJECT, **overrides}).json()["id"]
+    return create_project(client, {**PROJECT, **overrides})["id"]
 
 
 def _wait(check, timeout: float = 5.0):
@@ -78,7 +79,7 @@ def test_auto_approve_generates_the_whole_plan_and_the_board(client):
     assert not any(s["load"]["overloaded"] for s in board["sprints"])  # same capacity rule (FR-010)
 
     events = list(reversed(client.get(f"/api/projects/{pid}/activity?limit=200").json()))
-    types = [e["type"] for e in events]
+    types = [e["type"] for e in events if e["type"] != "team_changed"]  # Leo joining comes first (spec 015)
     assert types[0] == "agent_started"
     assert [e["agent"] for e in events if e["type"] == "agent_started"][:6] == STAGE_KEYS
     assert types.index("plan_completed") < types.index("plan_applied")

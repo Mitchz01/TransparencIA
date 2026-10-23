@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel
 
-from app.adapters.inbound.http import board, dev, integrations, projects
+from app.adapters.inbound.http import accounts, board, dev, integrations, projects, team
 from app.adapters.inbound.http.dependencies import open_uow
 from app.adapters.inbound.http.errors import register_error_handlers
 from app.adapters.outbound.agents.mock.data import MOCK_PLAN
@@ -18,6 +18,7 @@ from app.adapters.outbound.persistence.tables import ExternalLinkTable, ProjectT
 from app.application.use_cases.planning.apply_plan import ApplyPlan
 from app.main import lifespan
 from tests.fakes import RecordingEventBus
+from tests.api import create_project, sign_up
 
 REPO = "acme/demo"
 
@@ -26,16 +27,17 @@ REPO = "acme/demo"
 def dev_client():
     app = FastAPI(lifespan=lifespan)
     register_error_handlers(app)
-    for module in (projects, integrations, board, dev):
+    for module in (accounts, projects, team, integrations, board, dev):
         app.include_router(module.router)
     SQLModel.metadata.drop_all(engine)
     SQLModel.metadata.create_all(engine)
     with TestClient(app, raise_server_exceptions=False) as client:
+        sign_up(client)
         yield client
 
 
 def _linked_task(client) -> tuple[int, dict]:
-    pid = client.post("/api/projects", json={"name": "Demo", "description": "d", "members": [{"name": "Ana", "role": "Backend"}]}).json()["id"]
+    pid = create_project(client, {"name": "Demo", "description": "d", "members": [{"name": "Ana", "role": "Backend"}]})["id"]
     with Session(engine) as session:
         row = session.get(ProjectTable, pid)
         row.plan = MOCK_PLAN

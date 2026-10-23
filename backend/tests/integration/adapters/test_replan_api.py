@@ -13,6 +13,7 @@ from app.adapters.outbound.persistence.db import engine
 from app.adapters.outbound.persistence.tables import DocumentTable, ProjectTable
 from app.application.use_cases.planning.apply_plan import ApplyPlan
 from tests.fakes import RecordingEventBus
+from tests.api import create_project
 
 REPO = "acme/agile-app"
 PROJECT = {
@@ -26,7 +27,7 @@ PROJECT = {
 
 
 def _ready(client) -> int:
-    pid = client.post("/api/projects", json=PROJECT).json()["id"]
+    pid = create_project(client, PROJECT)["id"]
     with Session(engine) as session:
         row = session.get(ProjectTable, pid)
         row.plan = MOCK_PLAN
@@ -110,7 +111,7 @@ def test_unknown_project(client):
 
 
 def test_plan_not_applied(client):
-    pid = client.post("/api/projects", json=PROJECT).json()["id"]
+    pid = create_project(client, PROJECT)["id"]
     _assert_error(_replan(client, pid), 409, "plan_not_applied")
 
 

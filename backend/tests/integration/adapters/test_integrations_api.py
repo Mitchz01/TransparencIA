@@ -11,6 +11,7 @@ from app.adapters.outbound.persistence.db import engine
 from app.adapters.outbound.persistence.tables import ProposalTable, TaskTable
 from app.domain.errors import CodeHostUnavailable
 from app.domain.integrations import RepoAccess
+from tests.api import create_project
 
 PROJECT = {
     "name": "Agile Planner",
@@ -28,7 +29,7 @@ def github(client) -> FakeCodeHost:
 
 
 def _project(client) -> dict:
-    return client.post("/api/projects", json=PROJECT).json()
+    return create_project(client, PROJECT)
 
 
 def _tasks(project_id: int, count: int = 2) -> list[int]:
@@ -195,7 +196,7 @@ def test_propose_201_then_approve_publishes_the_issues(client, github):
 
 
 def test_connecting_with_a_board_proposes_and_auto_approve_publishes(client, github):
-    pid = client.post("/api/projects", json={**PROJECT, "auto_approve": True}).json()["id"]
+    pid = create_project(client, {**PROJECT, "auto_approve": True})["id"]
     _tasks(pid, 3)
     assert _connect(client, pid).status_code == 200
     _wait_for(lambda: len(github.called("create_issue")) == 3)
@@ -257,8 +258,8 @@ def test_set_username_200_with_access_check(client, github):
     assert warned.status_code == 200 and warned.json()["has_access"] is False
     assert warned.json()["member"]["github_username"] == "stranger"  # saved anyway, with a warning
 
-    # Editing the team (spec 001) keeps the username; null removes it.
-    client.patch(f"/api/projects/{pid}", json={"members": [{"id": ana["id"], "hours_per_week": 10}]})
+    # Editing the member (spec 015) keeps the username; null removes it.
+    client.patch(f"/api/projects/{pid}/members/{ana['id']}", json={"hours_per_week": 10})
     assert client.get(f"/api/projects/{pid}").json()["members"][0]["github_username"] == "stranger"
     removed = _username(client, ana["id"], None)
     assert removed.status_code == 200 and removed.json() == {"member": {**ana, "hours_per_week": 10}, "has_access": None}
