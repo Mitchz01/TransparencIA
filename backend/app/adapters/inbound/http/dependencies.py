@@ -14,6 +14,13 @@ from app.application.ports.agents import PlanningAgents
 from app.application.ports.code_host import CodeHost, CodeHostFactory
 from app.application.ports.event_bus import EventBus
 from app.application.ports.unit_of_work import UnitOfWork, UnitOfWorkFactory
+from app.application.use_cases.board.common import TaskChangedHandler
+from app.application.use_cases.board.get_board import GetBoard
+from app.application.use_cases.board.move_task import MoveTask
+from app.application.use_cases.board.set_capacity import SetCapacity
+from app.application.use_cases.board.update_checklist import UpdateChecklist
+from app.application.use_cases.board.update_task import UpdateTask
+from app.application.use_cases.planning.apply_plan import ApplyPlan
 from app.application.use_cases.planning.run_planning import RunPlanning
 from app.application.use_cases.projects.create_project import CreateProject
 from app.application.use_cases.projects.get_plan_views import GetPlanViews
@@ -251,3 +258,52 @@ def get_propose_review(
     """For spec 008's webhook router: run `.execute(...)` on pull_request.opened, in the background
     (it calls the reviewer agent). Auto-approve then applies the review in that same background job."""
     return ProposeReview(uow_factory, bus, agents, code_hosts, auto_approve.after_created)
+# ---------- Board (spec 003) ----------
+
+
+def get_get_board(uow: UnitOfWork = Depends(get_uow)) -> GetBoard:
+    return GetBoard(uow)
+
+
+def get_after_task_changed(request: Request) -> list[TaskChangedHandler]:
+    # Spec 007 (issue sync) and spec 008 (objective evaluation) add theirs in main.py.
+    return getattr(request.app.state, "after_task_changed", [])
+
+
+def get_move_task(
+    uow: UnitOfWork = Depends(get_uow),
+    bus: EventBus = Depends(get_event_bus),
+    handlers: list[TaskChangedHandler] = Depends(get_after_task_changed),
+) -> MoveTask:
+    return MoveTask(uow, bus, handlers)
+
+
+def get_update_task(
+    uow: UnitOfWork = Depends(get_uow),
+    bus: EventBus = Depends(get_event_bus),
+    move_task: MoveTask = Depends(get_move_task),
+    handlers: list[TaskChangedHandler] = Depends(get_after_task_changed),
+) -> UpdateTask:
+    return UpdateTask(uow, bus, move_task, handlers)
+
+
+def get_update_checklist(
+    uow: UnitOfWork = Depends(get_uow),
+    bus: EventBus = Depends(get_event_bus),
+    handlers: list[TaskChangedHandler] = Depends(get_after_task_changed),
+) -> UpdateChecklist:
+    return UpdateChecklist(uow, bus, handlers)
+
+
+def get_set_capacity(uow: UnitOfWork = Depends(get_uow)) -> SetCapacity:
+    return SetCapacity(uow)
+
+
+# TODO(spec 002): register ApplyPlan as an `on_plan_completed` handler of AdvancePlanning
+# (plan 003, T012) once AdvancePlanning exists. It isn't registered in spec 005's ApplierRegistry
+# on purpose: a ("plan_stage", "sprints") applier would shadow AdvancePlanning for the last stage,
+# and the approved backlog/sprints only reach project.plan through AdvancePlanning.
+def get_apply_plan(
+    uow_factory: UnitOfWorkFactory = Depends(get_uow_factory), bus: EventBus = Depends(get_event_bus)
+) -> ApplyPlan:
+    return ApplyPlan(uow_factory, bus)

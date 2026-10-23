@@ -88,6 +88,20 @@ class ProposalNotRetryable(DomainError):
         self.id = id
 
 
+class CapacityNotApplicable(DomainError):
+    """A Kanban project has a continuous board: there's no sprint capacity to set (spec 003)."""
+
+    code = "capacity_not_applicable"
+
+    def __init__(self, project_id: int | None):
+        super().__init__(f"Project {project_id} uses Kanban: its board has no sprint capacity.")
+        self.project_id = project_id
+
+
+# TODO(spec 008): SprintClosed (409 sprint_closed) once sprints can be closed; PATCH /tasks/{id}
+# then rejects moving a task into a closed sprint (plan 003, API Contract).
+
+
 class NoApplierForProposal(DomainError):
     """No spec registered a step to apply this kind of proposal (yet). The decision stays
     saved and the application is reported as failed, so it can be retried later."""

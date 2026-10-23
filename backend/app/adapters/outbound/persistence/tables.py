@@ -23,6 +23,7 @@ class ProjectTable(SQLModel, table=True):
     auto_approve: bool = False
     repository: str | None = None
     plan: dict[str, Any] | None = Field(default=None, sa_column=Column(JSON))
+    sprint_capacity_override: int | None = None
     created_at: datetime = Field(default_factory=_now)
     # Spec 007. Encrypted with SECRET_KEY when it's set (see token_cipher.py), plain text otherwise.
     github_token: str | None = None
@@ -73,6 +74,17 @@ class TaskTable(SQLModel, table=True):
     priority: str = "medium"
     status: str = "backlog"
     position: int = 0
+    missing_role: str | None = None
+
+
+class ObjectiveTable(SQLModel, table=True):
+    __tablename__ = "objective"
+
+    id: int | None = Field(default=None, primary_key=True)
+    project_id: int = Field(foreign_key="project.id", index=True)
+    sprint_id: int = Field(foreign_key="sprint.id")
+    title: str
+    done: bool = False
 
 
 class ProposalTable(SQLModel, table=True):

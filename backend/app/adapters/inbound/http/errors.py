@@ -13,6 +13,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from app.config import logger
 from app.domain.errors import (
     CodeHostUnavailable,
+    CapacityNotApplicable,
     DomainError,
     MethodologyLocked,
     NotFound,
@@ -32,6 +33,7 @@ _STATUS: dict[type[DomainError], int] = {
     ProposalNotRetryable: 409,
     RepositoryNotAccessible: 422,  # spec 007
     CodeHostUnavailable: 502,  # spec 007
+    CapacityNotApplicable: 409,
 }
 
 

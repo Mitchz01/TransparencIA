@@ -4,6 +4,7 @@ from typing import Protocol, Self
 from app.application.ports.repositories import (
     ActivityRepository,
     ExternalLinkRepository,
+    ObjectiveRepository,
     OwnWriteRepository,
     ProjectRepository,
     ProposalRepository,
@@ -18,6 +19,7 @@ class UnitOfWork(Protocol):
 
     projects: ProjectRepository
     sprints: SprintRepository
+    objectives: ObjectiveRepository
     tasks: TaskRepository
     proposals: ProposalRepository
     activity: ActivityRepository

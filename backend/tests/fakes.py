@@ -7,7 +7,7 @@ from itertools import count
 from typing import Any, Self
 
 from app.adapters.outbound.code_host.fake import FakeCodeHost
-from app.domain.board import Sprint, Task
+from app.domain.board import Objective, Sprint, Task
 from app.domain.errors import ProposalAlreadyResolved
 from app.domain.events import DomainEvent
 from app.domain.integrations import ExternalKind, ExternalLink, OwnWrite, OwnWriteAction
@@ -79,6 +79,14 @@ class FakeSprintRepository(_Repo):
 
     def list_by_project(self, project_id: int) -> list[Sprint]:
         return sorted((s.model_copy(deep=True) for s in self.rows.values() if s.project_id == project_id), key=lambda s: s.number)
+
+
+class FakeObjectiveRepository(_Repo):
+    def __init__(self, uow: "InMemoryUnitOfWork"):
+        super().__init__(uow, "objectives")
+
+    def list_by_project(self, project_id: int) -> list[Objective]:
+        return [o.model_copy(deep=True) for _, o in sorted(self.rows.items()) if o.project_id == project_id]
 
 
 class FakeTaskRepository(_Repo):
@@ -172,6 +180,7 @@ class InMemoryUnitOfWork:
         self._reset()
         self.projects = FakeProjectRepository(self)
         self.sprints = FakeSprintRepository(self)
+        self.objectives = FakeObjectiveRepository(self)
         self.tasks = FakeTaskRepository(self)
         self.proposals = FakeProposalRepository(self)
         self.activity = FakeActivityRepository(self)

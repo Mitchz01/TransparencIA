@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.adapters.inbound.http import activity, health, integrations, projects, proposals
+from app.adapters.inbound.http import activity, board, health, integrations, projects, proposals
 from app.adapters.inbound.http.dependencies import open_uow
 from app.adapters.inbound.http.errors import register_error_handlers
 from app.adapters.outbound.code_host.fake import FakeCodeHost
@@ -66,6 +66,7 @@ async def lifespan(app: FastAPI):
     apply_review = ApplyReview(open_uow, app.state.event_bus, app.state.code_host_factory)
     app.state.appliers.register("github_action", apply_review.execute, key="request_review")
     app.state.on_team_changed = []  # spec 008 registers its drift-replan handler here
+    app.state.after_task_changed = []  # spec 007 registers issue sync, spec 008 objective evaluation
     yield
 
 
@@ -78,4 +79,5 @@ app.include_router(projects.router)
 app.include_router(proposals.router)
 app.include_router(activity.router)
 app.include_router(integrations.router)  # spec 007
+app.include_router(board.router)
 # TODO: projects, planning, proposals, board, documents (adapters/inbound/http) and webhooks/github
