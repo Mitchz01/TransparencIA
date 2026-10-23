@@ -1,7 +1,12 @@
-"""Esquemas de salida de cada agente. Gemini los usa como response_schema,
-así que el resultado llega como JSON validado y se puede persistir directo."""
+"""Plan del proyecto: qué produce cada paso y en qué orden.
 
-from typing import Literal
+Es el contrato entre el dominio y cualquier generador de planes. El adaptador
+de ADK pasa estos esquemas a Gemini como output_schema, así que la respuesta
+llega como JSON validado y se puede persistir directo.
+"""
+
+from dataclasses import dataclass
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -144,3 +149,40 @@ class Assignment(BaseModel):
 class SprintPlanning(BaseModel):
     sprints: list[SprintPlan]
     assignments: list[Assignment]
+
+
+# ---------- Pasos y eventos ----------
+
+
+@dataclass(frozen=True)
+class PlanStep:
+    key: str  # sección del plan que produce
+    title: str  # nombre que ve el usuario
+    schema: type[BaseModel]
+
+
+PLAN_STEPS: tuple[PlanStep, ...] = (
+    PlanStep("analysis", "Analista de producto", Analysis),
+    PlanStep("methodology", "Agile coach", MethodologyDecision),
+    PlanStep("architecture", "Arquitecto de software", Architecture),
+    PlanStep("roadmap", "Product manager", Roadmap),
+    PlanStep("backlog", "Product owner", Backlog),
+    PlanStep("sprints", "Scrum master", SprintPlanning),
+)
+
+
+class PlanEvent(BaseModel):
+    """Progreso de la generación: un agente empezó o terminó su paso."""
+
+    type: Literal["agent_started", "agent_finished"]
+    agent: str
+    title: str
+    output: dict[str, Any] | None = None
+
+    @classmethod
+    def started(cls, step: PlanStep) -> "PlanEvent":
+        return cls(type="agent_started", agent=step.key, title=step.title)
+
+    @classmethod
+    def finished(cls, step: PlanStep, output: dict[str, Any]) -> "PlanEvent":
+        return cls(type="agent_finished", agent=step.key, title=step.title, output=output)

@@ -1,7 +1,15 @@
-"""Plan de ejemplo para correr sin API key (MOCK_AGENTS=1).
-Respeta los mismos esquemas que devuelven los agentes reales."""
+"""Adaptador mock del puerto PlanGenerator.
 
-from app.agents import schemas
+Devuelve un plan de ejemplo para correr sin API key (MOCK_AGENTS=1). Respeta
+los mismos esquemas que los agentes reales.
+"""
+
+import asyncio
+from collections.abc import AsyncIterator
+
+from app.domain import plan as schemas
+from app.domain.entities import Member, Project
+from app.domain.plan import PLAN_STEPS, PlanEvent
 
 
 def _story(key, epic, title, points, role, priority="medium", type_="feature"):
@@ -149,3 +157,14 @@ schemas.Architecture.model_validate(MOCK_PLAN["architecture"])
 schemas.Roadmap.model_validate(MOCK_PLAN["roadmap"])
 schemas.Backlog.model_validate(MOCK_PLAN["backlog"])
 schemas.SprintPlanning.model_validate(MOCK_PLAN["sprints"])
+
+
+class MockPlanGenerator:
+    def __init__(self, delay_seconds: float = 0.8) -> None:
+        self.delay_seconds = delay_seconds
+
+    async def generate(self, project: Project, members: list[Member]) -> AsyncIterator[PlanEvent]:
+        for step in PLAN_STEPS:
+            yield PlanEvent.started(step)
+            await asyncio.sleep(self.delay_seconds)
+            yield PlanEvent.finished(step, MOCK_PLAN[step.key])

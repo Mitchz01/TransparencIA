@@ -6,10 +6,12 @@
 ## Enfoque
 Resumen técnico en 3-5 líneas.
 
-## Backend
-- Modelos / cambios en `models.py`:
-- Endpoints:
-- Agentes / esquemas:
+## Backend (hexagonal)
+- Dominio (`domain/`): entidades, reglas, esquemas del plan:
+- Puertos (`application/ports/`):
+- Casos de uso (`application/use_cases/`):
+- Adaptadores de entrada (`adapters/inbound/http/`): endpoints:
+- Adaptadores de salida (`adapters/outbound/`): persistencia, agentes:
 
 ## Frontend
 - Páginas:

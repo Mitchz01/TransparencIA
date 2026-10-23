@@ -4,7 +4,7 @@ Estilo Jira, pero el plan lo arman agentes: cargás el proyecto y tu equipo (rol
 
 ## Pipeline de agentes
 
-`SequentialAgent` en el que cada `LlmAgent` devuelve JSON con un esquema ([schemas.py](backend/app/agents/schemas.py)):
+`SequentialAgent` en el que cada `LlmAgent` devuelve JSON con un esquema ([plan.py](backend/app/domain/plan.py)). Vive en el adaptador [adk.py](backend/app/adapters/outbound/planner/adk.py), detrás del puerto `PlanGenerator`:
 
 1. **Analista**: objetivos, alcance, riesgos, gaps del equipo
 2. **Agile coach**: Scrum / Kanban / Scrumban / XP / Shape Up, con ceremonias y WIP
@@ -12,6 +12,10 @@ Estilo Jira, pero el plan lo arman agentes: cargás el proyecto y tu equipo (rol
 4. **Product manager**: fases y épicas
 5. **Product owner**: historias con puntos y criterios de aceptación
 6. **Scrum master**: sprints y asignación por rol y capacidad
+
+## Arquitectura
+
+Backend con **arquitectura hexagonal** (puertos y adaptadores). El dominio y los casos de uso no conocen FastAPI, SQLModel ni ADK; cada tecnología entra por un adaptador. Detalle y reglas en [AGENTS.md](AGENTS.md#arquitectura-backend-hexagonal).
 
 ## Cómo trabajamos: SDD
 
@@ -45,8 +49,8 @@ npm run dev                               # :5173, proxy /api → :8000
 
 ## TODO
 
-- [ ] Routers: crear proyecto, detalle, `PATCH /tasks/{id}`, `GET /projects/{id}/plan/stream` (SSE)
-- [ ] Persistir la salida del pipeline como Sprint y Task
+- [ ] Casos de uso + routers: crear proyecto, detalle, `PATCH /tasks/{id}`, `GET /projects/{id}/plan/stream` (SSE)
+- [ ] Puertos de repositorio + adaptador SQLModel para persistir la salida del pipeline como Sprint y Task
 - [ ] Frontend: alta, progreso de agentes, kanban, roadmap
 - [ ] Extra: re-planificar ("se fue un dev, ajustá el sprint")
 - [ ] Deploy en Cloud Run

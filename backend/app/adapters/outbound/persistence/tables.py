@@ -1,34 +1,35 @@
+"""Tablas SQLModel. Detalle de persistencia: el dominio no las conoce.
+
+Para pasar a entidades: `Project.model_validate(row, from_attributes=True)`.
+"""
+
 from datetime import datetime, timezone
-from typing import Any, Literal
+from typing import Any
 
 from sqlalchemy import JSON, Column
 from sqlmodel import Field, SQLModel
-
-ProjectStatus = Literal["draft", "planning", "ready", "error"]
-TaskStatus = Literal["backlog", "todo", "in_progress", "review", "done"]
-RequestedMethodology = Literal["auto", "scrum", "kanban", "scrumban", "xp", "shape_up"]
 
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-# ---------- Tablas ----------
+class ProjectRow(SQLModel, table=True):
+    __tablename__ = "project"
 
-
-class Project(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str
     description: str
     duration_weeks: int = 8
     requested_methodology: str = "auto"
     status: str = "draft"
-    # analysis, methodology, architecture, roadmap generados por los agentes
     plan: dict[str, Any] | None = Field(default=None, sa_column=Column(JSON))
     created_at: datetime = Field(default_factory=_now)
 
 
-class Member(SQLModel, table=True):
+class MemberRow(SQLModel, table=True):
+    __tablename__ = "member"
+
     id: int | None = Field(default=None, primary_key=True)
     project_id: int = Field(foreign_key="project.id", index=True)
     name: str
@@ -38,7 +39,9 @@ class Member(SQLModel, table=True):
     skills: list[str] = Field(default_factory=list, sa_column=Column(JSON))
 
 
-class Sprint(SQLModel, table=True):
+class SprintRow(SQLModel, table=True):
+    __tablename__ = "sprint"
+
     id: int | None = Field(default=None, primary_key=True)
     project_id: int = Field(foreign_key="project.id", index=True)
     number: int
@@ -47,7 +50,9 @@ class Sprint(SQLModel, table=True):
     phase: str = ""
 
 
-class Task(SQLModel, table=True):
+class TaskRow(SQLModel, table=True):
+    __tablename__ = "task"
+
     id: int | None = Field(default=None, primary_key=True)
     project_id: int = Field(foreign_key="project.id", index=True)
     sprint_id: int | None = Field(default=None, foreign_key="sprint.id")
@@ -62,39 +67,3 @@ class Task(SQLModel, table=True):
     priority: str = "medium"
     status: str = "backlog"
     position: int = 0
-
-
-# ---------- Payloads de la API ----------
-
-
-class MemberCreate(SQLModel):
-    name: str
-    role: str
-    seniority: str = "mid"
-    hours_per_week: int = 20
-    skills: list[str] = []
-
-
-class ProjectCreate(SQLModel):
-    name: str
-    description: str
-    duration_weeks: int = 8
-    requested_methodology: RequestedMethodology = "auto"
-    members: list[MemberCreate]
-
-
-class ProjectDetail(SQLModel):
-    project: Project
-    members: list[Member]
-    sprints: list[Sprint]
-    tasks: list[Task]
-
-
-class TaskUpdate(SQLModel):
-    status: TaskStatus | None = None
-    sprint_id: int | None = None
-    assignee_id: int | None = None
-    position: int | None = None
-    title: str | None = None
-    description: str | None = None
-    points: int | None = None
