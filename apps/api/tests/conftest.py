@@ -7,6 +7,9 @@ os.environ["DATABASE_URL"] = f"sqlite:///{_DB_DIR}/test.db"
 os.environ.setdefault("MOCK_AGENTS", "1")
 os.environ.setdefault("MOCK_GITHUB", "1")  # spec 007: tests never call the real GitHub API
 os.environ.setdefault("MOCK_AGENTS_DELAY", "0")
+# Spec 017 (D13) hides the documents of spec 006 and the issue proposals of spec 007 by default; their tests need them.
+os.environ.setdefault("GENERATE_DOCUMENTS", "1")
+os.environ.setdefault("PROPOSE_ISSUES", "1")
 os.environ["GITHUB_WEBHOOK_SECRET"] = "test-webhook-secret"  # spec 008: tests sign their own deliveries
 
 import pytest  # noqa: E402

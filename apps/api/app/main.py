@@ -46,6 +46,7 @@ from app.application.ports.code_host import CodeHost, CodeHostFactory, OnRetry
 from app.config import (
     CORS_ORIGINS,
     ENV,
+    GENERATE_DOCUMENTS,
     GEMINI_MODEL,
     GITHUB_TOKEN,
     GITHUB_WEBHOOK_SECRET,
@@ -123,8 +124,14 @@ async def lifespan(app: FastAPI):
     app.state.run_planning_step = wire_planning(
         open_uow, app.state.event_bus, app.state.agents, app.state.appliers, app.state.on_plan_completed
     )
+    # Spec 017 (D13): hidden, not deleted. The appliers and routers of spec 006 stay wired, but the plan
+    # doesn't generate documents unless GENERATE_DOCUMENTS is on: a throwaway list takes the handler.
     app.state.generate_documents = wire_documents(
-        open_uow, app.state.event_bus, app.state.agents, app.state.appliers, app.state.on_plan_completed
+        open_uow,
+        app.state.event_bus,
+        app.state.agents,
+        app.state.appliers,
+        app.state.on_plan_completed if GENERATE_DOCUMENTS else [],
     )
     # Spec 008: on-demand and drift replans; approving one runs ApplyReplan, then these follow-ups
     # (007's issues, 006's MarkDocumentsOutdated, objectives).
