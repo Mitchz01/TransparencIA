@@ -15,6 +15,7 @@ from app.application.ports.unit_of_work import UnitOfWork, UnitOfWorkFactory
 from app.application.use_cases.board.common import TaskChangedHandler
 from app.application.use_cases.board.get_board import GetBoard
 from app.application.use_cases.board.move_task import MoveTask
+from app.application.use_cases.board.set_capacity import SetCapacity
 from app.application.use_cases.board.update_checklist import UpdateChecklist
 from app.application.use_cases.board.update_task import UpdateTask
 from app.application.use_cases.planning.apply_plan import ApplyPlan
@@ -197,6 +198,10 @@ def get_update_checklist(
     handlers: list[TaskChangedHandler] = Depends(get_after_task_changed),
 ) -> UpdateChecklist:
     return UpdateChecklist(uow, bus, handlers)
+
+
+def get_set_capacity(uow: UnitOfWork = Depends(get_uow)) -> SetCapacity:
+    return SetCapacity(uow)
 
 
 # TODO(spec 002): register ApplyPlan as an `on_plan_completed` handler of AdvancePlanning

@@ -3,9 +3,18 @@
 from fastapi import APIRouter, Depends
 
 from app.adapters.inbound.http import dependencies as deps
-from app.application.dto import BoardView, ChecklistUpdate, TaskMove, TaskResult, TaskUpdate
+from app.application.dto import (
+    BoardView,
+    CapacityResult,
+    CapacityUpdate,
+    ChecklistUpdate,
+    TaskMove,
+    TaskResult,
+    TaskUpdate,
+)
 from app.application.use_cases.board.get_board import GetBoard
 from app.application.use_cases.board.move_task import MoveTask
+from app.application.use_cases.board.set_capacity import SetCapacity
 from app.application.use_cases.board.update_checklist import UpdateChecklist
 from app.application.use_cases.board.update_task import UpdateTask
 
@@ -15,6 +24,13 @@ router = APIRouter(prefix="/api", tags=["board"])
 @router.get("/projects/{project_id}/board", response_model=BoardView)
 def get_board(project_id: int, use_case: GetBoard = Depends(deps.get_get_board)) -> BoardView:
     return use_case.execute(project_id)
+
+
+@router.put("/projects/{project_id}/capacity", response_model=CapacityResult)
+def set_capacity(
+    project_id: int, body: CapacityUpdate, use_case: SetCapacity = Depends(deps.get_set_capacity)
+) -> CapacityResult:
+    return use_case.execute(project_id, body.points_per_sprint)
 
 
 @router.patch("/tasks/{task_id}", response_model=TaskResult)

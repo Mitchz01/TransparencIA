@@ -305,7 +305,7 @@ Request headers: `Content-Type: application/json`
 ### Implementation for User Story 4
 
 - [x] T027 [US4] Accept `sprint_id` (or `null` for backlog) in `MoveTask`
-- [ ] T028 [US4] Implement `SetCapacity` (`backend/app/application/use_cases/board/set_capacity.py`) and `PUT /api/projects/{id}/capacity` for the fixed points override (FR-017)
+- [x] T028 [US4] Implement `SetCapacity` (`backend/app/application/use_cases/board/set_capacity.py`) and `PUT /api/projects/{id}/capacity` for the fixed points override (FR-017)
 - [ ] T029 [US4] Create `SprintSelector` (defaults to the first sprint with unfinished tasks) and `CapacityBar` (overload warning); drop target "Move to sprint…" on cards; continuous layout without selector when `continuous`, objectives as a filter — handed off to spec 009 (frontend)
 
 **Checkpoint**: User Stories 1–4 work independently
@@ -330,7 +330,7 @@ Request headers: `Content-Type: application/json`
 
 - [ ] T031 [P] Run the `vercel-react-best-practices` and `web-design-guidelines` skills on `frontend/src/ui/components/board/` (re-renders while dragging, keyboard drag, focus) — handed off to spec 009 (frontend)
 - [ ] T032 [P] Agree on the visual direction with the `frontend-design` skill and save the token plan in this plan (shared with spec 004) — handed off to spec 009 (frontend)
-- [ ] T033 Check FR-019: every board change publishes an event spec 005 can show
+- [x] T033 Check FR-019: every board change publishes an event spec 005 can show
 
 ---
 
@@ -368,3 +368,11 @@ Request headers: `Content-Type: application/json`
 - Each user story is independently completable and testable
 - Commit after each task or logical group, and check the box here
 - Avoid: vague tasks, editing the same file from two parallel tasks, cross-story dependencies that break independence
+
+### Implementation notes (backend)
+
+- `409 sprint_closed` on `PATCH /api/tasks/{id}` isn't implemented: sprints can't be closed until spec 008 adds it (TODO in `domain/errors.py`).
+- `domain/capacity.py` (spec 002, T006) was created here; member capacity is rounded down to whole points.
+- `MoveTask`, `UpdateTask` and `UpdateChecklist` share one `after_task_changed` handler list (`app.state.after_task_changed`); each handler gets the saved task and the event, so specs 007 and 008 can filter by event type. A PATCH that combines edit and move fields is saved in one commit by `UpdateTask` and publishes both `task_updated` and `task_status_changed`.
+- `sprint_id: null` without `status` lands in the `backlog` column (another sprint without `status` lands in `todo`).
+- `PUT /api/projects/{id}/capacity` doesn't publish an event (the contract doesn't list one).

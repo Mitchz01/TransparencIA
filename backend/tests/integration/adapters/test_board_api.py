@@ -264,3 +264,43 @@ def test_checklist_errors(client):
     _assert_validation(client.put(url, json={"items": [{"text": f"step {i}"} for i in range(51)]}), "items")
 
     assert _task(client.get(f"/api/projects/{pid}/board").json(), "US-1") == task
+
+
+# ---------- PUT /api/projects/{id}/capacity ----------
+
+
+def test_set_and_clear_the_capacity_override(client):
+    pid, board = _with_board(client)
+    ids = [s["id"] for s in board["sprints"]]
+
+    response = client.put(f"/api/projects/{pid}/capacity", json={"points_per_sprint": 20})
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "capacity_override": 20,
+        "sprints": [
+            {"id": ids[0], "load": {"points": 11, "capacity": 20, "overloaded": False}},
+            {"id": ids[1], "load": {"points": 23, "capacity": 20, "overloaded": True}},
+            {"id": ids[2], "load": {"points": 13, "capacity": 20, "overloaded": False}},
+        ],
+    }
+    assert client.get(f"/api/projects/{pid}/board").json()["capacity_override"] == 20
+
+    response = client.put(f"/api/projects/{pid}/capacity", json={"points_per_sprint": None})
+    assert response.status_code == 200
+    assert response.json()["capacity_override"] is None
+    assert response.json()["sprints"][0]["load"]["capacity"] == 21
+
+
+def test_capacity_errors(client):
+    pid, _ = _with_board(client)
+    url = f"/api/projects/{pid}/capacity"
+
+    _assert_not_json(client, "PUT", url)
+    _assert_error(client.put("/api/projects/999/capacity", json={"points_per_sprint": 20}), 404, "project_not_found")
+    kanban, _ = _with_board(client, KANBAN)
+    _assert_error(client.put(f"/api/projects/{kanban}/capacity", json={"points_per_sprint": 20}), 409, "capacity_not_applicable")
+    for bad in ({}, {"points_per_sprint": 0}, {"points_per_sprint": 501}, {"points_per_sprint": 2.5}, {"points_per_sprint": "a"}):
+        _assert_validation(client.put(url, json=bad), "points_per_sprint")
+
+    assert client.get(f"/api/projects/{pid}/board").json()["capacity_override"] is None

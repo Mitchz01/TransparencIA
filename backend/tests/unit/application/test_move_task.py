@@ -6,9 +6,10 @@ from app.adapters.outbound.agents.mock.data import MOCK_PLAN
 from app.application.dto import TaskMove
 from app.application.use_cases.board.get_board import GetBoard
 from app.application.use_cases.board.move_task import MoveTask
+from app.application.use_cases.board.set_capacity import SetCapacity
 from app.application.use_cases.planning.apply_plan import ApplyPlan
 from app.domain.board import OverloadWarning, WipWarning
-from app.domain.errors import TaskNotFound, ValidationFailed
+from app.domain.errors import CapacityNotApplicable, ProjectNotFound, TaskNotFound, ValidationFailed
 from tests.fakes import InMemoryUnitOfWork, RecordingEventBus, project
 
 KANBAN = {**MOCK_PLAN, "methodology": {**MOCK_PLAN["methodology"], "methodology": "kanban"}}
@@ -112,6 +113,29 @@ def test_overloaded_sprint_is_a_warning():
     result, _ = _move(uow, tasks["US-6"].id, sprint_id=sprints[0].id)  # 11 + 8 points > 10
     assert result.task.sprint_id == sprints[0].id
     assert result.warnings == [OverloadWarning(sprint_id=sprints[0].id, points=19, capacity=10)]
+
+
+def test_capacity_override_replaces_the_estimate_and_null_restores_it():
+    uow, saved, tasks, sprints = _board()
+    result = SetCapacity(uow).execute(saved.id, 30)
+    assert result.capacity_override == 30
+    assert [(s.id, s.load.capacity, s.load.overloaded) for s in result.sprints] == [(s.id, 30, False) for s in sprints]
+    assert GetBoard(uow).execute(saved.id).capacity_override == 30
+    assert SetCapacity(uow).execute(saved.id, None).sprints[1].load.capacity == 21  # 15 + 6 from the team
+
+
+def test_capacity_errors():
+    uow, saved, tasks, sprints = _board()
+    with pytest.raises(ProjectNotFound):
+        SetCapacity(uow).execute(999, 20)
+    with pytest.raises(ValidationFailed):
+        SetCapacity(uow).execute(saved.id, 0)
+    with pytest.raises(ValidationFailed):
+        SetCapacity(uow).execute(saved.id, 501)
+    kanban_uow, kanban, _, _ = _board(KANBAN)
+    with pytest.raises(CapacityNotApplicable):
+        SetCapacity(kanban_uow).execute(kanban.id, 20)
+    assert uow.projects.get(saved.id).sprint_capacity_override is None
 
 
 def test_continuous_board_has_no_sprint_load_and_one_column_per_status():
