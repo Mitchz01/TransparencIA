@@ -11,6 +11,7 @@
 - **Includes**: the service (backend) to create, read and edit a project with its team, validate the data and leave the project ready for the agents to start (UC-03).
 - **Doesn't include**: the screens to create, view and edit the project and its team. This spec covers the service only and its stories are tested directly against it; who builds the screens is still to be decided in [specs/README.md](../README.md).
 - **Doesn't include**: generating the plan (spec 002), the request to start planning (spec 002) or replanning (spec 008). This spec leaves the project ready and reports when the team changes.
+- **Changed by spec 015 (accounts and invitations)**: the leader no longer types the team. Creating a project takes no members: the creator is its first member (Leader) and the others join with an invitation link, bringing their profile. Adding members in Story 1 and Story 3 is replaced by joining (015, US4); editing and removing members moves to 015, US6. The validations, the "team changed" event and the edge cases of this spec still apply.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -150,13 +151,13 @@ When the leader changes the team, the system saves the change and reports that t
 
 ### Functional Requirements
 
-- **FR-001**: The system MUST allow creating a project with name, description, duration in weeks, methodology (optional), auto-approve and at least one member.
+- **FR-001**: The system MUST allow creating a project with name, description, duration in weeks, methodology (optional), auto-approve and at least one member. **Changed by spec 015**: the team isn't sent; the creator becomes the only member, as Leader, from their profile, and the rest join with the invitation link.
 - **FR-002**: The system MUST accept as methodology "let the agents recommend" (default), Scrum, Kanban, Scrumban, XP or Shape Up, and reject anything else.
 - **FR-003**: The system MUST store each member's name, role, seniority (junior, mid or senior; mid by default), hours per week (20 by default) and skills (empty by default).
 - **FR-004**: The system MUST reject the creation or the edit if the project name, the description, or a member's name or role is missing, if there are no members, if two members share a name, if the duration isn't between 1 and 52 weeks, or if a member's hours aren't between 1 and 60, saying which field fails.
 - **FR-005**: Every new project MUST start in draft status. Creating a project MUST NOT start planning: a separate request does that (spec 002).
 - **FR-006**: The system MUST return a project with all its data and its team given its id, or "not found" if it doesn't exist.
-- **FR-007**: The system MUST allow editing any project or team data, changing only what's specified, also while the project is "planning".
+- **FR-007**: The system MUST allow editing any project or team data, changing only what's specified, also while the project is "planning". Since spec 015, the team is edited member by member (`/members/{id}`), not through the project edit.
 - **FR-008**: An invalid edit MUST NOT apply any change (all or nothing).
 - **FR-009**: The system MUST reject changing the methodology once planning has started.
 - **FR-010**: Every edit that adds or removes members, or changes someone's name, role, seniority, hours or skills, MUST publish a single "team changed" event with the detail of the changes. Edits that don't touch the team MUST NOT publish it.
@@ -165,7 +166,7 @@ When the leader changes the team, the system saves the change and reports that t
 ### Key Entities *(include if feature involves data)*
 
 - **Project**: what the team wants to build. Name, description, duration in weeks, requested methodology, auto-approve, status (draft, planning, ready, error), team and creation date. The approved plan and the GitHub repo are filled in by other specs.
-- **Member**: a person on a project's team. Name, role, seniority, hours per week and skills. Belongs to a single project. The GitHub username is added by spec 007, from Integrations (007, FR-012).
+- **Member**: a person on a project's team. Name, role, seniority, hours per week and skills. Belongs to a single project. The GitHub username is added by spec 007, from Integrations (007, FR-012). Since spec 015, each member is linked to an account and has a permission (Leader or Member).
 - **"Team changed" event**: says a project's team changed, with the detail of who joined, who left and what was edited for each member. The live activity feed shows it (spec 005) and replanning uses it (spec 008).
 
 ### Contracts with other specs (agreed with Mitchz01)
