@@ -22,7 +22,7 @@ in that order if time runs out.
 images); new on the frontend: `qrcode`  
 **Storage**: SQLite; uploaded files as bytes in their own table  
 **Testing**: pytest (rules + API); vitest where it's cheap  
-**Target Platform**: laptop for the demo, reached from the jury's phones through a tunnel  
+**Target Platform**: a deployment the jury's phones reach over the internet (not run by this team)  
 **Constraints**: 3 hours; must work in mock mode with the seeded project
 
 ### Decisions
@@ -50,8 +50,10 @@ images); new on the frontend: `qrcode`
 - **D9 — Publication**: `Project.public_slug` (`secrets.token_urlsafe(8)`, generated on first publish,
   kept on unpublish) and `Project.public: bool`. The QR encodes `{PUBLIC_APP_URL}/p/{slug}` (env var,
   falls back to the current origin).
-- **D10 — Public exposure**: `cloudflared tunnel --url http://localhost:5174` (the portal app, spec 018) (quick tunnel, no account),
-  Vite `server.allowedHosts` for the tunnel domain. Cloud Run stays the real target, not tonight.
+- **D10 — Public exposure**: the app is deployed by someone outside this team; no tunnel. What the deployment
+  needs: the portal (`apps/portal`, a static build) and the backend under one origin, with `/api` proxied to
+  the backend (the portal calls `/api` relative), and `PUBLIC_APP_URL` set to the portal's public origin so
+  the QR points at it.
 - **D11 — The seed builds the demo project directly** (planned mangrove board with tasks done across
   past weeks, budget, 3 confirmed expenses, portal published), without running the agents.
 - **D12 — Alerts can't be cleared by the executing entity** (spec US5): it only answers; answered alerts
@@ -297,7 +299,7 @@ it says so out loud first.
 | **P2 — AI** | The evidence and chat prompts and adapters; generalized planning prompts; demo files | T002, T007, T009, T010, T021 | `ports/transparency_agents.py`, `agents/adk/*`, `agents/mock/transparency_*`, `transparency/ask_citizen.py`, `apps/api/demo/` |
 | **P3 — API** | Persistence, use cases, endpoints, cuts in the backend, seed | T008, T011–T013, T015, T018, T019, T023 | `ports/repositories.py`, `ports/unit_of_work.py`, `persistence/*`, `domain/project.py`, the other `transparency/*`, `http/transparency.py`, `http/public.py`, `main.py`, `config.py`, `seed.py` |
 | **P4 — Team UI** | The "Transparencia" tab and the cuts in navigation | T001 (frontend), T016, T017, T024 | `@agile/domain` (types, fixture), `ports.ts`, `adapters/*/transparencyGateway.ts`, `useTransparency.ts`, `TransparencyPage`, `QrCard`, `routes.tsx`, project nav |
-| **P5 — Portal + demo** | What the jury sees on their phone; tunnel, pitch | T020, T022, T025–T027, pitch + backup video | `apps/portal/*`, `packages/ui/src/transparency/*`, docs |
+| **P5 — Portal + demo** | What the jury sees on their phone; deployment notes, pitch | T020, T022, T025–T027, pitch + backup video | `apps/portal/*`, `packages/ui/src/transparency/*`, docs |
 | **Claude — US7** | The project from the contract | T028–T033 | In `apps/api`: `domain/contracts.py`, `ports/contract_reader.py`, `agents/*/contract_reader.py`, `use_cases/contracts/*`, `http/contracts.py`, `demo/contrato-manglar.pdf`. In `apps/team`: `domain/contracts.ts`, `adapters/*/contractGateway.ts`, `useContracts.ts`, `NewProjectFromContractPage.tsx`. One line each in `main.py` (P3), `routes.tsx` and `ports.ts` (P4), and in `prompts.py` (P2), announced first |
 
 P4 owns `QrCard` and the forms in `apps/team`; P5 owns `apps/portal` and the read-only components in
@@ -398,7 +400,7 @@ Sync points:
   Documents from the nav (P4)
 - [ ] T025 plan/api-conventions.md (D2, D3 and new errors), apps/team/docs/api-contract.md, plan/context.md
   and README updated to the transparency module
-- [ ] T026 Tunnel + `allowedHosts`; QR tested from a real phone on mobile data
+- [ ] T026 Deployment notes for whoever deploys (D10); QR tested from a real phone on mobile data once deployed
 - [ ] T027 Full demo with the real key and in mock mode; `pytest`, `npm run typecheck`, `npm run lint`
 
 ## Dependencies & Execution Order

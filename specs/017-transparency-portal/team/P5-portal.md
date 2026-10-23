@@ -1,7 +1,7 @@
 # P5 — Portal + demo
 
 You own **what the jury sees on their phone**: the public portal at `/p/:slug`, its read-only components
-(P4 reuses them), the citizen chat, the tunnel that makes the QR work, the docs, and the pitch. Plan
+(P4 reuses them), the citizen chat, what the deployment needs so the QR works, the docs, and the pitch. Plan
 tasks: T020, T022, T025–T027.
 
 UI text in Spanish (spec 009). Phone first: design at 390 px wide, then check desktop. Follow
@@ -59,12 +59,9 @@ UI text in Spanish (spec 009). Phone first: design at 390 px wide, then check de
      "¿Qué se ha sembrado?";
    - a text input of 300 chars max; answers appear as bubbles;
    - `agent_unavailable` → "El asistente no está disponible; los datos de arriba están completos".
-3. **Tunnel** (T026). Start it once and keep it running all demo: its URL changes on every start.
-   - `winget install --id Cloudflare.cloudflared`
-   - `cloudflared tunnel --url http://localhost:5174` (the portal app; the QR points there)
-   - In `apps/portal/vite.config.ts`: `server: { allowedHosts: ['.trycloudflare.com'], … }`.
-   - Give the tunnel URL to P3 for `PUBLIC_APP_URL` in `apps/api/.env`, and to P4 for `VITE_PUBLIC_APP_URL`.
-   - Test the seeded QR from a phone **on mobile data**, not the venue's wifi.
+3. **Deployment** (T026). Someone outside the team deploys; give them what plan.md D10 lists (one origin,
+   `/api` proxied to the backend, `PUBLIC_APP_URL` = the portal's public origin). Once it's up, test the
+   seeded QR from a phone **on mobile data**, not the venue's wifi.
 
 ## Phase 3 (1:30–2:20): docs and demo
 
