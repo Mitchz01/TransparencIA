@@ -316,9 +316,9 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 ## Phase 12: Polish & Cross-Cutting Concerns
 
 - [ ] T057 [P] Review every screen in both themes against the design rules (SC-004) with `check-design-rules.mjs` plus a manual pass; fix findings
-- [ ] T058 [P] Accessibility pass: keyboard-only run of the demo flow, focus order in drawers and dialogs, accessible names, contrast spot checks
-- [ ] T059 [P] Responsive pass at 360, 768 and 1440 px
-- [ ] T060 Time the demo on the fake service (SC-001) and the first content per screen (SC-005); fix the slow ones
+- [x] T058 [P] Accessibility pass: keyboard-only run of the demo flow, focus order in drawers and dialogs, accessible names, contrast spot checks
+- [x] T059 [P] Responsive pass at 360, 768 and 1440 px
+- [x] T060 Time the demo on the fake service (SC-001) and the first content per screen (SC-005); fix the slow ones
 - [ ] T061 Document `VITE_USE_FAKE` and the frontend scripts in `README.md`
 
 ---

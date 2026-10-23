@@ -31,7 +31,7 @@ export function IntegrationsPage() {
   const publishing = pending.some((p) => p.key === 'create_issues')
 
   return (
-    <div className="mx-auto grid max-w-4xl gap-3">
+    <div className="mx-auto grid max-w-4xl gap-3 [&>*]:min-w-0">
       <PageHeader title="Integraciones" description="Conecta el repo de GitHub del proyecto, carga el usuario de cada miembro y publica las tareas como issues." />
       {!project.has_token && <TestModeBanner />}
       {pending.map((p) => <GithubProposalCard key={p.id} projectId={project.id} proposal={p} />)}

@@ -19,7 +19,7 @@ export function MemberRows({ members, onChange, errors }: MemberRowsProps) {
 
   return (
     <div className="grid gap-3">
-      <ul className="grid gap-3" aria-label="Miembros del equipo">
+      <ul className="grid gap-3 [&>*]:min-w-0" aria-label="Miembros del equipo">
         {members.map((member, i) => {
           const path = `members[${i}]`
           const name = member.name.trim() || `miembro ${i + 1}`
@@ -30,8 +30,8 @@ export function MemberRows({ members, onChange, errors }: MemberRowsProps) {
             }),
           )
           return (
-            <li key={member.key} className="grid gap-4 rounded-md bg-inset p-4 sm:p-5">
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,3fr)_minmax(0,3fr)_minmax(0,2fr)_minmax(0,2fr)]">
+            <li key={member.key} className="grid gap-4 rounded-md bg-inset p-4 sm:p-5 [&>*]:min-w-0">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,3fr)_minmax(0,3fr)_minmax(0,2fr)_minmax(0,2fr)] [&>*]:min-w-0">
                 <TextField label="Nombre" size="md" fill="surface" value={member.name} error={errors[`${path}.name`]} autoComplete="off" onChange={(e) => update(member.key, { name: e.target.value })} />
                 <TextField label="Rol" size="md" fill="surface" value={member.role} placeholder="Frontend" error={errors[`${path}.role`]} onChange={(e) => update(member.key, { role: e.target.value })} />
                 <Select

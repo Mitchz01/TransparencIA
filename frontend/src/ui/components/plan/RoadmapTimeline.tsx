@@ -84,10 +84,10 @@ export function RoadmapTimeline({ roadmap }: { roadmap: RoadmapView }) {
                   {phase.epics.map((epic) => (
                     <Row
                       key={epic.key}
-                      title={<span className="flex gap-2"><span className="text-key text-ink-muted">{epic.key}</span>{epic.title}</span>}
+                      title={<span className="flex gap-2"><span className="shrink-0 text-key whitespace-nowrap text-ink-muted">{epic.key}</span>{epic.title}</span>}
                       detail={epic.description}
                       aside={
-                        <span className="grid w-28 shrink-0 gap-1.5 text-right sm:w-40">
+                        <span className="grid w-24 shrink-0 gap-1.5 text-right sm:w-40">
                           <span className="text-caption text-ink-muted tabular-nums">{epic.has_tasks ? progressText(epic.progress) : 'Sin tareas'}</span>
                           {epic.has_tasks && (
                             <ProgressTrack value={epic.progress.points_done} max={epic.progress.points} label={`${epic.key}: ${progressText(epic.progress)}`} inset className="w-full" />

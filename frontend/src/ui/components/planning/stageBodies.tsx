@@ -178,7 +178,7 @@ function backlog(c: StageOutputs['backlog']): StageSummary {
           render={(s) => (
             <Row
               key={s.key}
-              title={<span className="flex gap-2"><span className="text-key text-ink-muted">{s.key}</span>{s.title}</span>}
+              title={<span className="flex gap-2"><span className="shrink-0 text-key whitespace-nowrap text-ink-muted">{s.key}</span>{s.title}</span>}
               detail={`${s.epic_key}, ${s.role}`}
               aside={
                 <span className="flex shrink-0 items-center gap-3">
