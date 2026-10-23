@@ -59,6 +59,7 @@ specs/                 SDD: constitution, templates, features
 # backend
 cd backend && .venv/Scripts/activate && fastapi dev app/main.py   # :8000 (Linux/macOS: .venv/bin/activate)
 cd backend && pip install -r requirements-dev.txt && pytest       # tests
+cd backend && python -m app.seed                                   # demo accounts ana@team.dev / leo@team.dev, password agile-demo
 # frontend
 cd frontend && npm run dev                                         # :5173, /api → :8000
 ```
