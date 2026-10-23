@@ -531,39 +531,40 @@ sequenceDiagram
 | Issue closed as not planned | No change; shown in the activity feed |
 | Issue reopened | `todo` |
 
-- GitHub events never move a task out of `done`, except reopening the issue. Events caused by the system's own writes are ignored (spec 008, FR-015).
-- When all the tasks of an objective are `done`, the `Objective` closes.
-- **Use cases**: `integrations/handle_pull_request_event.py`, `handle_issue_event.py`
+- GitHub events only move a task forward, and never out of `done` except reopening the issue. Events caused by the system's own writes are ignored (spec 008, FR-015). Each delivery is processed once (`X-GitHub-Delivery`).
+- When all the tasks of an objective are `done`, the `Objective` closes (from GitHub or by hand); if one leaves `done`, it reopens.
+- A `pull_request.opened` also goes to spec 007's `ProposeReview` (UC-11).
+- Closing a sprint is the leader's action (`POST /api/sprints/{id}/close`); with unfinished tasks it proposes a replan (UC-13).
+- **Use cases**: `integrations/handle_github_event.py` (one for PR and issue events), `board/evaluate_objectives.py`, `board/close_sprint.py`
 
 ```mermaid
 sequenceDiagram
     participant GH as GitHub
     participant WH as GitHub webhook
-    participant UC as HandlePullRequestEvent
+    participant UC as HandleGithubEvent
     participant UoW
     participant Bus as EventBus
-    participant RP as Replan
+    participant EO as EvaluateObjectives
 
     GH->>WH: POST /webhooks/github (pull_request merged)
     WH->>WH: validates the HMAC signature with GITHUB_WEBHOOK_SECRET
     alt invalid signature
         WH-->>GH: 401
     else valid
-        WH->>UC: PullRequestMerged(repo, number, closes)
+        WH->>UC: receive(delivery id, PullRequestMerged(repo, number, closes))
+        UC->>UoW: deliveries.add (a repeated delivery is ignored)
         WH-->>GH: 202
+        WH->>UC: execute() in the background
         UC->>UoW: project by repository and tasks by ExternalLink
         loop each linked task
-            UC->>UC: status done and checklist complete
+            UC->>UC: next_status → done, checklist complete
             UC->>UoW: tasks.save(task)
-            UC->>Bus: publish(TaskStatusChanged)
         end
-        UC->>UC: evaluates those tasks' objectives
-        UC->>UoW: objective.done = true if all are done
         UC->>UoW: commit()
-        UC->>Bus: publish(ObjectiveClosed)
-        opt sprint ended with pending work
-            UC->>RP: propose a replan (UC-13)
-        end
+        UC->>Bus: publish(TaskUpdated, TaskStatusChanged)
+        UC->>EO: after_task_changed handlers (shared with the board)
+        EO->>UoW: objective.done = true if all its tasks are done
+        EO->>Bus: publish(ObjectiveClosed)
     end
 ```
 
@@ -572,9 +573,9 @@ sequenceDiagram
 - **Trigger**:
   - the leader asks for it with a reason ("a dev left", "a new client came in"),
   - the team changed (UC-02),
-  - a sprint ended with pending work (UC-12).
-- **Result**: a `replan` proposal with a diff over the current board (tasks that move between sprints, reassignments, new or discarded tasks) and its rationale. When approved, the diff is applied; `done` tasks are never touched. Automatic replans always wait for the leader, even with auto-approve (spec 008, FR-016).
-- **Use case**: `planning/replan.py` (new `replan` stage with its diff schema).
+  - a sprint was closed with pending work (UC-12).
+- **Result**: a `replan` proposal with a diff over the current board (tasks that move between sprints, reassignments, new or discarded tasks) and its rationale. A new request replaces the pending replan (`discarded`) and merges both reasons. When approved, `ApplyReplan` applies the diff in one transaction, skipping and reporting changes whose task changed meanwhile; `done` tasks are never touched. Then spec 007 proposes the added tasks as issues and closes the discarded ones' issues. Automatic replans always wait for the leader, even with auto-approve (spec 008, FR-016).
+- **Use cases**: `planning/replan.py` (the `replan` stage with its diff schema), `planning/apply_replan.py`, `planning/propose_replan_on_drift.py`.
 
 ```mermaid
 sequenceDiagram
@@ -586,16 +587,17 @@ sequenceDiagram
     participant Bus as EventBus
 
     L->>HTTP: POST /api/projects/{id}/replan (reason)
-    HTTP->>UC: launches in the background
-    HTTP-->>L: 202
+    HTTP->>UC: prepare (plan applied? pending replan to supersede?)
+    HTTP->>UC: execute in the background
+    HTTP-->>L: 202 (supersedes)
     UC->>UoW: approved plan, team and current board
     UC->>AG: run_stage(replan, plan, board, real velocity, reason)
     AG-->>UC: diff (move, reassign, add, discard) and rationale
-    UC->>UC: validates the diff (no done tasks touched)
-    UC->>UoW: proposals.add(Proposal kind replan)
+    UC->>UC: validates the diff (no done tasks touched), one retry
+    UC->>UoW: discard the pending replan, proposals.add(Proposal kind replan)
     UC->>UoW: commit()
     UC->>Bus: publish(ProposalCreated)
-    Note over UC,Bus: on approval, ApproveProposal applies the diff in a single transaction
+    Note over UC,Bus: on approval, spec 005 runs ApplyReplan: the diff in a single transaction, then its follow-ups
 ```
 
 ### UC-14 · Follow the live activity

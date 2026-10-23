@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.adapters.inbound.http import activity, board, health, integrations, planning, projects, proposals
+from app.adapters.inbound.http import activity, board, dev, health, integrations, planning, projects, proposals
 from app.adapters.inbound.http.background import spawn
 from app.adapters.inbound.http.dependencies import open_uow, wire_planning, wire_replanning
 from app.adapters.inbound.http.errors import register_error_handlers
@@ -17,6 +17,7 @@ from app.application.use_cases.board.evaluate_objectives import EvaluateObjectiv
 from app.application.use_cases.integrations.apply_review import ApplyReview
 from app.application.use_cases.planning.apply_replan import ReplanOutcome
 from app.application.use_cases.planning.propose_replan_on_drift import ProposeReplanOnDrift
+from app.application.use_cases.integrations.prune_sync_records import PruneSyncRecords
 from app.application.use_cases.integrations.publish_issues import PublishIssues
 from app.application.use_cases.integrations.sync_task_issue import SyncTaskIssue
 from app.application.use_cases.proposals.apply_proposal import ApplierRegistry
@@ -27,6 +28,7 @@ from app.application.ports.agents import PlanningAgents
 from app.application.ports.code_host import CodeHost, CodeHostFactory
 from app.config import (
     CORS_ORIGINS,
+    ENV,
     GEMINI_MODEL,
     GITHUB_TOKEN,
     GITHUB_WEBHOOK_SECRET,
@@ -65,6 +67,7 @@ def build_code_host_factory(fake: CodeHost) -> CodeHostFactory:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db()
+    PruneSyncRecords(open_uow).execute()  # spec 008: old webhook deliveries and consumed own writes
     app.state.agents = build_agents()
     app.state.code_host_factory = build_code_host_factory(FakeCodeHost())  # spec 007: per project token
     app.state.code_host = app.state.code_host_factory(None)  # the installation's
@@ -143,4 +146,6 @@ app.include_router(activity.router)
 app.include_router(integrations.router)  # spec 007
 app.include_router(board.router)
 app.include_router(github_webhooks.router)  # spec 008
+if ENV == "dev":
+    app.include_router(dev.router)  # spec 008 (T029): replay GitHub events without a tunnel
 # TODO: documents (spec 006)

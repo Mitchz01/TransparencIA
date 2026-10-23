@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import func, update
+from sqlalchemy import delete, func, update
 from sqlmodel import Session, col, select
 
 from app.adapters.outbound.persistence import mappers
@@ -327,6 +327,16 @@ class SqlOwnWriteRepository:
         self._session.flush()
         return True
 
+    def prune_consumed(self, before: datetime) -> int:
+        """Spec 008: unconsumed writes are kept, their echo may still arrive."""
+        result = self._session.exec(  # type: ignore[call-overload]
+            delete(OwnWriteTable).where(
+                col(OwnWriteTable.consumed_at).is_not(None), col(OwnWriteTable.consumed_at) < before
+            )
+        )
+        self._session.flush()
+        return result.rowcount or 0
+
 
 # ---------- GitHub sync (spec 008) ----------
 
@@ -345,3 +355,10 @@ class SqlWebhookDeliveryRepository:
         self._session.add(row)
         self._session.flush()
         return mappers.delivery_to_domain(row)
+
+    def prune(self, before: datetime) -> int:
+        result = self._session.exec(  # type: ignore[call-overload]
+            delete(WebhookDeliveryTable).where(col(WebhookDeliveryTable.received_at) < before)
+        )
+        self._session.flush()
+        return result.rowcount or 0

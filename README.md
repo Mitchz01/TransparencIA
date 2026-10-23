@@ -65,7 +65,7 @@ npm run dev                               # :5173, proxy /api → :8000
 
 ## TODO
 
-> The `member.active`, `proposal` and `activity` columns/tables are new and `create_db()` doesn't migrate: delete any local `backend/agile.db` before running. Spec 007 adds `project.github_token`, `project.webhook_id`, `member.github_username`, `proposal.result` and the `external_link` and `own_write` tables.
+> The `member.active`, `proposal` and `activity` columns/tables are new and `create_db()` doesn't migrate: delete any local `backend/agile.db` before running. Spec 007 adds `project.github_token`, `project.webhook_id`, `member.github_username`, `proposal.result` and the `external_link` and `own_write` tables. Spec 008 adds `sprint.closed`, `sprint.end_date` and the `webhook_delivery` table.
 
 
 - [x] Projects and team API (spec 001): `POST/GET/PATCH /api/projects`
@@ -73,8 +73,9 @@ npm run dev                               # :5173, proxy /api → :8000
 - [x] Plan views (spec 004): `GET /api/projects/{id}/plan`
 - [x] Per-stage planning pipeline (spec 002): `POST /api/projects/{id}/planning`, stage retry, the `plan_stage` applier
 - [x] Persist the approved plan as Sprint and Task (spec 003's `ApplyPlan`, run when the plan completes)
-- [x] GitHub integration backend (spec 007): `PUT/DELETE /api/projects/{id}/repository`, `POST /api/projects/{id}/issues/propose`, `PUT /api/members/{id}/github-username`, `github_action` appliers (hooks into 003 and 008 pending)
-- [ ] Generated specs and diagrams (006), sync and replanning (008)
+- [x] GitHub integration backend (spec 007): `PUT/DELETE /api/projects/{id}/repository`, `POST /api/projects/{id}/issues/propose`, `PUT /api/members/{id}/github-username`, `github_action` appliers
+- [ ] Generated specs and diagrams (006)
+- [x] GitHub sync and replanning backend (spec 008): `POST /webhooks/github`, `POST /api/projects/{id}/replan`, `POST /api/sprints/{id}/close`, objectives that close by themselves, drift replans; `ENV=dev` adds `POST /api/dev/github-events`
 - [ ] Frontend: project setup, agent progress, kanban, roadmap
 - [ ] Extra: replan ("a dev left, adjust the sprint")
 - [ ] Deploy to Cloud Run

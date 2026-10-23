@@ -7,6 +7,9 @@ load_dotenv()
 
 logger = logging.getLogger("agile")
 
+# "dev" mounts development-only endpoints, e.g. replaying GitHub events (spec 008, T029).
+ENV = os.getenv("ENV", "").lower()
+
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./agile.db")
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")

@@ -117,6 +117,7 @@ The system detects when the plan drifted from reality (a sprint ended with pendi
 - What if GitHub sends the same event twice? The effect is applied only once.
 - What if an event arrives from a repo that isn't connected to any project, or from an issue without a linked task? It's ignored without an error.
 - What if a task is already "done" (moved by hand) and a PR-opened event arrives? It doesn't go back: GitHub events never move a task out of "done", unless the issue is reopened.
+- What if a task is already further along than the event (e.g. "in review" and another PR that closes it is opened)? It stays where it is: GitHub progress only moves tasks forward; only reopening the issue moves one back.
 - What if a replan is requested (or detected) while another one is pending? A new one is generated that combines the reasons of both and replaces the previous one, which stays discarded in the history.
 - What if the board changed between generating the proposal and approving it? Changes that refer to tasks no longer in the expected state are discarded, and the rest is applied; the leader sees which ones were discarded.
 - What if the replan adds tasks and the project has a connected repo? When it's approved, publishing them as issues is proposed (spec 007, FR-006).

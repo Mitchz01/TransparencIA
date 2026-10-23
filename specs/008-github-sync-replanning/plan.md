@@ -275,9 +275,9 @@ Request headers: `Content-Type: application/json`
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T028 [P] Prune `webhook_delivery` and consumed `own_write` rows older than 7 days on startup
-- [ ] T029 [P] Add a dev-only `POST /api/dev/github-events` that replays a fixture through `HandleGithubEvent`, to demo sync without a tunnel
-- [ ] T030 Update `plan/use-cases.md` (UC-12, UC-13) if the implementation drifted
+- [x] T028 [P] Prune `webhook_delivery` and consumed `own_write` rows older than 7 days on startup
+- [x] T029 [P] Add a dev-only `POST /api/dev/github-events` that replays a fixture through `HandleGithubEvent`, to demo sync without a tunnel
+- [x] T030 Update `plan/use-cases.md` (UC-12, UC-13) if the implementation drifted
 
 ---
 
@@ -314,3 +314,18 @@ Request headers: `Content-Type: application/json`
 - Each user story is independently completable and testable
 - Commit after each task or logical group, and check the box here
 - Avoid: vague tasks, editing the same file from two parallel tasks, cross-story dependencies that break independence
+
+### Implementation notes (backend)
+
+- **T002**: `origin` and the `discarded` status were already on `Proposal` (spec 005 added them first). `ApplyPlan` sets each sprint's `end_date` back to back from the day the plan is applied (`sprint_end_date`); a continuous (Kanban) board has none. `create_db()` doesn't migrate: delete a local `agile.db` (new `sprint.closed`, `sprint.end_date` and the `webhook_delivery` table).
+- **Webhook (T005, T010)**: `HandleGithubEvent` has two steps: `receive` (in the request: records the delivery, answers `duplicate` / `unhandled_event` / `unknown_repository`) and `execute` (background). Signature checked on the raw body with `hmac.compare_digest` before any parsing; without `GITHUB_WEBHOOK_SECRET` every delivery is `401`. Rejected deliveries aren't recorded. `pull_request.closed` without merge is handled (closes the PR link, tasks don't move). Issue events for PRs are ignored.
+- **Status rules (T009)**: progress only moves forward (a PR opened on a task in review leaves it there); reopening moves to `todo` only from `in_progress`/`review`/`done`.
+- **Own writes (FR-015)**: only `issue_closed` can echo into a handled event (our writes otherwise trigger `opened`/`edited`/`review_requested`/comments, which the board ignores); the matching `OwnWrite` is consumed.
+- **Merge**: completing the checklist publishes `task_updated` (`fields: ["checklist"]`, actor `github`), so spec 007's issue sync also updates the issue body.
+- **T011 / 007 T033**: `deps.get_handle_github_event` passes `ProposeReview.execute` as `on_pull_request_opened`; it runs after the board is updated, and a failure there never undoes the sync.
+- **Replan (T015–T018)**: the agent's output is `Replan`; the proposal content is `ReplanContent` (`Replan` + `reason`, registered in `proposal_schemas.py` as `("replan", "replan")`). Moves and adds use sprint **numbers**; `to_sprint: null` = backlog. The retry loop of spec 002 was extracted as `run_validated()` in `run_planning_step.py` and reused. A failed replan publishes `ReplanFailed` (new event) and leaves the board and project untouched. `Replan` publishes `agent_started`/`agent_finished` (`agent: "replan"`).
+- **ApplyReplan**: a move keeps the task's status (backlog → `todo` into a sprint, anything → `backlog` to the backlog); a discard deletes the task (`TaskRepository.delete`, new) and keeps its issue link so spec 007's `CloseDiscardedIssue` (now with an optional `task_key`) can close it as not planned. Stale changes are reported as `{task_key, reason}` in `replan_applied` and in `proposal.result`. Follow-ups are `app.state.on_replan_applied` (`wire_replanning()` in `dependencies.py`): 007's `ProposePendingIssues` (only when tasks were added) and `CloseDiscardedIssue`, plus `EvaluateObjectives`. **Spec 006's `MarkDocumentsOutdated` isn't on this branch**: `TODO(spec 006)` in `wire_replanning()`; append it to `on_replan_applied`.
+- **Objectives (T021–T022)**: `EvaluateObjectives.execute(project_id)` checks every objective of the project (a move between sprints changes two); it reopens an objective when a task leaves `done` and publishes `objective_reopened` (new event) besides `objective_closed`. It's in the shared `app.state.after_task_changed` list, which `HandleGithubEvent` also calls, and an `on_replan_applied` follow-up.
+- **Drift (T025–T026)**: `app.state.on_sprint_closed` (new hook of `CloseSprint`) and spec 001's `app.state.on_team_changed` run `ProposeReplanOnDrift` in the background. `replan_proposed` in the close response means "pending tasks and a drift handler registered"; the proposal itself arrives later. Reasons longer than 1000 chars are cut. Without an applied plan nothing is proposed. Spec 003's `409 sprint_closed` is now implemented (see plan 003).
+- **T028**: `PruneSyncRecords` runs in the lifespan; unconsumed own writes are kept.
+- **T029**: `ENV=dev` mounts `POST /api/dev/github-events`. For a `pull_request_*` fixture, `number` is the issue the PR closes (its body becomes `Closes #N`); for an `issues_*` fixture, the issue number.

@@ -172,6 +172,12 @@ class FakeOwnWriteRepository(_Repo):
                 return True
         return False
 
+    def prune_consumed(self, before: datetime) -> int:
+        old = [k for k, w in self.rows.items() if w.consumed_at is not None and w.consumed_at < before]
+        for key in old:
+            del self.rows[key]
+        return len(old)
+
 
 class FakeWebhookDeliveryRepository(_Repo):
     def __init__(self, uow: "InMemoryUnitOfWork"):
@@ -182,6 +188,12 @@ class FakeWebhookDeliveryRepository(_Repo):
 
     def all(self) -> list[WebhookDelivery]:
         return [d.model_copy(deep=True) for _, d in sorted(self.rows.items())]
+
+    def prune(self, before: datetime) -> int:
+        old = [k for k, d in self.rows.items() if d.received_at < before]
+        for key in old:
+            del self.rows[key]
+        return len(old)
 
 
 class InMemoryUnitOfWork:

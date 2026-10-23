@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Protocol
 
 from app.domain.board import Objective, Sprint, Task
@@ -101,6 +102,9 @@ class OwnWriteRepository(Protocol):
     def consume_matching(self, repository: str, number: int, action: OwnWriteAction) -> bool:
         """Spec 008: marks the oldest unconsumed matching write as consumed; False if there's none."""
         ...
+    def prune_consumed(self, before: datetime) -> int:
+        """Spec 008: deletes writes consumed before `before`; returns how many."""
+        ...
 
 
 # ---------- GitHub sync (spec 008) ----------
@@ -111,3 +115,6 @@ class WebhookDeliveryRepository(Protocol):
         """True if a delivery with this id was already received (FR-003)."""
         ...
     def add(self, delivery: WebhookDelivery) -> WebhookDelivery: ...
+    def prune(self, before: datetime) -> int:
+        """Deletes deliveries received before `before`; returns how many."""
+        ...
