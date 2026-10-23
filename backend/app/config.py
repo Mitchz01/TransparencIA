@@ -42,3 +42,8 @@ GITHUB_WEBHOOK_URL = os.getenv("GITHUB_WEBHOOK_URL", "")
 SECRET_KEY = os.getenv("SECRET_KEY", "")
 # Spec 015: the session cookie only travels over HTTPS when set (Cloud Run); off for local dev.
 COOKIE_SECURE = os.getenv("COOKIE_SECURE", "").lower() in ("1", "true")
+# Spec 017: the public app's origin for the portal's link and QR, e.g. the tunnel's https URL.
+# Empty = the link is relative ("/p/{slug}") and the frontend prefixes its own origin.
+PUBLIC_APP_URL = os.getenv("PUBLIC_APP_URL", "").rstrip("/")
+# Spec 017 (D13): the generated software specs and diagrams (spec 006) are off unless turned on.
+GENERATE_DOCUMENTS = os.getenv("GENERATE_DOCUMENTS", "").lower() in ("1", "true")

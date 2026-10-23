@@ -14,6 +14,9 @@ import type { StageKey } from '../domain/plan'
 import type { PlanViews } from '../domain/planViews'
 import type { Project, ProjectCreate, ProjectSummary, ProjectUpdate } from '../domain/project'
 import type { Proposal, ProposalStatus } from '../domain/proposals'
+import type {
+  Alert, Budget, BudgetInput, CitizenAnswer, Expense, ExpenseConfirmation, Portal, Publication, TeamPortal,
+} from '../domain/transparency'
 import type { ApiErrorBody } from './errors'
 
 // ---------- spec 001 (+ getPlanViews, spec 004; accounts, spec 015) ----------
@@ -168,6 +171,35 @@ export interface TeamGateway {
 }
 
 /** What app/container.tsx provides to the UI (application/gateways.tsx holds the context). */
+// ---------- spec 017 (specs/017-transparency-portal/plan.md, "API Contract") ----------
+
+export interface TransparencyGateway {
+  /** GET /api/projects/{id}/budget → null until it's set. */
+  getBudget(projectId: number): Promise<Budget | null>
+  /** PUT /api/projects/{id}/budget, leaders only. Errors: 403 forbidden, 422 validation_failed. */
+  setBudget(projectId: number, body: BudgetInput): Promise<Budget>
+  /** POST /api/projects/{id}/expenses (multipart, field `file`) → a draft read by the AI. Errors: 409 budget_missing, 422 unsupported_file, 502 agent_unavailable. */
+  uploadEvidence(projectId: number, file: File): Promise<Expense>
+  /** POST /api/projects/{id}/expenses/{expenseId}/confirm. Errors: 404 expense_not_found, 409 expense_not_draft, 422 validation_failed. */
+  confirmExpense(projectId: number, expenseId: number, body: ExpenseConfirmation): Promise<Expense>
+  /** DELETE /api/projects/{id}/expenses/{expenseId}, drafts only. Errors: 404 expense_not_found, 409 expense_not_draft. */
+  discardExpense(projectId: number, expenseId: number): Promise<void>
+  /** GET /api/projects/{id}/transparency → the portal plus drafts. Errors: 409 budget_missing. */
+  getTeamPortal(projectId: number): Promise<TeamPortal>
+  /** PUT /api/projects/{id}/publication, leaders only. Errors: 403 forbidden, 409 budget_missing. */
+  setPublication(projectId: number, isPublic: boolean): Promise<Publication>
+  /** POST /api/projects/{id}/alerts/{alertId}/answer, leaders only. Errors: 404 alert_not_found, 422 validation_failed. */
+  answerAlert(projectId: number, alertId: number, answer: string): Promise<Alert>
+}
+
+/** No session: anyone with the link or the QR. */
+export interface PublicPortalGateway {
+  /** GET /api/public/projects/{slug}. Errors: 404 project_not_found (unknown or unpublished). */
+  getPortal(slug: string): Promise<Portal>
+  /** POST /api/public/projects/{slug}/ask. Errors: 404 project_not_found, 422 validation_failed, 502 agent_unavailable. */
+  ask(slug: string, question: string): Promise<CitizenAnswer>
+}
+
 export interface Gateways {
   auth: AuthGateway
   team: TeamGateway
@@ -179,4 +211,6 @@ export interface Gateways {
   board: BoardGateway
   documents: DocumentGateway
   integrations: IntegrationGateway
+  transparency: TransparencyGateway // spec 017
+  publicPortal: PublicPortalGateway // spec 017
 }

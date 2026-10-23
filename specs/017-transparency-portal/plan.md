@@ -255,7 +255,7 @@ Sync points:
 
 ## Phase 1: Setup (~10 min)
 
-- [ ] T000 Skeleton commit: every shared file and every new file with the team README's signatures (team/README.md)
+- [x] T000 Skeleton commit: every shared file and every new file with the team README's signatures (team/README.md)
 - [ ] T001 `qrcode` on the frontend; `PUBLIC_APP_URL` (backend) and `VITE_PUBLIC_APP_URL` (frontend)
 - [ ] T002 Demo files in `backend/demo/`: a seedlings invoice, a restaurant invoice, a field photo of planting
 

@@ -9,8 +9,10 @@ import { fakeIntegrationGateway } from './integrationGateway'
 import { fakePlanningGateway } from './planningGateway'
 import { fakeProjectGateway } from './projectGateway'
 import { fakeProposalGateway } from './proposalGateway'
+import { fakePublicPortalGateway } from './publicPortalGateway'
 import { FakeStore, setFakeOffline } from './store'
 import { fakeTeamGateway } from './teamGateway'
+import { fakeTransparencyGateway } from './transparencyGateway'
 
 export interface FakeBackend {
   gateways: Gateways
@@ -105,6 +107,9 @@ export function createFakeBackend({ store = new FakeStore(), storage, ...options
         proposeIssues: onProject('manage'),
         setGithubUsername: (memberId) => onMember('manage')(memberId),
       }),
+      // Spec 017: P4 adds the access checks inside its fake; the public one needs none.
+      transparency: fakeTransparencyGateway(store),
+      publicPortal: fakePublicPortalGateway(),
     },
   }
 }
