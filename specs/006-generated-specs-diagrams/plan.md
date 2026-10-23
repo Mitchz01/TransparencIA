@@ -224,11 +224,11 @@ Request headers: `Content-Type: application/json`. A leader edit isn't an agent 
 
 ### Tests for User Story 2
 
-- [ ] T015 [P] [US2] Tests: one `epic_spec:<EP-n>` proposal per epic; each agent call only receives that epic and its stories, in `backend/tests/unit/application/test_generate_documents.py`
+- [x] T015 [P] [US2] Tests: one `epic_spec:<EP-n>` proposal per epic; each agent call only receives that epic and its stories, in `backend/tests/unit/application/test_generate_documents.py`
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] Extend `GenerateDocuments` to loop over the approved roadmap's epics after `general_spec`, building the derived `epic` and `stories` context per epic
+- [x] T016 [US2] Extend `GenerateDocuments` to loop over the approved roadmap's epics after `general_spec`, building the derived `epic` and `stories` context per epic
 - [ ] T017 [US2] Group epic specs under their phase in `DocumentsPage`
 
 **Checkpoint**: User Stories 1 and 2 work independently

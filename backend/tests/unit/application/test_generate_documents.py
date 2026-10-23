@@ -74,6 +74,60 @@ def test_running_again_does_not_duplicate_proposed_documents():
     assert len(w.proposals("general_spec")) == 1
 
 
+# ---------- US2: one spec per epic ----------
+
+FIVE_EPICS = {
+    **MOCK_PLAN["roadmap"],
+    "phases": [
+        {**MOCK_PLAN["roadmap"]["phases"][0], "epics": [{"key": f"EP-{n}", "title": f"Epic {n}", "description": "x"} for n in (1, 2, 3)]},
+        {**MOCK_PLAN["roadmap"]["phases"][1], "epics": [{"key": f"EP-{n}", "title": f"Epic {n}", "description": "x"} for n in (4, 5)]},
+    ],
+}
+
+
+def test_one_epic_spec_proposal_per_epic_in_roadmap_order():
+    w = writer(plan={"roadmap": FIVE_EPICS})
+    w.run()
+
+    keys = [p.key for p in w.proposals() if p.key.startswith("epic_spec:")]
+    assert keys == [f"epic_spec:EP-{n}" for n in range(1, 6)]
+    assert w.agents.stages()[: 1 + 5] == ["general_spec"] + ["epic_spec"] * 5  # general spec first (FR-001)
+    for n in range(1, 6):
+        content = w.proposals(f"epic_spec:EP-{n}")[0].content
+        assert content["epic_key"] == f"EP-{n}" and content["title"] == f"Epic {n}"
+
+
+def test_each_epic_call_only_gets_its_epic_and_stories():
+    w = writer()
+    w.run()
+
+    context = w.agents.context("epic_spec", 1)  # the second epic: EP-2
+    assert set(context) == set(document_stage("epic_spec").inputs)
+    assert context["epic"]["key"] == "EP-2" and context["epic"]["phase"] == "Foundations"
+    expected = [s["key"] for s in MOCK_PLAN["backlog"]["stories"] if s["epic_key"] == "EP-2"]
+    assert [s["key"] for s in context["stories"]] == expected
+    markdown = w.proposals("epic_spec:EP-2")[0].content["markdown"]
+    assert all(key in markdown for key in expected)  # it names its epic's stories
+
+
+def test_an_epic_spec_for_the_wrong_epic_is_retried_with_the_issue():
+    wrong = {"epic_key": "EP-9", "title": "Setup", "markdown": "# x", "rationale": "x"}
+    w = writer(ScriptedAgents({"epic_spec": [wrong]}))
+    w.run()
+
+    retry = w.agents.context("epic_spec", 1)
+    assert retry["epic"]["key"] == "EP-1" and "EP-1" in retry["feedback"]["reason"]
+    assert w.proposals("epic_spec:EP-1")[0].content["epic_key"] == "EP-1"
+
+
+def test_a_failed_epic_spec_does_not_stop_the_others():
+    w = writer(ScriptedAgents({"epic_spec": [RuntimeError("down"), RuntimeError("down")]}))
+    w.run()
+
+    assert w.proposals("epic_spec:EP-1") == [] and len(w.proposals("epic_spec:EP-2")) == 1
+    assert w.bus.of_type("documents_generated")[0].missing == ["Spec of EP-1"]
+
+
 # ---------- Rejections follow spec 002's redo rule ----------
 
 

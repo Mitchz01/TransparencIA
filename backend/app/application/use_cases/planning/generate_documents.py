@@ -1,7 +1,8 @@
 """UC-08 · The writer proposes the project's documents once the plan is complete (spec 006).
 
 An `on_plan_completed` handler of spec 002 (after spec 003's ApplyPlan), in the background
-with its own UnitOfWork. It runs the general spec first (FR-001); each output becomes a
+with its own UnitOfWork. In order (FR-001): the general spec, one spec per roadmap epic, then
+the flow and architecture diagrams. Each output becomes a
 `document` proposal, so nothing exists as a document until it's approved (FR-002). The agent
 call, its retry and the events are spec 002's (run_agent). A document that still fails after
 its retry isn't proposed: DocumentsGenerated names it in `missing`; the project isn't put in
@@ -13,7 +14,12 @@ from typing import Any
 from app.application.ports.agents import PlanningAgents
 from app.application.ports.event_bus import EventBus
 from app.application.ports.unit_of_work import UnitOfWorkFactory
-from app.application.use_cases.planning.context import approved_outputs, build_document_context, rejection_feedback
+from app.application.use_cases.planning.context import (
+    approved_outputs,
+    build_document_context,
+    rejection_feedback,
+    roadmap_epics,
+)
 from app.application.use_cases.planning.run_planning_step import OutputCheck, StageFailed, run_agent
 from app.application.use_cases.proposals.auto_approve import AutoApprove
 from app.domain.documents import document_kind
@@ -53,12 +59,19 @@ class GenerateDocuments:
         missing: list[str] = []
 
         if "general_spec" not in taken:
-            stage = document_stage("general_spec")
-            context = build_document_context(stage, project, outputs)
-            if await self._write(project_id, "general_spec", stage, context, "the general spec"):
+            if await self._general_spec(project, outputs):
                 proposed += 1
             else:
                 missing.append("General spec")
+
+        # One spec per roadmap epic, in roadmap order (FR-005); each one is its own proposal.
+        for epic in roadmap_epics(outputs.get("roadmap")):
+            if f"epic_spec:{epic['key']}" in taken:
+                continue
+            if await self._epic_spec(project, outputs, epic):
+                proposed += 1
+            else:
+                missing.append(f"Spec of {epic['key']}")
 
         await self._bus.publish(
             DocumentsGenerated(
@@ -129,13 +142,44 @@ class GenerateDocuments:
     async def _rewrite(
         self, project: Project, outputs: dict[str, dict[str, Any]], key: str, feedback: dict[str, Any]
     ) -> bool:
-        project_id: int = project.id  # type: ignore[assignment]
         kind = document_kind(key)
         if kind == "general_spec":
-            stage = document_stage("general_spec")
-            context = build_document_context(stage, project, outputs, feedback=feedback)
-            return await self._write(project_id, key, stage, context, "the general spec")
+            return await self._general_spec(project, outputs, feedback)
+        if kind == "epic_spec":
+            epic_key = key.split(":", 1)[1]
+            epic = next((e for e in roadmap_epics(outputs.get("roadmap")) if e["key"] == epic_key), None)
+            if epic is None:  # the epic left the roadmap: there's nothing to describe
+                logger.warning("Epic %s isn't in the approved roadmap: %s isn't rewritten", epic_key, key)
+                return False
+            return await self._epic_spec(project, outputs, epic, feedback)
         return False
+
+    # ---------- Each kind of document ----------
+
+    async def _general_spec(
+        self, project: Project, outputs: dict[str, dict[str, Any]], feedback: dict[str, Any] | None = None
+    ) -> bool:
+        stage = document_stage("general_spec")
+        context = build_document_context(stage, project, outputs, feedback=feedback)
+        return await self._write(project.id, "general_spec", stage, context, "the general spec")  # type: ignore[arg-type]
+
+    async def _epic_spec(
+        self,
+        project: Project,
+        outputs: dict[str, dict[str, Any]],
+        epic: dict[str, Any],
+        feedback: dict[str, Any] | None = None,
+    ) -> bool:
+        stage = document_stage("epic_spec")
+        context = build_document_context(stage, project, outputs, epic=epic, feedback=feedback)
+
+        def check(output: dict[str, Any], _: dict[str, Any]) -> list[str]:
+            if output["epic_key"] != epic["key"]:
+                return [f"This spec is for epic {epic['key']}: epic_key must be '{epic['key']}', not '{output['epic_key']}'."]
+            return []
+
+        label = f"the spec of {epic['key']} {epic['title']}"
+        return await self._write(project.id, f"epic_spec:{epic['key']}", stage, context, label, check)  # type: ignore[arg-type]
 
     def _load(self, project_id: int) -> tuple[Project, dict[str, dict[str, Any]], set[str]]:
         """The project, its approved stage finals, and the document keys already proposed and
