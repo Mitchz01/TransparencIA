@@ -12,12 +12,14 @@ Each person **owns an area end to end** (spec → plan → code) and **reviews**
 | [006](006-generated-specs-diagrams/spec.md) | Generated specs and diagrams | UC-08 | Mitchz01 | sandredev | 2 |
 | [007](007-github-integration/spec.md) | GitHub integration | UC-09, UC-10, UC-11 | codigotpx | Mitchz01 | 3 |
 | [008](008-github-sync-replanning/spec.md) | GitHub sync and replanning | UC-12, UC-13 | Mitchz01 | sandredev | 3 |
+| [009](009-frontend/spec.md) | Frontend: every screen | UI of UC-01 to UC-14 | Mitchz01 | codigotpx | 1–3, story by story |
 
 ## Areas
 
 - **sandredev: Set up and decide.** The leader sets up the project, approves or rejects what the agents propose and follows the live activity. Also the read-only plan views.
 - **Mitchz01: Agents.** Everything that runs on Gemini/ADK: the plan stages, generated specs and diagrams, replanning.
 - **codigotpx: Work and integrate.** The board where work moves and the GitHub connection (issues, code review).
+- **Frontend (spec 009).** Specs 001 to 008 own the behavior and the API; spec 009 owns every screen, built on [frontend/docs/api-contract.md](../frontend/docs/api-contract.md) and the [design system](../frontend/design-system/README.md). Its stories follow the same rounds: P1 stories with round 1, and so on.
 
 ## Order
 
@@ -35,3 +37,4 @@ Where one spec depends on another, both owners agree on this **before** approvin
 | 005 → 003 | What gets created on the board when the plan is approved (`PlanApplied`) | sandredev, codigotpx |
 | 007 → 008 | Which GitHub events arrive by webhook and how they move tasks | codigotpx, Mitchz01 |
 | 003, 005 | Events shown in the live activity feed | codigotpx, sandredev |
+| 001–008 → 009 | Any endpoint or field a screen needs goes into the owner's plan and `api-contract.md` first | each owner, Mitchz01 |
