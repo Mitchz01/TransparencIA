@@ -1,7 +1,8 @@
 # Implementation Plan: [FEATURE]
 
-**Date**: [DATE] 
-**Spec**: [link]
+**Date**: [DATE]  
+**Spec**: [link]  
+**Status**: Draft | Approved
 
 ## Summary
 

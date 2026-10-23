@@ -1,26 +1,238 @@
-# Plan: Alta de proyecto y equipo
+# Implementation Plan: 001 · Project and team setup
 
-- **Spec**: [spec.md](spec.md)
-- **Estado**: Borrador | Aprobado
+**Date**: 2026-10-23  
+**Spec**: [spec.md](spec.md)  
+**Status**: Draft
 
-## Enfoque
-Resumen técnico en 3-5 líneas.
+## Summary
 
-## Backend
-- Dominio (`domain/`): entidades, reglas, eventos:
-- Puertos nuevos o cambiados (`application/ports/`):
-- Casos de uso (`application/use_cases/`):
-- Adaptadores de entrada (endpoints, webhooks):
-- Adaptadores de salida (tablas, agentes / etapas, GitHub):
+Create, read and edit a project with its team, with all-or-nothing validation, and report team changes. Backend: `CreateProject`, `GetProject`, `ListProjects` and `UpdateProject` use cases behind `/api/projects`, with the validation rules in the domain and a `TeamChanged` event that other specs subscribe to through a handler hook. Frontend: the app shell (Tailwind, router, gateway container), plus the new-project form, the project list and the project settings page. Because this is the first screen of the demo, this plan also sets up the frontend foundations every other spec reuses.
 
-## Frontend
-- Tipos de dominio (`src/domain`):
-- Gateways / hooks (`src/application`, `src/adapters`):
-- Páginas y componentes (`src/ui`):
+## Technical Context
 
-## Decisiones y alternativas
-| Decisión | Alternativa descartada | Por qué |
-|---|---|---|
+**Language/Version**: Python 3.13 (backend), TypeScript 6 + React 19 (frontend)  
+**Primary Dependencies**: FastAPI, Pydantic, SQLModel; Vite 8, React Router 7, Tailwind 4 (`@tailwindcss/vite`)  
+**Storage**: SQLite through the existing persistence adapter (`project` and `member` tables)  
+**Testing**: pytest (unit with an in-memory UnitOfWork, integration with TestClient on in-memory SQLite); `tsc -b` for the frontend  
+**Target Platform**: local dev server, Cloud Run as the deployment target  
+**Project Type**: web (backend + frontend)  
+**Performance Goals**: create, read and edit respond in < 1 s (SC-001)  
+**Constraints**: hexagonal dependency rule (`tests/architecture/test_layers.py`); works without a Gemini key (FR-011)  
+**Scale/Scope**: a handful of projects with 1–15 members each; 3 screens
 
-## Riesgos
--
+## Project Structure
+
+### Documentation (this feature)
+
+```text
+specs/001-project-team-setup/
+├── plan.md              # This file
+└── spec.md              # Feature spec
+```
+
+### Source Code (repository root)
+
+```text
+backend/app/
+├── domain/
+│   ├── project.py                       # + normalization, validate_project(), diff_team()
+│   ├── errors.py                        # + ValidationFailed, MethodologyLocked
+│   └── events.py                        # + TeamChanged, MemberChange
+├── application/
+│   ├── dto.py                           # + ProjectUpdate, MemberUpsert, ProjectSummary
+│   └── use_cases/projects/
+│       ├── create_project.py
+│       ├── get_project.py
+│       ├── list_projects.py
+│       └── update_project.py            # TeamChanged + on_team_changed handlers
+└── adapters/
+    ├── inbound/http/
+    │   ├── projects.py                  # /api/projects
+    │   ├── dependencies.py              # + project use case providers
+    │   └── errors.py                    # + 422 / 409 mapping
+    └── outbound/persistence/
+        └── repositories.py              # SqlProjectRepository.save syncs members
+
+backend/tests/
+├── fakes.py                             # InMemoryUnitOfWork, RecordingEventBus (shared by all specs)
+├── unit/domain/test_project_rules.py
+├── unit/application/test_create_project.py
+├── unit/application/test_update_project.py
+└── integration/adapters/test_projects_api.py
+
+frontend/src/
+├── app/
+│   ├── App.tsx                          # layout + <Outlet/>
+│   ├── routes.tsx                       # "/", "/projects/new", "/projects/:id/settings"
+│   └── container.tsx                    # GatewaysProvider: http or fake (VITE_USE_FAKE)
+├── domain/project.ts                    # + ProjectCreate, ProjectUpdate, rules
+├── application/
+│   ├── ports.ts                         # + ProjectGateway
+│   └── use-cases/useProjects.ts, useProject.ts, useSaveProject.ts
+├── adapters/
+│   ├── http/client.ts, projectGateway.ts
+│   └── fake/projectGateway.ts
+└── ui/
+    ├── pages/ProjectsPage.tsx, NewProjectPage.tsx, ProjectSettingsPage.tsx
+    └── components/project/ProjectForm.tsx, MemberFields.tsx
+```
+
+**Structure Decision**: web application on the existing hexagonal layout. Backend code goes into `domain/`, `application/use_cases/projects/` and the HTTP and persistence adapters; frontend code follows `ui → application → domain`, with `app/container.tsx` as the only importer of `adapters/`.
+
+## Phase 1: Setup (Shared Infrastructure)
+
+**Purpose**: frontend shell that every screen of every spec reuses
+
+- [ ] T001 Install Tailwind (`npm i -D tailwindcss @tailwindcss/vite`), add `tailwindcss()` to `frontend/vite.config.ts` and `@import "tailwindcss"` to `frontend/src/ui/styles/index.css`
+- [ ] T002 Replace the Vite template in `frontend/src/app/App.tsx` with a layout (header + `<Outlet/>`) and remove `App.css` and the template assets
+- [ ] T003 [P] Create `frontend/src/app/routes.tsx` with React Router and mount it from `frontend/src/main.tsx`
+- [ ] T004 [P] Create `frontend/src/adapters/http/client.ts`: `fetch` wrapper with JSON, base path `/api` and a typed `ApiError` (status + `detail`, field for 422)
+- [ ] T005 Create `frontend/src/app/container.tsx`: `GatewaysProvider` + `useGateways()`, choosing http or fake gateways with `VITE_USE_FAKE`
+
+---
+
+## Phase 2: Foundational (Blocking Prerequisites)
+
+**Purpose**: domain rules, errors and test fakes the stories build on
+
+**⚠️ CRITICAL**: no user story work can begin until this phase is complete
+
+- [ ] T006 Add `ValidationFailed(field, message)` and `MethodologyLocked` to `backend/app/domain/errors.py`; map them to 422 and 409 in `backend/app/adapters/inbound/http/errors.py` (422 body: `{"detail", "field"}`)
+- [ ] T007 Add to `backend/app/domain/project.py`: `normalize_name()` (trim + collapse spaces), skill dedup, and `validate_project(project)` covering FR-004 (required fields, ≥ 1 member, unique names case-insensitive, duration 1–52, hours 1–60)
+- [ ] T008 [P] Add `ProjectUpdate` (all fields optional, `members: list[MemberUpsert] | None`) and `ProjectSummary` to `backend/app/application/dto.py`; `MemberUpsert` carries an optional `id` so existing members are edited, not recreated
+- [ ] T009 [P] Create `backend/tests/fakes.py` with `InMemoryUnitOfWork` (dict-backed repos for every port in `application/ports/repositories.py`) and `RecordingEventBus`
+- [ ] T010 Make `SqlProjectRepository.save` in `backend/app/adapters/outbound/persistence/repositories.py` sync the team: update members with an id, insert new ones, delete missing ones
+
+**Checkpoint**: foundation ready — user story implementation can now begin
+
+---
+
+## Phase 3: User Story 1 - Create a project with its team (Priority: P1) 🎯 MVP
+
+**Goal**: the leader creates a project in draft with its team from the form
+
+**Independent Test**: POST a project with two members; the response has an id, `draft` status and both members; a later GET returns the same data
+
+### Tests for User Story 1
+
+- [ ] T011 [P] [US1] Unit tests for `validate_project` (every FR-004 case, normalization, defaults) in `backend/tests/unit/domain/test_project_rules.py`
+- [ ] T012 [P] [US1] Use case tests (draft status, nothing saved on invalid input, planning not started) in `backend/tests/unit/application/test_create_project.py`
+- [ ] T013 [P] [US1] API test for `POST /api/projects` (201, 422 with `field`) in `backend/tests/integration/adapters/test_projects_api.py`
+
+### Implementation for User Story 1
+
+- [ ] T014 [US1] Implement `CreateProject` in `backend/app/application/use_cases/projects/create_project.py` (normalize, validate, `projects.add`, commit; status always `draft`)
+- [ ] T015 [US1] Create `backend/app/adapters/inbound/http/projects.py` with `POST /api/projects` (201), add its provider to `dependencies.py` and include the router in `backend/app/main.py`
+- [ ] T016 [P] [US1] Add `ProjectCreate` and client-side validation mirroring FR-004 to `frontend/src/domain/project.ts`
+- [ ] T017 [P] [US1] Add `ProjectGateway` to `frontend/src/application/ports.ts`; implement it in `frontend/src/adapters/http/projectGateway.ts` and `frontend/src/adapters/fake/projectGateway.ts`
+- [ ] T018 [US1] Create `ProjectForm` and `MemberFields` (add/remove rows, role, seniority, hours, skills) in `frontend/src/ui/components/project/`
+- [ ] T019 [US1] Create `NewProjectPage` with `useSaveProject` (`frontend/src/application/use-cases/useSaveProject.ts`), showing the 422 field errors inline; route `/projects/new`
+
+**Checkpoint**: a project can be created from the UI and through the API
+
+---
+
+## Phase 4: User Story 2 - Read a project (Priority: P1)
+
+**Goal**: get a project with its team by id, and list projects
+
+**Independent Test**: create a project, GET it by id and compare; GET an unknown id returns 404
+
+### Tests for User Story 2
+
+- [ ] T020 [P] [US2] API tests for `GET /api/projects` and `GET /api/projects/{id}` (200, 404) in `backend/tests/integration/adapters/test_projects_api.py`
+
+### Implementation for User Story 2
+
+- [ ] T021 [US2] Implement `GetProject` (raises `ProjectNotFound`) and `ListProjects` (returns `ProjectSummary`) in `backend/app/application/use_cases/projects/`
+- [ ] T022 [US2] Add `GET /api/projects` and `GET /api/projects/{id}` to `backend/app/adapters/inbound/http/projects.py`
+- [ ] T023 [US2] Create `ProjectsPage` (list + "New project") with `useProjects` and `useProject` hooks; route `/`
+
+**Checkpoint**: User Stories 1 and 2 work independently
+
+---
+
+## Phase 5: User Story 3 - Edit the project and the team (Priority: P2)
+
+**Goal**: partial, all-or-nothing edits of project and team data
+
+**Independent Test**: add a third member and change someone's hours; GET shows three members, the new hours and everything else unchanged
+
+### Tests for User Story 3
+
+- [ ] T024 [P] [US3] Use case tests (partial change, add/edit/remove members, empty team rejected, methodology locked once planning started, 404) in `backend/tests/unit/application/test_update_project.py`
+- [ ] T025 [P] [US3] Persistence test for member sync (insert, update, delete in one save) in `backend/tests/integration/adapters/test_persistence.py`
+
+### Implementation for User Story 3
+
+- [ ] T026 [US3] Implement `UpdateProject` in `backend/app/application/use_cases/projects/update_project.py`: apply only the given fields, validate the result, raise `MethodologyLocked` if the methodology changes and `status != "draft"`, save and commit
+- [ ] T027 [US3] Add `PATCH /api/projects/{id}` to `backend/app/adapters/inbound/http/projects.py`
+- [ ] T028 [US3] Create `ProjectSettingsPage` reusing `ProjectForm` in edit mode (methodology disabled when not in draft); route `/projects/:id/settings`
+
+**Checkpoint**: User Stories 1–3 work independently
+
+---
+
+## Phase 6: User Story 4 - Report that the team changed (Priority: P3)
+
+**Goal**: a single `TeamChanged` event per edit that touches the team
+
+**Independent Test**: add one member and remove another in the same edit; exactly one `TeamChanged` with both changes is published; renaming the project publishes nothing
+
+### Tests for User Story 4
+
+- [ ] T029 [P] [US4] Unit tests for `diff_team` (joined, left, changed fields; no diff when only project fields change) in `backend/tests/unit/domain/test_project_rules.py`
+- [ ] T030 [P] [US4] Use case tests: one event per edit, none for invalid edits, handlers called with the event, in `backend/tests/unit/application/test_update_project.py`
+
+### Implementation for User Story 4
+
+- [ ] T031 [US4] Add `TeamChanged(joined, left, changed: list[MemberChange])` to `backend/app/domain/events.py` and `diff_team(old, new)` to `backend/app/domain/project.py`
+- [ ] T032 [US4] Publish `TeamChanged` from `UpdateProject` after commit and call its `on_team_changed` handlers (constructor argument, empty by default); spec 008 registers its drift handler there
+
+**Checkpoint**: all user stories work independently
+
+---
+
+## Phase 7: Polish & Cross-Cutting Concerns
+
+- [ ] T033 [P] Mirror the new types (`ProjectUpdate`, `TeamChanged`) in `frontend/src/domain/project.ts` and `frontend/src/domain/events.ts`
+- [ ] T034 [P] Run the `web-design-guidelines` audit on the new pages and fix the findings (labels, focus, error messages)
+- [ ] T035 Update the TODO list in `README.md`
+
+---
+
+## Dependencies & Execution Order
+
+### Phase Dependencies
+
+- **Setup (Phase 1)**: no dependencies; frontend-only, can run in parallel with Phase 2
+- **Foundational (Phase 2)**: blocks all user stories
+- **User Stories (Phase 3+)**: US1 and US2 can go in parallel after Phase 2; US3 needs US2's `GetProject`; US4 needs US3's `UpdateProject`
+- **Polish**: after the desired stories
+
+### User Story Dependencies
+
+- **US1 (P1)**: after Foundational; no dependencies on other stories
+- **US2 (P1)**: after Foundational; independent from US1 (tests create data through the repository)
+- **US3 (P2)**: uses `GetProject` from US2
+- **US4 (P3)**: extends `UpdateProject` from US3
+
+### Cross-spec dependencies
+
+- **001 → 002**: `StartPlanning` (spec 002) reads the project; 002's agent context excludes ids, status and auto-approve (already done in `_project_context`).
+- **001 → 008**: `UpdateProject(on_team_changed=[...])` is the hook spec 008 uses to propose a replan.
+- **003, 005, 007**: reuse the frontend shell (Phase 1), `backend/tests/fakes.py` and the 422/409 error mapping.
+- **007**: adds `github_username` to `Member`; this plan doesn't touch it.
+
+### Within Each User Story
+
+- Domain rules before use cases
+- Use cases before endpoints
+- Backend endpoint before the page that calls it
+
+## Notes
+
+- [Story] labels map tasks to user stories for traceability
+- Each user story is independently completable and testable
+- Commit after each task or logical group, and check the box here
+- Avoid: vague tasks, editing the same file from two parallel tasks, cross-story dependencies that break independence
