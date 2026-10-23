@@ -3,7 +3,7 @@
 // Endpoints, status codes and errors: frontend/docs/api-contract.md.
 // Every method rejects with an ApiError (application/errors.ts) on failure.
 
-import type { BoardView, CapacityResult, ChecklistItem, CloseSprintResult, NewTask, TaskPatch, TaskResult } from '../domain/board'
+import type { BoardView, CapacityResult, ChecklistItem, CloseSprintResult, TaskPatch, TaskResult } from '../domain/board'
 import type { DocumentSummary, ProjectDocument } from '../domain/documents'
 import type { DomainEvent } from '../domain/events'
 import type { ConnectRequest, Connection, GithubUsernameResult } from '../domain/integrations'
@@ -95,8 +95,6 @@ export interface BoardGateway {
   getBoard(projectId: number): Promise<BoardView>
   /** PATCH /api/tasks/{id}. Warnings never block. Errors: 404 task_not_found, 409 sprint_closed, 422. */
   updateTask(taskId: number, patch: TaskPatch): Promise<TaskResult>
-  /** POST /api/projects/{id}/tasks (spec 014), at the end of its column with the next US-N key. Errors: 404 project_not_found, 409 sprint_closed, 422. */
-  createTask(projectId: number, task: NewTask): Promise<TaskResult>
   /** PUT /api/tasks/{id}/checklist, max 50 items of 1–300 chars. Errors: 404 task_not_found, 422 (paths "items[2].text"). */
   setChecklist(taskId: number, items: ChecklistItem[]): Promise<TaskResult>
   /** PUT /api/projects/{id}/capacity, 1–500 or null for the estimate. Errors: 404, 409 capacity_not_applicable, 422. */

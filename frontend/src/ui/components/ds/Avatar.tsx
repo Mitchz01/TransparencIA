@@ -8,7 +8,7 @@ export const initials = (name: string) =>
     .map((part) => part[0]?.toUpperCase())
     .join('')
 
-/** Initials on `surface-strong`. The name is always written next to it (visible or for screen readers only), so the initials stay hidden from them. */
+/** Initials on `surface-strong`. The name is always written next to it, so it stays hidden from screen readers. */
 export function Avatar({ name, className }: { name: string; className?: string }) {
   return (
     <span

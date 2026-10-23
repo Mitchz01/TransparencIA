@@ -145,17 +145,6 @@ class TaskUpdated(DomainEvent):
     fields: list[str]
 
 
-class TaskCreated(DomainEvent):
-    """A person added a task to the board (spec 014)."""
-
-    type: Literal["task_created"] = "task_created"
-    actor: Actor = "person"
-    task_id: int
-    key: str
-    status: str
-    sprint_id: int | None = None
-
-
 class PlanApplied(DomainEvent):
     """The approved plan became a board (contract 005 → 003)."""
 

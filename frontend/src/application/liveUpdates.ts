@@ -32,7 +32,6 @@ export function keysForEvent(event: DomainEvent): QueryKey[] | null {
     case 'plan_applied':
     case 'replan_applied':
       return [queryKeys.board(id), queryKeys.planViews(id), queryKeys.project(id)]
-    case 'task_created':
     case 'task_status_changed':
     case 'task_updated':
     case 'objective_closed':

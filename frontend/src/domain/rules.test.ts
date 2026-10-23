@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import type { Task } from './board'
 import type { ProjectCreate } from './project'
 import {
-  MEMBER_DEFAULTS, PROJECT_DEFAULTS, activeFilterCount, checklistProgress, columnTasks, defaultSprint, fieldsFromFilters, filterTasks,
-  memberCapacity, moveTask, nextTaskKey, sprintLoad, suggestsAdvance, teamCapacity, validateProject, wipWarnings,
+  MEMBER_DEFAULTS, PROJECT_DEFAULTS, checklistProgress, columnTasks, defaultSprint, filterTasks, memberCapacity, moveTask,
+  sprintLoad, suggestsAdvance, teamCapacity, validateProject, wipWarnings,
 } from './rules'
 
 const valid: ProjectCreate = {
@@ -157,19 +157,5 @@ describe('defaultSprint', () => {
     const sprints = [1, 2, 3].map((n) => ({ id: n * 10, number: n, name: `Sprint ${n}`, goal: '', phase: '', load: null, closed: false, end_date: null }))
     expect(defaultSprint(sprints, [task({ sprint_id: 10, status: 'done' }), task({ sprint_id: 20 })])?.number).toBe(2)
     expect(defaultSprint(sprints, [])?.number).toBe(3)
-  })
-})
-
-describe('new tasks (spec 014)', () => {
-  it('take the key after the highest US-N, ignoring other shapes', () => {
-    expect(nextTaskKey([{ key: 'US-1' }, { key: 'US-12' }, { key: 'BUG-40' }])).toBe('US-13')
-    expect(nextTaskKey([{ key: 'BUG-3' }])).toBe('US-1')
-  })
-
-  it('take the active filters, never "Sin asignar"', () => {
-    expect(fieldsFromFilters({ assignee: 3, priority: 'high', epic: 'EP-1' })).toEqual({ assignee_id: 3, priority: 'high', epic_key: 'EP-1' })
-    expect(fieldsFromFilters({ assignee: 'none' })).toEqual({})
-    expect(activeFilterCount({ assignee: 'none', priority: 'low' })).toBe(2)
-    expect(activeFilterCount({})).toBe(0)
   })
 })

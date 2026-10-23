@@ -106,19 +106,6 @@ export interface TaskPatch {
   assignee_id?: number | null // assigning clears missing_role
 }
 
-/** POST /api/projects/{id}/tasks (spec 014): only the title is required; the task gets the next "US-N" key
- *  and goes to the end of its column. */
-export interface NewTask {
-  title: string // 1–200 chars
-  sprint_id?: number | null // null or missing = backlog (or the whole board when continuous)
-  status?: TaskStatus // missing = "todo" in a sprint or on a continuous board, "backlog" otherwise
-  description?: string
-  points?: number // integer 0–100, default 1
-  priority?: Priority // default "medium"
-  assignee_id?: number | null
-  epic_key?: string // up to 20 chars
-}
-
 export interface CapacityResult {
   capacity_override: number | null
   sprints: { id: number; load: SprintLoad | null }[]
@@ -136,5 +123,4 @@ export const TASK_LIMITS = {
   checklistItems: 50,
   checklistText: 300,
   capacity: [1, 500],
-  epicKey: 20, // spec 014
 } as const

@@ -1,5 +1,4 @@
-"""Spec 003's API Contract: GET /board, PATCH /tasks/{id}, PUT /tasks/{id}/checklist, PUT /capacity;
-spec 014's POST /projects/{id}/tasks."""
+"""Spec 003's API Contract: GET /board, PATCH /tasks/{id}, PUT /tasks/{id}/checklist, PUT /capacity."""
 
 import asyncio
 
@@ -197,47 +196,6 @@ def test_patch_validation_saves_nothing(client):
     _assert_validation(_patch(client, task["id"], {"status": "done", "title": ""}), "title")
 
     assert _task(client.get(f"/api/projects/{pid}/board").json(), "US-1") == task
-
-
-# ---------- POST /api/projects/{id}/tasks (spec 014) ----------
-
-
-def test_create_task_at_the_end_of_its_column(client):
-    pid, board = _with_board(client)
-    sprint = board["sprints"][0]
-    todo = [t for t in board["tasks"] if t["sprint_id"] == sprint["id"] and t["status"] == "todo"]
-    highest = max(int(t["key"].removeprefix("US-")) for t in board["tasks"])
-
-    response = client.post(f"/api/projects/{pid}/tasks", json={"title": "Fix checkout copy", "sprint_id": sprint["id"], "priority": "high"})
-
-    assert response.status_code == 201, response.json()
-    body = response.json()
-    task = body["task"]
-    assert response.headers["Location"] == f"/api/tasks/{task['id']}"
-    assert (task["key"], task["title"], task["status"], task["position"], task["priority"], task["points"]) == (
-        f"US-{highest + 1}", "Fix checkout copy", "todo", len(todo), "high", 1,
-    )
-    assert body["suggest_advance"] is False
-    assert _task(client.get(f"/api/projects/{pid}/board").json(), task["key"])["id"] == task["id"]
-    event = client.get(f"/api/projects/{pid}/activity").json()[0]
-    assert (event["type"], event["task_id"], event["key"], event["summary"]) == ("task_created", task["id"], task["key"], f"{task['key']} created")
-
-
-def test_create_task_errors(client):
-    pid, board = _with_board(client)
-    url = f"/api/projects/{pid}/tasks"
-    _assert_validation(client.post(url, json={}), "title")
-    _assert_validation(client.post(url, json={"title": "x" * 201}), "title")
-    _assert_validation(client.post(url, json={"title": "Ok", "status": "blocked"}), "status")
-    _assert_validation(client.post(url, json={"title": "Ok", "points": 101, "sprint_id": 99999}), "points", "sprint_id")
-    _assert_validation(client.post(url, json={"title": "Ok", "epic_key": "E" * 21}), "epic_key")
-    _assert_not_json(client, "POST", url)
-    _assert_error(client.post("/api/projects/99999/tasks", json={"title": "Ok"}), 404, "project_not_found")
-    assert len(client.get(f"/api/projects/{pid}/board").json()["tasks"]) == len(board["tasks"])
-
-    sprint = board["sprints"][0]
-    assert client.post(f"/api/sprints/{sprint['id']}/close").status_code == 200
-    _assert_error(client.post(url, json={"title": "Late", "sprint_id": sprint["id"]}), 409, "sprint_closed")
 
 
 # ---------- PATCH /api/tasks/{id}: edit ----------

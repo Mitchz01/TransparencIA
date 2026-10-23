@@ -4,7 +4,7 @@ import asyncio
 
 from app.application.use_cases.board.evaluate_objectives import EvaluateObjectives
 from app.domain.board import Objective, Task, objectives_to_close
-from app.domain.events import TaskCreated, TaskStatusChanged, TaskUpdated
+from app.domain.events import TaskStatusChanged, TaskUpdated
 from tests.fakes import InMemoryUnitOfWork, RecordingEventBus, project
 
 run = asyncio.run
@@ -105,18 +105,3 @@ def test_edits_that_dont_move_the_task_are_ignored():
     edited = TaskUpdated(project_id=pid, task_id=third.id, fields=["title"])
     run(EvaluateObjectives(uow.factory(), bus).on_task_changed(third, edited))
     assert bus.events == []
-
-
-def test_a_new_task_reopens_a_met_objective():
-    # Spec 014: the sprint has work again
-    uow, pid, objective, tasks = _setup()
-    bus = RecordingEventBus()
-    use_case = EvaluateObjectives(uow.factory(), bus)
-    run(use_case.on_task_changed(_set_status(uow, tasks[2], "done"), _moved(tasks[2])))
-
-    with uow:
-        new = uow.tasks.add(Task(project_id=pid, sprint_id=7, key="US-4", title="New", status="todo"))
-        uow.commit()
-    run(use_case.on_task_changed(new, TaskCreated(project_id=pid, task_id=new.id, key=new.key, status=new.status, sprint_id=7)))
-
-    assert [e.type for e in bus.events] == ["objective_closed", "objective_reopened"]

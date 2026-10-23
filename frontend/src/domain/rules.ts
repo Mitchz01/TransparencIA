@@ -1,6 +1,6 @@
 // Pure rules the screens share with the service, mirrored so the UI reacts before the server answers.
 
-import type { BoardWarning, ChecklistItem, NewTask, Priority, Sprint, SprintLoad, Task, TaskStatus, WipLimit } from './board'
+import type { BoardWarning, ChecklistItem, Priority, Sprint, SprintLoad, Task, TaskStatus, WipLimit } from './board'
 import {
   LIMITS, REQUESTED_METHODOLOGIES, SENIORITIES, validateMembers, validateProjectCreate,
   type Member, type ProjectCreate, type ProjectUpdate, type Seniority,
@@ -92,12 +92,6 @@ export function wipWarnings(tasks: Task[], limits: WipLimit[], sprintId: number 
 
 export const wipLimitOf = (limits: WipLimit[], status: TaskStatus) => limits.find((l) => l.column === status)?.limit ?? null
 
-/** "US-" plus one more than the highest "US-N" key; other key shapes are ignored (spec 014, as the service does). */
-export function nextTaskKey(tasks: Pick<Task, 'key'>[]): string {
-  const numbers = tasks.map((t) => /^US-(\d+)$/.exec(t.key)?.[1]).filter((n): n is string => n !== undefined).map(Number)
-  return `US-${Math.max(0, ...numbers) + 1}`
-}
-
 // ---------- Checklist (spec 003) ----------
 
 export function checklistProgress(items: ChecklistItem[]) {
@@ -132,16 +126,4 @@ export function filterTasks(tasks: Task[], filters: TaskFilters): Task[] {
       (filters.priority === undefined || t.priority === filters.priority) &&
       (filters.epic === undefined || t.epic_key === filters.epic),
   )
-}
-
-export const activeFilterCount = (filters: TaskFilters) =>
-  [filters.assignee, filters.priority, filters.epic].filter((value) => value !== undefined).length
-
-/** What a task added on a filtered board takes from the filters, so it doesn't vanish from it (spec 014, FR-003). */
-export function fieldsFromFilters(filters: TaskFilters): Pick<NewTask, 'assignee_id' | 'priority' | 'epic_key'> {
-  return {
-    ...(typeof filters.assignee === 'number' && { assignee_id: filters.assignee }),
-    ...(filters.priority && { priority: filters.priority }),
-    ...(filters.epic && { epic_key: filters.epic }),
-  }
 }

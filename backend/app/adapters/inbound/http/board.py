@@ -1,7 +1,6 @@
-"""/api/projects/{id}/board and /api/tasks/{id} (spec 003, UC-06); /api/sprints/{id}/close (spec 008);
-POST /api/projects/{id}/tasks (spec 014)."""
+"""/api/projects/{id}/board and /api/tasks/{id} (spec 003, UC-06); /api/sprints/{id}/close (spec 008)."""
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends
 
 from app.adapters.inbound.http import dependencies as deps
 from app.application.dto import (
@@ -10,13 +9,11 @@ from app.application.dto import (
     CapacityUpdate,
     ChecklistUpdate,
     SprintCloseResult,
-    TaskCreate,
     TaskMove,
     TaskResult,
     TaskUpdate,
 )
 from app.application.use_cases.board.close_sprint import CloseSprint
-from app.application.use_cases.board.create_task import CreateTask
 from app.application.use_cases.board.get_board import GetBoard
 from app.application.use_cases.board.move_task import MoveTask
 from app.application.use_cases.board.set_capacity import SetCapacity
@@ -36,16 +33,6 @@ def set_capacity(
     project_id: int, body: CapacityUpdate, use_case: SetCapacity = Depends(deps.get_set_capacity)
 ) -> CapacityResult:
     return use_case.execute(project_id, body.points_per_sprint)
-
-
-@router.post("/projects/{project_id}/tasks", response_model=TaskResult, status_code=status.HTTP_201_CREATED)
-async def create_task(
-    project_id: int, body: TaskCreate, response: Response, use_case: CreateTask = Depends(deps.get_create_task)
-) -> TaskResult:
-    """Spec 014: at the end of its column, with the next US-N key. Warnings never block."""
-    result = await use_case.execute(project_id, body)
-    response.headers["Location"] = f"/api/tasks/{result.task.id}"
-    return result
 
 
 @router.patch("/tasks/{task_id}", response_model=TaskResult)

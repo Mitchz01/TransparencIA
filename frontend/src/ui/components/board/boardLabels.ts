@@ -1,5 +1,5 @@
 import type { Priority, TaskStatus, TaskType } from '../../../domain/board'
-import type { ColumnHue, Hue } from '../ds'
+import type { Hue } from '../ds'
 
 export const STATUS_LABELS: Record<TaskStatus, string> = {
   backlog: 'Backlog',
@@ -9,15 +9,6 @@ export const STATUS_LABELS: Record<TaskStatus, string> = {
   done: 'Hecho',
 }
 
-/** Each column's hue (spec 014): neutral until work starts, then blue, amber for review, teal when done. */
-export const STATUS_HUE: Record<TaskStatus, ColumnHue> = {
-  backlog: 'neutral',
-  todo: 'neutral',
-  in_progress: 'blue',
-  review: 'amber',
-  done: 'teal',
-}
-
 export const PRIORITY_LOOK: Record<Priority, { label: string; hue: Hue }> = {
   high: { label: 'Alta', hue: 'coral' },
   medium: { label: 'Media', hue: 'amber' },
@@ -25,3 +16,5 @@ export const PRIORITY_LOOK: Record<Priority, { label: string; hue: Hue }> = {
 }
 
 export const TYPE_LABELS: Record<TaskType, string> = { feature: 'Funcionalidad', bug: 'Error', chore: 'Tarea técnica', spike: 'Investigación' }
+
+export const firstName = (name: string) => name.split(/\s+/)[0]

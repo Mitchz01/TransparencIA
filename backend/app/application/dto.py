@@ -176,21 +176,6 @@ class TaskUpdate(_SentFields):
         return TaskEdit(**sent) if sent else None
 
 
-class TaskCreate(_SentFields):
-    """POST /api/projects/{id}/tasks (spec 014). Only `title` is required (checked by the domain,
-    so its error reads like the edit ones); unsent fields take the `Task` defaults.
-    `sprint_id: null` = the backlog, or the whole board when it's continuous."""
-
-    title: str | None = None
-    sprint_id: int | None = None
-    status: TaskStatus | None = None
-    description: str | None = None
-    points: int | None = None
-    priority: Priority | None = None
-    assignee_id: int | None = None
-    epic_key: str | None = None
-
-
 class ChecklistUpdate(BaseModel):
     items: list[ChecklistItem]
 

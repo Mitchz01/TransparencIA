@@ -13,10 +13,6 @@ Each person **owns an area end to end** (spec → plan → code) and **reviews**
 | [007](007-github-integration/spec.md) | GitHub integration | UC-09, UC-10, UC-11 | codigotpx | Mitchz01 | 3 |
 | [008](008-github-sync-replanning/spec.md) | GitHub sync and replanning | UC-12, UC-13 | Mitchz01 | sandredev | 3 |
 | [009](009-frontend/spec.md) | Frontend: every screen | UI of UC-01 to UC-14 | Mitchz01 | codigotpx | 1–3, story by story |
-| [011](011-task-panel/spec.md) | Compact task panel | UI of UC-08 to UC-10 | Mitchz01 | codigotpx | 4 |
-| [012](012-visual-plan-views/spec.md) | Visual plan views | UI of UC-07 | Mitchz01 | codigotpx | 4 |
-| [013](013-board-density/spec.md) | A board you read at a glance | UI of UC-05, UC-06 | Mitchz01 | codigotpx | 4 |
-| [014](014-board-views-quick-add/spec.md) | Board views, filters and quick add | UC-05, UC-06 | Mitchz01 | codigotpx | 4 |
 
 ## Areas
 

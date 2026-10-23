@@ -1,6 +1,5 @@
 import { screen, within } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { createFakeBackend, FakeStore } from '../../adapters/fake'
 import { buildPlanViews } from '../../adapters/fake/planViews'
 import { renderApp } from '../../test/renderApp'
@@ -43,55 +42,5 @@ describe('fake plan views', () => {
     expect(views.roadmap.content).toMatchObject({ current_week: 3, current_phase: 'MVP', overdue: false })
     expect(views.roadmap.content!.progress.points_done).toBe(2)
     expect(views.roadmap.content!.phases[0].epics[0].has_tasks).toBe(true)
-  })
-})
-
-describe('Visual plan views (spec 012)', () => {
-  afterEach(() => vi.useRealTimers())
-
-  it('draws the roadmap as bars over the weeks, with today and the milestones', async () => {
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date('2026-10-26T12:00:00Z')) // week 3: the sprints were approved on Oct 9
-    renderApp('/projects/2/plan?view=roadmap')
-
-    expect(await screen.findByRole('progressbar', { name: /^Bases, semanas 1 a 2, / })).toBeInTheDocument()
-    expect(screen.getByRole('progressbar', { name: /^MVP, semanas 3 a 4, / })).toBeInTheDocument()
-    expect(screen.getByRole('progressbar', { name: /^EP-1 Puesta en marcha: / })).toBeInTheDocument()
-    expect(screen.getByText(', semana actual').parentElement).toHaveTextContent(/^3/)
-    expect(screen.getByText('Semana 2, fin de Bases')).toBeInTheDocument()
-    expect(screen.getByText('Repo y CI, Proyecto y equipo')).toBeInTheDocument()
-  })
-
-  it('draws the methodology as the iteration and the board flows', async () => {
-    renderApp('/projects/2/plan?view=methodology')
-
-    const ceremonies = within(await screen.findByRole('list', { name: 'Ceremonias en orden' })).getAllByRole('listitem')
-    expect(ceremonies.map((li) => li.textContent)).toEqual([
-      expect.stringMatching(/^Planning/),
-      expect.stringMatching(/^Daily/),
-      expect.stringMatching(/^Retro/),
-      'Se repite cada 2 semanas',
-    ])
-    const board = within(screen.getByRole('list', { name: 'Columnas del tablero con su límite' }))
-    expect(board.getAllByRole('listitem').map((li) => li.textContent)).toEqual([
-      'Por hacerSin límite',
-      'En cursoMáximo 3 a la vez',
-      'En revisiónMáximo 2 a la vez',
-      'HechoSin límite',
-    ])
-  })
-
-  it('draws the architecture as layers with their components, and folds the decisions', async () => {
-    renderApp('/projects/2/plan?view=architecture')
-
-    expect(within(await screen.findByRole('region', { name: 'Frontend' })).getByText('App web')).toBeInTheDocument()
-    expect(within(screen.getByRole('region', { name: 'Backend' })).getByText('API')).toBeInTheDocument()
-    expect(within(screen.getByRole('region', { name: 'IA' })).getByText('Agentes')).toBeInTheDocument()
-    expect(within(screen.getByRole('region', { name: 'Otras piezas' })).getByText('Base de datos')).toBeInTheDocument()
-
-    const decision = screen.getByText('Salidas estructuradas').closest('details')!
-    expect(decision).not.toHaveAttribute('open')
-    await userEvent.click(screen.getByText('Salidas estructuradas'))
-    expect(decision).toHaveAttribute('open')
   })
 })

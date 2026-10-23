@@ -501,13 +501,12 @@ Pagination: pass the `seq` of the last item you have as `before`; an empty list 
 
 `start` also resumes after an error: it continues from the first stage without an approved proposal. Stage keys: `analysis`, `methodology`, `architecture`, `roadmap`, `backlog`, `sprints`.
 
-### BoardGateway (spec 003, close sprint from spec 008, create task from spec 014)
+### BoardGateway (spec 003, close sprint from spec 008)
 
 | Method | Endpoint | Request | Success | Errors |
 |---|---|---|---|---|
 | `getBoard(projectId)` | `GET /api/projects/{id}/board` | — | `200` `BoardView` | `404 project_not_found` |
 | `updateTask(taskId, patch)` | `PATCH /api/tasks/{id}` | `TaskPatch` | `200` `TaskResult` | `404 task_not_found`, `409 sprint_closed`, `422 validation_failed` |
-| `createTask(projectId, task)` | `POST /api/projects/{id}/tasks` | `NewTask` | `201` `TaskResult` + `Location` | `404 project_not_found`, `409 sprint_closed`, `422 validation_failed` |
 | `setChecklist(taskId, items)` | `PUT /api/tasks/{id}/checklist` | `{items: ChecklistItem[]}` | `200` `TaskResult` | `404 task_not_found`, `422 validation_failed` |
 | `setCapacity(projectId, points)` | `PUT /api/projects/{id}/capacity` | `{points_per_sprint: number \| null}` | `200` `{capacity_override, sprints: {id, load}[]}` | `404 project_not_found`, `409 capacity_not_applicable`, `422 validation_failed` |
 | `closeSprint(sprintId)` | `POST /api/sprints/{id}/close` | — | `200` `{sprint: Sprint, pending_task_keys: string[], replan_proposed: boolean}` | `404 sprint_not_found`, `409 sprint_already_closed` |
@@ -525,18 +524,6 @@ export interface TaskPatch {
   points?: number // integer 0–100
   priority?: Priority
   assignee_id?: number | null // assigning clears missing_role
-}
-
-// Spec 014: only the title is required. It gets the next "US-N" key and goes to the end of its column.
-export interface NewTask {
-  title: string // 1–200 chars
-  sprint_id?: number | null // null or missing = backlog (or the whole board when continuous)
-  status?: TaskStatus // missing = "todo" in a sprint or on a continuous board, "backlog" otherwise
-  description?: string
-  points?: number // integer 0–100, default 1
-  priority?: Priority // default "medium"
-  assignee_id?: number | null
-  epic_key?: string // up to 20 chars
 }
 ```
 
@@ -612,7 +599,6 @@ export type DomainEvent = BaseEvent &
     | { type: 'plan_applied'; skipped_story_keys: string[] }
     | { type: 'task_status_changed'; task_id: number; status: TaskStatus }
     | { type: 'task_updated'; task_id: number }
-    | { type: 'task_created'; task_id: number; key: string; status: TaskStatus; sprint_id: number | null } // spec 014
     // spec 006: documents
     | { type: 'documents_generated'; missing: string[] }
     // spec 007: GitHub
@@ -641,7 +627,7 @@ What to refetch per event:
 | `resync` | Everything the page shows |
 | Any event | Prepend it to the activity feed (it already has `summary`, `actor` and `ref`) |
 | `team_changed` | Project |
-| `plan_applied`, `task_created`, `task_status_changed`, `task_updated`, `objective_closed`, `sprint_closed`, `replan_applied` | Board |
+| `plan_applied`, `task_status_changed`, `task_updated`, `objective_closed`, `sprint_closed`, `replan_applied` | Board |
 | `documents_generated` | Documents list |
 | `issues_published` | Board (issue badges) and the proposal |
 | `github_action_delayed` | Nothing: show "delayed" (e.g. "GitHub isn't answering, retrying in Ns") on that `proposal_id` until `issues_published`, `review_requested` or `proposal_apply_failed` arrives for it. Not stored on the proposal: after a reload it just shows as applying |

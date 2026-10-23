@@ -142,8 +142,7 @@ class SprintNotFound(NotFound):
 
 
 class SprintClosed(DomainError):
-    """PATCH /tasks/{id} can't move a task into a closed sprint (spec 003, closed by spec 008), and
-    POST /projects/{id}/tasks can't add one to it (spec 014)."""
+    """PATCH /tasks/{id} can't move a task into a closed sprint (spec 003, closed by spec 008)."""
 
     code = "sprint_closed"
 

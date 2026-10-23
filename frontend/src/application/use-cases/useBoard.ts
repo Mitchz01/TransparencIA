@@ -1,7 +1,7 @@
 // UC-08 to UC-10: the board, moving cards and editing tasks.
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { BoardView, ChecklistItem, NewTask, Task, TaskPatch, TaskResult } from '../../domain/board'
+import type { BoardView, ChecklistItem, Task, TaskPatch, TaskResult } from '../../domain/board'
 import { moveTask, type MoveTarget } from '../../domain/rules'
 import { useGateways } from '../gateways'
 import { queryKeys } from '../queryKeys'
@@ -70,27 +70,6 @@ export function useTaskActions(projectId: number) {
       return run(() => board.setChecklist(task.id, items), 'No se guardó el checklist')
     },
   }
-}
-
-/** Adds a task at the end of its column (spec 014). Resolves with whether it was created and the field
- *  errors to show; a failure that isn't about a field shows a toast with a retry. */
-export function useCreateTask(projectId: number) {
-  const { board } = useGateways()
-  const client = useQueryClient()
-  const reportError = useApiErrorToast()
-  const key = queryKeys.board(projectId)
-
-  const create = async (task: NewTask): Promise<{ created: boolean; errors: FieldErrors }> => {
-    try {
-      const { task: saved } = await board.createTask(projectId, task)
-      client.setQueryData<BoardView>(key, (view) => view && { ...view, tasks: [...view.tasks.filter((t) => t.id !== saved.id), saved] })
-      void client.invalidateQueries({ queryKey: key })
-      return { created: true, errors: {} }
-    } catch (error) {
-      return { created: false, errors: reportError(error, { failure: 'No se creó la tarea', form: true, retry: () => void create(task), refetch: [key] }) }
-    }
-  }
-  return create
 }
 
 export function useCapacity(projectId: number) {
