@@ -176,17 +176,17 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ### Tests for User Story 2
 
-- [ ] T023 [P] [US2] Tests for `deriveStepper` (every row of the stepper state table) in `frontend/src/domain/stepper.test.ts`
-- [ ] T024 [P] [US2] Flow test on the fake service: approve, adjust (iteration length), reject without reason blocked, reject with reason, stage needing the leader, in `frontend/src/ui/pages/PlanningPage.test.tsx`
+- [x] T023 [P] [US2] Tests for `deriveStepper` (every row of the stepper state table) in `frontend/src/domain/stepper.test.ts`
+- [x] T024 [P] [US2] Flow test on the fake service: approve, adjust (iteration length), reject without reason blocked, reject with reason, stage needing the leader, in `frontend/src/ui/pages/PlanningPage.test.tsx`
 
 ### Implementation for User Story 2
 
-- [ ] T025 [US2] Implement `deriveStepper` in `frontend/src/domain/stepper.ts` and `usePlanning(projectId)` (project + proposals + recent activity → stepper; `start`, `retryStage`)
-- [ ] T026 [US2] Create `StageStepper` in `frontend/src/ui/components/planning/`: six rows, each with the agent name and its state as icon + word (Working, Waiting for you, Approved, Needs you, Failed); no circles or connecting lines
-- [ ] T027 [US2] Create `ProposalCard` (agent, title, state pill, rationale block in `primary-soft`, actions) and one body per stage (`AnalysisBody`, `MethodologyBody`, `ArchitectureBody`, `RoadmapBody`, `BacklogBody`, `SprintsBody`), at most three facts each
-- [ ] T028 [US2] Create `AdjustEditor`: editable fields per stage (methodology, iteration length and WIP limits; roadmap phase names and weeks; story points and priority; sprint assignments), sending the whole content; 422 `content.*` paths mapped to fields
-- [ ] T029 [US2] Create `RejectDialog` (reason required, 1–1000 chars) and the "Applying" and "Retry" states from `apply_failed`
-- [ ] T030 [US2] Create `PlanningPage` at `/projects/:id/planning`: stepper beside the current proposal, "Start planning" / "Retry" actions, auto-approve notice, and "Open the board" once `plan_applied` arrives
+- [x] T025 [US2] Implement `deriveStepper` in `frontend/src/domain/stepper.ts` and `usePlanning(projectId)` (project + proposals + recent activity → stepper; `start`, `retryStage`)
+- [x] T026 [US2] Create `StageStepper` in `frontend/src/ui/components/planning/`: six rows, each with the agent name and its state as icon + word (Working, Waiting for you, Approved, Needs you, Failed); no circles or connecting lines
+- [x] T027 [US2] Create `ProposalCard` (agent, title, state pill, rationale block in `primary-soft`, actions) and one body per stage (`AnalysisBody`, `MethodologyBody`, `ArchitectureBody`, `RoadmapBody`, `BacklogBody`, `SprintsBody`), at most three facts each
+- [x] T028 [US2] Create `AdjustEditor`: editable fields per stage (methodology, iteration length and WIP limits; roadmap phase names and weeks; story points and priority; sprint assignments), sending the whole content; 422 `content.*` paths mapped to fields
+- [x] T029 [US2] Create `RejectDialog` (reason required, 1–1000 chars) and the "Applying" and "Retry" states from `apply_failed`
+- [x] T030 [US2] Create `PlanningPage` at `/projects/:id/planning`: stepper beside the current proposal, "Start planning" / "Retry" actions, auto-approve notice, and "Open the board" once `plan_applied` arrives
 
 **Checkpoint**: User Stories 1 and 2 work end to end on the fake service
 

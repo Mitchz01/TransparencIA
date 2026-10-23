@@ -1,5 +1,5 @@
 import {
-  useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes,
+  useId, type ComponentProps, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes,
 } from 'react'
 import { cn } from './cn'
 import { Icon } from './Icon'
@@ -68,7 +68,7 @@ type BaseProps = {
   fill?: 'inset' | 'surface'
 }
 
-export function TextField({ label, hint, error, hideLabel, className, size = 'lg', fill, ...input }: BaseProps & Omit<InputHTMLAttributes<HTMLInputElement>, 'size'>) {
+export function TextField({ label, hint, error, hideLabel, className, size = 'lg', fill, ...input }: BaseProps & Omit<ComponentProps<'input'>, 'size'>) {
   return (
     <FieldShell label={label} hint={hint} error={error} hideLabel={hideLabel} className={className}>
       {({ id, describedBy, invalid }) => (
@@ -101,7 +101,7 @@ export function NumberField({
   )
 }
 
-export function TextArea({ label, hint, error, hideLabel, className, rows = 4, ...input }: Omit<BaseProps, 'size'> & TextareaHTMLAttributes<HTMLTextAreaElement>) {
+export function TextArea({ label, hint, error, hideLabel, className, rows = 4, ...input }: Omit<BaseProps, 'size'> & ComponentProps<'textarea'>) {
   return (
     <FieldShell label={label} hint={hint} error={error} hideLabel={hideLabel} className={className}>
       {({ id, describedBy, invalid }) => (
