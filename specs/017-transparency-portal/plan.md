@@ -229,7 +229,7 @@ Hidden, not deleted (D13): no time to fix what a deletion breaks, and nothing hi
 
 ## Team split (5 people)
 
-Owners are by file, so nobody edits someone else's file. Everyone works on `feat/transparency` with small
+Owners are by file, so nobody edits someone else's file. Each person's brief: [team/](team/README.md). Everyone works on `feat/transparency` with small
 commits and `git pull --rebase` often. The **API Contract** above is frozen at 0:10; whoever needs to change
 it says so out loud first.
 
@@ -255,6 +255,7 @@ Sync points:
 
 ## Phase 1: Setup (~10 min)
 
+- [ ] T000 Skeleton commit: every shared file and every new file with the team README's signatures (team/README.md)
 - [ ] T001 `qrcode` on the frontend; `PUBLIC_APP_URL` (backend) and `VITE_PUBLIC_APP_URL` (frontend)
 - [ ] T002 Demo files in `backend/demo/`: a seedlings invoice, a restaurant invoice, a field photo of planting
 
