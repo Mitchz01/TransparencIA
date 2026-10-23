@@ -42,6 +42,8 @@ Status: **Approved** (2026-10-23): palette, type and components.
 | `on-inverse` | `#F2F4EE` | `#0A0B09` | Text on `inverse` |
 | `focus` | `#2F5FE0` | `#C6F432` | Keyboard focus ring |
 | `glow` | none | lime radial at 10% | One soft light behind the page header in dark mode. Never more than one per screen |
+| `inset` | `#F4F5F0` | `#22261E` | Alias: a block or an input inside a card (`bg` in light, `surface-strong` in dark) |
+| `scrim` | ink at 32% | black at 60% | The veil behind dialogs and drawers |
 
 Lime on the light background is **1.2:1**, so in light mode lime is always a fill with dark text on it, never text, an icon or a thin line on `bg`. Use `accent-ink` for accent text in both themes.
 
@@ -73,7 +75,7 @@ Each hue has a text color and a soft fill; text on its soft fill passes 4.5:1 in
 
 ## Typography
 
-- **Geist** for everything, including task keys (`US-12`) and story points. One family only: no monospace. From Google Fonts, with Segoe UI and the system font as fallback.
+- **Geist** for everything, including task keys (`US-12`) and story points. One family only: no monospace. Bundled with the app (variable font, so the demo never depends on the network), with Segoe UI and the system font as fallback.
 - Numbers, keys and points use tabular figures (`font-variant-numeric: tabular-nums`).
 - Sentence case everywhere: "Start planning", not "Start Planning" or "START PLANNING". No uppercase labels.
 
@@ -106,7 +108,26 @@ Headings use `letter-spacing: -0.01em`; `text-display` uses `-0.02em`.
 
 ## Navigation
 
-No generic sidebar. The project screens use a **floating top bar**: the project switcher on the left, the sections as a pill group in the center (Planning, Board, Roadmap, Documents, Integrations; the active one in `primary`), and activity, theme and settings as icon buttons on the right. The live activity opens as a right drawer, not a permanent column.
+No generic sidebar. The project screens use a **floating top bar**: the project switcher on the left, the sections as a pill group in the center (Planning, Board, Plan, Documents, Integrations; the active one in `primary`), and activity, theme and settings as icon buttons on the right. Under 768px the sections collapse into a menu button that shows the current section. The live activity opens as a right drawer, not a permanent column.
+
+## Components
+
+Added for the first round of screens; all of them are in [preview.html](preview.html), section "Forms, overlays and feedback". React versions live in `src/ui/components/ds/`.
+
+| Component | Look | Notes |
+|---|---|---|
+| Text field, number field, select | `control-lg` pill on `inset`, `text-label` label above, optional hint below in `ink-muted` | Error: coral icon + message under the field and a coral inner outline; the typed value stays. Number fields use tabular figures and can show a unit after the value |
+| Text area | Same as a text field with `radius-md` | For descriptions and reasons |
+| Checkbox | 20px square with 6px corners: `surface-strong` when empty, `primary` with a tick when checked | The label is always next to it; used by the checklist |
+| On / off choice | A segmented control with two options ("Off", "On") | Instead of a switch, so the state is always a word |
+| Stage stepper | One row per stage: stage name, agent name below in `ink-muted`, the state on the right as icon + word in its hue. The current stage sits on `surface-strong` | No numbers in circles and no lines between steps |
+| Menu | `surface` panel, `radius-lg`, `shadow-float`, pill rows that turn `surface-strong` on hover; the chosen row has a tick | Opened from a secondary button with a chevron (project switcher, sprint selector, sections on mobile) |
+| Dialog | Centered `surface` panel, `radius-xl`, `shadow-float`, on `scrim` | Title in `text-heading`, actions bottom right, Escape closes |
+| Drawer | Right panel with a `space-3` margin, `radius-xl`, `shadow-float`, on `scrim` | Task details and activity |
+| Toast | `inverse` panel, `radius-lg`, `shadow-float`, icon + message, optional "Retry" (`primary`) and the request id in `text-caption` | Bottom of the screen; errors never use red fills |
+| Empty state | Icon on a 48px `surface-strong` square with `radius-md`, heading, one sentence, one action | Says what's missing and links to where it's made |
+| Skeleton | `surface-strong` blocks with `radius-md`, a slow opacity pulse | No pulse under reduced motion |
+| Capacity bar | Track with a `primary` fill (`coral` when overloaded) and "18 of 21 pts" next to it | Overload adds "Overloaded" with the alert icon |
 
 ## Interaction and accessibility
 

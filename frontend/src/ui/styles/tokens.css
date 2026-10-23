@@ -48,6 +48,10 @@
   --glow: transparent;
   --shadow-float: 0 12px 32px rgb(18 21 13 / 0.12), 0 2px 6px rgb(18 21 13 / 0.06);
 
+  /* Aliases: a block or an input inside a card; the veil behind dialogs and drawers */
+  --inset: #f4f5f0;
+  --scrim: rgb(18 21 13 / 0.32);
+
   /* Type */
   --font-sans: "Geist Variable", "Geist", "Segoe UI", system-ui, sans-serif;
   --text-display: 600 2.25rem/1.15 var(--font-sans);
@@ -122,6 +126,9 @@
   --focus: #c6f432;
   --glow: radial-gradient(60% 120% at 50% 0%, rgb(198 244 50 / 0.10), transparent 70%);
   --shadow-float: 0 16px 40px rgb(0 0 0 / 0.55);
+
+  --inset: #22261e;
+  --scrim: rgb(0 0 0 / 0.6);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -164,5 +171,8 @@
     --focus: #c6f432;
     --glow: radial-gradient(60% 120% at 50% 0%, rgb(198 244 50 / 0.10), transparent 70%);
     --shadow-float: 0 16px 40px rgb(0 0 0 / 0.55);
+
+    --inset: #22261e;
+    --scrim: rgb(0 0 0 / 0.6);
   }
 }
