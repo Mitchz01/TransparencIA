@@ -10,7 +10,7 @@ describe('Home launchpad (spec 016)', () => {
     const backend = createFakeBackend({ store: new FakeStore(), stageDelayMs: 10 })
     const { router } = renderApp('/', backend)
 
-    expect(await screen.findByRole('heading', { name: '¿Qué proyecto levantamos hoy, Ana?' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '¿Qué proyecto ejecutamos hoy, Ana?' })).toBeInTheDocument()
     const box = screen.getByRole('textbox', { name: 'Describe tu proyecto' })
     expect(screen.getByRole('button', { name: 'Continuar con este proyecto' })).toBeDisabled()
 
@@ -35,8 +35,8 @@ describe('Home launchpad (spec 016)', () => {
     const panel = await screen.findByRole('region', { name: 'Tus proyectos' })
     await within(panel).findByRole('link', { name: /Tienda online/ })
     await user.click(within(panel).getByRole('radio', { name: 'Plantillas' }))
-    await user.click(within(panel).getByRole('button', { name: /App de reservas/ }))
-    expect((screen.getByRole('textbox', { name: 'Describe tu proyecto' }) as HTMLTextAreaElement).value).toContain('canchas de fútbol 5')
+    await user.click(within(panel).getByRole('button', { name: /Mejoramiento de vía terciaria/ }))
+    expect((screen.getByRole('textbox', { name: 'Describe tu proyecto' }) as HTMLTextAreaElement).value).toContain('placa huella')
 
     await user.type(within(panel).getByRole('searchbox', { name: 'Buscar proyectos' }), 'zzz')
     expect(within(panel).getByText('Ningún proyecto se llama "zzz".')).toBeInTheDocument()

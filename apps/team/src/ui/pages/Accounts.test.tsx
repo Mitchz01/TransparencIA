@@ -32,12 +32,12 @@ describe('Sign in (spec 015, US1)', () => {
     expect(password).not.toHaveAttribute('aria-invalid')
   })
 
-  it('only says "Próximamente" for Google, GitHub and SSO', async () => {
+  it('only says "Próximamente" for Google and SSO', async () => {
     const user = userEvent.setup()
     const backend = signedOut()
     const { router } = renderApp('/login', backend)
 
-    for (const provider of ['Google', 'GitHub', 'SSO']) {
+    for (const provider of ['Google', 'SSO']) {
       await user.click(await screen.findByRole('button', { name: `Continuar con ${provider}` }))
       expect(await screen.findByText('Próximamente')).toBeInTheDocument()
     }

@@ -8,9 +8,9 @@ interface StageLabel {
 
 /** How the UI names each stage and its agent. The backend's agent titles stay in domain/proposalContent.ts. */
 export const STAGE_LABELS: Record<StageKey, StageLabel> = {
-  analysis: { name: 'Análisis', agent: 'Analista de producto', the: 'el análisis' },
+  analysis: { name: 'Análisis', agent: 'Analista del proyecto', the: 'el análisis' },
   methodology: { name: 'Metodología', agent: 'Coach ágil', the: 'la metodología' },
-  architecture: { name: 'Arquitectura', agent: 'Arquitecto de software', the: 'la arquitectura' },
+  architecture: { name: 'Arquitectura', agent: 'Arquitecto de la solución', the: 'la arquitectura' },
   roadmap: { name: 'Roadmap', agent: 'Product manager', the: 'el roadmap' },
   backlog: { name: 'Backlog', agent: 'Product owner', the: 'el backlog' },
   sprints: { name: 'Sprints', agent: 'Scrum master', the: 'los sprints' },

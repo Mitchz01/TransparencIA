@@ -54,7 +54,7 @@ export function ProjectsPage() {
         >
           <AgentsPill latestProjectId={latest?.id ?? null} onStart={() => composer.current?.focus()} />
           <h1 id="home-greeting" className="max-w-3xl text-display text-balance text-on-mesh md:text-[3rem]">
-            {name ? `¿Qué proyecto levantamos hoy, ${name}?` : '¿Qué proyecto levantamos hoy?'}
+            {name ? `¿Qué proyecto ejecutamos hoy, ${name}?` : '¿Qué proyecto ejecutamos hoy?'}
           </h1>
           <ProjectComposer ref={composer} />
         </section>

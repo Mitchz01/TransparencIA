@@ -308,7 +308,7 @@ it says so out loud first.
 | **P3 — API** | Persistence, use cases, endpoints, cuts in the backend, seed | T008, T011–T013, T015, T018, T019, T023 | `ports/repositories.py`, `ports/unit_of_work.py`, `persistence/*`, `domain/project.py`, the other `transparency/*`, `http/transparency.py`, `http/public.py`, `main.py`, `config.py`, `seed.py` |
 | **P4 — Team UI** | The "Transparencia" tab and the cuts in navigation | T001 (frontend), T016, T017, T024 | `@agile/domain` (types, fixture), `ports.ts`, `adapters/*/transparencyGateway.ts`, `useTransparency.ts`, `TransparencyPage`, `QrCard`, `routes.tsx`, project nav |
 | **P5 — Portal + demo** | What the jury sees on their phone; deployment notes, pitch | T020, T022, T025–T027, pitch + backup video | `apps/portal/*`, `packages/ui/src/transparency/*`, docs |
-| **Claude — US7** | The project from the contract | T028–T033 | In `apps/api`: `domain/contracts.py`, `ports/contract_reader.py`, `agents/*/contract_reader.py`, `use_cases/contracts/*`, `http/contracts.py`, `demo/contrato-manglar.pdf`. In `apps/team`: `domain/contracts.ts`, `adapters/*/contractGateway.ts`, `useContracts.ts`, `NewProjectFromContractPage.tsx`. One line each in `main.py` (P3), `routes.tsx` and `ports.ts` (P4), and in `prompts.py` (P2), announced first |
+| **Claude — US7** | The project from the contract | T040–T045 | In `apps/api`: `domain/contracts.py`, `ports/contract_reader.py`, `agents/*/contract_reader.py`, `use_cases/contracts/*`, `http/contracts.py`, `demo/contrato-manglar.pdf`. In `apps/team`: `domain/contracts.ts`, `adapters/*/contractGateway.ts`, `useContracts.ts`, `NewProjectFromContractPage.tsx`. One line each in `main.py` (P3), `routes.tsx` and `ports.ts` (P4), and in `prompts.py` (P2), announced first |
 
 P4 owns `QrCard` and the forms in `apps/team`; P5 owns `apps/portal` and the read-only components in
 `packages/ui/src/transparency/` (the team tab reuses P5's `TrafficLight`, `ProgressBars`, `BudgetLines`).
@@ -388,18 +388,18 @@ Sync points:
 
 ## Phase 8b: US7 — The project starts from the contract (~50 min, Claude, in parallel)
 
-- [ ] T028 [US7] `domain/contracts.py`: `ContractReading` (agent output) and the rules
+- [ ] T040 [US7] `domain/contracts.py`: `ContractReading` (agent output) and the rules
   `duration_weeks(start, end)` and `compose_description(reading)` (D17, D20), with unit tests
-- [ ] T029 [US7] Port `ContractReader`; mock adapter (the mangrove contract of the team README) and ADK
+- [ ] T041 [US7] Port `ContractReader`; mock adapter (the mangrove contract of the team README) and ADK
   adapter with the contract prompt (FR-018, FR-019: no people, no invented amounts)
-- [ ] T030 [US7] Use cases `ReadContract` and `CreateProjectFromContract` (project + budget in one commit,
+- [ ] T042 [US7] Use cases `ReadContract` and `CreateProjectFromContract` (project + budget in one commit,
   reusing `CreateProject`'s rules and P1's `budget_errors`) + `http/contracts.py` + API tests
-- [ ] T031 [US7] Frontend: `ContractGateway` (http + fake), `useContracts`, `NewProjectFromContractPage`
+- [ ] T043 [US7] Frontend: `ContractGateway` (http + fake), `useContracts`, `NewProjectFromContractPage`
   (upload with spinner → editable draft: project fields, budget lines, obligations and milestones as a
   read-only preview of the description → "Crear proyecto"); a "Crear desde contrato" entry on the new
   project screen
-- [ ] T032 [US7] `apps/api/demo/contrato-manglar.pdf`: 2 pages, the numbers of the team README
-- [ ] T033 [US7] The milestones line in the planning prompts (D17, with P2); plan the demo contract's
+- [ ] T044 [US7] `apps/api/demo/contrato-manglar.pdf`: 2 pages, the numbers of the team README
+- [ ] T045 [US7] The milestones line in the planning prompts (D17, with P2); plan the demo contract's
   project with the real key and check every milestone lands before its date
 
 ## Phase 8c: US8 — Find a public project (P5)
@@ -419,6 +419,9 @@ Sync points:
 - [ ] T025 plan/api-conventions.md (D2, D3 and new errors), apps/team/docs/api-contract.md, plan/context.md
   and README updated to the transparency module
 - [ ] T026 Deployment notes for whoever deploys (D10); QR tested from a real phone on mobile data once deployed
+- [x] T034 The team app's texts tell the new product (FR-023): the sign in showcase, the home's agents pill
+  (no GitHub: it points at Transparencia), the composer's examples, durations and templates, and the
+  project form's placeholders become public projects; sample project names in the fakes stay
 - [ ] T027 Full demo with the real key and in mock mode; `pytest`, `npm run typecheck`, `npm run lint`
 
 ## Dependencies & Execution Order
