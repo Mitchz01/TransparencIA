@@ -1,16 +1,16 @@
 import { useNavigate } from 'react-router-dom'
 import { AgentSpark, Button, Icon, Popover, type IconGlyph } from '@agile/ui'
-import { ArrowRight02Icon, FlowchartIcon, GithubIcon, GoogleGeminiIcon, RefreshIcon, Route01Icon } from '@agile/ui/icons'
+import { AiMagicIcon, ArrowRight02Icon, Coins01Icon, GoogleGeminiIcon, Route01Icon, UserGroupIcon } from '@agile/ui/icons'
 
 const ROWS: { icon: IconGlyph; title: string; text: string }[] = [
-  { icon: Route01Icon, title: 'Planifican', text: 'Eligen la metodología, arman el roadmap y reparten el trabajo según tu equipo.' },
-  { icon: FlowchartIcon, title: 'Escriben specs y diagramas', text: 'Cada historia llega con su spec y la arquitectura dibujada.' },
-  { icon: RefreshIcon, title: 'Replanifican desde GitHub', text: 'Leen issues y pull requests, y proponen cambios cuando el plan se desvía.' },
+  { icon: Route01Icon, title: 'Planifican el contrato', text: 'Convierten el objeto y las obligaciones en fases y actividades, y reparten el trabajo según tu equipo.' },
+  { icon: AiMagicIcon, title: 'Leen facturas y fotos', text: 'Asignan cada gasto a su rubro y su actividad, y marcan lo que no cuadra para que una persona lo revise.' },
+  { icon: UserGroupIcon, title: 'Le responden al ciudadano', text: 'Explican en palabras sencillas en qué va el proyecto y en qué se gastó la plata.' },
 ]
 
 const mark = 'inline-flex size-7 items-center justify-center rounded-sm ring-2 ring-mesh-5'
 
-/** The pill above the greeting: what the agents do, and a way to connect GitHub (spec 016). */
+/** The pill above the greeting: what the agents do, and a way into the latest project's transparency (spec 016, spec 017 FR-023). */
 export function AgentsPill({ latestProjectId, onStart }: { latestProjectId: number | null; onStart: () => void }) {
   const navigate = useNavigate()
   return (
@@ -22,12 +22,12 @@ export function AgentsPill({ latestProjectId, onStart }: { latestProjectId: numb
         <>
           <span className="flex shrink-0 -space-x-1.5" aria-hidden="true">
             <span className={`${mark} bg-primary text-on-primary`}><AgentSpark size={16} /></span>
-            <span className={`${mark} bg-surface text-ink`}><Icon icon={GithubIcon} size={16} /></span>
+            <span className={`${mark} bg-surface text-ink`}><Icon icon={Coins01Icon} size={16} /></span>
             <span className={`${mark} bg-inverse text-on-inverse`}><Icon icon={GoogleGeminiIcon} size={16} /></span>
           </span>
           <span className="min-w-0">
-            <span className="sm:hidden">Agentes con Gemini y GitHub</span>
-            <span className="hidden sm:inline">Agentes con Gemini que planifican y sincronizan con GitHub</span>
+            <span className="sm:hidden">Agentes con Gemini</span>
+            <span className="hidden sm:inline">Agentes con Gemini que planifican el contrato y rinden cuentas de cada peso</span>
           </span>
           <Icon icon={ArrowRight02Icon} className="shrink-0" />
         </>
@@ -48,11 +48,11 @@ export function AgentsPill({ latestProjectId, onStart }: { latestProjectId: numb
       </div>
       <Button
         variant="primary"
-        icon={GithubIcon}
+        icon={Coins01Icon}
         className="w-full"
-        onClick={() => (latestProjectId ? navigate(`/projects/${latestProjectId}/integrations`) : onStart())}
+        onClick={() => (latestProjectId ? navigate(`/projects/${latestProjectId}/transparency`) : onStart())}
       >
-        {latestProjectId ? 'Conectar GitHub' : 'Describe tu primer proyecto'}
+        {latestProjectId ? 'Ver la transparencia' : 'Describe tu primer proyecto'}
       </Button>
     </Popover>
   )

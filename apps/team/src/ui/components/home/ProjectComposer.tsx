@@ -19,12 +19,13 @@ export interface ComposerHandle {
   fill: (text: string) => void
 }
 
-const DURATIONS = [4, 6, 8, 12] as const
+// Public contracts run for months: up to a year, as the backend allows (WEEKS_RANGE).
+const DURATIONS = [8, 12, 26, 52] as const
 
 const EXAMPLES = [
-  'Una app de citas para clínicas veterinarias…',
-  'Un marketplace de artesanos de Medellín…',
-  'Un SaaS de reservas para canchas de fútbol 5…',
+  'Restauración de 5 ha de manglar en la Ciénaga Grande…',
+  'Mejoramiento de 3 km de vía terciaria en Aracataca…',
+  'Un acueducto veredal para 120 familias en la Sierra Nevada…',
 ]
 
 const LINE = 24

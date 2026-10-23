@@ -82,14 +82,14 @@ export function ProjectForm({ initial, submitLabel, submitIcon, onSubmit, second
   return (
     <form ref={form} noValidate onSubmit={submit} className="grid min-w-0 gap-3 [&>*]:min-w-0">
       {errors[''] && <FieldError>{errors['']}</FieldError>}
-      <Section title="Proyecto" description="Qué quieres construir, para quién y todo lo que los agentes deban saber.">
-        <TextField label="Nombre del proyecto" value={draft.name} error={errors.name} placeholder="Tienda online" onChange={(e) => change({ name: e.target.value })} />
+      <Section title="Proyecto" description="El objeto del contrato, dónde se ejecuta, para quién y todo lo que los agentes deban saber.">
+        <TextField label="Nombre del proyecto" value={draft.name} error={errors.name} placeholder="Restauración de manglar" onChange={(e) => change({ name: e.target.value })} />
         <TextArea
           label="Descripción"
           rows={5}
           value={draft.description}
           error={errors.description}
-          placeholder="Una tienda de muebles artesanales, con catálogo, carrito y pagos."
+          placeholder="Restauración de 5 ha de manglar en la Ciénaga Grande: vivero, siembra, mantenimiento y talleres con la comunidad."
           onChange={(e) => change({ description: e.target.value })}
         />
         <div className="grid gap-5 sm:grid-cols-2">

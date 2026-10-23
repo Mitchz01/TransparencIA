@@ -20,7 +20,7 @@ export function ActivityDrawer({ projectId, onClose }: { projectId: number; onCl
         <SkeletonCard lines={4} />
       ) : events.length === 0 ? (
         <EmptyState icon={Activity01Icon} title="Todavía nada" className="bg-inset">
-          Aquí aparecen los agentes, las personas y GitHub a medida que trabajan.
+          Aquí aparecen los agentes y las personas a medida que trabajan.
         </EmptyState>
       ) : (
         <div className="grid gap-3">
