@@ -95,29 +95,29 @@ const clean = (value: string) => value.trim().replace(/\s+/g, ' ')
 
 function checkText(issues: FieldIssue[], field: string, value: string | undefined, max: number) {
   const text = clean(value ?? '')
-  if (!text) issues.push({ field, message: 'Required.' })
-  else if (text.length > max) issues.push({ field, message: `Max ${max} characters.` })
+  if (!text) issues.push({ field, message: 'Obligatorio.' })
+  else if (text.length > max) issues.push({ field, message: `Máximo ${max} caracteres.` })
 }
 
 function checkRange(issues: FieldIssue[], field: string, value: number | undefined, [low, high]: readonly [number, number]) {
   if (value === undefined) return
-  if (!Number.isInteger(value) || value < low || value > high) issues.push({ field, message: `Must be between ${low} and ${high}.` })
+  if (!Number.isInteger(value) || value < low || value > high) issues.push({ field, message: `Debe estar entre ${low} y ${high}.` })
 }
 
 export function validateMembers(members: MemberInput[]): FieldIssue[] {
   const issues: FieldIssue[] = []
-  if (members.length === 0) issues.push({ field: 'members', message: 'The team needs at least one member.' })
+  if (members.length === 0) issues.push({ field: 'members', message: 'El equipo necesita al menos un miembro.' })
   const seen = new Set<string>()
   members.forEach((member, i) => {
     const path = `members[${i}]`
     checkText(issues, `${path}.name`, member.name, LIMITS.name)
     const key = clean(member.name ?? '').toLowerCase()
-    if (key && seen.has(key)) issues.push({ field: `${path}.name`, message: 'Duplicated name.' })
+    if (key && seen.has(key)) issues.push({ field: `${path}.name`, message: 'Nombre repetido.' })
     if (key) seen.add(key)
     checkText(issues, `${path}.role`, member.role, LIMITS.role)
     checkRange(issues, `${path}.hours_per_week`, member.hours_per_week, LIMITS.hours)
     member.skills?.forEach((skill, j) => {
-      if (clean(skill).length > LIMITS.skill) issues.push({ field: `${path}.skills[${j}]`, message: `Max ${LIMITS.skill} characters.` })
+      if (clean(skill).length > LIMITS.skill) issues.push({ field: `${path}.skills[${j}]`, message: `Máximo ${LIMITS.skill} caracteres.` })
     })
   })
   return issues

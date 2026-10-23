@@ -2,7 +2,7 @@
 
 **Date**: 2026-10-23  
 **Spec**: [spec.md](spec.md)  
-**Status**: Draft
+**Status**: Approved
 
 ## Summary
 
@@ -92,6 +92,7 @@ frontend/
 | Font bundled with the app | Loading it from the web | The demo can't depend on the venue's network |
 | Fake planning engine inside the fake store | Recorded demo data only | The demo needs live progress, approvals and the board appearing, without a backend |
 | A script that checks the design rules | Only manual review | The rules are absolute (spec FR-002); a script catches regressions on every commit |
+| Narrow icon rail for the sections, views of each section in the top bar | Sections as a pill group in the top bar | Asked for by the leader after seeing the first screens: the top bar is free for the views (sprints, plan parts), and the rail keeps the sections one click away without a wide sidebar |
 
 ## API Contract
 
@@ -116,11 +117,11 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 **Purpose**: dependencies, styling and the empty app shell
 
-- [ ] T001 Install Tailwind 4 with `@tailwindcss/vite`, `@tanstack/react-query`, `@dnd-kit/sortable`, `@fontsource-variable/geist`, `react-markdown`, `mermaid`, and as dev dependencies `vitest`, `jsdom`, `@testing-library/react`, `@testing-library/user-event`
-- [ ] T002 Add the Tailwind plugin and the Vitest config to `frontend/vite.config.ts` (and translate its leftover comment to English)
-- [ ] T003 In `frontend/src/ui/styles/index.css`: import Tailwind, `tokens.css` and the font; map every token with `@theme` (colors `bg`, `surface`, `surface-strong`, `ink*`, `primary*`, `accent-ink`, `inverse`, the five hues and their soft fills, `chart-*`; radii; font family; text sizes); base styles (body background `bg`, `ink` text, tabular numbers utility, focus ring, reduced motion)
-- [ ] T004 Remove the Vite template (`App.css`, template assets and markup) from `frontend/src/app/` and `frontend/src/ui/assets/`
-- [ ] T005 [P] Create `frontend/scripts/check-design-rules.mjs` and add it to `npm run lint`: fail on em dashes, the `·` separator, emoji ranges, `border-l`/`border-r` and `divide-` classes, `<hr`, `uppercase`, and small round status dots (`rounded-full` with `w-1`…`w-3`)
+- [x] T001 Install Tailwind 4 with `@tailwindcss/vite`, `@tanstack/react-query`, `@dnd-kit/sortable`, `@fontsource-variable/geist`, and as dev dependencies `vitest`, `jsdom`, `@testing-library/react`, `@testing-library/user-event` (`react-markdown` and `mermaid` move to T048, the first task that renders documents)
+- [x] T002 Add the Tailwind plugin and the Vitest config to `frontend/vite.config.ts` (and translate its leftover comment to English)
+- [x] T003 In `frontend/src/ui/styles/index.css`: import Tailwind, `tokens.css` and the font; map every token with `@theme` (colors `bg`, `surface`, `surface-strong`, `ink*`, `primary*`, `accent-ink`, `inverse`, the five hues and their soft fills, `chart-*`; radii; font family; text sizes); base styles (body background `bg`, `ink` text, tabular numbers utility, focus ring, reduced motion)
+- [x] T004 Remove the Vite template (`App.css`, template assets and markup) from `frontend/src/app/` and `frontend/src/ui/assets/`
+- [x] T005 [P] Create `frontend/scripts/check-design-rules.mjs` and add it to `npm run lint`: fail on em dashes, the `·` separator, emoji ranges, `border-l`/`border-r` and `divide-` classes, `<hr`, `uppercase`, and small round status dots (`rounded-full` with `w-1`…`w-3`)
 
 ---
 
@@ -130,18 +131,18 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 **CRITICAL**: no user story work can begin until this phase is complete. Requires PR #16 merged.
 
-- [ ] T006 Create `frontend/src/app/container.tsx` (`GatewaysProvider`, `useGateways`; `createFakeGateways()` when `VITE_USE_FAKE=true`, `createHttpGateways()` otherwise) and `frontend/src/app/theme.tsx` (`data-theme` on `<html>`, system preference by default, remembered choice, toggle)
-- [ ] T007 Create `frontend/src/app/App.tsx` (QueryClient, GatewaysProvider, ThemeProvider) and `frontend/src/app/routes.tsx` with every route of the screen map and a `NotFoundPage`
-- [ ] T008 [P] Build the base design system components in `frontend/src/ui/components/ds/`: `Icon` (20/24 px, `currentColor`), `Button` (primary, secondary, quiet; sizes sm/md/lg; loading state), `IconButton` (with required `aria-label`), `Pill` (hue + icon + word), `Chip` (pressed state), `Segmented`, `Card`, `Avatar` (initials), `ProgressTrack`
-- [ ] T009 [P] Build the form and overlay components in `frontend/src/ui/components/ds/`: `TextField`, `TextArea`, `Select`, `NumberField` (label, hint, error under the field, `aria-invalid` + `aria-describedby`), `Dialog`, `Drawer` (focus trap, Escape, `shadow-float`), `Toast` (message + retry + request id), `Tooltip`, `EmptyState`, `Skeleton`
-- [ ] T010 [P] Unit tests for `Pill`, `Button` and `TextField` accessibility (names, error wiring) in `frontend/src/ui/components/ds/ds.test.tsx`
-- [ ] T011 Build the shell in `frontend/src/ui/components/shell/`: `AppLayout`, `TopBar` with `ProjectSwitcher` (left), `SectionNav` pill group (center, active section in `primary`), and activity, theme and settings icon buttons (right); collapses the sections into a menu under 768px
-- [ ] T012 Create `frontend/src/application/queryKeys.ts` and `frontend/src/application/liveUpdates.ts`: `useLiveUpdates(projectId)` subscribes to `EventStream` (with `after` = newest loaded `seq`) and invalidates the keys from the contract's "What to refetch per event" table; `resync` invalidates everything for the project
-- [ ] T013 Create `frontend/src/application/use-cases/useApiErrorToast.ts`: maps each error `code` to the UI reaction in the contract's error table (toast with request id, refetch, field errors)
-- [ ] T014 Add "Proposal content by kind" to section 3 of `frontend/docs/api-contract.md` (from the plans of 006, 007, 008) and mirror it in `frontend/src/domain/proposalContent.ts`
-- [ ] T015 Add `PlanningGateway`, `BoardGateway`, `DocumentGateway` and `IntegrationGateway` to `frontend/src/application/ports.ts` exactly as the contract's section 4; implement them in `frontend/src/adapters/http/` and register them in `createHttpGateways()`
-- [ ] T016 Implement the same four in `frontend/src/adapters/fake/`, plus `fakePlanning.ts`: `start` publishes `agent_started`, waits ~1.2 s, creates the stage proposal from the demo plan with `agent_finished` + `proposal_created`; approving a stage starts the next; auto-approve chains them; approving `sprints` builds the demo board, publishes `plan_applied` and creates the document proposals
-- [ ] T017 [P] Tests for the fake planning engine (stage order, auto-approve, board built after sprints, events with increasing `seq`) in `frontend/src/adapters/fake/fakePlanning.test.ts`
+- [x] T006 Create `frontend/src/app/container.tsx` (`GatewaysProvider`, `useGateways`; `createFakeGateways()` when `VITE_USE_FAKE=true`, `createHttpGateways()` otherwise) and `frontend/src/app/theme.tsx` (`data-theme` on `<html>`, system preference by default, remembered choice, toggle)
+- [x] T007 Create `frontend/src/app/App.tsx` (QueryClient, GatewaysProvider, ThemeProvider) and `frontend/src/app/routes.tsx` with every route of the screen map and a `NotFoundPage`
+- [x] T008 [P] Build the base design system components in `frontend/src/ui/components/ds/`: `Icon` (20/24 px, `currentColor`), `Button` (primary, secondary, quiet; sizes sm/md/lg; loading state), `IconButton` (with required `aria-label`), `Pill` (hue + icon + word), `Chip` (pressed state), `Segmented`, `Card`, `Avatar` (initials), `ProgressTrack`
+- [x] T009 [P] Build the form and overlay components in `frontend/src/ui/components/ds/`: `TextField`, `TextArea`, `Select`, `NumberField` (label, hint, error under the field, `aria-invalid` + `aria-describedby`), `Dialog`, `Drawer` (focus trap, Escape, `shadow-float`), `Toast` (message + retry + request id), `Tooltip`, `EmptyState`, `Skeleton`
+- [x] T010 [P] Unit tests for `Pill`, `Button` and `TextField` accessibility (names, error wiring) in `frontend/src/ui/components/ds/ds.test.tsx`
+- [x] T011 Build the shell in `frontend/src/ui/components/shell/`: `AppLayout`, `TopBar` with `ProjectSwitcher` (left), `SectionNav` pill group (center, active section in `primary`), and activity, theme and settings icon buttons (right); collapses the sections into a menu under 768px
+- [x] T012 Create `frontend/src/application/queryKeys.ts` and `frontend/src/application/liveUpdates.ts`: `useLiveUpdates(projectId)` subscribes to `EventStream` (with `after` = newest loaded `seq`) and invalidates the keys from the contract's "What to refetch per event" table; `resync` invalidates everything for the project
+- [x] T013 Create `frontend/src/application/use-cases/useApiErrorToast.ts`: maps each error `code` to the UI reaction in the contract's error table (toast with request id, refetch, field errors)
+- [x] T014 Add "Proposal content by kind" to section 3 of `frontend/docs/api-contract.md` (from the plans of 006, 007, 008) and mirror it in `frontend/src/domain/proposalContent.ts`
+- [x] T015 Add `PlanningGateway`, `BoardGateway`, `DocumentGateway` and `IntegrationGateway` to `frontend/src/application/ports.ts` exactly as the contract's section 4; implement them in `frontend/src/adapters/http/` and register them in `createHttpGateways()`
+- [x] T016 Implement the same four in `frontend/src/adapters/fake/`, plus `fakePlanning.ts`: `start` publishes `agent_started`, waits ~1.2 s, creates the stage proposal from the demo plan with `agent_finished` + `proposal_created`; approving a stage starts the next; auto-approve chains them; approving `sprints` builds the demo board, publishes `plan_applied` and creates the document proposals
+- [x] T017 [P] Tests for the fake planning engine (stage order, auto-approve, board built after sprints, events with increasing `seq`) in `frontend/src/adapters/fake/fakePlanning.test.ts`
 
 **Checkpoint**: the app opens on the fake service with the shell, theme toggle and live updates working
 
@@ -155,14 +156,14 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ### Tests for User Story 1
 
-- [ ] T018 [P] [US1] Tests for the project form rules (contract section 4 validation table, unique names case-insensitive, defaults) in `frontend/src/domain/rules.test.ts`
-- [ ] T019 [P] [US1] Flow test: fill the form, duplicate name shows under the second row, fix it, save → navigates to `/projects/:id/planning`, in `frontend/src/ui/pages/NewProjectPage.test.tsx`
+- [x] T018 [P] [US1] Tests for the project form rules (contract section 4 validation table, unique names case-insensitive, defaults) in `frontend/src/domain/rules.test.ts`
+- [x] T019 [P] [US1] Flow test: fill the form, duplicate name shows under the second row, fix it, save → navigates to `/projects/:id/planning`, in `frontend/src/ui/pages/NewProjectPage.test.tsx`
 
 ### Implementation for User Story 1
 
-- [ ] T020 [US1] Add `validateProject()` to `frontend/src/domain/rules.ts` returning errors keyed by the contract's field paths (`members[1].name`)
-- [ ] T021 [US1] Create `MemberRows` (add/remove rows, role, seniority, hours, skills as chips) and `ProjectForm` (name, description, duration, methodology select, auto-approve switch) in `frontend/src/ui/components/project/`
-- [ ] T022 [US1] Create `useCreateProject` (create → `planning.start` → navigate; 422 errors mapped to fields) and `NewProjectPage` at `/projects/new`
+- [x] T020 [US1] Add `validateProject()` to `frontend/src/domain/rules.ts` returning errors keyed by the contract's field paths (`members[1].name`)
+- [x] T021 [US1] Create `MemberRows` (add/remove rows, role, seniority, hours, skills as chips) and `ProjectForm` (name, description, duration, methodology select, auto-approve switch) in `frontend/src/ui/components/project/`
+- [x] T022 [US1] Create `useCreateProject` (create → `planning.start` → navigate; 422 errors mapped to fields) and `NewProjectPage` at `/projects/new`
 
 **Checkpoint**: a project can be created and planning starts from the UI
 
@@ -176,17 +177,17 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ### Tests for User Story 2
 
-- [ ] T023 [P] [US2] Tests for `deriveStepper` (every row of the stepper state table) in `frontend/src/domain/stepper.test.ts`
-- [ ] T024 [P] [US2] Flow test on the fake service: approve, adjust (iteration length), reject without reason blocked, reject with reason, stage needing the leader, in `frontend/src/ui/pages/PlanningPage.test.tsx`
+- [x] T023 [P] [US2] Tests for `deriveStepper` (every row of the stepper state table) in `frontend/src/domain/stepper.test.ts`
+- [x] T024 [P] [US2] Flow test on the fake service: approve, adjust (iteration length), reject without reason blocked, reject with reason, stage needing the leader, in `frontend/src/ui/pages/PlanningPage.test.tsx`
 
 ### Implementation for User Story 2
 
-- [ ] T025 [US2] Implement `deriveStepper` in `frontend/src/domain/stepper.ts` and `usePlanning(projectId)` (project + proposals + recent activity → stepper; `start`, `retryStage`)
-- [ ] T026 [US2] Create `StageStepper` in `frontend/src/ui/components/planning/`: six rows, each with the agent name and its state as icon + word (Working, Waiting for you, Approved, Needs you, Failed); no circles or connecting lines
-- [ ] T027 [US2] Create `ProposalCard` (agent, title, state pill, rationale block in `primary-soft`, actions) and one body per stage (`AnalysisBody`, `MethodologyBody`, `ArchitectureBody`, `RoadmapBody`, `BacklogBody`, `SprintsBody`), at most three facts each
-- [ ] T028 [US2] Create `AdjustEditor`: editable fields per stage (methodology, iteration length and WIP limits; roadmap phase names and weeks; story points and priority; sprint assignments), sending the whole content; 422 `content.*` paths mapped to fields
-- [ ] T029 [US2] Create `RejectDialog` (reason required, 1–1000 chars) and the "Applying" and "Retry" states from `apply_failed`
-- [ ] T030 [US2] Create `PlanningPage` at `/projects/:id/planning`: stepper beside the current proposal, "Start planning" / "Retry" actions, auto-approve notice, and "Open the board" once `plan_applied` arrives
+- [x] T025 [US2] Implement `deriveStepper` in `frontend/src/domain/stepper.ts` and `usePlanning(projectId)` (project + proposals + recent activity → stepper; `start`, `retryStage`)
+- [x] T026 [US2] Create `StageStepper` in `frontend/src/ui/components/planning/`: six rows, each with the agent name and its state as icon + word (Working, Waiting for you, Approved, Needs you, Failed); no circles or connecting lines
+- [x] T027 [US2] Create `ProposalCard` (agent, title, state pill, rationale block in `primary-soft`, actions) and one body per stage (`AnalysisBody`, `MethodologyBody`, `ArchitectureBody`, `RoadmapBody`, `BacklogBody`, `SprintsBody`), at most three facts each
+- [x] T028 [US2] Create `AdjustEditor`: editable fields per stage (methodology, iteration length and WIP limits; roadmap phase names and weeks; story points and priority; sprint assignments), sending the whole content; 422 `content.*` paths mapped to fields
+- [x] T029 [US2] Create `RejectDialog` (reason required, 1–1000 chars) and the "Applying" and "Retry" states from `apply_failed`
+- [x] T030 [US2] Create `PlanningPage` at `/projects/:id/planning`: stepper beside the current proposal, "Start planning" / "Retry" actions, auto-approve notice, and "Open the board" once `plan_applied` arrives
 
 **Checkpoint**: User Stories 1 and 2 work end to end on the fake service
 
@@ -200,17 +201,17 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ### Tests for User Story 3
 
-- [ ] T031 [P] [US3] Tests for `wipWarnings`, `sprintLoad`, `checklistProgress` and `filterTasks` in `frontend/src/domain/rules.test.ts`
-- [ ] T032 [P] [US3] Tests for `useMoveTask`: optimistic update, revert and toast on failure, warnings kept, in `frontend/src/application/use-cases/useMoveTask.test.tsx`
+- [x] T031 [P] [US3] Tests for `wipWarnings`, `sprintLoad`, `checklistProgress` and `filterTasks` in `frontend/src/domain/rules.test.ts`
+- [x] T032 [P] [US3] Tests for `useMoveTask`: optimistic update, revert and toast on failure, warnings kept, in `frontend/src/application/use-cases/useMoveTask.test.tsx`
 
 ### Implementation for User Story 3
 
-- [ ] T033 [US3] Add the board rules to `frontend/src/domain/rules.ts` (capacity mirrors spec 002's rule) and create `useBoard` and `useMoveTask` (TanStack Query optimistic mutation)
-- [ ] T034 [US3] Create `KanbanBoard`, `Column` (name + count in words, add button, WIP warning as icon + word) and `TaskCard` (title, description cut to two lines, key and points with tabular numbers, checklist progress, assignee or "Missing role", priority pill) in `frontend/src/ui/components/board/`
-- [ ] T035 [US3] Wire dnd-kit: pointer and keyboard sensors, `SortableContext` per column, drag overlay with `shadow-float` and a slight tilt, announcements for screen readers
-- [ ] T036 [US3] Create `TaskDrawer` and `Checklist` (edit fields, check/add/edit/remove items, "Move to review?" suggestion)
-- [ ] T037 [US3] Create `SprintSelector` (defaults to the first sprint with unfinished work), `CapacityBar` (points vs capacity, overload warning, capacity override) and `BoardFilters` (mine, priority, epic; kept in the URL)
-- [ ] T038 [US3] Create `BoardPage` at `/projects/:id/board`, with the continuous layout when `continuous` is true and an empty state linking to planning when there's no board yet
+- [x] T033 [US3] Add the board rules to `frontend/src/domain/rules.ts` (capacity mirrors spec 002's rule) and create `useBoard` and `useMoveTask` (TanStack Query optimistic mutation)
+- [x] T034 [US3] Create `KanbanBoard`, `Column` (name + count in words, add button, WIP warning as icon + word) and `TaskCard` (title, description cut to two lines, key and points with tabular numbers, checklist progress, assignee or "Missing role", priority pill) in `frontend/src/ui/components/board/`
+- [x] T035 [US3] Wire dnd-kit: pointer and keyboard sensors, `SortableContext` per column, drag overlay with `shadow-float` and a slight tilt, announcements for screen readers
+- [x] T036 [US3] Create `TaskDrawer` and `Checklist` (edit fields, check/add/edit/remove items, "Move to review?" suggestion)
+- [x] T037 [US3] Create `SprintSelector` (sprints as views in the top bar, defaults to the first sprint with unfinished work), `CapacityBar` (points vs capacity, overload warning, capacity override) and `BoardFilters` (assignee, priority, epic; kept in the URL; there is no signed-in person, so "mine" is picking an assignee)
+- [x] T038 [US3] Create `BoardPage` at `/projects/:id/board`, with the continuous layout when `continuous` is true and an empty state linking to planning when there's no board yet
 
 **Checkpoint**: the round 1 demo (project → plan → approval → board) works end to end on the fake service
 
@@ -224,10 +225,10 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ### Implementation for User Story 4
 
-- [ ] T039 [P] [US4] Create `ViewOrigin` (agent, rationale, approval date in words, how it was approved) and the "not generated yet" / "waiting for approval" states linking to the proposal, in `frontend/src/ui/components/plan/`
-- [ ] T040 [US4] Create `RoadmapTimeline`: phases as blocks across a week grid, epics inside with their progress track, the current week highlighted with a fill (no lines)
-- [ ] T041 [US4] Create `MethodologyView` (decision, iteration, ceremonies, WIP limits, discarded alternatives, chosen by leader or agents) and `ArchitectureView` (style, components, stack, decisions)
-- [ ] T042 [US4] Create `PlanPage` at `/projects/:id/plan` with a segmented control for Roadmap, Methodology and Architecture, fed by `usePlanViews`
+- [x] T039 [P] [US4] Create `ViewOrigin` (agent, rationale, approval date in words, how it was approved) and the "not generated yet" / "waiting for approval" states linking to the proposal, in `frontend/src/ui/components/plan/`
+- [x] T040 [US4] Create `RoadmapTimeline`: phases as blocks across a week grid, epics inside with their progress track, the current week highlighted with a fill (no lines)
+- [x] T041 [US4] Create `MethodologyView` (decision, iteration, ceremonies, WIP limits, discarded alternatives, chosen by leader or agents) and `ArchitectureView` (style, components, stack, decisions)
+- [x] T042 [US4] Create `PlanPage` at `/projects/:id/plan` with a segmented control for Roadmap, Methodology and Architecture, fed by `usePlanViews`
 
 **Checkpoint**: User Stories 1–4 work independently
 
@@ -241,9 +242,9 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ### Implementation for User Story 5
 
-- [ ] T043 [US5] Create `useActivity` (infinite query with `before`, prepends live events from `useLiveUpdates`)
-- [ ] T044 [US5] Create `ActivityItem` (actor icon, `summary`, time in words, link from `ref`) and `ActivityDrawer` (opened from the top bar on every project screen)
-- [ ] T045 [P] [US5] Test reconnection with `after` and `resync` against the fake stream in `frontend/src/application/liveUpdates.test.ts`
+- [x] T043 [US5] Create `useActivity` (infinite query with `before`, prepends live events from `useLiveUpdates`)
+- [x] T044 [US5] Create `ActivityItem` (actor icon, `summary`, time in words, link from `ref`) and `ActivityDrawer` (opened from the top bar on every project screen)
+- [x] T045 [P] [US5] Test reconnection with `after` and `resync` against the fake stream in `frontend/src/application/liveUpdates.test.ts`
 
 **Checkpoint**: User Stories 1–5 work independently
 
@@ -257,8 +258,8 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ### Implementation for User Story 6
 
-- [ ] T046 [US6] Create `ProjectsPage` at `/`: project cards (name, status pill, duration, member count) and "New project"
-- [ ] T047 [US6] Create `SettingsPage` at `/projects/:id/settings` reusing `ProjectForm` in edit mode (`PATCH` with only the changed fields; methodology disabled with a short reason when not in draft; `methodology_locked` handled)
+- [x] T046 [US6] Create `ProjectsPage` at `/`: project cards (name, status pill, duration, member count) and "New project"
+- [x] T047 [US6] Create `SettingsPage` at `/projects/:id/settings` reusing `ProjectForm` in edit mode (`PATCH` with only the changed fields; methodology disabled with a short reason when not in draft; `methodology_locked` handled)
 
 **Checkpoint**: User Stories 1–6 work independently
 
@@ -272,9 +273,9 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ### Implementation for User Story 7
 
-- [ ] T048 [P] [US7] Create `MarkdownView` (themed typography) and `MermaidView` (themed render; shows the source with a message when it can't be drawn)
-- [ ] T049 [US7] Create `VersionHistory`, `RegenerateDialog` and `DocumentEditor` (sends `base_version`; `version_conflict` offers reload or copy)
-- [ ] T050 [US7] Create `DocumentsPage` at `/projects/:id/documents`: general spec, epic specs grouped by phase, diagrams, outdated badge with a regenerate shortcut
+- [x] T048 [P] [US7] Install `react-markdown` and `mermaid`; create `MarkdownView` (themed typography) and `MermaidView` (themed render; shows the source with a message when it can't be drawn)
+- [x] T049 [US7] Create `VersionHistory`, `RegenerateDialog` and `DocumentEditor` (sends `base_version`; `version_conflict` offers reload or copy)
+- [x] T050 [US7] Create `DocumentsPage` at `/projects/:id/documents`: general spec, epic specs grouped by phase, diagrams, outdated badge with a regenerate shortcut
 
 **Checkpoint**: User Stories 1–7 work independently
 
@@ -288,9 +289,9 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ### Implementation for User Story 8
 
-- [ ] T051 [P] [US8] Create `RepositoryForm` (`owner/name` pattern from the contract, write-only token field showing only "Token saved", replace confirmation, `repository_not_accessible` reasons in plain words) and `TestModeBanner`
-- [ ] T052 [US8] Create `MemberGithubUsers` (with the "can't see the repo yet" warning) and the `create_issues` and `request_review` proposal bodies
-- [ ] T053 [US8] Create `IntegrationsPage` at `/projects/:id/integrations` with "Publish pending tasks", and add `IssueBadge` to `TaskCard`
+- [x] T051 [P] [US8] Create `RepositoryForm` (`owner/name` pattern from the contract, write-only token field showing only "Token saved", replace confirmation, `repository_not_accessible` reasons in plain words) and `TestModeBanner`
+- [x] T052 [US8] Create `MemberGithubUsers` (with the "can't see the repo yet" warning) and the `create_issues` and `request_review` proposal bodies
+- [x] T053 [US8] Create `IntegrationsPage` at `/projects/:id/integrations` with "Publish pending tasks", and add `IssueBadge` to `TaskCard`
 
 **Checkpoint**: User Stories 1–8 work independently
 
@@ -304,9 +305,9 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ### Implementation for User Story 9
 
-- [ ] T054 [P] [US9] Create `ReplanDialog` (reason 1–1000 chars) and `CloseSprintButton` (end date in words, warning when it's past)
-- [ ] T055 [US9] Create `ReplanDiff`: changes grouped by kind, each with its rationale and a toggle to drop it; approving with dropped changes sends `adjust` with the remaining ones
-- [ ] T056 [US9] Add both actions to the board header and the `replan` body to `ProposalCard`; extend `fakePlanning.ts` with a sample replan
+- [x] T054 [P] [US9] Create `ReplanDialog` (reason 1–1000 chars) and `CloseSprintButton` (end date in words, warning when it's past)
+- [x] T055 [US9] Create `ReplanDiff`: changes grouped by kind, each with its rationale and a toggle to drop it; approving with dropped changes sends `adjust` with the remaining ones
+- [x] T056 [US9] Add both actions to the board header and show the pending replan (`ReplanDiff`) on the board, where its changes apply; extend `fakePlanning.ts` with a sample replan and the automatic one after closing a sprint
 
 **Checkpoint**: all user stories work independently
 
@@ -314,11 +315,11 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ## Phase 12: Polish & Cross-Cutting Concerns
 
-- [ ] T057 [P] Review every screen in both themes against the design rules (SC-004) with `check-design-rules.mjs` plus a manual pass; fix findings
-- [ ] T058 [P] Accessibility pass: keyboard-only run of the demo flow, focus order in drawers and dialogs, accessible names, contrast spot checks
-- [ ] T059 [P] Responsive pass at 360, 768 and 1440 px
-- [ ] T060 Time the demo on the fake service (SC-001) and the first content per screen (SC-005); fix the slow ones
-- [ ] T061 Document `VITE_USE_FAKE` and the frontend scripts in `README.md`
+- [x] T057 [P] Review every screen in both themes against the design rules (SC-004) with `check-design-rules.mjs` plus a manual pass; fix findings
+- [x] T058 [P] Accessibility pass: keyboard-only run of the demo flow, focus order in drawers and dialogs, accessible names, contrast spot checks
+- [x] T059 [P] Responsive pass at 360, 768 and 1440 px
+- [x] T060 Time the demo on the fake service (SC-001) and the first content per screen (SC-005); fix the slow ones
+- [x] T061 Document `VITE_USE_FAKE` and the frontend scripts in `README.md`
 
 ---
 
