@@ -1,111 +1,144 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+/* Tailwind mapped to the design tokens (tokens.css). Utilities only exist for tokens:
+   the default palette, radii, shadows and type scale are cleared on purpose.
+   `inline` makes each utility read the token variable, so both themes switch at runtime. */
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+@import "tailwindcss";
+@import "@fontsource-variable/geist/wght.css";
+@import "./tokens.css";
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
+@theme inline {
+  --color-*: initial;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-soft-ink: var(--primary-soft-ink);
+  --color-accent-ink: var(--accent-ink);
+  --color-inverse: var(--inverse);
+  --color-on-inverse: var(--on-inverse);
+  --color-focus: var(--focus);
+  --color-blue: var(--blue);
+  --color-blue-soft: var(--blue-soft);
+  --color-violet: var(--violet);
+  --color-violet-soft: var(--violet-soft);
+  --color-amber: var(--amber);
+  --color-amber-soft: var(--amber-soft);
+  --color-coral: var(--coral);
+  --color-coral-soft: var(--coral-soft);
+  --color-teal: var(--teal);
+  --color-teal-soft: var(--teal-soft);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --font-*: initial;
+  --font-sans: "Geist Variable", "Geist", "Segoe UI", system-ui, sans-serif;
+
+  --radius-*: initial;
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-pill: 999px;
+
+  --shadow-*: initial;
+
+  --text-*: initial;
+  --text-display: 2.25rem;
+  --text-display--line-height: 1.15;
+  --text-display--font-weight: 600;
+  --text-display--letter-spacing: -0.02em;
+  --text-title: 1.5rem;
+  --text-title--line-height: 1.25;
+  --text-title--font-weight: 600;
+  --text-title--letter-spacing: -0.01em;
+  --text-heading: 1.125rem;
+  --text-heading--line-height: 1.35;
+  --text-heading--font-weight: 600;
+  --text-heading--letter-spacing: -0.01em;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.55;
+  --text-label: 0.875rem;
+  --text-label--line-height: 1.4;
+  --text-label--font-weight: 500;
+  --text-caption: 0.8125rem;
+  --text-caption--line-height: 1.4;
+  --text-number: 2rem;
+  --text-number--line-height: 1.1;
+  --text-number--font-weight: 600;
+
+  --spacing-control-sm: 32px;
+  --spacing-control-md: 40px;
+  --spacing-control-lg: 48px;
+}
+
+/* Only what floats has a shadow: drawers, dialogs, menus, toasts, the dragged card. */
+@utility shadow-float {
+  box-shadow: var(--shadow-float);
+}
+
+/* Task keys and points: the same family, with tabular figures. */
+@utility text-key {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The one soft light behind the page header (dark theme only; transparent in light). */
+@utility bg-glow {
+  background-image: var(--glow);
+}
+
+@layer base {
+  html {
+    background: var(--bg);
   }
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+  body {
+    margin: 0;
+    min-height: 100svh;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
   }
-}
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+  ::placeholder {
+    color: var(--ink-subtle);
   }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
+
+  button {
+    cursor: pointer;
   }
-}
-p {
-  margin: 0;
-}
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
+  button:disabled {
+    cursor: not-allowed;
+  }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
 }

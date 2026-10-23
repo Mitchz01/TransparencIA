@@ -116,11 +116,11 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 **Purpose**: dependencies, styling and the empty app shell
 
-- [ ] T001 Install Tailwind 4 with `@tailwindcss/vite`, `@tanstack/react-query`, `@dnd-kit/sortable`, `@fontsource-variable/geist`, `react-markdown`, `mermaid`, and as dev dependencies `vitest`, `jsdom`, `@testing-library/react`, `@testing-library/user-event`
-- [ ] T002 Add the Tailwind plugin and the Vitest config to `frontend/vite.config.ts` (and translate its leftover comment to English)
-- [ ] T003 In `frontend/src/ui/styles/index.css`: import Tailwind, `tokens.css` and the font; map every token with `@theme` (colors `bg`, `surface`, `surface-strong`, `ink*`, `primary*`, `accent-ink`, `inverse`, the five hues and their soft fills, `chart-*`; radii; font family; text sizes); base styles (body background `bg`, `ink` text, tabular numbers utility, focus ring, reduced motion)
-- [ ] T004 Remove the Vite template (`App.css`, template assets and markup) from `frontend/src/app/` and `frontend/src/ui/assets/`
-- [ ] T005 [P] Create `frontend/scripts/check-design-rules.mjs` and add it to `npm run lint`: fail on em dashes, the `·` separator, emoji ranges, `border-l`/`border-r` and `divide-` classes, `<hr`, `uppercase`, and small round status dots (`rounded-full` with `w-1`…`w-3`)
+- [x] T001 Install Tailwind 4 with `@tailwindcss/vite`, `@tanstack/react-query`, `@dnd-kit/sortable`, `@fontsource-variable/geist`, and as dev dependencies `vitest`, `jsdom`, `@testing-library/react`, `@testing-library/user-event` (`react-markdown` and `mermaid` move to T048, the first task that renders documents)
+- [x] T002 Add the Tailwind plugin and the Vitest config to `frontend/vite.config.ts` (and translate its leftover comment to English)
+- [x] T003 In `frontend/src/ui/styles/index.css`: import Tailwind, `tokens.css` and the font; map every token with `@theme` (colors `bg`, `surface`, `surface-strong`, `ink*`, `primary*`, `accent-ink`, `inverse`, the five hues and their soft fills, `chart-*`; radii; font family; text sizes); base styles (body background `bg`, `ink` text, tabular numbers utility, focus ring, reduced motion)
+- [x] T004 Remove the Vite template (`App.css`, template assets and markup) from `frontend/src/app/` and `frontend/src/ui/assets/`
+- [x] T005 [P] Create `frontend/scripts/check-design-rules.mjs` and add it to `npm run lint`: fail on em dashes, the `·` separator, emoji ranges, `border-l`/`border-r` and `divide-` classes, `<hr`, `uppercase`, and small round status dots (`rounded-full` with `w-1`…`w-3`)
 
 ---
 
@@ -272,7 +272,7 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ### Implementation for User Story 7
 
-- [ ] T048 [P] [US7] Create `MarkdownView` (themed typography) and `MermaidView` (themed render; shows the source with a message when it can't be drawn)
+- [ ] T048 [P] [US7] Install `react-markdown` and `mermaid`; create `MarkdownView` (themed typography) and `MermaidView` (themed render; shows the source with a message when it can't be drawn)
 - [ ] T049 [US7] Create `VersionHistory`, `RegenerateDialog` and `DocumentEditor` (sends `base_version`; `version_conflict` offers reload or copy)
 - [ ] T050 [US7] Create `DocumentsPage` at `/projects/:id/documents`: general spec, epic specs grouped by phase, diagrams, outdated badge with a regenerate shortcut
 
