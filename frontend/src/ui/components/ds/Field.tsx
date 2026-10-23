@@ -1,9 +1,10 @@
 import {
-  useId, type ComponentProps, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes,
+  useId, useState, type ComponentProps, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes,
 } from 'react'
 import { cn } from './cn'
 import { Icon } from './Icon'
-import { Alert02Icon, ArrowDown01Icon, Tick02Icon } from './icons'
+import { IconButton } from './IconButton'
+import { Alert02Icon, ArrowDown01Icon, Tick02Icon, ViewIcon, ViewOffIcon } from './icons'
 
 // Every field: a label above, an optional hint, and the error under the field with the typed value kept
 // (spec 009, FR-008). The error is wired with aria-invalid + aria-describedby.
@@ -95,6 +96,37 @@ export function NumberField({
             {...input}
           />
           {unit && <span className="pointer-events-none absolute top-1/2 right-5 -translate-y-1/2 text-label text-ink-muted">{unit}</span>}
+        </span>
+      )}
+    </FieldShell>
+  )
+}
+
+/** A password with a button that shows it while typing; the value never leaves the field. */
+export function PasswordField({ label, hint, error, hideLabel, className, size = 'lg', fill, ...input }: BaseProps & Omit<ComponentProps<'input'>, 'size' | 'type'>) {
+  const [shown, setShown] = useState(false)
+  return (
+    <FieldShell label={label} hint={hint} error={error} hideLabel={hideLabel} className={className}>
+      {({ id, describedBy, invalid }) => (
+        <span className="relative block">
+          <input
+            id={id}
+            type={shown ? 'text' : 'password'}
+            aria-invalid={invalid || undefined}
+            aria-describedby={describedBy}
+            className={cn(control(size, invalid, fill), 'pr-14')}
+            {...input}
+          />
+          <span className="absolute top-1/2 right-1.5 -translate-y-1/2">
+            <IconButton
+              icon={shown ? ViewOffIcon : ViewIcon}
+              label={shown ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+              variant="quiet"
+              size="md"
+              tooltip="none"
+              onClick={() => setShown(!shown)}
+            />
+          </span>
         </span>
       )}
     </FieldShell>

@@ -1,24 +1,26 @@
 import { useState, type FormEvent } from 'react'
 import { useCapacity } from '../../../application/use-cases/useBoard'
 import type { SprintLoad } from '../../../domain/board'
-import { Button, Dialog, IconButton, NumberField, ProgressTrack, StateLabel } from '../ds'
+import { Button, cn, Dialog, IconButton, NumberField, ProgressTrack, StateLabel } from '../ds'
 import { Alert02Icon, Edit02Icon } from '../ds/icons'
 
 interface CapacityBarProps {
   projectId: number
   load: SprintLoad
   override: number | null
+  /** Leaders adjust the capacity; members only see it. */
+  editable?: boolean
 }
 
 /** The sprint's points against what the team can do. Going over warns, never blocks. */
-export function CapacityBar({ projectId, load, override }: CapacityBarProps) {
+export function CapacityBar({ projectId, load, override, editable = true }: CapacityBarProps) {
   const [editing, setEditing] = useState(false)
   return (
-    <div className="flex min-h-control-md flex-wrap items-center gap-x-3 gap-y-2 rounded-pill bg-surface py-1 pr-1 pl-5">
+    <div className={cn('flex min-h-control-md flex-wrap items-center gap-x-3 gap-y-2 rounded-pill bg-surface py-1 pl-5', editable ? 'pr-1' : 'pr-5')}>
       <span className="text-label tabular-nums whitespace-nowrap">{load.points} de {load.capacity} pts</span>
       <ProgressTrack value={load.points} max={load.capacity} over={load.overloaded} label={`Carga del sprint: ${load.points} de ${load.capacity} puntos`} className="w-28 sm:w-36" />
       {load.overloaded && <StateLabel hue="coral" icon={Alert02Icon}>Sobrecargado</StateLabel>}
-      <IconButton icon={Edit02Icon} label="Ajustar la capacidad" size="sm" variant="quiet" tooltipAlign="end" onClick={() => setEditing(true)} />
+      {editable && <IconButton icon={Edit02Icon} label="Ajustar la capacidad" size="sm" variant="quiet" tooltipAlign="end" onClick={() => setEditing(true)} />}
       {editing && <CapacityDialog projectId={projectId} current={override ?? load.capacity} estimated={override === null} onClose={() => setEditing(false)} />}
     </div>
   )

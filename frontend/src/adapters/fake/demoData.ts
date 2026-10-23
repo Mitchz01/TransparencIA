@@ -5,13 +5,42 @@
 import type { BoardView, Task } from '../../domain/board'
 import type { NewEvent } from './store'
 import type { StageKey } from '../../domain/plan'
-import type { Project } from '../../domain/project'
+import type { Account } from '../../domain/account'
+import type { Member, Project } from '../../domain/project'
 import type { Proposal } from '../../domain/proposals'
 import { STAGE_AGENTS, STAGE_KEYS } from '../../domain/proposalContent'
 import { buildBoard } from './demoBoard'
 import { DEMO_RATIONALES, DEMO_STAGES } from './demoPlan'
 
 const created = '2026-10-23T14:05:00Z'
+
+// ---------- Accounts (spec 015): Ana leads every demo project, Leo is a member of each ----------
+
+/** Both demo accounts sign in with this password (window.fakeBackend.signInAs switches between them). */
+export const DEMO_PASSWORD = 'agile-demo'
+
+export interface FakeAccount extends Account {
+  password: string // in memory only, like everything in the fake backend
+}
+
+export const demoAccounts: FakeAccount[] = [
+  {
+    id: 1, email: 'ana@team.dev', name: 'Ana Gómez', role: 'Backend', seniority: 'senior', hours_per_week: 30,
+    skills: ['python', 'fastapi'], github_username: null, created_at: '2026-10-01T10:00:00Z', password: DEMO_PASSWORD,
+  },
+  {
+    id: 2, email: 'leo@team.dev', name: 'Leo Ruiz', role: 'Frontend', seniority: 'mid', hours_per_week: 20,
+    skills: ['react'], github_username: null, created_at: '2026-10-02T10:00:00Z', password: DEMO_PASSWORD,
+  },
+]
+
+const [ana, leo] = demoAccounts
+const fromAccount = (id: number, account: FakeAccount, permission: Member['permission']): Member => ({
+  id, name: account.name, role: account.role ?? '', seniority: account.seniority, hours_per_week: account.hours_per_week,
+  skills: [...account.skills], account_id: account.id, permission,
+})
+/** People who never signed up (the demo board's team): members without an account. */
+const guest = (member: Omit<Member, 'account_id' | 'permission'>): Member => ({ ...member, account_id: null, permission: 'member' })
 
 export const demoPlan: NonNullable<Project['plan']> = {
   analysis: DEMO_STAGES.analysis,
@@ -30,10 +59,7 @@ export const demoProject: Project = {
   auto_approve: false,
   repository: null,
   plan: demoPlan,
-  members: [
-    { id: 11, name: 'Ana Gómez', role: 'Backend', seniority: 'senior', hours_per_week: 30, skills: ['python', 'fastapi'] },
-    { id: 12, name: 'Leo Ruiz', role: 'Frontend', seniority: 'mid', hours_per_week: 20, skills: ['react'] },
-  ],
+  members: [fromAccount(11, ana, 'leader'), fromAccount(12, leo, 'member')],
   created_at: created,
 }
 
@@ -55,6 +81,13 @@ export const demoProposals: Proposal[] = [
 
 const boardCreated = '2026-10-09T09:30:00Z'
 
+/** Who the board's tasks were planned for; Ana and Leo joined the project too. */
+const boardTeam: Member[] = [
+  guest({ id: 21, name: 'Marta Díaz', role: 'Backend', seniority: 'senior', hours_per_week: 30, skills: ['python', 'payments'] }),
+  guest({ id: 22, name: 'Pablo Ortiz', role: 'Frontend', seniority: 'mid', hours_per_week: 30, skills: ['react', 'css'] }),
+  guest({ id: 23, name: 'Sara Vidal', role: 'Frontend', seniority: 'junior', hours_per_week: 20, skills: ['react'] }),
+]
+
 export const demoBoardProject: Project = {
   id: 2,
   name: 'Tienda online',
@@ -65,11 +98,7 @@ export const demoBoardProject: Project = {
   auto_approve: false,
   repository: null,
   plan: structuredClone(DEMO_STAGES),
-  members: [
-    { id: 21, name: 'Marta Díaz', role: 'Backend', seniority: 'senior', hours_per_week: 30, skills: ['python', 'payments'] },
-    { id: 22, name: 'Pablo Ortiz', role: 'Frontend', seniority: 'mid', hours_per_week: 30, skills: ['react', 'css'] },
-    { id: 23, name: 'Sara Vidal', role: 'Frontend', seniority: 'junior', hours_per_week: 20, skills: ['react'] },
-  ],
+  members: [fromAccount(24, ana, 'leader'), ...boardTeam, fromAccount(25, leo, 'member')],
   created_at: boardCreated,
 }
 
@@ -82,7 +111,7 @@ export const demoBoardProposals: Proposal[] = STAGE_KEYS.map((key: StageKey, i) 
 
 /** The second project's board, two weeks in: sprint 1 half done. */
 export function demoBoard(nextId: () => number): BoardView {
-  const board = buildBoard(demoBoardProject.id, demoBoardProject.members, DEMO_STAGES, nextId, boardCreated)
+  const board = buildBoard(demoBoardProject.id, boardTeam, DEMO_STAGES, nextId, boardCreated)
   const progress: Record<string, { status: Task['status']; checked: number }> = {
     'US-1': { status: 'done', checked: 2 },
     'US-2': { status: 'in_progress', checked: 1 },

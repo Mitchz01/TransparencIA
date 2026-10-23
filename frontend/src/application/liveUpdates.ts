@@ -28,7 +28,8 @@ export function keysForEvent(event: DomainEvent): QueryKey[] | null {
     case 'proposal_apply_failed':
       return [queryKeys.proposals(id), queryKeys.proposal(event.proposal_id), queryKeys.planViews(id), queryKeys.project(id)]
     case 'team_changed':
-      return [queryKeys.project(id), queryKeys.projects()]
+      // Someone leaving also unassigns their pending tasks (spec 015).
+      return [queryKeys.project(id), queryKeys.projects(), queryKeys.board(id)]
     case 'plan_applied':
     case 'replan_applied':
       return [queryKeys.board(id), queryKeys.planViews(id), queryKeys.project(id)]

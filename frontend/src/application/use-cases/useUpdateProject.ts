@@ -1,4 +1,4 @@
-// UC-01 (edit): change the project, its team or auto-approve. A team change may lead to a replan (spec 008).
+// UC-01 (edit): change the project or auto-approve. The team changes on its own screen (useTeam, spec 015).
 
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'

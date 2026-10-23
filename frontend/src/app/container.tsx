@@ -1,9 +1,10 @@
 // Composition root of the frontend: the only module that imports adapters/.
 // VITE_USE_FAKE=true runs the whole app on the in-memory backend with fake agents (spec 009, FR-007).
 
-import type { ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { GatewaysContext } from '../application/gateways'
 import type { Gateways } from '../application/ports'
+import { watchSession } from '../application/session'
 import { createFakeBackend, setFakeOffline } from '../adapters/fake'
 import { createHttpGateways } from '../adapters/http'
 
@@ -29,6 +30,11 @@ function createGateways(): Gateways {
         backend.forget()
         window.location.assign('/')
       },
+      // fakeBackend.signInAs('Leo') shows the member view; the demo password is in adapters/fake/demoData.ts.
+      signInAs: (name: string) => {
+        backend.signInAs(name)
+        window.location.assign('/')
+      },
     },
   })
   return backend.gateways
@@ -36,7 +42,16 @@ function createGateways(): Gateways {
 
 let shared: Gateways | null = null
 
-export function GatewaysProvider({ children, gateways }: { children: ReactNode; gateways?: Gateways }) {
+interface GatewaysProviderProps {
+  children: ReactNode
+  gateways?: Gateways
+  /** Called when any call answers 401 not_authenticated (spec 015): the session ended. */
+  onSignedOut?: () => void
+}
+
+export function GatewaysProvider({ children, gateways, onSignedOut }: GatewaysProviderProps) {
   shared ??= gateways ?? createGateways()
-  return <GatewaysContext.Provider value={gateways ?? shared}>{children}</GatewaysContext.Provider>
+  const base = gateways ?? shared
+  const value = useMemo(() => (onSignedOut ? watchSession(base, onSignedOut) : base), [base, onSignedOut])
+  return <GatewaysContext.Provider value={value}>{children}</GatewaysContext.Provider>
 }

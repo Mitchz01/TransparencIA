@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import {
   useApproveDocuments, useDocument, useDocuments, usePendingDocuments, useRegenerate, useSaveDocument,
 } from '../../application/use-cases/useDocuments'
+import { useCanManage } from '../../application/use-cases/useSession'
 import type { DocumentSummary } from '../../domain/documents'
 import type { Proposal } from '../../domain/proposals'
 import { formatDate } from '../format'
@@ -65,15 +66,16 @@ function DocumentList({ documents, selected, onSelect, phases }: {
   )
 }
 
-function PendingDocuments({ pending, onApprove, approving }: { pending: Proposal[]; onApprove: (ids: number[]) => void; approving: boolean }) {
+/** Without `onApprove` (a member) the list waits for a leader. */
+function PendingDocuments({ pending, onApprove, approving }: { pending: Proposal[]; onApprove?: (ids: number[]) => void; approving: boolean }) {
   return (
     <Card className="grid gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="grid gap-0.5">
-          <h2 className="text-heading">Esperan tu aprobación</h2>
-          <p className="text-body text-ink-muted">El redactor de specs las armó con el plan aprobado. Ninguna cuenta hasta que la apruebes.</p>
+          <h2 className="text-heading">{onApprove ? 'Esperan tu aprobación' : 'Esperan la aprobación del líder'}</h2>
+          <p className="text-body text-ink-muted">El redactor de specs las armó con el plan aprobado. Ninguna cuenta hasta que se apruebe.</p>
         </div>
-        {pending.length > 1 && (
+        {onApprove && pending.length > 1 && (
           <Button variant="primary" icon={Tick02Icon} loading={approving} onClick={() => onApprove(pending.map((p) => p.id))}>Aprobar todas</Button>
         )}
       </div>
@@ -84,7 +86,7 @@ function PendingDocuments({ pending, onApprove, approving }: { pending: Proposal
               <span className="text-label">{proposalTitle(p)}</span>
               <span className="text-caption text-ink-muted">{p.rationale}</span>
             </span>
-            <Button size="sm" icon={Tick02Icon} disabled={approving} onClick={() => onApprove([p.id])}>Aprobar</Button>
+            {onApprove && <Button size="sm" icon={Tick02Icon} disabled={approving} onClick={() => onApprove([p.id])}>Aprobar</Button>}
           </li>
         ))}
       </ul>
@@ -100,6 +102,8 @@ function DocumentViewer({ projectId, summary, pending }: { projectId: number; su
   const regenerate = useRegenerate(projectId)
   const save = useSaveDocument(projectId)
   const approve = useApproveDocuments(projectId)
+  // Members edit documents; regenerating and approving are the leaders' (spec 015).
+  const manage = useCanManage(projectId)
   const [editing, setEditing] = useState(false)
   // The text the edit started from, so a newer version arriving meanwhile never replaces what is typed.
   const [editBase, setEditBase] = useState<string | null>(null)
@@ -136,7 +140,7 @@ function DocumentViewer({ projectId, summary, pending }: { projectId: number; su
         {!editing && (
           <div className="flex flex-wrap items-center gap-2">
             <VersionHistory versions={current.versions} current={current.version} shown={doc.version} onPick={(v) => setVersion(v === current.version ? undefined : v)} />
-            <Button size="sm" icon={RefreshIcon} disabled={Boolean(pending)} onClick={() => setRegenerating(true)}>Regenerar</Button>
+            {manage && <Button size="sm" icon={RefreshIcon} disabled={Boolean(pending)} onClick={() => setRegenerating(true)}>Regenerar</Button>}
             <Button size="sm" icon={Edit02Icon} disabled={Boolean(old)} onClick={() => { setEditBase(current.content); setEditVersion(current.version); setEditing(true) }}>Editar</Button>
           </div>
         )}
@@ -152,17 +156,17 @@ function DocumentViewer({ projectId, summary, pending }: { projectId: number; su
       {summary.outdated && !pending && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-amber-soft p-4">
           <StateLabel hue="amber" icon={Alert02Icon}>El plan cambió después de este documento</StateLabel>
-          <Button size="sm" icon={RefreshIcon} onClick={() => setRegenerating(true)}>Regenerar</Button>
+          {manage && <Button size="sm" icon={RefreshIcon} onClick={() => setRegenerating(true)}>Regenerar</Button>}
         </div>
       )}
 
       {pending && (
         <div className="grid gap-3 rounded-md bg-primary-soft p-4 text-primary-soft-ink">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <span className="inline-flex items-center gap-2 text-label"><Icon icon={HourglassIcon} />Hay una versión nueva esperando tu aprobación</span>
+            <span className="inline-flex items-center gap-2 text-label"><Icon icon={HourglassIcon} />{manage ? 'Hay una versión nueva esperando tu aprobación' : 'Hay una versión nueva esperando la aprobación del líder'}</span>
             <div className="flex flex-wrap gap-2">
               <Button size="sm" onClick={() => setPreview(!preview)} aria-expanded={preview}>{preview ? 'Ocultar' : 'Ver la propuesta'}</Button>
-              <Button size="sm" variant="primary" icon={Tick02Icon} loading={approve.isPending} onClick={() => approve.mutate([pending.id])}>Aprobar</Button>
+              {manage && <Button size="sm" variant="primary" icon={Tick02Icon} loading={approve.isPending} onClick={() => approve.mutate([pending.id])}>Aprobar</Button>}
             </div>
           </div>
           {preview && (
@@ -212,6 +216,7 @@ export function DocumentsPage() {
   const { data: documents, isPending } = useDocuments(project.id)
   const pending = usePendingDocuments(project.id)
   const approve = useApproveDocuments(project.id)
+  const manage = useCanManage(project.id)
   const [params, setParams] = useSearchParams()
   const phases = (project.plan?.roadmap?.phases ?? []).map((p) => ({ name: p.name, epics: p.epics.map((e) => e.key) }))
 
@@ -229,7 +234,7 @@ export function DocumentsPage() {
         <SkeletonCard lines={6} />
       ) : (
         <div className="grid gap-3">
-          {newOnes.length > 0 && <PendingDocuments pending={newOnes} approving={approve.isPending} onApprove={(ids) => approve.mutate(ids)} />}
+          {newOnes.length > 0 && <PendingDocuments pending={newOnes} approving={approve.isPending} onApprove={manage ? (ids) => approve.mutate(ids) : undefined} />}
           {!documents?.length ? (
             newOnes.length === 0 && (
               <EmptyState

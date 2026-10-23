@@ -14,7 +14,6 @@ async function newProject(autoApprove = false) {
   const project = await settle(
     api.projects.create({
       name: 'Shop', description: 'A small online shop.', auto_approve: autoApprove,
-      members: [{ name: 'Ana', role: 'Backend', seniority: 'senior' }, { name: 'Leo', role: 'Frontend' }],
     }),
   )
   return project.id

@@ -8,11 +8,20 @@ interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 
   /** Required: an icon-only button needs an accessible name (spec 009, FR-010). Also shown as a tooltip. */
   label: string
   size?: 'sm' | 'md'
-  variant?: 'filled' | 'quiet'
+  /** "inverse" is the strong one of a pair, like the selected segment (the carousel's next). */
+  variant?: 'filled' | 'quiet' | 'inverse' | 'surface'
   /** Where the tooltip opens; "none" when the label is already visible nearby. */
   tooltip?: 'below' | 'above' | 'right' | 'none'
   tooltipAlign?: 'center' | 'end'
 }
+
+const VARIANTS = {
+  filled: 'bg-surface-strong text-ink hover:opacity-80',
+  quiet: 'text-ink-muted hover:bg-surface-strong hover:text-ink',
+  inverse: 'bg-inverse text-on-inverse hover:opacity-90',
+  // On a tinted panel, where surface-strong would read as gray.
+  surface: 'bg-surface text-ink hover:opacity-80',
+} as const
 
 export function IconButton({
   icon, label, size = 'md', variant = 'filled', tooltip = 'below', tooltipAlign, className, type = 'button', ...rest
@@ -25,7 +34,7 @@ export function IconButton({
         className={cn(
           'inline-flex items-center justify-center rounded-pill transition-[color,background-color,opacity] duration-150 disabled:opacity-50',
           size === 'md' ? 'size-control-md' : 'size-control-sm',
-          variant === 'filled' ? 'bg-surface-strong text-ink hover:opacity-80' : 'text-ink-muted hover:bg-surface-strong hover:text-ink',
+          VARIANTS[variant],
           className,
         )}
         {...rest}

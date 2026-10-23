@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useProposalActions } from '../../../application/use-cases/usePlanning'
+import { useCanManage } from '../../../application/use-cases/useSession'
 import type { StageKey } from '../../../domain/plan'
 import { finalContent, type Proposal } from '../../../domain/proposals'
 import type { FieldErrors } from '../../../domain/rules'
 import type { StageState } from '../../../domain/stepper'
 import { Button, Card, Icon, Pill, StateLabel } from '../ds'
-import { AiMagicIcon, Alert02Icon, Edit02Icon, InformationCircleIcon, RefreshIcon, Tick02Icon, UserWarning01Icon } from '../ds/icons'
+import { AiMagicIcon, Alert02Icon, Edit02Icon, HourglassIcon, InformationCircleIcon, RefreshIcon, Tick02Icon, UserWarning01Icon } from '../ds/icons'
 import { AdjustEditor, validateAdjust } from './AdjustEditor'
 import { RejectDialog } from './RejectDialog'
 import { summarizeStage } from './stageBodies'
@@ -23,9 +24,10 @@ interface ProposalCardProps {
   retryingStage: boolean
 }
 
-/** What the agent decided, why, the main facts, and the leader's decision. */
+/** What the agent decided, why, the main facts, and the leader's decision. Members see it without the decision buttons. */
 export function ProposalCard({ projectId, stageKey, state, proposal, applying, onRetryStage, retryingStage }: ProposalCardProps) {
   const { approve, adjust, reject, retryApply } = useProposalActions(projectId)
+  const manage = useCanManage(projectId)
   const [draft, setDraft] = useState<Record<string, unknown> | null>(null)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [saving, setSaving] = useState(false)
@@ -71,14 +73,18 @@ export function ProposalCard({ projectId, stageKey, state, proposal, applying, o
 
       {needsLeader && (
         <div className="grid gap-1 rounded-md bg-amber-soft p-4">
-          <StateLabel hue="amber" icon={UserWarning01Icon}>Te necesita</StateLabel>
-          <p className="text-body text-ink">La rechazaste tres veces seguidas. Reinténtala con tu último motivo o ajusta esta propuesta tú mismo.</p>
+          <StateLabel hue="amber" icon={UserWarning01Icon}>{manage ? 'Te necesita' : 'Necesita al líder'}</StateLabel>
+          <p className="text-body text-ink">
+            {manage
+              ? 'La rechazaste tres veces seguidas. Reinténtala con tu último motivo o ajusta esta propuesta tú mismo.'
+              : 'Se rechazó tres veces seguidas. Un líder la reintenta o la ajusta.'}
+          </p>
         </div>
       )}
 
       {proposal.status === 'rejected' && proposal.rejection_reason && (
         <div className="grid gap-1 rounded-md bg-inset p-4">
-          <span className="text-label">Tu motivo</span>
+          <span className="text-label">{manage ? 'Tu motivo' : 'El motivo del líder'}</span>
           <p className="text-body text-ink-muted">{proposal.rejection_reason}</p>
         </div>
       )}
@@ -86,7 +92,7 @@ export function ProposalCard({ projectId, stageKey, state, proposal, applying, o
       {proposal.apply_failed && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-coral-soft p-4">
           <StateLabel hue="coral" icon={Alert02Icon}>{proposal.apply_error ?? 'Se aprobó, pero no se pudo aplicar.'}</StateLabel>
-          <Button size="sm" variant="primary" icon={RefreshIcon} loading={retryApply.isPending} onClick={() => retryApply.mutate(proposal.id)}>Reintentar</Button>
+          {manage && <Button size="sm" variant="primary" icon={RefreshIcon} loading={retryApply.isPending} onClick={() => retryApply.mutate(proposal.id)}>Reintentar</Button>}
         </div>
       )}
 
@@ -111,6 +117,8 @@ export function ProposalCard({ projectId, stageKey, state, proposal, applying, o
           <Button variant="primary" icon={Tick02Icon} loading={saving} onClick={saveAdjusted}>Aprobar con cambios</Button>
           <Button variant="quiet" onClick={() => { setDraft(null); setErrors({}) }}>Cancelar</Button>
         </div>
+      ) : !manage ? (
+        waiting && <StateLabel hue="amber" icon={HourglassIcon}>Esperando la aprobación del líder</StateLabel>
       ) : waiting ? (
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" icon={Tick02Icon} loading={approve.isPending} onClick={() => approve.mutate(proposal.id)}>Aprobar</Button>

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useProjects } from '../../application/use-cases/useProjects'
 import type { ProjectSummary } from '../../domain/project'
 import { ButtonLink, EmptyState, Icon, Pill, SkeletonCard } from '../components/ds'
-import { Add01Icon, Calendar03Icon, Clock01Icon, Folder01Icon, UserGroupIcon } from '../components/ds/icons'
+import { Add01Icon, Calendar03Icon, Clock01Icon, CrownIcon, Folder01Icon, UserGroupIcon, UserIcon } from '../components/ds/icons'
 import { PROJECT_STATUS } from '../components/project/projectStatus'
 import { AppLayout } from '../components/shell/AppLayout'
 import { PageHeader } from '../components/shell/PageHeader'
@@ -21,6 +21,9 @@ function ProjectCard({ project }: { project: ProjectSummary }) {
         <Pill hue={status.hue} icon={status.icon}>{status.label}</Pill>
       </div>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-caption text-ink-muted tabular-nums">
+        {project.permission === 'leader'
+          ? <span className="inline-flex items-center gap-1.5 text-ink"><Icon icon={CrownIcon} size={16} />Líder</span>
+          : <span className="inline-flex items-center gap-1.5 text-ink"><Icon icon={UserIcon} size={16} />Miembro</span>}
         <span className="inline-flex items-center gap-1.5"><Icon icon={Clock01Icon} size={16} />{plural(project.duration_weeks, 'semana')}</span>
         <span className="inline-flex items-center gap-1.5"><Icon icon={UserGroupIcon} size={16} />{plural(project.member_count, 'miembro')}</span>
         <span className="inline-flex items-center gap-1.5"><Icon icon={Calendar03Icon} size={16} />{formatDate(project.created_at)}</span>
@@ -49,7 +52,7 @@ export function ProjectsPage() {
         </ul>
       ) : (
         <EmptyState icon={Folder01Icon} title="Todavía no hay proyectos" action={newProject}>
-          Empieza con una descripción y tu equipo. Los agentes siguen desde ahí.
+          Crea uno y suma a tu equipo con un link, o pide a tu líder el link de su proyecto.
         </EmptyState>
       )}
     </AppLayout>

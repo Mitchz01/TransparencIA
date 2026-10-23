@@ -12,7 +12,7 @@ export function TeamAvatars({ projectId, members }: { projectId: number; members
   const rest = members.length - SHOWN
   return (
     <Link
-      to={`/projects/${projectId}/settings`}
+      to={`/projects/${projectId}/team`}
       aria-label={`Equipo: ${listNames(members.map((m) => m.name))}`}
       title="Ver el equipo"
       className="flex items-center rounded-pill p-1 transition-[background-color] duration-150 hover:bg-surface"

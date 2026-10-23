@@ -156,6 +156,11 @@ Added for the first round of screens; all of them are in [preview.html](preview.
 | Avatar stack | Up to four sets of initials overlapping by 4px with a 2px `bg` ring, then "+N" | A link to the team; its accessible name lists every member |
 | Task card | `card` with `radius-md` and `space-4` padding: the title in `text-label` semibold (two lines at most), the checklist track when partly done, and one data row with the key, checklist, points, issue, priority as icon plus word, and the initials (or the missing role) on the right | No description; it lives in the task panel. The name behind the initials is a tooltip and screen reader text |
 | Disclosure row | A row-list row whose title opens its detail, with a chevron that turns | Built on `<details>`, so it opens with Enter and Space |
+| Password field | A text field with a quiet eye button at the end that shows the password while typing ("Mostrar contraseña" / "Ocultar contraseña") | Spec 015. The button keeps a fixed accessible name per state |
+| Notched panel | A fill with its top right corner cut in, every corner of the cut rounded (two outward, one inward). The cut is painted with the color behind the panel, so it needs a flat fill behind it (`behind`); something small can sit in the cut (the theme toggle, the agents' mark) | Spec 015 sign in screens. No borders or shadow, like any card. Keep content clear of the cut |
+| Agents' mark | A spark of eleven uneven rays in `currentColor`; `solid` at icon size, `line` large and quiet behind content | Brand art, not an icon: icons still come only from Hugeicons. On the sign in screens, inside a `surface` circle in the cut of a notched panel |
+| Account menu | The avatar as a 40px pill that opens a menu with the name and email on top (not choices), then "Mi perfil" and "Cerrar sesión" | In both top bars. `Menu` takes a `header` and can drop its chevron |
+| Sign in layout | The form in a 400px column on the left, with the screen's one glow behind it; a `primary-soft` notched panel on the right with what the agents do (a carousel with `surface` and `inverse` round buttons) and how the team joins | Under 1024px only the form. Fields on the page background use `surface` (in light, `inset` is the same color as `bg`). The Google, GitHub and SSO buttons are secondary pills with the Hugeicons logos |
 
 ## Interaction and accessibility
 

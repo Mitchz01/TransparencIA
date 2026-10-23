@@ -3,10 +3,11 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTheme } from '../../../application/theme'
 import { Icon, IconButton } from '../ds'
 import { Moon02Icon, Notification01Icon, Settings01Icon, Sun03Icon, Tick02Icon } from '../ds/icons'
+import { AccountMenu } from './AccountMenu'
 import { ProjectSwitcher } from './ProjectSwitcher'
 import { SectionMenu } from './SectionNav'
 
-function Brand({ withName = false, className }: { withName?: boolean; className?: string }) {
+export function Brand({ withName = false, className }: { withName?: boolean; className?: string }) {
   return (
     <Link to="/" className={`inline-flex shrink-0 items-center gap-2.5 rounded-pill ${className ?? ''}`} aria-label="Agile Planner, todos los proyectos">
       <span className="inline-flex size-9 items-center justify-center rounded-sm bg-primary text-on-primary">
@@ -39,13 +40,16 @@ function Bar({ children }: { children: ReactNode }) {
   )
 }
 
-/** Outside a project: the brand on the left, the theme on the right. */
+/** Outside a project: the brand on the left, the theme and the account on the right. */
 export function HomeTopBar() {
   return (
     <Bar>
       <div className="flex h-control-md items-center justify-between gap-3">
         <Brand withName />
-        <ThemeToggle />
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <AccountMenu />
+        </div>
       </div>
     </Bar>
   )
@@ -57,11 +61,13 @@ interface ProjectTopBarProps {
   onOpenActivity: () => void
   /** Receives the element where the current section renders its views. */
   viewsRef: (element: HTMLDivElement | null) => void
+  /** Leaders see the settings (spec 015); members don't. */
+  canManage: boolean
 }
 
-/** Inside a project: the project on the left, the section's views in the center, activity on the right.
+/** Inside a project: the project on the left, the section's views in the center, activity and the account on the right.
  *  The sections live in the rail; under 768px they move into a menu here. */
-export function ProjectTopBar({ projectId, projectName, onOpenActivity, viewsRef }: ProjectTopBarProps) {
+export function ProjectTopBar({ projectId, projectName, onOpenActivity, viewsRef, canManage }: ProjectTopBarProps) {
   const navigate = useNavigate()
   return (
     <Bar>
@@ -75,8 +81,9 @@ export function ProjectTopBar({ projectId, projectName, onOpenActivity, viewsRef
           <IconButton icon={Notification01Icon} label="Actividad" tooltipAlign="end" onClick={onOpenActivity} />
           <span className="contents md:hidden">
             <ThemeToggle />
-            <IconButton icon={Settings01Icon} label="Ajustes" tooltipAlign="end" onClick={() => navigate(`/projects/${projectId}/settings`)} />
+            {canManage && <IconButton icon={Settings01Icon} label="Ajustes" tooltipAlign="end" onClick={() => navigate(`/projects/${projectId}/settings`)} />}
           </span>
+          <AccountMenu />
         </div>
         <div className="col-span-2 md:hidden">
           <SectionMenu projectId={projectId} />

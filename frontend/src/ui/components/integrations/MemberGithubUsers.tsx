@@ -5,10 +5,11 @@ import { Alert02Icon, Tick02Icon } from '../ds/icons'
 
 interface Props {
   members: Member[]
-  onSave: (memberId: number, username: string | null) => Promise<{ errors: Record<string, string>; warning?: string }>
+  /** Leaders only (spec 015); without it each row just shows the username. */
+  onSave?: (memberId: number, username: string | null) => Promise<{ errors: Record<string, string>; warning?: string }>
 }
 
-function MemberRow({ member, onSave }: { member: Member } & Pick<Props, 'onSave'>) {
+function MemberRow({ member, onSave }: { member: Member; onSave: NonNullable<Props['onSave']> }) {
   const [value, setValue] = useState(member.github_username ?? '')
   const [error, setError] = useState<string>()
   const [note, setNote] = useState<{ text: string; warning: boolean }>()
@@ -69,7 +70,22 @@ export function MemberGithubUsers({ members, onSave }: Props) {
         <p className="text-body text-ink-muted">Con su usuario, las issues se asignan a quien corresponde y se sugieren revisores.</p>
       </div>
       <ul className="grid gap-2">
-        {members.map((m) => <MemberRow key={m.id} member={m} onSave={onSave} />)}
+        {members.map((m) =>
+          onSave ? (
+            <MemberRow key={m.id} member={m} onSave={onSave} />
+          ) : (
+            <li key={m.id} className="flex items-center justify-between gap-3 rounded-md bg-inset p-4">
+              <span className="flex min-w-0 items-center gap-3">
+                <Avatar name={m.name} className="bg-surface" />
+                <span className="grid min-w-0">
+                  <span className="truncate text-label">{m.name}</span>
+                  <span className="text-caption text-ink-muted">{m.role}</span>
+                </span>
+              </span>
+              <span className="truncate text-label text-ink-muted">{m.github_username ?? 'Sin usuario'}</span>
+            </li>
+          ),
+        )}
       </ul>
     </Card>
   )

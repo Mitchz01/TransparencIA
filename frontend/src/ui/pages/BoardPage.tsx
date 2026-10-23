@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useBoard, useCreateTask, useMoveTask } from '../../application/use-cases/useBoard'
 import { usePendingReplan } from '../../application/use-cases/useReplan'
+import { useCanManage } from '../../application/use-cases/useSession'
 import type { Priority } from '../../domain/board'
 import { BOARD_COLUMNS, CONTINUOUS_COLUMNS, defaultSprint, fieldsFromFilters, filterTasks, sprintLoad, type TaskFilters } from '../../domain/rules'
 import { AddTask } from '../components/board/AddTask'
@@ -65,6 +66,8 @@ export function BoardPage() {
   const [openId, setOpenId] = useState<number | null>(null)
   const [replanning, setReplanning] = useState(false)
   const pendingReplan = usePendingReplan(project.id)
+  // Members work on the board; capacity, replanning and closing sprints are the leaders' (spec 015).
+  const manage = useCanManage(project.id)
 
   if (isPending) {
     return (
@@ -127,15 +130,15 @@ export function BoardPage() {
         actions={
           <>
             <TeamAvatars projectId={project.id} members={project.members} />
-            {load && sprint && <CapacityBar projectId={project.id} load={load} override={board.capacity_override} />}
-            <Button icon={AiMagicIcon} disabled={Boolean(pendingReplan)} onClick={() => setReplanning(true)}>Replanificar</Button>
-            {sprint && <CloseSprintButton projectId={project.id} sprint={sprint} tasks={board.tasks} />}
+            {load && sprint && <CapacityBar projectId={project.id} load={load} override={board.capacity_override} editable={manage} />}
+            {manage && <Button icon={AiMagicIcon} disabled={Boolean(pendingReplan)} onClick={() => setReplanning(true)}>Replanificar</Button>}
+            {sprint && <CloseSprintButton projectId={project.id} sprint={sprint} tasks={board.tasks} canClose={manage} />}
           </>
         }
       />
       {pendingReplan && (
         <div className="mb-5">
-          <ReplanDiff key={pendingReplan.proposal.id} projectId={project.id} proposal={pendingReplan.proposal} content={pendingReplan.content} />
+          <ReplanDiff key={pendingReplan.proposal.id} projectId={project.id} proposal={pendingReplan.proposal} content={pendingReplan.content} canDecide={manage} />
         </div>
       )}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">

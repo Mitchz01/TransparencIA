@@ -10,10 +10,12 @@ interface SkillsFieldProps {
   onChange: (skills: string[]) => void
   /** Errors by skill index ("members[0].skills[2]" → 2). */
   errors?: Record<number, string>
+  /** "inset" inside a card or a dialog, where a surface field would vanish. */
+  fill?: 'surface' | 'inset'
 }
 
 /** Skills as chips: type one and press Enter or a comma. */
-export function SkillsField({ label, skills, onChange, errors = {} }: SkillsFieldProps) {
+export function SkillsField({ label, skills, onChange, errors = {}, fill = 'surface' }: SkillsFieldProps) {
   const [text, setText] = useState('')
   const id = useId()
   const errorList = Object.entries(errors)
@@ -40,12 +42,13 @@ export function SkillsField({ label, skills, onChange, errors = {} }: SkillsFiel
       </label>
       <div
         className={cn(
-          'flex min-h-control-md flex-wrap items-center gap-1.5 rounded-md bg-surface px-2 py-1.5 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus',
+          'flex min-h-control-md flex-wrap items-center gap-1.5 rounded-md px-2 py-1.5 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus',
+          fill === 'surface' ? 'bg-surface' : 'bg-inset',
           errorList.length > 0 && 'shadow-[inset_0_0_0_1.5px_var(--coral)]',
         )}
       >
         {skills.map((skill, i) => (
-          <span key={skill} className={cn('inline-flex h-7 items-center gap-1 rounded-pill pr-1 pl-3 text-label', errors[i] ? 'bg-coral-soft text-coral' : 'bg-surface-strong text-ink')}>
+          <span key={skill} className={cn('inline-flex h-7 items-center gap-1 rounded-pill pr-1 pl-3 text-label', errors[i] ? 'bg-coral-soft text-coral' : fill === 'surface' ? 'bg-surface-strong text-ink' : 'bg-surface text-ink')}>
             {skill}
             <button
               type="button"

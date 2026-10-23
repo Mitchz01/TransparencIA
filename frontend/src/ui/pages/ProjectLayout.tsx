@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Navigate, Outlet, useOutletContext, useParams } from 'react-router-dom'
 import { useLiveUpdates } from '../../application/liveUpdates'
 import { useProject } from '../../application/use-cases/useProjects'
+import { useCanManage } from '../../application/use-cases/useSession'
 import type { Project } from '../../domain/project'
 import { ActivityDrawer } from '../components/activity/ActivityDrawer'
 import { SkeletonCard } from '../components/ds'
@@ -20,6 +21,7 @@ function LiveUpdates({ projectId }: { projectId: number }) {
 export function ProjectLayout() {
   const projectId = Number(useParams().projectId)
   const { data: project, notFound } = useProject(projectId)
+  const canManage = useCanManage(projectId)
   const [activityOpen, setActivityOpen] = useState(false)
   const [viewsSlot, setViewsSlot] = useState<HTMLDivElement | null>(null)
 
@@ -28,13 +30,14 @@ export function ProjectLayout() {
   return (
     <TopBarViewsSlot.Provider value={viewsSlot}>
       <AppLayout
-        rail={<ProjectRail projectId={projectId} />}
+        rail={<ProjectRail projectId={projectId} canManage={canManage} />}
         topBar={
           <ProjectTopBar
             projectId={projectId}
             projectName={project?.name ?? 'Proyecto'}
             onOpenActivity={() => setActivityOpen(true)}
             viewsRef={setViewsSlot}
+            canManage={canManage}
           />
         }
       >
