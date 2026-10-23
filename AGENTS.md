@@ -20,23 +20,36 @@ Reglas:
 - **Backend**: Python 3.13, FastAPI, SQLModel (SQLite), Google ADK + Gemini (`gemini-3.5-flash`)
 - **Frontend**: React 19 + TypeScript + Vite, Tailwind, dnd-kit, React Router
 
-## Estructura
+## Estructura (arquitectura hexagonal)
+
+Contexto del producto en [plan/context.md](plan/context.md); arquitectura y decisiones en [plan/hexagonal-architecture.md](plan/hexagonal-architecture.md).
+
+Regla de dependencia: `adapters → application → domain`, nunca al revés (lo verifica `tests/architecture/test_layers.py`).
 
 ```
 backend/app/
-  main.py            app FastAPI
-  config.py          env vars (sin API key → MOCK_AGENTS)
-  db.py, models.py   SQLModel: Project, Member, Sprint, Task
-  agents/            pipeline ADK, esquemas de salida, mock
-  routers/           endpoints HTTP
-  services/          lógica de negocio (persistir plan, etc.)
-backend/tests/
+  main.py              composition root: elige adaptadores (mock o real) y monta routers
+  config.py            env vars (sin API key → MOCK_AGENTS, sin GITHUB_TOKEN → MOCK_GITHUB)
+  domain/              entidades, esquemas del plan (PLANNING_STAGES), propuestas, eventos. Sin I/O
+  application/
+    ports/             interfaces (Protocol): repos, UnitOfWork, PlanningAgents, CodeHost, EventBus
+    use_cases/         un módulo por caso de uso, agrupados por feature
+    dto.py             entradas/salidas de los casos de uso
+  adapters/
+    inbound/http/      routers FastAPI + SSE
+    inbound/webhooks/  webhooks de GitHub
+    outbound/persistence/  SQLModel: tablas, mappers, repos, UnitOfWork
+    outbound/agents/   adk/ (Gemini) y mock/
+    outbound/code_host/    github/ y fake
+    outbound/events/   bus de eventos en memoria
+backend/tests/         unit/ (domain, application), integration/adapters/, architecture/
 frontend/src/
-  api/               cliente HTTP + SSE
-  components/        UI reutilizable
-  pages/             pantallas (rutas)
-  hooks/             hooks
-  types/             tipos compartidos (espejo de models.py / schemas.py)
+  app/                 App, rutas, composition root (container)
+  domain/              tipos espejo de backend/app/domain + reglas puras
+  application/         ports.ts (gateways) + use-cases/ (hooks)
+  adapters/            http/ (backend real) y fake/ (sin backend)
+  ui/                  pages/, components/, styles/, assets/
+plan/                  contexto del producto y arquitectura
 specs/               SDD: constitution, plantillas, features
 ```
 
@@ -44,7 +57,8 @@ specs/               SDD: constitution, plantillas, features
 
 ```bash
 # backend
-cd backend && .venv/Scripts/activate && fastapi dev app/main.py   # :8000
+cd backend && .venv/Scripts/activate && fastapi dev app/main.py   # :8000 (Linux/macOS: .venv/bin/activate)
+cd backend && pip install -r requirements-dev.txt && pytest       # tests
 # frontend
 cd frontend && npm run dev                                         # :5173, /api → :8000
 ```
@@ -53,4 +67,7 @@ cd frontend && npm run dev                                         # :5173, /api
 
 - Código e identificadores en inglés; textos de UI y specs en español.
 - Las salidas de agentes siempre con `output_schema` (Pydantic), nunca texto libre.
-- Tipos del front en `src/types` alineados con `backend/app/agents/schemas.py` y `models.py`.
+- Tipos del front en `src/domain` alineados con `backend/app/domain/`.
+- Nombres de carpetas y archivos siempre en inglés (también en `plan/` y `specs/`); el contenido de docs y la UI, en español.
+- Nada del exterior (FastAPI, SQLModel, ADK, GitHub) se importa en `domain/` ni en `application/`: se agrega un puerto y un adaptador.
+- Las tablas SQLModel son del adaptador de persistencia; el resto del código usa las entidades de `domain/`.

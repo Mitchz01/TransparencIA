@@ -1,7 +1,7 @@
 """Plan de ejemplo para correr sin API key (MOCK_AGENTS=1).
 Respeta los mismos esquemas que devuelven los agentes reales."""
 
-from app.agents import schemas
+from app.domain import plan as schemas
 
 
 def _story(key, epic, title, points, role, priority="medium", type_="feature"):

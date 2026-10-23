@@ -1,6 +1,8 @@
-"""Esquemas de salida de cada agente. Gemini los usa como response_schema,
-así que el resultado llega como JSON validado y se puede persistir directo."""
+"""Plan del proyecto: las etapas de planificación y el esquema de salida de cada una.
+Los agentes los usan como output_schema, así que el resultado llega como JSON
+validado y se puede persistir directo."""
 
+from dataclasses import dataclass
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -144,3 +146,24 @@ class Assignment(BaseModel):
 class SprintPlanning(BaseModel):
     sprints: list[SprintPlan]
     assignments: list[Assignment]
+
+
+# ---------- Etapas ----------
+
+
+@dataclass(frozen=True)
+class PlanningStage:
+    key: str  # clave del resultado en el contexto del plan
+    title: str  # nombre del agente que ve el usuario
+    schema: type[BaseModel]
+    inputs: tuple[str, ...]  # resultados previos que necesita como contexto
+
+
+PLANNING_STAGES: tuple[PlanningStage, ...] = (
+    PlanningStage("analysis", "Analista de producto", Analysis, ("project",)),
+    PlanningStage("methodology", "Agile coach", MethodologyDecision, ("project", "analysis")),
+    PlanningStage("architecture", "Arquitecto de software", Architecture, ("project", "analysis", "methodology")),
+    PlanningStage("roadmap", "Product manager", Roadmap, ("project", "analysis", "methodology", "architecture")),
+    PlanningStage("backlog", "Product owner", Backlog, ("project", "architecture", "roadmap")),
+    PlanningStage("sprints", "Scrum master", SprintPlanning, ("project", "methodology", "roadmap", "backlog")),
+)
