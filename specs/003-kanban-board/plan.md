@@ -234,14 +234,14 @@ Request headers: `Content-Type: application/json`
 
 ### Tests for User Story 1
 
-- [ ] T008 [P] [US1] `build_board` tests in `backend/tests/unit/domain/test_board_builder.py`: one sprint + objective per iteration; stories in `todo` within their sprint; unsprinted stories in `backlog`; unknown story keys skipped and reported; checklist = one unchecked item per criterion; assignment by exact name, then role with fewest points in the sprint, else `missing_role`; duplicate member names → by role
-- [ ] T009 [P] [US1] `ApplyPlan` tests (project → `ready`, `PlanApplied` published, running it twice creates nothing new) in `backend/tests/unit/application/test_apply_plan.py`
+- [x] T008 [P] [US1] `build_board` tests in `backend/tests/unit/domain/test_board_builder.py`: one sprint + objective per iteration; stories in `todo` within their sprint; unsprinted stories in `backlog`; unknown story keys skipped and reported; checklist = one unchecked item per criterion; assignment by exact name, then role with fewest points in the sprint, else `missing_role`; duplicate member names → by role
+- [x] T009 [P] [US1] `ApplyPlan` tests (project → `ready`, `PlanApplied` published, running it twice creates nothing new) in `backend/tests/unit/application/test_apply_plan.py`
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] Implement `build_board(project_id, members, backlog, sprint_planning) -> BuiltBoard` with `assign()` and `checklist_from_criteria()` in `backend/app/domain/board.py`
-- [ ] T011 [US1] Implement `ApplyPlan` in `backend/app/application/use_cases/planning/apply_plan.py`: skip if the project already has sprints, persist the built board, set `ready`, commit, publish `PlanApplied` (with the skipped story keys)
-- [ ] T012 [US1] Register `ApplyPlan` as an `on_plan_completed` handler of spec 002's `AdvancePlanning` in `backend/app/adapters/inbound/http/dependencies.py`
+- [x] T010 [US1] Implement `build_board(project_id, members, backlog, sprint_planning) -> BuiltBoard` with `assign()` and `checklist_from_criteria()` in `backend/app/domain/board.py`
+- [x] T011 [US1] Implement `ApplyPlan` in `backend/app/application/use_cases/planning/apply_plan.py`: skip if the project already has sprints, persist the built board, set `ready`, commit, publish `PlanApplied` (with the skipped story keys)
+- [ ] T012 [US1] Register `ApplyPlan` as an `on_plan_completed` handler of spec 002's `AdvancePlanning` in `backend/app/adapters/inbound/http/dependencies.py` — not done: spec 002's `AdvancePlanning` doesn't exist yet; `get_apply_plan` and a TODO are in `dependencies.py`
 - [ ] T013 [US1] Create `BoardPage` (route `/projects/:id/board`), `KanbanBoard`, `Column` and `TaskCard` (key, title, priority, points, assignee or "missing role", checklist progress) in `frontend/src/ui/` — handed off to spec 009 (frontend)
 
 **Checkpoint**: after approving the plan, the board shows up with its cards

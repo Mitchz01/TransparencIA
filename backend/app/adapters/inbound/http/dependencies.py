@@ -13,6 +13,7 @@ from app.application.ports.code_host import CodeHost
 from app.application.ports.event_bus import EventBus
 from app.application.ports.unit_of_work import UnitOfWork, UnitOfWorkFactory
 from app.application.use_cases.board.get_board import GetBoard
+from app.application.use_cases.planning.apply_plan import ApplyPlan
 from app.application.use_cases.planning.run_planning import RunPlanning
 from app.application.use_cases.projects.create_project import CreateProject
 from app.application.use_cases.projects.get_plan_views import GetPlanViews
@@ -162,3 +163,13 @@ def get_plan_views(uow: UnitOfWork = Depends(get_uow)) -> GetPlanViews:
 
 def get_get_board(uow: UnitOfWork = Depends(get_uow)) -> GetBoard:
     return GetBoard(uow)
+
+
+# TODO(spec 002): register ApplyPlan as an `on_plan_completed` handler of AdvancePlanning
+# (plan 003, T012) once AdvancePlanning exists. It isn't registered in spec 005's ApplierRegistry
+# on purpose: a ("plan_stage", "sprints") applier would shadow AdvancePlanning for the last stage,
+# and the approved backlog/sprints only reach project.plan through AdvancePlanning.
+def get_apply_plan(
+    uow_factory: UnitOfWorkFactory = Depends(get_uow_factory), bus: EventBus = Depends(get_event_bus)
+) -> ApplyPlan:
+    return ApplyPlan(uow_factory, bus)
