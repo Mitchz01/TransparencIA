@@ -155,14 +155,14 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ### Tests for User Story 1
 
-- [ ] T018 [P] [US1] Tests for the project form rules (contract section 4 validation table, unique names case-insensitive, defaults) in `frontend/src/domain/rules.test.ts`
-- [ ] T019 [P] [US1] Flow test: fill the form, duplicate name shows under the second row, fix it, save → navigates to `/projects/:id/planning`, in `frontend/src/ui/pages/NewProjectPage.test.tsx`
+- [x] T018 [P] [US1] Tests for the project form rules (contract section 4 validation table, unique names case-insensitive, defaults) in `frontend/src/domain/rules.test.ts`
+- [x] T019 [P] [US1] Flow test: fill the form, duplicate name shows under the second row, fix it, save → navigates to `/projects/:id/planning`, in `frontend/src/ui/pages/NewProjectPage.test.tsx`
 
 ### Implementation for User Story 1
 
-- [ ] T020 [US1] Add `validateProject()` to `frontend/src/domain/rules.ts` returning errors keyed by the contract's field paths (`members[1].name`)
-- [ ] T021 [US1] Create `MemberRows` (add/remove rows, role, seniority, hours, skills as chips) and `ProjectForm` (name, description, duration, methodology select, auto-approve switch) in `frontend/src/ui/components/project/`
-- [ ] T022 [US1] Create `useCreateProject` (create → `planning.start` → navigate; 422 errors mapped to fields) and `NewProjectPage` at `/projects/new`
+- [x] T020 [US1] Add `validateProject()` to `frontend/src/domain/rules.ts` returning errors keyed by the contract's field paths (`members[1].name`)
+- [x] T021 [US1] Create `MemberRows` (add/remove rows, role, seniority, hours, skills as chips) and `ProjectForm` (name, description, duration, methodology select, auto-approve switch) in `frontend/src/ui/components/project/`
+- [x] T022 [US1] Create `useCreateProject` (create → `planning.start` → navigate; 422 errors mapped to fields) and `NewProjectPage` at `/projects/new`
 
 **Checkpoint**: a project can be created and planning starts from the UI
 

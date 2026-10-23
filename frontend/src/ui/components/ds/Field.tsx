@@ -48,28 +48,38 @@ export function FieldError({ id, children }: { id?: string; children: ReactNode 
   )
 }
 
-const control = (size: 'md' | 'lg', invalid: boolean) =>
+const control = (size: 'md' | 'lg', invalid: boolean, fill: 'inset' | 'surface' = 'inset') =>
   cn(
-    'w-full min-w-0 rounded-pill bg-inset px-5 text-label font-normal text-ink transition-[box-shadow] duration-150',
+    'w-full min-w-0 rounded-pill px-5 text-label font-normal text-ink transition-[box-shadow] duration-150',
+    fill === 'inset' ? 'bg-inset' : 'bg-surface',
     size === 'lg' ? 'h-control-lg' : 'h-control-md',
     invalid && 'shadow-[inset_0_0_0_1.5px_var(--coral)]',
     'disabled:opacity-60',
   )
 
-type BaseProps = { label: string; hint?: string; error?: string; hideLabel?: boolean; className?: string; size?: 'md' | 'lg' }
+type BaseProps = {
+  label: string
+  hint?: string
+  error?: string
+  hideLabel?: boolean
+  className?: string
+  size?: 'md' | 'lg'
+  /** "surface" for fields inside an inset block, so they don't vanish into it. */
+  fill?: 'inset' | 'surface'
+}
 
-export function TextField({ label, hint, error, hideLabel, className, size = 'lg', ...input }: BaseProps & Omit<InputHTMLAttributes<HTMLInputElement>, 'size'>) {
+export function TextField({ label, hint, error, hideLabel, className, size = 'lg', fill, ...input }: BaseProps & Omit<InputHTMLAttributes<HTMLInputElement>, 'size'>) {
   return (
     <FieldShell label={label} hint={hint} error={error} hideLabel={hideLabel} className={className}>
       {({ id, describedBy, invalid }) => (
-        <input id={id} aria-invalid={invalid || undefined} aria-describedby={describedBy} className={control(size, invalid)} {...input} />
+        <input id={id} aria-invalid={invalid || undefined} aria-describedby={describedBy} className={control(size, invalid, fill)} {...input} />
       )}
     </FieldShell>
   )
 }
 
 export function NumberField({
-  label, hint, error, hideLabel, className, size = 'lg', unit, ...input
+  label, hint, error, hideLabel, className, size = 'lg', unit, fill, ...input
 }: BaseProps & { unit?: string } & Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'type'>) {
   return (
     <FieldShell label={label} hint={hint} error={error} hideLabel={hideLabel} className={className}>
@@ -81,7 +91,7 @@ export function NumberField({
             inputMode="numeric"
             aria-invalid={invalid || undefined}
             aria-describedby={describedBy}
-            className={cn(control(size, invalid), 'tabular-nums', unit && 'pr-16')}
+            className={cn(control(size, invalid, fill), 'tabular-nums', unit && 'pr-16')}
             {...input}
           />
           {unit && <span className="pointer-events-none absolute top-1/2 right-5 -translate-y-1/2 text-label text-ink-muted">{unit}</span>}
@@ -117,7 +127,7 @@ export interface SelectOption {
 }
 
 export function Select({
-  label, hint, error, hideLabel, className, size = 'lg', options, ...select
+  label, hint, error, hideLabel, className, size = 'lg', options, fill, ...select
 }: BaseProps & { options: SelectOption[] } & Omit<SelectHTMLAttributes<HTMLSelectElement>, 'size'>) {
   return (
     <FieldShell label={label} hint={hint} error={error} hideLabel={hideLabel} className={className}>
@@ -127,7 +137,7 @@ export function Select({
             id={id}
             aria-invalid={invalid || undefined}
             aria-describedby={describedBy}
-            className={cn(control(size, invalid), 'cursor-pointer appearance-none pr-12 disabled:cursor-not-allowed')}
+            className={cn(control(size, invalid, fill), 'cursor-pointer appearance-none pr-12 disabled:cursor-not-allowed')}
             {...select}
           >
             {options.map((o) => (

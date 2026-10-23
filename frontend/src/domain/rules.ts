@@ -1,7 +1,40 @@
 // Pure rules the screens share with the service, mirrored so the UI reacts before the server answers.
 
 import type { BoardWarning, ChecklistItem, Priority, Sprint, SprintLoad, Task, TaskStatus, WipLimit } from './board'
-import type { Member, Seniority } from './project'
+import {
+  LIMITS, REQUESTED_METHODOLOGIES, SENIORITIES, validateMembers, validateProjectCreate,
+  type Member, type ProjectCreate, type ProjectUpdate, type Seniority,
+} from './project'
+
+// ---------- Project form (contract section 4, ProjectGateway validation table) ----------
+
+/** Field path → first message, the same paths as the API's 422 `errors[].field` ("members[1].name"). */
+export type FieldErrors = Record<string, string>
+
+const firstPerField = (issues: { field: string; message: string }[]): FieldErrors =>
+  issues.reduce<FieldErrors>((errors, { field, message }) => (field in errors ? errors : { ...errors, [field]: message }), {})
+
+export function validateProject(body: ProjectCreate | ProjectUpdate): FieldErrors {
+  const issues = 'name' in body && 'description' in body && 'members' in body
+    ? validateProjectCreate(body as ProjectCreate)
+    : [
+        ...(body.name !== undefined && !body.name.trim() ? [{ field: 'name', message: 'Required.' }] : []),
+        ...(body.name && body.name.trim().length > LIMITS.name ? [{ field: 'name', message: `Max ${LIMITS.name} characters.` }] : []),
+        ...(body.members ? validateMembers(body.members) : []),
+      ]
+  if (body.requested_methodology !== undefined && !REQUESTED_METHODOLOGIES.includes(body.requested_methodology)) {
+    issues.push({ field: 'requested_methodology', message: 'Pick one of the list.' })
+  }
+  body.members?.forEach((member, i) => {
+    if (member.seniority !== undefined && !SENIORITIES.includes(member.seniority)) {
+      issues.push({ field: `members[${i}].seniority`, message: 'Pick junior, mid or senior.' })
+    }
+  })
+  return firstPerField(issues)
+}
+
+export const MEMBER_DEFAULTS = { seniority: 'mid' as Seniority, hours_per_week: 20 }
+export const PROJECT_DEFAULTS = { duration_weeks: 8, requested_methodology: 'auto' as const, auto_approve: false }
 
 // ---------- Capacity (spec 002, domain/capacity.py: the single rule, spec 003 FR-017) ----------
 
