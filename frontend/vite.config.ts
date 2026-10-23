@@ -8,8 +8,9 @@ export default defineConfig({
     proxy: { '/api': 'http://localhost:8000' },
   },
   build: {
-    // The diagram renderer's own chunks load only when a diagram is opened.
-    chunkSizeWarningLimit: 700,
+    // The app's own chunks stay under 300 kB. The big ones are the diagram renderer's, loaded only when a
+    // diagram is opened (its largest, a layout engine, only for diagrams that ask for that layout).
+    chunkSizeWarningLimit: 1500,
   },
   test: {
     environment: 'jsdom',
