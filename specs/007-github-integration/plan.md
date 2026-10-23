@@ -75,6 +75,113 @@ frontend/src/
 
 **Structure Decision**: web application on the existing hexagonal layout. All GitHub knowledge stays in `adapters/outbound/code_host/github/`; use cases only see the `CodeHost` port, so the demo runs on `FakeCodeHost` without a token.
 
+## API Contract
+
+Follows [plan/api-conventions.md](../../plan/api-conventions.md) (headers, error body, status codes). The API tests assert every status row below.
+
+New domain errors (with T007): `RepositoryNotAccessible`, `RepositoryNotConnected`, `NothingToPublish`, `PublicationPending`, `CodeHostUnavailable`, `MemberNotFound`.
+
+`github_action` proposals (publishing issues, requesting reviews) are approved through spec 005's proposal API; approving them runs `PublishIssues` or `ApplyReview`. The webhook (`POST /webhooks/github`) is spec 008's contract.
+
+### Changes to other specs' shapes
+
+- `Project` (001) adds `has_token: bool`. `github_token` is **never** returned.
+- `Member` (001) adds `github_username: string | null`.
+- `Task` (003) adds `issue`: `{"number": 12, "url": "https://github.com/acme/app/issues/12", "state": "open", "broken": false}` or `null`. `state`: `open` | `closed` | `merged`; `broken: true` when the issue was deleted on GitHub.
+
+**Connection**
+
+```json
+{
+  "repository": "acme/agile-app",
+  "has_token": true,
+  "mode": "github",
+  "webhook_registered": true,
+  "replaced": "acme/old-repo"
+}
+```
+
+`mode`: `github` (real calls) | `test` (no token anywhere, `FakeCodeHost`, FR-005). `replaced` is the previous repo or `null`.
+
+### `PUT /api/projects/{id}/repository` — connect or replace the repo (US1)
+
+Request headers: `Content-Type: application/json`
+
+```json
+{ "repository": "acme/agile-app", "token": "github_pat_…" }
+```
+
+- `repository`: `owner/name` (`^[A-Za-z0-9-]{1,39}/[A-Za-z0-9._-]{1,100}$`).
+- `token`: optional and write-only. Missing → keep the current project token, or fall back to the installation token, or test mode (FR-004). `""` deletes the project token.
+- Replacing deletes the old repo's webhook; existing issue links are kept.
+
+| Status | When | Body |
+|---|---|---|
+| `200` | Connected (or replaced) and webhook registered | `Connection` |
+| `400` | Body isn't JSON | Error `malformed_request` |
+| `404` | Unknown project | Error `project_not_found` |
+| `422` | `repository` doesn't match `owner/name` | Error `validation_failed` with `errors` |
+| `422` | The repo doesn't exist, the token can't see it, or it lacks permission to create issues, comment or manage webhooks; nothing is saved | Error `repository_not_accessible`, plus `"reason": "not_found" \| "forbidden" \| "missing_permissions"` |
+| `502` | GitHub didn't answer or failed (5xx, timeout) | Error `code_host_unavailable` |
+
+### `DELETE /api/projects/{id}/repository` — disconnect (US1)
+
+No body.
+
+| Status | When | Body |
+|---|---|---|
+| `204` | Disconnected: webhook removed (best effort), project token deleted, issue links kept | Empty |
+| `404` | Unknown project | Error `project_not_found` |
+| `409` | No repo connected | Error `repository_not_connected` |
+
+If deleting the webhook on GitHub fails, the repo is disconnected anyway and the failure is logged; the response is still `204`.
+
+### `POST /api/projects/{id}/issues/propose` — propose publishing pending tasks (US2)
+
+No body. Creates a `github_action` proposal (key `create_issues`) with every task that has no issue.
+
+| Status | When | Body |
+|---|---|---|
+| `201` | Proposal created (or auto-approved and publishing in the background) | `{"proposal_id": 63, "task_count": 11}` + `Location: /api/proposals/63` |
+| `404` | Unknown project | Error `project_not_found` |
+| `409` | No repo connected | Error `repository_not_connected` |
+| `409` | Every task already has an issue | Error `nothing_to_publish` |
+| `409` | A `create_issues` proposal is already pending | Error `publication_pending`, plus `"proposal_id": 60` |
+
+The result of publishing (created and failed issues) is stored on the proposal and announced with the `issues_published` event: `{"project_id", "proposal_id", "created": [{"task_id", "number"}], "failed": [{"task_id", "error"}]}`.
+
+### `PUT /api/members/{id}/github-username` — set a member's GitHub user (US3)
+
+Request headers: `Content-Type: application/json`
+
+```json
+{ "github_username": "anagomez" }
+```
+
+`null` removes it.
+
+| Status | When | Body |
+|---|---|---|
+| `200` | Saved | `{"member": Member, "has_access": true}` — `has_access` is `false` when the user can't access the repo (saved with a warning, US3 scenario 2) and `null` when there's no repo or GitHub couldn't be checked |
+| `400` | Body isn't JSON | Error `malformed_request` |
+| `404` | Unknown member | Error `member_not_found` |
+| `422` | Not a valid GitHub username (1–39 chars, letters, digits and single hyphens, not starting or ending with a hyphen) | Error `validation_failed` with `errors` |
+
+GitHub being down doesn't fail this request: the username is saved and `has_access` is `null`.
+
+### Calls to GitHub (outbound)
+
+Not part of our API, but they define our error mapping (`client.py`, T011):
+
+| GitHub answers | We do |
+|---|---|
+| `401` / `403` on connect | `422 repository_not_accessible` (`forbidden` / `missing_permissions`) |
+| `404` on connect | `422 repository_not_accessible` (`not_found`) |
+| `5xx`, timeout, secondary rate limit | Retry with backoff (T034); in a request → `502 code_host_unavailable`; in a background job → the proposal shows the failed items |
+| `422` creating an issue (e.g. unknown assignee) | Retry once without assignees; if it still fails, the task goes to `failed` |
+
+---
+
 ## Phase 1: Setup (Shared Infrastructure)
 
 **Purpose**: dependencies and configuration

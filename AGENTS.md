@@ -67,6 +67,7 @@ cd frontend && npm run dev                                         # :5173, /api
 
 - **Everything in English**: code, identifiers, comments, docs, specs, plans, commit messages and UI text. The only exception is what the agents generate for a project, which follows the language of the project description (spec 002, FR-014).
 - Agent outputs always use `output_schema` (Pydantic), never free text.
+- HTTP endpoints follow [plan/api-conventions.md](plan/api-conventions.md) (headers, error body, status codes); each plan's **API Contract** section defines its endpoints, and new endpoints are added there before they're coded. [frontend/docs/api-contract.md](frontend/docs/api-contract.md) gathers them for the frontend (TypeScript shapes, gateways, error handling); update it in the same PR as the plan.
 - Frontend types in `src/domain` stay aligned with `backend/app/domain/`.
 - Nothing external (FastAPI, SQLModel, ADK, GitHub) is imported in `domain/` or `application/`: add a port and an adapter.
 - SQLModel tables belong to the persistence adapter; the rest of the code uses the `domain/` entities.

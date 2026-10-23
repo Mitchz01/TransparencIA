@@ -79,6 +79,92 @@ frontend/src/
 
 **Structure Decision**: web application on the existing hexagonal layout. Stage definitions stay in `domain/plan.py` (`PLANNING_STAGES`), so the `PlanningAgents` port keeps its single `run_stage` method; orchestration lives in `application/use_cases/planning/`.
 
+## API Contract
+
+Follows [plan/api-conventions.md](../../plan/api-conventions.md) (headers, error body, status codes). The API tests assert every status row below.
+
+New domain errors (with T008): `StageNotRetryable`, plus `stage_not_found` for unknown stage keys.
+
+Approving, adjusting and rejecting proposals is spec 005's API; this spec only starts and resumes the pipeline and streams its progress. Until 005 lands, auto-approve covers the demo.
+
+### Shared shapes
+
+**Proposal** (also returned by spec 005)
+
+```json
+{
+  "id": 41,
+  "project_id": 12,
+  "kind": "plan_stage",
+  "key": "methodology",
+  "agent": "Agile coach",
+  "content": { /* output schema of the stage */ },
+  "rationale": "Small team with high uncertainty…",
+  "status": "pending",
+  "adjusted_content": null,
+  "rejection_reason": null,
+  "auto_approved": false,
+  "created_at": "2026-10-23T14:06:10Z",
+  "resolved_at": null
+}
+```
+
+`kind`: `plan_stage` | `document` | `replan` | `github_action`. `status`: `pending` | `approved` | `adjusted` | `rejected` (spec 008 adds `discarded`).
+
+### `POST /api/projects/{id}/planning` — start or resume planning (US1, US5)
+
+No body (`Content-Type` not required). Starts from the first stage without an approved proposal, so after an error it resumes instead of starting over (FR-016).
+
+| Status | When | Body |
+|---|---|---|
+| `202` | Accepted; the first pending stage runs in the background | `{"project_id": 12, "status": "planning", "stage": "analysis"}` |
+| `404` | Unknown project | Error `project_not_found` |
+| `409` | Already planning | Error `planning_already_running` |
+| `409` | Project is `ready` (plan already completed; use replan, spec 008) | Error `planning_not_startable` |
+
+### `POST /api/projects/{id}/planning/stages/{key}/retry` — rerun a capped stage (US4)
+
+No body. `key` is a stage key (`analysis`, `methodology`, `architecture`, `roadmap`, `backlog`, `sprints`). Used after three consecutive rejections, when the stage waits for the leader (`stage_needs_leader`).
+
+| Status | When | Body |
+|---|---|---|
+| `202` | The stage runs again in the background, with the last rejection as feedback | `{"project_id": 12, "status": "planning", "stage": "methodology"}` |
+| `404` | Unknown project | Error `project_not_found` |
+| `404` | Unknown stage key | Error `stage_not_found` |
+| `409` | The stage isn't waiting for the leader (it's running, pending approval or already approved) | Error `stage_not_retryable` |
+
+### `GET /api/projects/{id}/events` — live events (SSE, UC-14)
+
+Request headers: `Accept: text/event-stream`. Response headers and keep-alive as in the conventions.
+
+| Status | When | Body |
+|---|---|---|
+| `200` | Stream opened | `text/event-stream` |
+| `404` | Unknown project (checked before the stream starts) | Error `project_not_found` (JSON) |
+
+Each event is `event: <type>` + `data: <json>`. Events this spec publishes:
+
+| `event` | `data` |
+|---|---|
+| `agent_started` | `{"project_id", "agent": "methodology", "title": "Agile coach"}` |
+| `agent_finished` | `{"project_id", "agent", "title", "output": { … }}` |
+| `proposal_created` | `{"project_id", "proposal_id"}` |
+| `proposal_resolved` | `{"project_id", "proposal_id", "status"}` |
+| `stage_needs_leader` | `{"project_id", "stage": "methodology", "rejections": 3}` |
+| `plan_failed` | `{"project_id", "agent", "error": "message safe to show"}` |
+| `plan_completed` | `{"project_id"}` |
+
+Other specs add their own types (`plan_applied`, `task_status_changed`, `team_changed`…) on the same stream; the client ignores types it doesn't know.
+
+```text
+event: agent_started
+data: {"type":"agent_started","project_id":12,"agent":"analysis","title":"Product analyst"}
+
+: ping
+```
+
+---
+
 ## Phase 1: Setup (Shared Infrastructure)
 
 **Purpose**: wiring for background work and per-task DB sessions

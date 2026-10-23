@@ -66,6 +66,144 @@ backend/tests/
 
 **Structure Decision**: the existing hexagonal layout. Code goes into `domain/`, `application/use_cases/projects/` and the HTTP and persistence adapters. No frontend files.
 
+## API Contract
+
+Follows [plan/api-conventions.md](../../plan/api-conventions.md) (headers, error body, status codes). This spec also **implements** the backend side of those conventions for everyone (T006); the frontend side is the handed-off T004. The API tests assert every status row below.
+
+### Shared shapes
+
+**Member**
+
+```json
+{
+  "id": 3,
+  "name": "Ana Gómez",
+  "role": "Backend",
+  "seniority": "senior",
+  "hours_per_week": 30,
+  "skills": ["python", "fastapi"]
+}
+```
+
+`seniority`: `junior` | `mid` | `senior`. Spec 007 adds `github_username: string | null`.
+
+**Project**
+
+```json
+{
+  "id": 12,
+  "name": "Agile Planner",
+  "description": "Jira-like tool where AI agents plan the work.",
+  "duration_weeks": 8,
+  "requested_methodology": "auto",
+  "status": "draft",
+  "auto_approve": false,
+  "repository": null,
+  "plan": null,
+  "members": [ /* Member */ ],
+  "created_at": "2026-10-23T14:05:00Z"
+}
+```
+
+- `requested_methodology`: `auto` | `scrum` | `kanban` | `scrumban` | `xp` | `shape_up`.
+- `status`: `draft` | `planning` | `ready` | `error`.
+- `plan`: the approved stage outputs keyed by stage (spec 002), `null` until the first approval.
+- Spec 007 adds `has_token: bool`; the token itself is never returned.
+
+**ProjectSummary**
+
+```json
+{ "id": 12, "name": "Agile Planner", "status": "ready", "duration_weeks": 8, "member_count": 4, "created_at": "2026-10-23T14:05:00Z" }
+```
+
+### Validation rules (FR-004)
+
+Used by `POST` and `PATCH`; every failing field is listed in `errors`.
+
+| Field | Rule | `message` |
+|---|---|---|
+| `name` | Required, 1–120 chars after trimming | `Required.` / `Max 120 characters.` |
+| `description` | Required, 1–5000 chars | `Required.` / `Max 5000 characters.` |
+| `duration_weeks` | Integer 1–52 | `Must be between 1 and 52.` |
+| `requested_methodology` | One of the enum values | `Must be one of: auto, scrum, kanban, scrumban, xp, shape_up.` |
+| `members` | At least 1 | `The team needs at least one member.` |
+| `members[i].name` | Required; unique in the team (case-insensitive, after trimming) | `Required.` / `Duplicated name.` |
+| `members[i].role` | Required, 1–60 chars | `Required.` |
+| `members[i].seniority` | `junior` \| `mid` \| `senior` | `Must be one of: junior, mid, senior.` |
+| `members[i].hours_per_week` | Integer 1–60 | `Must be between 1 and 60.` |
+| `members[i].skills` | List of strings, each 1–40 chars; duplicates removed | `Max 40 characters.` |
+| `members[i].id` (PATCH only) | Must belong to this project | `Unknown member.` |
+
+### `POST /api/projects` — create a project (US1)
+
+Request headers: `Content-Type: application/json`
+
+```json
+{
+  "name": "Agile Planner",
+  "description": "Jira-like tool where AI agents plan the work.",
+  "duration_weeks": 8,
+  "requested_methodology": "auto",
+  "auto_approve": false,
+  "members": [
+    { "name": "Ana Gómez", "role": "Backend", "seniority": "senior", "hours_per_week": 30, "skills": ["python"] },
+    { "name": "Leo Ruiz", "role": "Frontend" }
+  ]
+}
+```
+
+Defaults: `duration_weeks` 8, `requested_methodology` `auto`, `auto_approve` false, `seniority` `mid`, `hours_per_week` 20, `skills` `[]`.
+
+| Status | When | Body |
+|---|---|---|
+| `201` | Created in `draft`; planning is **not** started (FR-005) | `Project` + `Location: /api/projects/{id}` |
+| `400` | Body isn't JSON | Error `malformed_request` |
+| `422` | Any rule in the table above fails; nothing is saved | Error `validation_failed` with `errors` |
+
+### `GET /api/projects` — list projects (US2)
+
+No body. Newest first.
+
+| Status | When | Body |
+|---|---|---|
+| `200` | Always (empty list if there are none) | `ProjectSummary[]` |
+
+### `GET /api/projects/{id}` — read a project (US2)
+
+| Status | When | Body |
+|---|---|---|
+| `200` | Exists | `Project` |
+| `404` | Unknown id | Error `project_not_found` |
+
+### `PATCH /api/projects/{id}` — edit the project and the team (US3)
+
+Request headers: `Content-Type: application/json`. Every field is optional; at least one is required.
+
+```json
+{
+  "description": "New description",
+  "auto_approve": true,
+  "members": [
+    { "id": 3, "name": "Ana Gómez", "role": "Backend", "seniority": "senior", "hours_per_week": 25, "skills": ["python"] },
+    { "name": "Sofía Paz", "role": "QA" }
+  ]
+}
+```
+
+- `members`, when present, is the **whole new team**: items with `id` are edited, items without `id` are added, current members missing from the list are removed.
+- `requested_methodology` can only change while `status` is `draft` (FR-009).
+- Allowed while the project is `planning` (FR-007).
+
+| Status | When | Body |
+|---|---|---|
+| `200` | Saved; a `team_changed` event is published if the team changed (FR-010) | `Project` |
+| `400` | Body isn't JSON | Error `malformed_request` |
+| `404` | Unknown project | Error `project_not_found` |
+| `409` | Methodology changed after planning started | Error `methodology_locked` |
+| `422` | Empty body, a rule fails, or a member `id` isn't from this project; nothing is saved | Error `validation_failed` with `errors` |
+
+---
+
 ## Phase 1: Setup (Shared Infrastructure)
 
 No backend setup is needed: the frontend shell tasks (T001–T005) are [handed off](#handed-off-frontend).
@@ -78,7 +216,7 @@ No backend setup is needed: the frontend shell tasks (T001–T005) are [handed o
 
 **⚠️ CRITICAL**: no user story work can begin until this phase is complete
 
-- [ ] T006 Add `ValidationFailed(field, message)` and `MethodologyLocked` to `backend/app/domain/errors.py`; map them to 422 and 409 in `backend/app/adapters/inbound/http/errors.py` (422 body: `{"detail", "field"}`)
+- [ ] T006 Add `ValidationFailed(errors: list[FieldError])` and `MethodologyLocked` to `backend/app/domain/errors.py`, and give every `DomainError` a stable `code`. In `backend/app/adapters/inbound/http/errors.py` implement the shared conventions ([plan/api-conventions.md](../../plan/api-conventions.md), "Implementation checklist"): the error body `{code, detail, errors}`, the status table, `RequestValidationError` → 400 (bad JSON) / 422, a catch-all 500 and the `X-Request-Id` middleware; test them in `backend/tests/integration/adapters/test_errors.py`
 - [ ] T007 Add to `backend/app/domain/project.py`: `normalize_name()` (trim + collapse spaces), skill dedup, and `validate_project(project)` covering FR-004 (required fields, ≥ 1 member, unique names case-insensitive, duration 1–52, hours 1–60)
 - [ ] T008 [P] Add `ProjectUpdate` (all fields optional, `members: list[MemberUpsert] | None`) and `ProjectSummary` to `backend/app/application/dto.py`; `MemberUpsert` carries an optional `id` so existing members are edited, not recreated
 - [ ] T009 [P] Create `backend/tests/fakes.py` with `InMemoryUnitOfWork` (dict-backed repos for every port in `application/ports/repositories.py`) and `RecordingEventBus`
@@ -98,7 +236,7 @@ No backend setup is needed: the frontend shell tasks (T001–T005) are [handed o
 
 - [ ] T011 [P] [US1] Unit tests for `validate_project` (every FR-004 case, normalization, defaults) in `backend/tests/unit/domain/test_project_rules.py`
 - [ ] T012 [P] [US1] Use case tests (draft status, nothing saved on invalid input, planning not started) in `backend/tests/unit/application/test_create_project.py`
-- [ ] T013 [P] [US1] API test for `POST /api/projects` (201, 422 with `field`) in `backend/tests/integration/adapters/test_projects_api.py`
+- [ ] T013 [P] [US1] API test for `POST /api/projects` (201 + `Location`, 400, 422 with every failing field in `errors`) in `backend/tests/integration/adapters/test_projects_api.py`
 
 ### Implementation for User Story 1
 
@@ -117,7 +255,7 @@ No backend setup is needed: the frontend shell tasks (T001–T005) are [handed o
 
 ### Tests for User Story 2
 
-- [ ] T020 [P] [US2] API tests for `GET /api/projects` and `GET /api/projects/{id}` (200, 404) in `backend/tests/integration/adapters/test_projects_api.py`
+- [ ] T020 [P] [US2] API tests for `GET /api/projects` and `GET /api/projects/{id}` (200, 404 `project_not_found`) in `backend/tests/integration/adapters/test_projects_api.py`
 
 ### Implementation for User Story 2
 
@@ -181,7 +319,7 @@ Out of this spec's scope (see the spec's Scope section). Kept here with their or
 - T001 Install Tailwind (`npm i -D tailwindcss @tailwindcss/vite`), add `tailwindcss()` to `frontend/vite.config.ts` and `@import "tailwindcss"` to `frontend/src/ui/styles/index.css`
 - T002 Replace the Vite template in `frontend/src/app/App.tsx` with a layout (header + `<Outlet/>`) and remove `App.css` and the template assets
 - T003 Create `frontend/src/app/routes.tsx` with React Router and mount it from `frontend/src/main.tsx`
-- T004 Create `frontend/src/adapters/http/client.ts`: `fetch` wrapper with JSON, base path `/api` and a typed `ApiError` (status + `detail`, field for 422)
+- T004 Create `frontend/src/adapters/http/client.ts`: `fetch` wrapper with JSON, base path `/api`, an `X-Request-Id` per request, and a typed `ApiError` (status + `code`, `detail`, `errors[]`), as described in [frontend/docs/api-contract.md](../../frontend/docs/api-contract.md)
 - T005 Create `frontend/src/app/container.tsx`: `GatewaysProvider` + `useGateways()`, choosing http or fake gateways with `VITE_USE_FAKE`
 - T016 Add `ProjectCreate` and client-side validation mirroring FR-004 to `frontend/src/domain/project.ts`
 - T017 Add `ProjectGateway` to `frontend/src/application/ports.ts`; implement it in `frontend/src/adapters/http/projectGateway.ts` and `frontend/src/adapters/fake/projectGateway.ts`
