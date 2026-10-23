@@ -17,6 +17,7 @@ Etapas en orden; cada una es un `LlmAgent` que devuelve JSON con un esquema ([do
 
 - [plan/context.md](plan/context.md): qué es el producto y cómo se usa (sin detalles técnicos).
 - [plan/hexagonal-architecture.md](plan/hexagonal-architecture.md): arquitectura hexagonal (puertos y adaptadores), carpetas y decisiones.
+- [plan/use-cases.md](plan/use-cases.md): casos de uso con diagramas de cómo se implementa cada uno.
 
 ## Cómo trabajamos: SDD
 
