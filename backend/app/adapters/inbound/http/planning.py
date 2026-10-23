@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, status
 
 from app.adapters.inbound.http import dependencies as deps
 from app.adapters.inbound.http.background import spawn
-from app.application.dto import PlanningAccepted, StageRun
+from app.application.dto import PlanningAccepted, ReplanAccepted, ReplanRequest, StageRun
+from app.application.use_cases.planning.replan import Replan
 from app.application.use_cases.planning.retry_stage import RetryStage
 from app.application.use_cases.planning.run_planning_step import RunPlanningStep
 from app.application.use_cases.planning.start_planning import StartPlanning
@@ -41,3 +42,11 @@ async def retry_stage(
     run_step: RunPlanningStep = Depends(deps.get_run_planning_step),
 ) -> PlanningAccepted:
     return _accept(use_case.execute(project_id, stage_key), run_step)
+
+
+@router.post("/{project_id}/replan", status_code=status.HTTP_202_ACCEPTED, response_model=ReplanAccepted)
+async def replan(project_id: int, body: ReplanRequest, use_case: Replan = Depends(deps.get_replan)) -> ReplanAccepted:
+    """Spec 008 (US2): the result arrives as a `replan` proposal, decided through spec 005's API."""
+    run = use_case.prepare(project_id, body.reason)
+    spawn(use_case.execute(run))  # agents never run inside the request
+    return ReplanAccepted(project_id=project_id, supersedes=run.supersedes)

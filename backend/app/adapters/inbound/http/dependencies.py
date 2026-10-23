@@ -22,6 +22,8 @@ from app.application.use_cases.board.update_checklist import UpdateChecklist
 from app.application.use_cases.board.update_task import UpdateTask
 from app.application.use_cases.planning.advance_planning import AdvancePlanning, PlanCompletedHandler
 from app.application.use_cases.planning.apply_plan import ApplyPlan
+from app.application.use_cases.planning.apply_replan import ApplyReplan, ReplanFollowUp, ReplanOutcome
+from app.application.use_cases.planning.replan import Replan
 from app.application.use_cases.planning.retry_stage import RetryStage
 from app.application.use_cases.planning.run_planning_step import RunPlanningStep
 from app.application.use_cases.planning.start_planning import StartPlanning
@@ -365,3 +367,39 @@ def get_handle_github_event(
         await propose_review.execute(event.repository, event.number, event.author, event.body, event.url)
 
     return HandleGithubEvent(uow_factory, bus, handlers, review)
+
+
+def wire_replanning(
+    uow_factory: UnitOfWorkFactory,
+    bus: EventBus,
+    agents: PlanningAgents,
+    appliers: ApplierRegistry,
+    code_hosts: CodeHostFactory,
+    on_replan_applied: list[ReplanFollowUp],
+) -> Replan:
+    """Built once at startup (main.py), like wire_planning: approving a `replan` proposal runs
+    ApplyReplan (spec 005's registry), and its follow-ups are the other specs' reactions."""
+    auto_approve = AutoApprove(uow_factory, bus, ApplyProposal(uow_factory, bus, appliers))
+    appliers.register("replan", ApplyReplan(uow_factory, bus, on_replan_applied).execute)
+
+    # Spec 007: added tasks are proposed as issues (with a repo connected) ...
+    propose_issues = ProposePendingIssues(uow_factory, bus, auto_approve.after_created)
+
+    async def propose_added_tasks(outcome: ReplanOutcome) -> None:
+        if outcome.added_task_ids:
+            await propose_issues(outcome.project_id)
+
+    # ... and the issues of discarded tasks are closed as "not planned" (FR-022).
+    close_issue = CloseDiscardedIssue(uow_factory, bus, code_hosts)
+
+    async def close_discarded_issues(outcome: ReplanOutcome) -> None:
+        for task in outcome.discarded_tasks:
+            await close_issue.execute(task.task_id, task.rationale, task.key)
+
+    on_replan_applied.extend([propose_added_tasks, close_discarded_issues])
+    # TODO(spec 006): append MarkDocumentsOutdated to on_replan_applied once spec 006 lands.
+    return Replan(uow_factory, agents, bus, auto_approve.after_created)
+
+
+def get_replan(request: Request) -> Replan:
+    return request.app.state.replan

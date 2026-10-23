@@ -103,29 +103,7 @@ class RunPlanningStep:
         await self._auto_approve.after_created(proposal.id)  # type: ignore[arg-type]
 
     async def _run(self, stage: PlanningStage, context: dict[str, Any]) -> dict[str, Any]:
-        """The validated output as JSON, or StageFailed after ATTEMPTS tries."""
-        attempt_context = context
-        message = ""
-        started = time.monotonic()
-        for attempt in range(1, ATTEMPTS + 1):
-            try:
-                result = await self._agents.run_stage(stage, attempt_context)
-                raw = result.model_dump(mode="json") if isinstance(result, BaseModel) else result
-                output = stage.schema.model_validate(raw).model_dump(mode="json")
-            except Exception:  # noqa: BLE001  the service failed or the output broke the schema
-                logger.warning("Stage %s failed (attempt %d/%d)", stage.key, attempt, ATTEMPTS, exc_info=True)
-                message = f"The {stage.title} didn't return a valid result. Retry to run the stage again."
-                continue
-
-            issues = validate_stage_output(stage.key, output, context)
-            if not issues:
-                # SC-001: how long each stage takes against the real model, and how many tries.
-                logger.info("Stage %s done in %.1fs (attempt %d)", stage.key, time.monotonic() - started, attempt)
-                return output
-            logger.warning("Stage %s broke %d rule(s) (attempt %d/%d): %s", stage.key, len(issues), attempt, ATTEMPTS, issues)
-            message = f"The {stage.title}'s result broke these rules: " + " ".join(issues)
-            attempt_context = {**context, "feedback": _issues_feedback(context, issues, output)}
-        raise StageFailed(message)
+        return await run_validated(self._agents, stage, context)
 
     async def _fail(self, project_id: int, stage: PlanningStage, message: str) -> None:
         with self._uow_factory() as uow:
@@ -142,6 +120,33 @@ class RunPlanningStep:
                 ref=EventRef(kind="project", id=project_id),
             )
         )
+
+
+async def run_validated(agents: PlanningAgents, stage: PlanningStage, context: dict[str, Any]) -> dict[str, Any]:
+    """The stage's validated output as JSON, or StageFailed after ATTEMPTS tries.
+    Shared with spec 008's Replan."""
+    attempt_context = context
+    message = ""
+    started = time.monotonic()
+    for attempt in range(1, ATTEMPTS + 1):
+        try:
+            result = await agents.run_stage(stage, attempt_context)
+            raw = result.model_dump(mode="json") if isinstance(result, BaseModel) else result
+            output = stage.schema.model_validate(raw).model_dump(mode="json")
+        except Exception:  # noqa: BLE001  the service failed or the output broke the schema
+            logger.warning("Stage %s failed (attempt %d/%d)", stage.key, attempt, ATTEMPTS, exc_info=True)
+            message = f"The {stage.title} didn't return a valid result. Retry to run the stage again."
+            continue
+
+        issues = validate_stage_output(stage.key, output, context)
+        if not issues:
+            # SC-001: how long each stage takes against the real model, and how many tries.
+            logger.info("Stage %s done in %.1fs (attempt %d)", stage.key, time.monotonic() - started, attempt)
+            return output
+        logger.warning("Stage %s broke %d rule(s) (attempt %d/%d): %s", stage.key, len(issues), attempt, ATTEMPTS, issues)
+        message = f"The {stage.title}'s result broke these rules: " + " ".join(issues)
+        attempt_context = {**context, "feedback": _issues_feedback(context, issues, output)}
+    raise StageFailed(message)
 
 
 def _issues_feedback(context: dict[str, Any], issues: list[str], output: dict[str, Any]) -> dict[str, Any]:

@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from app.domain.capacity import team_capacity
 from app.domain.errors import FieldError
-from app.domain.plan import Backlog, SprintPlanning, Story, WipLimit
+from app.domain.plan import Backlog, ReplanChange, SprintPlanning, Story, WipLimit
 from app.domain.project import Member, Project, normalize_name
 
 TaskStatus = Literal["backlog", "todo", "in_progress", "review", "done"]
@@ -113,7 +113,7 @@ def assign(story: Story, named: str | None, members: Sequence[Member], points: d
     return None, story.role or None
 
 
-def _task(project_id: int, story: Story, status: TaskStatus, position: int) -> Task:
+def task_from_story(project_id: int, story: Story, status: TaskStatus, position: int) -> Task:
     return Task(
         project_id=project_id,
         key=story.key,
@@ -141,7 +141,7 @@ def build_board(project_id: int, members: Sequence[Member], backlog: Backlog, sp
     board = BuiltBoard()
 
     def build(story: Story, status: TaskStatus, position: int, points: dict[int, int]) -> Task:
-        task = _task(project_id, story, status, position)
+        task = task_from_story(project_id, story, status, position)
         task.assignee_id, task.missing_role = assign(story, named.get(story.key), members, points)
         if task.assignee_id is not None:
             points[task.assignee_id] = points.get(task.assignee_id, 0) + story.points
@@ -348,3 +348,75 @@ def suggest_advance(task: Task) -> bool:
     """Every checklist item done while the task is in progress: offer "move to In review?",
     never move it by itself (FR-015)."""
     return task.status == "in_progress" and bool(task.checklist) and all(i.done for i in task.checklist)
+
+
+# ---------- Sprints, objectives and replans (spec 008) ----------
+
+
+def pending_tasks(sprint_id: int | None, tasks: Iterable[Task]) -> list[Task]:
+    """The sprint's tasks that aren't done, in board order."""
+    return sorted((t for t in tasks if t.sprint_id == sprint_id and t.status != "done"), key=lambda t: (t.position, t.id or 0))
+
+
+def velocity(sprints: Iterable[Sprint], tasks: Sequence[Task]) -> list[int]:
+    """Done points of each closed sprint, in sprint order: the team's real pace."""
+    return [
+        sum(t.points for t in tasks if t.sprint_id == s.id and t.status == "done")
+        for s in sorted(sprints, key=lambda s: s.number)
+        if s.closed
+    ]
+
+
+def objectives_to_close(objectives: Iterable[Objective], tasks: Sequence[Task]) -> list[Objective]:
+    """The objectives whose `done` changes: met when every task of its sprint is done (FR-007),
+    in progress again when one of them leaves "done". A sprint without tasks has nothing to meet."""
+    changed = []
+    for objective in objectives:
+        sprint_tasks = [t for t in tasks if t.sprint_id == objective.sprint_id]
+        met = bool(sprint_tasks) and all(t.status == "done" for t in sprint_tasks)
+        if met != objective.done:
+            changed.append(objective.model_copy(update={"done": met}))
+    return changed
+
+
+STALE_CHANGE = "task changed since the proposal"
+
+
+def find_member(members: Sequence[Member], name: str | None) -> Member | None:
+    """The only member with that name (spaces and case ignored), or None."""
+    if not name:
+        return None
+    matches = [m for m in members if _same_name(m.name, name)]
+    return matches[0] if len(matches) == 1 else None
+
+
+def replan_change_problem(
+    change: ReplanChange, tasks: dict[str, Task], open_sprints: dict[int, Sprint], members: Sequence[Member]
+) -> str | None:
+    """Why an approved replan change can't be applied to the board as it is now (it's then
+    discarded and reported, FR-012), or None. `tasks` is the board when applying started,
+    by key; `open_sprints` by number. Done tasks never change (FR-011)."""
+    if change.kind == "add":
+        if change.new_story is None:
+            return "no story to add"
+        if change.new_story.key in tasks:
+            return f"a task with key {change.new_story.key} already exists"
+    else:
+        task = tasks.get(change.task_key or "")
+        if task is None:
+            return "task no longer on the board"
+        if task.status == "done" or (change.expected_status is not None and task.status != change.expected_status):
+            return STALE_CHANGE
+        if change.kind == "reassign" and find_member(members, change.to_member) is None:
+            return f"{change.to_member or 'the member'} isn't on the team"
+    if change.kind in ("move", "add") and change.to_sprint is not None and change.to_sprint not in open_sprints:
+        return f"sprint {change.to_sprint} doesn't exist or is closed"
+    return None
+
+
+def replan_status(task: Task, sprint_id: int | None) -> TaskStatus:
+    """A replan move keeps the work's progress: to the backlog it's "backlog", from the backlog
+    into a sprint it's "todo", otherwise the status stays (unlike a manual move, spec 003)."""
+    if sprint_id is None:
+        return "backlog"
+    return "todo" if task.status == "backlog" else task.status

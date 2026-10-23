@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.adapters.inbound.http import activity, board, health, integrations, planning, projects, proposals
 from app.adapters.inbound.http.background import spawn
-from app.adapters.inbound.http.dependencies import open_uow, wire_planning
+from app.adapters.inbound.http.dependencies import open_uow, wire_planning, wire_replanning
 from app.adapters.inbound.http.errors import register_error_handlers
 from app.adapters.inbound.webhooks import github as github_webhooks
 from app.adapters.outbound.code_host.fake import FakeCodeHost
@@ -83,6 +83,17 @@ async def lifespan(app: FastAPI):
     app.state.on_plan_completed = []
     app.state.run_planning_step = wire_planning(
         open_uow, app.state.event_bus, app.state.agents, app.state.appliers, app.state.on_plan_completed
+    )
+    # Spec 008: on-demand and drift replans; approving one runs ApplyReplan, then these follow-ups
+    # (007's issues, objectives; spec 006 will add MarkDocumentsOutdated).
+    app.state.on_replan_applied = []
+    app.state.replan = wire_replanning(
+        open_uow,
+        app.state.event_bus,
+        app.state.agents,
+        app.state.appliers,
+        app.state.code_host_factory,
+        app.state.on_replan_applied,
     )
     app.state.on_team_changed = []  # spec 008 registers its drift-replan handler here
     app.state.after_task_changed = []  # spec 007 registers issue sync, spec 008 objective evaluation

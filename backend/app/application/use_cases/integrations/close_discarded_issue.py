@@ -25,15 +25,16 @@ class CloseDiscardedIssue:
         self._bus = bus
         self._code_hosts = code_hosts
 
-    async def execute(self, task_id: int, reason: str) -> bool:
-        """True if the issue was closed (or found deleted and marked broken)."""
+    async def execute(self, task_id: int, reason: str, task_key: str | None = None) -> bool:
+        """True if the issue was closed (or found deleted and marked broken). `task_key` names
+        the task in the comment when it was already deleted (spec 008's replan discards)."""
         with self._uow_factory() as uow:
             link = uow.links.get_issue(task_id)
             task = uow.tasks.get(task_id)  # None when the task was deleted
             project = uow.projects.get(link.project_id) if link else None
         if link is None or link.broken or link.state != "open" or project is None or project.repository is None:
             return False
-        task_key = task.key if task else f"#{task_id}"
+        task_key = task.key if task else task_key or f"#{task_id}"
         try:
             exists = await self._code_hosts(project.github_token).close_issue(
                 link.repository, link.number, "not_planned", close_comment(task_key, reason)

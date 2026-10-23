@@ -169,5 +169,12 @@ MOCK_CODE_REVIEW = {
 }
 schemas.CodeReview.model_validate(MOCK_CODE_REVIEW)
 
+# Spec 008: the replan's base output; MockPlanningAgents fills `changes` from the board it gets.
+MOCK_REPLAN = {
+    "changes": [],
+    "rationale": "The plan still fits the team and the board: nothing needs to change.",
+}
+schemas.Replan.model_validate(MOCK_REPLAN)
+
 # What MockPlanningAgents returns per stage key.
-MOCK_OUTPUTS = {**MOCK_PLAN, "code_review": MOCK_CODE_REVIEW}
+MOCK_OUTPUTS = {**MOCK_PLAN, "code_review": MOCK_CODE_REVIEW, "replan": MOCK_REPLAN}

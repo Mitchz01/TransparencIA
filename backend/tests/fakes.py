@@ -97,6 +97,9 @@ class FakeTaskRepository(_Repo):
     def list_by_project(self, project_id: int) -> list[Task]:
         return sorted((t.model_copy(deep=True) for t in self.rows.values() if t.project_id == project_id), key=lambda t: t.position)
 
+    def delete(self, task_id: int) -> None:
+        self.rows.pop(task_id, None)
+
 
 class FakeProposalRepository(_Repo):
     def __init__(self, uow: "InMemoryUnitOfWork"):

@@ -302,3 +302,91 @@ class CodeReview(BaseModel):
 
 
 CODE_REVIEW_STAGE = PlanningStage("code_review", "Code reviewer", CodeReview, ("task", "diff"))
+
+
+# ---------- Replanning (spec 008, US2) ----------
+# Not a planning stage either: it runs on an applied plan, on demand or when the plan drifts.
+
+ReplanChangeKind = Literal["move", "reassign", "add", "discard"]
+ChangeStatus = Literal["backlog", "todo", "in_progress", "review", "done"]
+
+
+class ReplanChange(BaseModel):
+    kind: ReplanChangeKind
+    task_key: str | None = Field(default=None, description="The board task it changes (move, reassign, discard)")
+    to_sprint: int | None = Field(default=None, description="Sprint number for move/add; null = the backlog")
+    to_member: str | None = Field(default=None, description="Exact member name for reassign")
+    new_story: Story | None = Field(default=None, description="The story to add (add only)")
+    expected_status: ChangeStatus | None = Field(
+        default=None, description="The task's current status on the board; the change is skipped if it changed"
+    )
+    rationale: str = Field(description="Why this change, in one or two sentences")
+
+
+class Replan(BaseModel):
+    changes: list[ReplanChange]
+    rationale: str = Field(description=RATIONALE)
+
+
+class ReplanContent(Replan):
+    """Content of a `replan` proposal: the agent's output plus the reason it was asked for.
+    The leader adjusts it by removing changes (FR-013)."""
+
+    reason: str = ""
+
+
+# Inputs: the project and team, the approved plan, the current board, the real velocity and the reason.
+REPLAN_STAGE = PlanningStage("replan", "Scrum master", Replan, ("project", "plan", "board", "velocity", "reason"))
+
+
+def _same(a: str, b: str) -> bool:
+    return " ".join(a.split()).casefold() == " ".join(b.split()).casefold()
+
+
+def validate_replan(output: dict[str, Any], context: dict[str, Any]) -> list[str]:
+    """Consistency issues of a replan against the board it was made for: changes only refer
+    to existing tasks, open sprints and team members, and never touch a done task (FR-011)."""
+    board = context.get("board") or {}
+    tasks = {t["key"]: t for t in board.get("tasks", [])}
+    open_sprints = {s["number"] for s in board.get("sprints", []) if not s.get("closed")}
+    members = [m["name"] for m in (context.get("project") or {}).get("members", [])]
+    issues: list[str] = []
+    added: set[str] = set()
+
+    def check_sprint(change: dict[str, Any], label: str) -> None:
+        number = change.get("to_sprint")
+        if number is not None and number not in open_sprints:
+            issues.append(f"{label}: sprint {number} doesn't exist or is closed; use an open sprint's number or null for the backlog.")
+
+    for i, change in enumerate(output.get("changes", []), 1):
+        kind, key = change["kind"], change.get("task_key")
+        label = f"Change {i} ({kind} {key})" if key else f"Change {i} ({kind})"
+        if kind == "add":
+            story = change.get("new_story")
+            if not story:
+                issues.append(f"{label}: an add needs new_story.")
+                continue
+            if story["key"] in tasks or story["key"] in added:
+                issues.append(f"{label}: the key {story['key']} is already used; give the new story a unique key.")
+            added.add(story["key"])
+            check_sprint(change, label)
+            continue
+        if not key or key not in tasks:
+            issues.append(f"{label}: {key or 'the task_key'} isn't a task on the board.")
+            continue
+        task = tasks[key]
+        if task["status"] == "done":
+            issues.append(f"{label}: {key} is done, and done tasks never change.")
+            continue
+        if change.get("expected_status") != task["status"]:
+            issues.append(f"{label}: expected_status must be {key}'s current status, '{task['status']}'.")
+        if kind == "move":
+            check_sprint(change, label)
+        elif kind == "reassign":
+            member = change.get("to_member")
+            if not member or not any(_same(member, name) for name in members):
+                issues.append(f"{label}: {member or 'to_member'} isn't on the team; use a member's exact name.")
+    return issues
+
+
+_RULES["replan"] = validate_replan

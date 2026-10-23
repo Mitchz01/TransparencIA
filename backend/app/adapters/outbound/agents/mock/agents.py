@@ -92,4 +92,39 @@ def _fit_sprints(output: dict[str, Any], context: dict[str, Any]) -> dict[str, A
     return output
 
 
-_FITTERS = {"methodology": _fit_methodology, "backlog": _fit_backlog, "sprints": _fit_sprints}
+def _fit_replan(output: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
+    """Like a scrum master would (spec 008): pending tasks without an owner on the team go to a
+    member with their role (else the first member), and pending tasks of closed sprints move to
+    the first open sprint (else the backlog). Done tasks are never touched."""
+    board = context.get("board") or {}
+    members = (context.get("project") or {}).get("members", [])
+    names = {m["name"] for m in members}
+    sprints = board.get("sprints", [])
+    closed = {s["number"] for s in sprints if s.get("closed")}
+    open_numbers = [s["number"] for s in sprints if not s.get("closed")]
+    changes = []
+    for task in board.get("tasks", []):
+        if task["status"] == "done":
+            continue
+        if members and task.get("assignee") not in names:
+            role = (task.get("missing_role") or task.get("role") or "").casefold()
+            member = next((m for m in members if m["role"].casefold() == role), members[0])
+            changes.append({
+                "kind": "reassign", "task_key": task["key"], "to_member": member["name"],
+                "expected_status": task["status"],
+                "rationale": f"{task['key']} has no owner on the team; {member['name']} ({member['role']}) can take it.",
+            })
+        if task.get("sprint") in closed:
+            target = open_numbers[0] if open_numbers else None
+            where = f"sprint {target}" if target is not None else "the backlog"
+            changes.append({
+                "kind": "move", "task_key": task["key"], "to_sprint": target, "expected_status": task["status"],
+                "rationale": f"{task['key']} wasn't finished in its sprint; it moves to {where}.",
+            })
+    if changes:
+        output["changes"] = changes
+        output["rationale"] = f"{context.get('reason') or 'The plan drifted'}: {len(changes)} change(s) keep the pending work owned and scheduled."
+    return output
+
+
+_FITTERS = {"methodology": _fit_methodology, "backlog": _fit_backlog, "sprints": _fit_sprints, "replan": _fit_replan}

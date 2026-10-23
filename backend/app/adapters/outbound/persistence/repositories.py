@@ -167,6 +167,12 @@ class SqlTaskRepository:
         self._session.flush()
         return mappers.task_to_domain(row)
 
+    def delete(self, task_id: int) -> None:
+        row = self._session.get(TaskTable, task_id)
+        if row is not None:
+            self._session.delete(row)
+            self._session.flush()
+
 
 class SqlProposalRepository:
     def __init__(self, session: Session):

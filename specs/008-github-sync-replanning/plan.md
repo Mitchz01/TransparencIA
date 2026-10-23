@@ -217,17 +217,17 @@ Request headers: `Content-Type: application/json`
 
 ### Tests for User Story 2
 
-- [ ] T012 [P] [US2] `validate_replan` tests (rejects changes to done tasks, unknown task keys, unknown members or sprints) in `backend/tests/unit/domain/test_replan_validation.py`
-- [ ] T013 [P] [US2] `Replan` tests (context = approved plan + team + board + velocity + reason; one retry on invalid output; a new request supersedes the pending one, merging reasons, old one `discarded`; leader replans follow auto-approve) in `backend/tests/unit/application/test_replan.py`
-- [ ] T014 [P] [US2] `ApplyReplan` tests (all changes in one transaction; adjusted proposal with removed changes; stale changes discarded and reported in `ReplanApplied`; follow-up handlers called) in `backend/tests/unit/application/test_apply_replan.py`
+- [x] T012 [P] [US2] `validate_replan` tests (rejects changes to done tasks, unknown task keys, unknown members or sprints) in `backend/tests/unit/domain/test_replan_validation.py`
+- [x] T013 [P] [US2] `Replan` tests (context = approved plan + team + board + velocity + reason; one retry on invalid output; a new request supersedes the pending one, merging reasons, old one `discarded`; leader replans follow auto-approve) in `backend/tests/unit/application/test_replan.py`
+- [x] T014 [P] [US2] `ApplyReplan` tests (all changes in one transaction; adjusted proposal with removed changes; stale changes discarded and reported in `ReplanApplied`; follow-up handlers called) in `backend/tests/unit/application/test_apply_replan.py`
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] Add `ReplanChange(kind: move|reassign|add|discard, task_key, to_sprint, to_member, new_story, expected_status, rationale)`, `Replan(changes, rationale)`, `REPLAN_STAGE` (inputs: project, plan, board, velocity, reason) and `validate_replan()` to `backend/app/domain/plan.py`; add the prompt and a mock output
-- [ ] T016 [US2] Implement `Replan(project_id, reason, origin)` in `backend/app/application/use_cases/planning/replan.py`: build the context (velocity = done points per closed sprint), run the stage with one retry, supersede any pending replan (FR-014), create the `replan` proposal with `origin`, auto-approve only when `origin == "leader"` (FR-016)
-- [ ] T017 [US2] Implement `ApplyReplan(proposal_id)` in `backend/app/application/use_cases/planning/apply_replan.py`: apply the final content's changes in one UoW, skip changes whose task isn't in `expected_status`, publish `ReplanApplied(applied, discarded)`; then call the follow-ups: spec 007's `ProposeIssues` for added tasks and `CloseDiscardedIssue` for discarded ones, spec 006's `MarkDocumentsOutdated`
-- [ ] T018 [US2] Add `POST /api/projects/{id}/replan` (`{reason}`, 202) to `backend/app/adapters/inbound/http/planning.py`
-- [ ] T019 [US2] Create `ReplanDialog` (reason, from the board header) and `ReplanDiff` (changes grouped by kind, each with its rationale and a checkbox to drop it before approving, for spec 005's proposal card)
+- [x] T015 [US2] Add `ReplanChange(kind: move|reassign|add|discard, task_key, to_sprint, to_member, new_story, expected_status, rationale)`, `Replan(changes, rationale)`, `REPLAN_STAGE` (inputs: project, plan, board, velocity, reason) and `validate_replan()` to `backend/app/domain/plan.py`; add the prompt and a mock output
+- [x] T016 [US2] Implement `Replan(project_id, reason, origin)` in `backend/app/application/use_cases/planning/replan.py`: build the context (velocity = done points per closed sprint), run the stage with one retry, supersede any pending replan (FR-014), create the `replan` proposal with `origin`, auto-approve only when `origin == "leader"` (FR-016)
+- [x] T017 [US2] Implement `ApplyReplan(proposal_id)` in `backend/app/application/use_cases/planning/apply_replan.py`: apply the final content's changes in one UoW, skip changes whose task isn't in `expected_status`, publish `ReplanApplied(applied, discarded)`; then call the follow-ups: spec 007's `ProposeIssues` for added tasks and `CloseDiscardedIssue` for discarded ones, spec 006's `MarkDocumentsOutdated`
+- [x] T018 [US2] Add `POST /api/projects/{id}/replan` (`{reason}`, 202) to `backend/app/adapters/inbound/http/planning.py`
+- [ ] T019 [US2] Create `ReplanDialog` (reason, from the board header) and `ReplanDiff` (changes grouped by kind, each with its rationale and a checkbox to drop it before approving, for spec 005's proposal card) — handed off to spec 009 (frontend)
 
 **Checkpoint**: User Stories 1 and 2 work independently
 
@@ -247,7 +247,7 @@ Request headers: `Content-Type: application/json`
 
 - [ ] T021 [US3] Implement `objectives_to_close(objectives, tasks)` in `backend/app/domain/board.py` and `EvaluateObjectives(project_id, task_ids)` in `backend/app/application/use_cases/board/evaluate_objectives.py`
 - [ ] T022 [US3] Call `EvaluateObjectives` from `HandleGithubEvent` and register it as an `after_task_changed` handler of spec 003's `MoveTask`
-- [ ] T023 [US3] Show `ObjectiveBadge` (met / in progress) next to each sprint in the board
+- [ ] T023 [US3] Show `ObjectiveBadge` (met / in progress) next to each sprint in the board — handed off to spec 009 (frontend)
 
 **Checkpoint**: User Stories 1–3 work independently
 
@@ -267,7 +267,7 @@ Request headers: `Content-Type: application/json`
 
 - [ ] T025 [US4] Implement `CloseSprint(sprint_id)` in `backend/app/application/use_cases/board/close_sprint.py` and `POST /api/sprints/{id}/close`; publish `SprintClosed(pending_task_keys)`
 - [ ] T026 [US4] Implement `ProposeReplanOnDrift` in `backend/app/application/use_cases/planning/propose_replan_on_drift.py` with two entry points: `on_sprint_closed` and `on_team_changed`; register the latter as an `on_team_changed` handler of spec 001's `UpdateProject`
-- [ ] T027 [US4] Add `CloseSprintButton` to the sprint selector (shows the end date and a warning when it's past)
+- [ ] T027 [US4] Add `CloseSprintButton` to the sprint selector (shows the end date and a warning when it's past) — handed off to spec 009 (frontend)
 
 **Checkpoint**: all user stories work independently
 
