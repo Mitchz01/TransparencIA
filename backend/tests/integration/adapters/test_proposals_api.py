@@ -15,9 +15,9 @@ def _project(client) -> int:
     return client.post("/api/projects", json=PROJECT).json()["id"]
 
 
-def _proposal(project_id: int, key: str = "methodology", **fields) -> int:
+def _proposal(project_id: int, key: str = "methodology", kind: str = "plan_stage", **fields) -> int:
     with Session(engine) as session:
-        row = ProposalTable(project_id=project_id, kind="plan_stage", key=key, agent="Agile coach", content=MOCK_PLAN[key], rationale="Because", **fields)
+        row = ProposalTable(project_id=project_id, kind=kind, key=key, agent="Agile coach", content=MOCK_PLAN[key], rationale="Because", **fields)
         session.add(row)
         session.commit()
         return row.id
@@ -42,7 +42,7 @@ def test_list_and_get(client):
 
 def test_approve_then_apply_fails_without_an_applier(client):
     pid = _project(client)
-    pr = _proposal(pid)
+    pr = _proposal(pid, kind="replan")  # spec 008 hasn't registered its applier yet
     response = client.post(f"/api/proposals/{pr}/approve")
     assert response.status_code == 200 and response.json()["status"] == "approved"
 
@@ -50,7 +50,7 @@ def test_approve_then_apply_fails_without_an_applier(client):
     assert again.status_code == 409
     assert again.json()["code"] == "proposal_already_resolved" and again.json()["status"] == "approved"
 
-    # No spec registered a plan_stage applier yet: the decision stays, applying is flagged.
+    # No spec registered a replan applier yet: the decision stays, applying is flagged.
     for _ in range(50):
         stored = client.get(f"/api/proposals/{pr}").json()
         if stored["apply_failed"]:

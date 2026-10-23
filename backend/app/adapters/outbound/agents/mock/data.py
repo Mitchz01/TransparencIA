@@ -38,6 +38,7 @@ MOCK_PLAN = {
         ],
         "complexity": "medium",
         "team_gaps": ["UX design"],
+        "rationale": "The scope is clear for an MVP, but the agents are new to the team. The main risk is the LLM output, so the plan leans on structured schemas.",
     },
     "methodology": {
         "methodology": "scrumban",
@@ -78,6 +79,7 @@ MOCK_PLAN = {
                 "rationale": "It's persisted directly as cards",
             }
         ],
+        "rationale": "A modular monolith is the simplest thing a small team can run and change fast. The stack follows the team's skills.",
     },
     "roadmap": {
         "phases": [
@@ -111,7 +113,8 @@ MOCK_PLAN = {
                 "deliverables": ["Replanning", "Metrics"],
                 "epics": [{"key": "EP-5", "title": "Insights", "description": "Velocity and replanning"}],
             },
-        ]
+        ],
+        "rationale": "Foundations first so the MVP has a base; the beta is kept small to fit the deadline.",
     },
     "backlog": {
         "stories": [
@@ -126,7 +129,8 @@ MOCK_PLAN = {
             _story("US-9", "EP-4", "Move cards with drag & drop", 3, "Frontend"),
             _story("US-10", "EP-5", "Replan a sprint", 8, "Backend", "low"),
             _story("US-11", "EP-5", "Velocity chart", 5, "Frontend", "low"),
-        ]
+        ],
+        "rationale": "Each epic is split into small stories the team can finish in one iteration; the riskiest ones (agents) are high priority.",
     },
     "sprints": {
         "sprints": [
@@ -139,6 +143,7 @@ MOCK_PLAN = {
         ],
         # The names don't match the real team: assignment falls back to matching by role.
         "assignments": [],
+        "rationale": "The iterations follow the roadmap phases and stay within the team's capacity.",
     },
 }
 
@@ -149,3 +154,173 @@ schemas.Architecture.model_validate(MOCK_PLAN["architecture"])
 schemas.Roadmap.model_validate(MOCK_PLAN["roadmap"])
 schemas.Backlog.model_validate(MOCK_PLAN["backlog"])
 schemas.SprintPlanning.model_validate(MOCK_PLAN["sprints"])
+
+
+# Spec 007: the code reviewer isn't a plan stage, so its sample output lives apart from MOCK_PLAN.
+MOCK_CODE_REVIEW = {
+    "summary": "Adds the requested behavior and wires it into the existing flow.",
+    "findings": [
+        {"criterion": "Works on desktop and mobile", "status": "partial", "comment": "The layout changes cover desktop; no mobile breakpoint is touched."},
+        {"criterion": "Has basic tests", "status": "met", "comment": "A test covers the main path."},
+    ],
+    "risks": ["No test for the error path."],
+    "reviewed_fully": True,
+    "rationale": "Close to done: check the mobile layout before merging.",
+}
+schemas.CodeReview.model_validate(MOCK_CODE_REVIEW)
+
+# Spec 008: the replan's base output; MockPlanningAgents fills `changes` from the board it gets.
+MOCK_REPLAN = {
+    "changes": [],
+    "rationale": "The plan still fits the team and the board: nothing needs to change.",
+}
+schemas.Replan.model_validate(MOCK_REPLAN)
+
+# What MockPlanningAgents returns per stage key.
+MOCK_OUTPUTS = {**MOCK_PLAN, "code_review": MOCK_CODE_REVIEW, "replan": MOCK_REPLAN}
+
+
+# ---------- Writer: specs and diagrams (spec 006) ----------
+#
+# Built from the plan they describe, so MockPlanningAgents writes them from any project's
+# approved context with the same functions (the samples below are the sample plan's).
+
+SAMPLE_PROJECT = {"name": "Agile Planner", "description": "Jira-like tool where AI agents plan the work."}
+
+
+def _label(text: str) -> str:
+    """Safe inside a quoted Mermaid label: no quotes, brackets or HTML."""
+    return "".join(" " if c in '"[](){}<>|' else c for c in text).strip() or "Step"
+
+
+def _scenarios(story: dict) -> list[str]:
+    return [
+        f"{n}. **Given** {story['title'].lower()} is available, **When** the user uses it, **Then** {criterion[0].lower()}{criterion[1:]}"
+        for n, criterion in enumerate(story.get("acceptance_criteria") or ["It works as described"], 1)
+    ]
+
+
+def _story_section(n: int, story: dict) -> list[str]:
+    priority = {"high": "P1", "medium": "P2", "low": "P3"}.get(story.get("priority", "medium"), "P2")
+    return [
+        f"### User Story {n} - {story['key']} {story['title']} (Priority: {priority})",
+        "",
+        story.get("description", ""),
+        "",
+        "**Acceptance Scenarios**:",
+        "",
+        *_scenarios(story),
+        "",
+    ]
+
+
+def general_spec_output(project: dict, analysis: dict, roadmap: dict, backlog: dict) -> dict:
+    epics = [epic for phase in roadmap.get("phases", []) for epic in phase.get("epics", [])]
+    stories = backlog.get("stories", [])
+    main = [next(s for s in stories if s["epic_key"] == e["key"]) for e in epics if any(s["epic_key"] == e["key"] for s in stories)]
+    lines = [
+        f"# Feature Specification: {project['name']}",
+        "",
+        project.get("description", ""),
+        "",
+        "## User Scenarios & Testing",
+        "",
+        *[line for n, story in enumerate(main, 1) for line in _story_section(n, story)],
+        "### Edge Cases",
+        "",
+        *[f"- {risk['description']}: {risk['mitigation']}" for risk in analysis.get("risks", [])],
+        "",
+        "## Requirements",
+        "",
+        "### Functional Requirements",
+        "",
+        *[f"- **FR-{n:03}**: The system MUST cover {item[0].lower()}{item[1:]}." for n, item in enumerate(analysis.get("in_scope", []), 1)],
+        "",
+        "### Key Entities",
+        "",
+        *[f"- **{epic['title']}**: {epic['description']}" for epic in epics],
+        "",
+        "## Success Criteria",
+        "",
+        "### Measurable Outcomes",
+        "",
+        *[f"- **SC-{n:03}**: {goal}." for n, goal in enumerate(analysis.get("goals", []), 1)],
+    ]
+    return {
+        "title": f"General spec: {project['name']}",
+        "markdown": "\n".join(lines),
+        "rationale": "It follows the approved plan: one main story per roadmap epic, the analysis risks as edge cases and its goals as success criteria.",
+    }
+
+
+def epic_spec_output(epic: dict, stories: list[dict]) -> dict:
+    lines = [
+        f"# Feature Specification: {epic['key']} {epic['title']}",
+        "",
+        epic.get("description", ""),
+        "",
+        "## User Scenarios & Testing",
+        "",
+        *[line for n, story in enumerate(stories, 1) for line in _story_section(n, story)],
+        "### Edge Cases",
+        "",
+        "- What if the user leaves halfway? Nothing is saved until the step is confirmed.",
+        "",
+        "## Requirements",
+        "",
+        "### Functional Requirements",
+        "",
+        *[f"- **FR-{n:03}**: The system MUST let the user {s['title'][0].lower()}{s['title'][1:]}." for n, s in enumerate(stories, 1)],
+        "",
+        "## Success Criteria",
+        "",
+        "### Measurable Outcomes",
+        "",
+        f"- **SC-001**: 100% of the {len(stories)} stories of {epic['key']} meet their acceptance criteria.",
+    ]
+    return {
+        "epic_key": epic["key"],
+        "title": epic["title"],
+        "markdown": "\n".join(lines),
+        "rationale": f"Each of the {len(stories)} stories of {epic['key']} becomes a user story with its acceptance criteria as scenarios.",
+    }
+
+
+def flow_diagrams_output(architecture: dict, roadmap: dict) -> dict:
+    components = architecture.get("components", [])
+    nodes = [f'    C{n}["{_label(c["name"])}"]' for n, c in enumerate(components, 1)]
+    links = [f"    C{n} --> C{n + 1}" for n in range(1, len(components))]
+    diagrams = [
+        {
+            "title": "Architecture",
+            "kind": "architecture",
+            "mermaid": "\n".join(["flowchart LR", *(nodes or ['    C1["App"]']), *links]),
+        }
+    ]
+    for phase in roadmap.get("phases", []):
+        steps = [f'    S{n}["{_label(e["title"])}"]' for n, e in enumerate(phase.get("epics", []), 1)]
+        if not steps:
+            continue
+        arrows = [f"    S{n} --> S{n + 1}" for n in range(1, len(steps))]
+        diagrams.append(
+            {"title": f"{phase['name']} journey", "kind": "flow", "mermaid": "\n".join(["flowchart TD", *steps, *arrows])}
+        )
+    return {
+        "diagrams": diagrams,
+        "rationale": "The architecture diagram follows the approved components; each journey walks through the epics of a roadmap phase.",
+    }
+
+
+MOCK_DOCUMENTS = {
+    "general_spec": general_spec_output(SAMPLE_PROJECT, MOCK_PLAN["analysis"], MOCK_PLAN["roadmap"], MOCK_PLAN["backlog"]),
+    "epic_spec": epic_spec_output(
+        MOCK_PLAN["roadmap"]["phases"][0]["epics"][0],
+        [s for s in MOCK_PLAN["backlog"]["stories"] if s["epic_key"] == "EP-1"],
+    ),
+    "flow_diagrams": flow_diagrams_output(MOCK_PLAN["architecture"], MOCK_PLAN["roadmap"]),
+}
+
+schemas.GeneralSpec.model_validate(MOCK_DOCUMENTS["general_spec"])
+schemas.EpicSpec.model_validate(MOCK_DOCUMENTS["epic_spec"])
+for _diagram in schemas.FlowDiagrams.model_validate(MOCK_DOCUMENTS["flow_diagrams"]).diagrams:
+    schemas.DiagramProposal.model_validate(_diagram.model_dump())  # also renders (check_mermaid)

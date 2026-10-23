@@ -2,7 +2,7 @@
 
 **Date**: 2026-10-23  
 **Spec**: [spec.md](spec.md)  
-**Status**: Draft
+**Status**: Approved
 
 ## Summary
 
@@ -171,7 +171,7 @@ Request headers: `Content-Type: application/json`. A leader edit isn't an agent 
 
 **Purpose**: frontend dependencies
 
-- [ ] T001 Install `mermaid` and `react-markdown` in `frontend/`
+- [ ] T001 Install `mermaid` and `react-markdown` in `frontend/` — handed off to spec 009 (frontend)
 
 ---
 
@@ -181,12 +181,13 @@ Request headers: `Content-Type: application/json`. A leader edit isn't an agent 
 
 **⚠️ CRITICAL**: no user story work can begin until this phase is complete
 
-- [ ] T002 In `backend/app/domain/documents.py`, rename the kind `use_case_spec` to `epic_spec`, add `epic_key: str | None`, `outdated: bool`, and the `DocumentVersion(document_id, version, content, proposal_id, created_at)` entity; mirror it in `frontend/src/domain/documents.ts`
-- [ ] T003 Add `DocumentTable` and `DocumentVersionTable` with mappers, extend `DocumentRepository` (get, find(project_id, kind, epic_key), add, save, add_version, versions) and add `documents` to the `UnitOfWork` port, `SqlUnitOfWork` and `backend/tests/fakes.py`
-- [ ] T004 Add the output schemas to `backend/app/domain/plan.py`: `GeneralSpec(title, markdown, rationale)`, `EpicSpec(epic_key, title, markdown, rationale)`, `FlowDiagrams(diagrams: list[Diagram(title, kind: "flow" | "architecture", mermaid)], rationale)`
-- [ ] T005 Declare `DOCUMENT_STAGES` in `backend/app/domain/plan.py`: `general_spec` (inputs: project, analysis, architecture, roadmap, backlog), `epic_spec` (inputs: project, epic, stories — derived per epic), `flow_diagrams` (inputs: project, analysis, architecture, roadmap)
-- [ ] T006 [P] Add the prompts to `backend/app/adapters/outbound/agents/adk/prompts.py`, with a `SPEC_STRUCTURE` constant summarizing `specs/spec-template.md` (prioritized stories, Given/When/Then, edge cases, requirements, success criteria) for FR-004
-- [ ] T007 [P] Add sample outputs for the three stages to `backend/app/adapters/outbound/agents/mock/data.py`
+- [x] T002 In `backend/app/domain/documents.py`, rename the kind `use_case_spec` to `epic_spec`, add `epic_key: str | None`, `outdated: bool`, and the `DocumentVersion(document_id, version, content, proposal_id, created_at)` entity
+- [ ] T002b Mirror it in `frontend/src/domain/documents.ts` — handed off to spec 009 (frontend)
+- [x] T003 Add `DocumentTable` and `DocumentVersionTable` with mappers, extend `DocumentRepository` (get, find(project_id, kind, epic_key), add, save, add_version, versions) and add `documents` to the `UnitOfWork` port, `SqlUnitOfWork` and `backend/tests/fakes.py`
+- [x] T004 Add the output schemas to `backend/app/domain/plan.py`: `GeneralSpec(title, markdown, rationale)`, `EpicSpec(epic_key, title, markdown, rationale)`, `FlowDiagrams(diagrams: list[Diagram(title, kind: "flow" | "architecture", mermaid)], rationale)`
+- [x] T005 Declare `DOCUMENT_STAGES` in `backend/app/domain/plan.py`: `general_spec` (inputs: project, analysis, architecture, roadmap, backlog), `epic_spec` (inputs: project, epic, stories — derived per epic), `flow_diagrams` (inputs: project, analysis, architecture, roadmap)
+- [x] T006 [P] Add the prompts to `backend/app/adapters/outbound/agents/adk/prompts.py`, with a `SPEC_STRUCTURE` constant summarizing `specs/spec-template.md` (prioritized stories, Given/When/Then, edge cases, requirements, success criteria) for FR-004
+- [x] T007 [P] Add sample outputs for the three stages to `backend/app/adapters/outbound/agents/mock/data.py`
 
 **Checkpoint**: document stages are callable through `PlanningAgents` in mock and real mode
 
@@ -200,16 +201,16 @@ Request headers: `Content-Type: application/json`. A leader edit isn't an agent 
 
 ### Tests for User Story 1
 
-- [ ] T008 [P] [US1] `GenerateDocuments` tests (runs on plan completion; `AgentStarted` + `ProposalCreated` for `general_spec`; context built only from approved finals; auto-approve applies it) in `backend/tests/unit/application/test_generate_documents.py`
-- [ ] T009 [P] [US1] `ApplyDocumentProposal` tests (creates v1; nothing exists before approval) in `backend/tests/unit/application/test_apply_document.py`
+- [x] T008 [P] [US1] `GenerateDocuments` tests (runs on plan completion; `AgentStarted` + `ProposalCreated` for `general_spec`; context built only from approved finals; auto-approve applies it) in `backend/tests/unit/application/test_generate_documents.py`
+- [x] T009 [P] [US1] `ApplyDocumentProposal` tests (creates v1; nothing exists before approval) in `backend/tests/unit/application/test_apply_document.py`
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] Implement `GenerateDocuments` in `backend/app/application/use_cases/planning/generate_documents.py`, starting with `general_spec`; each output becomes a `document` proposal with key `general_spec`
-- [ ] T011 [US1] Register `GenerateDocuments` as an `on_plan_completed` handler of spec 002's `AdvancePlanning` (after `ApplyPlan`) in `backend/app/adapters/inbound/http/dependencies.py`
-- [ ] T012 [US1] Implement `ApplyDocumentProposal` in `backend/app/application/use_cases/documents/apply_document.py`: find the document by kind and epic; create it at v1 or add a new version; save the `DocumentVersion` with its proposal id
-- [ ] T013 [US1] Implement `ListDocuments` and `GET /api/projects/{id}/documents` + `GET /api/documents/{id}` (with versions) in `backend/app/adapters/inbound/http/documents.py`; include the router in `main.py`
-- [ ] T014 [US1] Add `DocumentGateway` (ports, http, fake), `useDocuments`, `DocumentsPage` (list + viewer) and `MarkdownView`; route `/projects/:id/documents`
+- [x] T010 [US1] Implement `GenerateDocuments` in `backend/app/application/use_cases/planning/generate_documents.py`, starting with `general_spec`; each output becomes a `document` proposal with key `general_spec`
+- [x] T011 [US1] Register `GenerateDocuments` as an `on_plan_completed` handler of spec 002's `AdvancePlanning` (after `ApplyPlan`) in `backend/app/adapters/inbound/http/dependencies.py`
+- [x] T012 [US1] Implement `ApplyDocumentProposal` in `backend/app/application/use_cases/documents/apply_document.py`: find the document by kind and epic; create it at v1 or add a new version; save the `DocumentVersion` with its proposal id
+- [x] T013 [US1] Implement `ListDocuments` and `GET /api/projects/{id}/documents` + `GET /api/documents/{id}` (with versions) in `backend/app/adapters/inbound/http/documents.py`; include the router in `main.py`
+- [ ] T014 [US1] Add `DocumentGateway` (ports, http, fake), `useDocuments`, `DocumentsPage` (list + viewer) and `MarkdownView`; route `/projects/:id/documents` — handed off to spec 009 (frontend)
 
 **Checkpoint**: the general spec can be generated, approved and read
 
@@ -223,12 +224,12 @@ Request headers: `Content-Type: application/json`. A leader edit isn't an agent 
 
 ### Tests for User Story 2
 
-- [ ] T015 [P] [US2] Tests: one `epic_spec:<EP-n>` proposal per epic; each agent call only receives that epic and its stories, in `backend/tests/unit/application/test_generate_documents.py`
+- [x] T015 [P] [US2] Tests: one `epic_spec:<EP-n>` proposal per epic; each agent call only receives that epic and its stories, in `backend/tests/unit/application/test_generate_documents.py`
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] Extend `GenerateDocuments` to loop over the approved roadmap's epics after `general_spec`, building the derived `epic` and `stories` context per epic
-- [ ] T017 [US2] Group epic specs under their phase in `DocumentsPage`
+- [x] T016 [US2] Extend `GenerateDocuments` to loop over the approved roadmap's epics after `general_spec`, building the derived `epic` and `stories` context per epic
+- [ ] T017 [US2] Group epic specs under their phase in `DocumentsPage` — handed off to spec 009 (frontend)
 
 **Checkpoint**: User Stories 1 and 2 work independently
 
@@ -242,14 +243,14 @@ Request headers: `Content-Type: application/json`. A leader edit isn't an agent 
 
 ### Tests for User Story 3
 
-- [ ] T018 [P] [US3] `check_mermaid` tests (allowed headers `flowchart`/`graph`/`sequenceDiagram`/`stateDiagram-v2`/`erDiagram`; non-empty body; balanced brackets and quotes; no `<script>` or HTML tags) in `backend/tests/unit/domain/test_diagrams.py`
-- [ ] T019 [P] [US3] Tests: an invalid diagram is regenerated once; if it's still invalid, it isn't proposed and `DocumentsGenerated` lists it as missing, in `backend/tests/unit/application/test_generate_documents.py`
+- [x] T018 [P] [US3] `check_mermaid` tests (allowed headers `flowchart`/`graph`/`sequenceDiagram`/`stateDiagram-v2`/`erDiagram`; non-empty body; balanced brackets and quotes; no `<script>` or HTML tags) in `backend/tests/unit/domain/test_diagrams.py`
+- [x] T019 [P] [US3] Tests: an invalid diagram is regenerated once; if it's still invalid, it isn't proposed and `DocumentsGenerated` lists it as missing, in `backend/tests/unit/application/test_generate_documents.py`
 
 ### Implementation for User Story 3
 
-- [ ] T020 [US3] Implement `check_mermaid(source) -> list[str]` in `backend/app/domain/diagrams.py`
-- [ ] T021 [US3] Extend `GenerateDocuments` with `flow_diagrams`: validate each diagram, retry once with the issues as `feedback`, propose each valid diagram as `flow_diagram:<n>`, publish `DocumentsGenerated(missing=[...])`
-- [ ] T022 [US3] Create `MermaidView` (`mermaid.render` with a unique id; on parse error, show the source and a warning) and use it in `DocumentsPage`
+- [x] T020 [US3] Implement `check_mermaid(source) -> list[str]` in `backend/app/domain/diagrams.py`
+- [x] T021 [US3] Extend `GenerateDocuments` with `flow_diagrams`: validate each diagram, retry once with the issues as `feedback`, propose each valid diagram as `flow_diagram:<n>`, publish `DocumentsGenerated(missing=[...])`
+- [ ] T022 [US3] Create `MermaidView` (`mermaid.render` with a unique id; on parse error, show the source and a warning) and use it in `DocumentsPage` — handed off to spec 009 (frontend)
 
 **Checkpoint**: User Stories 1–3 work independently
 
@@ -263,15 +264,15 @@ Request headers: `Content-Type: application/json`. A leader edit isn't an agent 
 
 ### Tests for User Story 4
 
-- [ ] T023 [P] [US4] `RegenerateDocument` and `EditDocument` tests (proposal with `feedback = instructions`; approved → v2; manual edit → new version without a proposal; v1 kept) in `backend/tests/unit/application/test_regenerate_document.py`
-- [ ] T024 [P] [US4] `MarkDocumentsOutdated` test in `backend/tests/unit/application/test_apply_document.py`
+- [x] T023 [P] [US4] `RegenerateDocument` and `EditDocument` tests (proposal with `feedback = instructions`; approved → v2; manual edit → new version without a proposal; v1 kept) in `backend/tests/unit/application/test_regenerate_document.py`
+- [x] T024 [P] [US4] `MarkDocumentsOutdated` test in `backend/tests/unit/application/test_apply_document.py`
 
 ### Implementation for User Story 4
 
-- [ ] T025 [US4] Implement `RegenerateDocument` (background, reuses the stage run with `feedback`) and `EditDocument` (the leader's own edit is not an agent decision, so it saves a version directly) in `backend/app/application/use_cases/documents/`
-- [ ] T026 [US4] Add `POST /api/documents/{id}/regenerate` (202) and `PUT /api/documents/{id}` to `backend/app/adapters/inbound/http/documents.py`
-- [ ] T027 [US4] Implement `MarkDocumentsOutdated(project_id)` in `backend/app/application/use_cases/documents/mark_outdated.py`; spec 008 calls it after a replan is applied; regenerating or editing clears the flag
-- [ ] T028 [US4] Create `VersionHistory`, `RegenerateDialog` and `DocumentEditor`; show an "outdated" badge with a regenerate shortcut
+- [x] T025 [US4] Implement `RegenerateDocument` (background, reuses the stage run with `feedback`) and `EditDocument` (the leader's own edit is not an agent decision, so it saves a version directly) in `backend/app/application/use_cases/documents/`
+- [x] T026 [US4] Add `POST /api/documents/{id}/regenerate` (202) and `PUT /api/documents/{id}` to `backend/app/adapters/inbound/http/documents.py`
+- [x] T027 [US4] Implement `MarkDocumentsOutdated(project_id)` in `backend/app/application/use_cases/documents/mark_outdated.py`; spec 008 calls it after a replan is applied; regenerating or editing clears the flag
+- [ ] T028 [US4] Create `VersionHistory`, `RegenerateDialog` and `DocumentEditor`; show an "outdated" badge with a regenerate shortcut — handed off to spec 009 (frontend)
 
 **Checkpoint**: all user stories work independently
 
@@ -279,9 +280,25 @@ Request headers: `Content-Type: application/json`. A leader edit isn't an agent 
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T029 [P] Check SC-001 against Gemini with a 5-epic project; if it's too slow, run the epic specs concurrently with `asyncio.gather` (each one still a separate proposal)
-- [ ] T030 [P] "Approve all" for a batch of document proposals is part of spec 005's proposal UI; make sure document proposals carry what it needs (kind, epic, title)
-- [ ] T031 Update `plan/use-cases.md` (UC-08) if the implementation drifted
+- [x] T029 [P] Check SC-001 against Gemini with a 5-epic project; if it's too slow, run the epic specs concurrently with `asyncio.gather` (each one still a separate proposal) — concurrency implemented: `GenerateDocuments` writes the epic specs with `asyncio.gather` under an `asyncio.Semaphore` (`DOCUMENTS_CONCURRENCY`, default 3); each call keeps its events and retry (`run_agent`), a failed epic goes to `DocumentsGenerated.missing`, and the outputs are proposed afterwards one by one in roadmap order (one UnitOfWork at a time). The real Gemini timing is still to be measured with a key: set `GOOGLE_API_KEY` and `MOCK_AGENTS=0`, plan a project whose roadmap has 5 epics, approve the sprints stage, and read the `Documents of project N proposed in X.Xs` log line (plus each `Stage epic_spec done in …` line); compare `DOCUMENTS_CONCURRENCY=1` against the default
+- [x] T030 [P] "Approve all" for a batch of document proposals is part of spec 005's proposal UI; make sure document proposals carry what it needs (kind, epic, title)
+- [x] T031 Update `plan/use-cases.md` (UC-08) if the implementation drifted
+
+---
+
+### Implementation notes (backend)
+
+- **Document key**: a `Document` stores the proposal `key` it comes from (`general_spec`, `epic_spec:EP-2`, `flow_diagram:1`). `DocumentRepository.find(project_id, key)` replaces the planned `find(project_id, kind, epic_key)`: several diagrams share `kind` with no epic, so kind + epic can't tell them apart. The key isn't in the API shapes.
+- **Proposal content per key** (registered in `proposal_schemas.py`): `general_spec` → `GeneralSpec`, `epic_spec:` → `EpicSpec`, `flow_diagram:` → `DiagramProposal` (one `Diagram` plus `rationale`, since each diagram is its own proposal). `DiagramProposal` runs `check_mermaid`, so adjusting a diagram that wouldn't render is a `422 validation_failed` on `content.mermaid`.
+- **Wiring**: `wire_documents()` in `dependencies.py` (called from `main.py` after `wire_planning`) appends `GenerateDocuments.execute` to `on_plan_completed` after `ApplyPlan`, registers `ApplyDocumentProposal` as the `document` applier (decided) and `GenerateDocuments.on_proposal_resolved` for rejections. If `ApplyPlan` fails, the writer doesn't run (the handler list stops).
+- **Agent call**: `run_agent()` was extracted from `RunPlanningStep` (same retry, feedback and logging) and is shared with the writer. A document that still fails after its retry isn't proposed; `DocumentsGenerated.missing` names it and the project stays `ready`. An epic spec whose `epic_key` isn't its epic's is retried with that issue. Running the writer again skips keys that already have a pending or decided proposal. After merging spec 008, `run_validated()` (008) is a thin wrapper over `run_agent()` with the stage rules; `RunPlanningStep` and spec 008's `Replan` use it, so there is one retry loop.
+- **Rejected documents** follow spec 002's redo rule: rewritten with `{reason, rejected_content}` until 3 rejections in a row, then `StageNeedsLeader` (`stage` = the document key) and the leader adjusts the last proposal (spec 005). A rewritten diagram keeps its key and is picked from the output by title.
+- **Regeneration**: `RegenerateDocument` claims `(project_id, key)` in `GenerateDocuments` (in memory, single process like the event bus) before the 202, so a second request gets `409` while it runs or while its proposal is pending. A failed regeneration publishes `DocumentsGenerated(proposed=0, missing=[key])`. The feedback is spec 002's shape with the document's current content as `rejected_content`.
+- **`GET ?version=n`** returns that version's `content` and `version` (`title`, `outdated` and `versions` are the document's). Editing from an old version then gets `409 version_conflict`.
+- **Validation order** on `PUT`: `404` → `422` (content, then `invalid_diagram`) → `409 version_conflict`. On `POST …/regenerate`: `404` → `422` → `409`. A missing or mistyped field is a `422` from FastAPI before any of them.
+- **Extra events** (besides `DocumentsGenerated`): `DocumentSaved(document_id, key, version, source)` on every new version (approved proposal or leader edit) and `DocumentsOutdated(document_ids)` from `MarkDocumentsOutdated`, so the UI can refresh over SSE.
+- **`MarkDocumentsOutdated(uow_factory, bus).execute(project_id)`** flags every document of the project that isn't outdated yet and returns their ids. Spec 008 runs it as an `ApplyReplan` follow-up (`app.state.on_replan_applied`, wired in `wire_replanning()`); `get_mark_documents_outdated` is still available for direct calls. Any new version clears the flag.
+- **Mock agents** write the documents from the context they get (project, roadmap epics, stories, components), so they fit any project; a `feedback.reason` is appended to the Markdown as "Leader's notes".
 
 ---
 

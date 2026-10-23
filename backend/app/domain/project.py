@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Literal, get_args
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 from app.domain.errors import FieldError, MethodologyLocked, ValidationFailed
 
@@ -33,13 +33,8 @@ class Member(BaseModel):
     seniority: Seniority = "mid"
     hours_per_week: int = 20
     skills: list[str] = []
-
-
-class Objective(BaseModel):
-    id: int | None = None
-    title: str
-    phase: str = ""
-    done: bool = False
+    # Set only from Integrations (spec 007, US3): issues are assigned and reviews requested to it.
+    github_username: str | None = None
 
 
 class Project(BaseModel):
@@ -55,8 +50,20 @@ class Project(BaseModel):
     repository: str | None = None
     # approved stage outputs keyed by stage (spec 002)
     plan: dict[str, Any] | None = None
+    # Fixed points per sprint set by the leader; None = estimated from the team (spec 003, FR-017).
+    sprint_capacity_override: int | None = None
     members: list[Member] = []
     created_at: datetime = Field(default_factory=_now)
+    # The project's own GitHub token (spec 007, FR-004). Write-only: never serialized, so it
+    # can't leak through the API or events; the API exposes `has_token` instead.
+    github_token: str | None = Field(default=None, exclude=True)
+    # Id of the webhook registered on `repository`, to delete it on disconnect (spec 007).
+    webhook_id: int | None = Field(default=None, exclude=True)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def has_token(self) -> bool:
+        return bool(self.github_token)
 
 
 # ---------- Normalization and validation (spec 001, FR-004) ----------

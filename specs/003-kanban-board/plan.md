@@ -2,7 +2,7 @@
 
 **Date**: 2026-10-23  
 **Spec**: [spec.md](spec.md)  
-**Status**: Draft
+**Status**: Approved
 
 ## Summary
 
@@ -71,7 +71,7 @@ frontend/src/
 
 Follows [plan/api-conventions.md](../../plan/api-conventions.md) (headers, error body, status codes). The API tests assert every status row below.
 
-New domain errors (Foundational): `CapacityNotApplicable`; `SprintClosed` once spec 008 adds closed sprints.
+New domain errors (Foundational): `CapacityNotApplicable`; `SprintClosed` (added by spec 008 with closed sprints).
 
 ### Shared shapes
 
@@ -205,8 +205,8 @@ Request headers: `Content-Type: application/json`
 
 **Purpose**: dependencies and entity fields
 
-- [ ] T001 Install `@dnd-kit/sortable` in `frontend/` (`@dnd-kit/core` is already there)
-- [ ] T002 Add `missing_role: str | None` to `Task` and the `Objective(id, project_id, sprint_id, title, done)` entity to `backend/app/domain/board.py` (move `Objective` out of `domain/project.py`); add `sprint_capacity_override: int | None` to `Project`
+- [ ] T001 Install `@dnd-kit/sortable` in `frontend/` (`@dnd-kit/core` is already there) — handed off to spec 009 (frontend)
+- [x] T002 Add `missing_role: str | None` to `Task` and the `Objective(id, project_id, sprint_id, title, done)` entity to `backend/app/domain/board.py` (move `Objective` out of `domain/project.py`); add `sprint_capacity_override: int | None` to `Project`
 
 ---
 
@@ -216,11 +216,11 @@ Request headers: `Content-Type: application/json`
 
 **⚠️ CRITICAL**: no user story work can begin until this phase is complete
 
-- [ ] T003 Add `missing_role` to `TaskTable`, `sprint_capacity_override` to `ProjectTable` and a new `ObjectiveTable` in `backend/app/adapters/outbound/persistence/tables.py`, with mappers
-- [ ] T004 Add `get`/`save` to `SprintRepository`, a new `ObjectiveRepository` (list_by_project, add, save) and `objectives` on the `UnitOfWork` port, `SqlUnitOfWork` and `backend/tests/fakes.py`
-- [ ] T005 Add `BoardView` (sprints with `SprintLoad` = points vs capacity, tasks, objectives, WIP limits from `project.plan["methodology"]`, `continuous` when the methodology is Kanban) to `backend/app/application/dto.py`
-- [ ] T006 Implement `GetBoard` in `backend/app/application/use_cases/board/get_board.py` and `GET /api/projects/{id}/board` in `backend/app/adapters/inbound/http/board.py`; include the router in `main.py`
-- [ ] T007 [P] Add `BoardGateway.getBoard()` to `frontend/src/application/ports.ts`, with http and fake implementations, and mirror `Objective`, `BoardView` and `missing_role` in `frontend/src/domain/board.ts`
+- [x] T003 Add `missing_role` to `TaskTable`, `sprint_capacity_override` to `ProjectTable` and a new `ObjectiveTable` in `backend/app/adapters/outbound/persistence/tables.py`, with mappers
+- [x] T004 Add `get`/`save` to `SprintRepository`, a new `ObjectiveRepository` (list_by_project, add, save) and `objectives` on the `UnitOfWork` port, `SqlUnitOfWork` and `backend/tests/fakes.py`
+- [x] T005 Add `BoardView` (sprints with `SprintLoad` = points vs capacity, tasks, objectives, WIP limits from `project.plan["methodology"]`, `continuous` when the methodology is Kanban) to `backend/app/application/dto.py`
+- [x] T006 Implement `GetBoard` in `backend/app/application/use_cases/board/get_board.py` and `GET /api/projects/{id}/board` in `backend/app/adapters/inbound/http/board.py`; include the router in `main.py`
+- [ ] T007 [P] Add `BoardGateway.getBoard()` to `frontend/src/application/ports.ts`, with http and fake implementations, and mirror `Objective`, `BoardView` and `missing_role` in `frontend/src/domain/board.ts` — handed off to spec 009 (frontend)
 
 **Checkpoint**: the board read model is served (empty until a plan is applied)
 
@@ -234,15 +234,15 @@ Request headers: `Content-Type: application/json`
 
 ### Tests for User Story 1
 
-- [ ] T008 [P] [US1] `build_board` tests in `backend/tests/unit/domain/test_board_builder.py`: one sprint + objective per iteration; stories in `todo` within their sprint; unsprinted stories in `backlog`; unknown story keys skipped and reported; checklist = one unchecked item per criterion; assignment by exact name, then role with fewest points in the sprint, else `missing_role`; duplicate member names → by role
-- [ ] T009 [P] [US1] `ApplyPlan` tests (project → `ready`, `PlanApplied` published, running it twice creates nothing new) in `backend/tests/unit/application/test_apply_plan.py`
+- [x] T008 [P] [US1] `build_board` tests in `backend/tests/unit/domain/test_board_builder.py`: one sprint + objective per iteration; stories in `todo` within their sprint; unsprinted stories in `backlog`; unknown story keys skipped and reported; checklist = one unchecked item per criterion; assignment by exact name, then role with fewest points in the sprint, else `missing_role`; duplicate member names → by role
+- [x] T009 [P] [US1] `ApplyPlan` tests (project → `ready`, `PlanApplied` published, running it twice creates nothing new) in `backend/tests/unit/application/test_apply_plan.py`
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] Implement `build_board(project_id, members, backlog, sprint_planning) -> BuiltBoard` with `assign()` and `checklist_from_criteria()` in `backend/app/domain/board.py`
-- [ ] T011 [US1] Implement `ApplyPlan` in `backend/app/application/use_cases/planning/apply_plan.py`: skip if the project already has sprints, persist the built board, set `ready`, commit, publish `PlanApplied` (with the skipped story keys)
-- [ ] T012 [US1] Register `ApplyPlan` as an `on_plan_completed` handler of spec 002's `AdvancePlanning` in `backend/app/adapters/inbound/http/dependencies.py`
-- [ ] T013 [US1] Create `BoardPage` (route `/projects/:id/board`), `KanbanBoard`, `Column` and `TaskCard` (key, title, priority, points, assignee or "missing role", checklist progress) in `frontend/src/ui/`
+- [x] T010 [US1] Implement `build_board(project_id, members, backlog, sprint_planning) -> BuiltBoard` with `assign()` and `checklist_from_criteria()` in `backend/app/domain/board.py`
+- [x] T011 [US1] Implement `ApplyPlan` in `backend/app/application/use_cases/planning/apply_plan.py`: skip if the project already has sprints, persist the built board, set `ready`, commit, publish `PlanApplied` (with the skipped story keys)
+- [x] T012 [US1] Register `ApplyPlan` as an `on_plan_completed` handler of spec 002's `AdvancePlanning` in `backend/app/adapters/inbound/http/dependencies.py` — done by spec 002: `wire_planning()` in `dependencies.py` appends `ApplyPlan.execute` to `app.state.on_plan_completed` (the unused `get_apply_plan` provider was removed)
+- [ ] T013 [US1] Create `BoardPage` (route `/projects/:id/board`), `KanbanBoard`, `Column` and `TaskCard` (key, title, priority, points, assignee or "missing role", checklist progress) in `frontend/src/ui/` — handed off to spec 009 (frontend)
 
 **Checkpoint**: after approving the plan, the board shows up with its cards
 
@@ -256,16 +256,16 @@ Request headers: `Content-Type: application/json`
 
 ### Tests for User Story 2
 
-- [ ] T014 [P] [US2] `reorder` and `wip_warnings` tests in `backend/tests/unit/domain/test_board_rules.py`
-- [ ] T015 [P] [US2] `MoveTask` tests (status/position saved, positions compacted, WIP warning returned without blocking, `TaskStatusChanged` published, 404) in `backend/tests/unit/application/test_move_task.py`
-- [ ] T016 [P] [US2] API test for `PATCH /api/tasks/{id}` with a move in `backend/tests/integration/adapters/test_board_api.py`
+- [x] T014 [P] [US2] `reorder` and `wip_warnings` tests in `backend/tests/unit/domain/test_board_rules.py`
+- [x] T015 [P] [US2] `MoveTask` tests (status/position saved, positions compacted, WIP warning returned without blocking, `TaskStatusChanged` published, 404) in `backend/tests/unit/application/test_move_task.py`
+- [x] T016 [P] [US2] API test for `PATCH /api/tasks/{id}` with a move in `backend/tests/integration/adapters/test_board_api.py`
 
 ### Implementation for User Story 2
 
-- [ ] T017 [US2] Implement `reorder(tasks, task_id, status, position)` and `wip_warnings(tasks, wip_limits)` in `backend/app/domain/board.py`
-- [ ] T018 [US2] Implement `MoveTask` in `backend/app/application/use_cases/board/move_task.py` (returns the task + WIP warnings) and call its `after_task_changed` handlers (empty by default; spec 008 registers objective evaluation)
-- [ ] T019 [US2] Add `PATCH /api/tasks/{id}` (move) to `backend/app/adapters/inbound/http/board.py`
-- [ ] T020 [US2] Wire dnd-kit in `KanbanBoard` (`DndContext` + `SortableContext` per column); `useBoard` applies the move optimistically, calls `BoardGateway.moveTask` and reverts with a toast on error; `Column` shows the WIP warning
+- [x] T017 [US2] Implement `reorder(tasks, task_id, status, position)` and `wip_warnings(tasks, wip_limits)` in `backend/app/domain/board.py`
+- [x] T018 [US2] Implement `MoveTask` in `backend/app/application/use_cases/board/move_task.py` (returns the task + WIP warnings) and call its `after_task_changed` handlers (empty by default; spec 008 registers objective evaluation)
+- [x] T019 [US2] Add `PATCH /api/tasks/{id}` (move) to `backend/app/adapters/inbound/http/board.py`
+- [ ] T020 [US2] Wire dnd-kit in `KanbanBoard` (`DndContext` + `SortableContext` per column); `useBoard` applies the move optimistically, calls `BoardGateway.moveTask` and reverts with a toast on error; `Column` shows the WIP warning — handed off to spec 009 (frontend)
 
 **Checkpoint**: User Stories 1 and 2 work independently
 
@@ -279,14 +279,14 @@ Request headers: `Content-Type: application/json`
 
 ### Tests for User Story 3
 
-- [ ] T021 [P] [US3] `UpdateTask` and `UpdateChecklist` tests (assigning clears `missing_role`; progress recalculated; complete checklist returns `suggest_advance` but doesn't move; `TaskUpdated` published) in `backend/tests/unit/application/test_update_task.py`
+- [x] T021 [P] [US3] `UpdateTask` and `UpdateChecklist` tests (assigning clears `missing_role`; progress recalculated; complete checklist returns `suggest_advance` but doesn't move; `TaskUpdated` published) in `backend/tests/unit/application/test_update_task.py`
 
 ### Implementation for User Story 3
 
-- [ ] T022 [US3] Implement `UpdateTask` in `backend/app/application/use_cases/board/update_task.py` with `after_task_changed` handlers (spec 007 registers issue sync)
-- [ ] T023 [US3] Implement `UpdateChecklist` (replace the item list) in `backend/app/application/use_cases/board/update_checklist.py`
-- [ ] T024 [US3] Accept edit fields in `PATCH /api/tasks/{id}` and add `PUT /api/tasks/{id}/checklist` in `backend/app/adapters/inbound/http/board.py`
-- [ ] T025 [US3] Create `TaskDrawer` and `Checklist` with `useTaskEditor`; show the "move to In review?" suggestion when the checklist completes
+- [x] T022 [US3] Implement `UpdateTask` in `backend/app/application/use_cases/board/update_task.py` with `after_task_changed` handlers (spec 007 registers issue sync)
+- [x] T023 [US3] Implement `UpdateChecklist` (replace the item list) in `backend/app/application/use_cases/board/update_checklist.py`
+- [x] T024 [US3] Accept edit fields in `PATCH /api/tasks/{id}` and add `PUT /api/tasks/{id}/checklist` in `backend/app/adapters/inbound/http/board.py`
+- [ ] T025 [US3] Create `TaskDrawer` and `Checklist` with `useTaskEditor`; show the "move to In review?" suggestion when the checklist completes — handed off to spec 009 (frontend)
 
 **Checkpoint**: User Stories 1–3 work independently
 
@@ -300,13 +300,13 @@ Request headers: `Content-Type: application/json`
 
 ### Tests for User Story 4
 
-- [ ] T026 [P] [US4] Tests: moving to another sprint lands in `todo`; `SprintLoad` uses `domain/capacity.py` or the override; `continuous` for Kanban, in `backend/tests/unit/application/test_move_task.py` and `test_board_rules.py`
+- [x] T026 [P] [US4] Tests: moving to another sprint lands in `todo`; `SprintLoad` uses `domain/capacity.py` or the override; `continuous` for Kanban, in `backend/tests/unit/application/test_move_task.py` and `test_board_rules.py`
 
 ### Implementation for User Story 4
 
-- [ ] T027 [US4] Accept `sprint_id` (or `null` for backlog) in `MoveTask`
-- [ ] T028 [US4] Implement `SetCapacity` (`backend/app/application/use_cases/board/set_capacity.py`) and `PUT /api/projects/{id}/capacity` for the fixed points override (FR-017)
-- [ ] T029 [US4] Create `SprintSelector` (defaults to the first sprint with unfinished tasks) and `CapacityBar` (overload warning); drop target "Move to sprint…" on cards; continuous layout without selector when `continuous`, objectives as a filter
+- [x] T027 [US4] Accept `sprint_id` (or `null` for backlog) in `MoveTask`
+- [x] T028 [US4] Implement `SetCapacity` (`backend/app/application/use_cases/board/set_capacity.py`) and `PUT /api/projects/{id}/capacity` for the fixed points override (FR-017)
+- [ ] T029 [US4] Create `SprintSelector` (defaults to the first sprint with unfinished tasks) and `CapacityBar` (overload warning); drop target "Move to sprint…" on cards; continuous layout without selector when `continuous`, objectives as a filter — handed off to spec 009 (frontend)
 
 **Checkpoint**: User Stories 1–4 work independently
 
@@ -320,7 +320,7 @@ Request headers: `Content-Type: application/json`
 
 ### Implementation for User Story 5
 
-- [ ] T030 [US5] Add `filterTasks(tasks, filters)` to `frontend/src/domain/rules.ts` and `BoardFilters`, with the filter state in the URL search params so it survives sprint changes
+- [ ] T030 [US5] Add `filterTasks(tasks, filters)` to `frontend/src/domain/rules.ts` and `BoardFilters`, with the filter state in the URL search params so it survives sprint changes — handed off to spec 009 (frontend)
 
 **Checkpoint**: all user stories work independently
 
@@ -328,9 +328,9 @@ Request headers: `Content-Type: application/json`
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T031 [P] Run the `vercel-react-best-practices` and `web-design-guidelines` skills on `frontend/src/ui/components/board/` (re-renders while dragging, keyboard drag, focus)
-- [ ] T032 [P] Agree on the visual direction with the `frontend-design` skill and save the token plan in this plan (shared with spec 004)
-- [ ] T033 Check FR-019: every board change publishes an event spec 005 can show
+- [ ] T031 [P] Run the `vercel-react-best-practices` and `web-design-guidelines` skills on `frontend/src/ui/components/board/` (re-renders while dragging, keyboard drag, focus) — handed off to spec 009 (frontend)
+- [ ] T032 [P] Agree on the visual direction with the `frontend-design` skill and save the token plan in this plan (shared with spec 004) — handed off to spec 009 (frontend)
+- [x] T033 Check FR-019: every board change publishes an event spec 005 can show
 
 ---
 
@@ -368,3 +368,11 @@ Request headers: `Content-Type: application/json`
 - Each user story is independently completable and testable
 - Commit after each task or logical group, and check the box here
 - Avoid: vague tasks, editing the same file from two parallel tasks, cross-story dependencies that break independence
+
+### Implementation notes (backend)
+
+- `409 sprint_closed` on `PATCH /api/tasks/{id}` was added by spec 008 once sprints could close (`check_target_sprint` in `board/common.py`, used by `MoveTask` and `UpdateTask`): it rejects moving a task into a closed sprint from another one; tasks already in a closed sprint can still change column. Tested in `test_sprint_close_api.py`.
+- `domain/capacity.py` (spec 002, T006) was created here; member capacity is rounded down to whole points.
+- `MoveTask`, `UpdateTask` and `UpdateChecklist` share one `after_task_changed` handler list (`app.state.after_task_changed`); each handler gets the saved task and the event, so specs 007 and 008 can filter by event type. A PATCH that combines edit and move fields is saved in one commit by `UpdateTask` and publishes both `task_updated` and `task_status_changed`.
+- `sprint_id: null` without `status` lands in the `backlog` column (another sprint without `status` lands in `todo`).
+- `PUT /api/projects/{id}/capacity` doesn't publish an event (the contract doesn't list one).

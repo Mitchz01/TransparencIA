@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Protocol
 
-from app.domain.board import Sprint, Task
-from app.domain.documents import Document
+from app.domain.board import Objective, Sprint, Task
+from app.domain.documents import Document, DocumentVersion
 from app.domain.events import DomainEvent
+from app.domain.integrations import ExternalKind, ExternalLink, OwnWrite, OwnWriteAction
 from app.domain.project import Project
 from app.domain.proposals import Proposal, ProposalStatus
+from app.domain.sync import WebhookDelivery
 
 
 class ProjectRepository(Protocol):
@@ -18,11 +21,25 @@ class ProjectRepository(Protocol):
     def save(self, project: Project) -> Project:
         """Saves the project and syncs its team (members missing from the list are deactivated)."""
         ...
+    def get_by_member(self, member_id: int) -> Project | None:
+        """The project of an active member (spec 007)."""
+        ...
+    def get_by_repository(self, repository: str) -> Project | None:
+        """The project connected to `owner/name`, case-insensitive (spec 007)."""
+        ...
 
 
 class SprintRepository(Protocol):
+    def get(self, sprint_id: int) -> Sprint | None: ...
     def list_by_project(self, project_id: int) -> list[Sprint]: ...
     def add(self, sprint: Sprint) -> Sprint: ...
+    def save(self, sprint: Sprint) -> Sprint: ...
+
+
+class ObjectiveRepository(Protocol):
+    def list_by_project(self, project_id: int) -> list[Objective]: ...
+    def add(self, objective: Objective) -> Objective: ...
+    def save(self, objective: Objective) -> Objective: ...
 
 
 class TaskRepository(Protocol):
@@ -30,6 +47,9 @@ class TaskRepository(Protocol):
     def list_by_project(self, project_id: int) -> list[Task]: ...
     def add(self, task: Task) -> Task: ...
     def save(self, task: Task) -> Task: ...
+    def delete(self, task_id: int) -> None:
+        """Spec 008: a task discarded by a replan. Its issue link stays, so its issue can be closed."""
+        ...
 
 
 class ProposalRepository(Protocol):
@@ -57,6 +77,52 @@ class ActivityRepository(Protocol):
 
 
 class DocumentRepository(Protocol):
+    def get(self, document_id: int) -> Document | None: ...
+    def find(self, project_id: int, key: str) -> Document | None:
+        """The project's document versioned by proposals with this key ("epic_spec:EP-2")."""
+        ...
     def list_by_project(self, project_id: int) -> list[Document]: ...
     def add(self, document: Document) -> Document: ...
     def save(self, document: Document) -> Document: ...
+    def add_version(self, version: DocumentVersion) -> DocumentVersion: ...
+    def versions(self, document_id: int) -> list[DocumentVersion]:
+        """Oldest first; versions are never deleted."""
+        ...
+
+
+# ---------- GitHub integration (spec 007) ----------
+
+
+class ExternalLinkRepository(Protocol):
+    def get_issue(self, task_id: int) -> ExternalLink | None:
+        """The task's newest issue link (an older one may be broken)."""
+        ...
+    def list_by_project(self, project_id: int, kind: ExternalKind | None = None) -> list[ExternalLink]: ...
+    def find(self, repository: str, number: int, kind: ExternalKind) -> list[ExternalLink]:
+        """Links to one issue (at most one task) or one PR (one per task it closes)."""
+        ...
+    def add(self, link: ExternalLink) -> ExternalLink: ...
+    def save(self, link: ExternalLink) -> ExternalLink: ...
+
+
+class OwnWriteRepository(Protocol):
+    def add(self, write: OwnWrite) -> OwnWrite: ...
+    def consume_matching(self, repository: str, number: int, action: OwnWriteAction) -> bool:
+        """Spec 008: marks the oldest unconsumed matching write as consumed; False if there's none."""
+        ...
+    def prune_consumed(self, before: datetime) -> int:
+        """Spec 008: deletes writes consumed before `before`; returns how many."""
+        ...
+
+
+# ---------- GitHub sync (spec 008) ----------
+
+
+class WebhookDeliveryRepository(Protocol):
+    def seen(self, delivery_id: str) -> bool:
+        """True if a delivery with this id was already received (FR-003)."""
+        ...
+    def add(self, delivery: WebhookDelivery) -> WebhookDelivery: ...
+    def prune(self, before: datetime) -> int:
+        """Deletes deliveries received before `before`; returns how many."""
+        ...

@@ -2,7 +2,7 @@
 
 **Date**: 2026-10-23  
 **Spec**: [spec.md](spec.md)  
-**Status**: Draft
+**Status**: Approved
 
 ## Summary
 
@@ -168,8 +168,8 @@ Request headers: `Content-Type: application/json`
 
 **Purpose**: test fixtures and entity fields
 
-- [ ] T001 [P] Save sample GitHub webhook payloads (`pull_request` opened, ready_for_review, closed+merged; `issues` closed completed, closed not_planned, reopened) in `backend/tests/fixtures/github/`
-- [ ] T002 Add `closed: bool` and `end_date: date | None` to `Sprint` in `backend/app/domain/board.py` (spec 003's `ApplyPlan` fills `end_date` from the approval date and `sprint_length_weeks`), `origin` and the `discarded` status to `Proposal` in `backend/app/domain/proposals.py`, and the matching columns in `tables.py`
+- [x] T001 [P] Save sample GitHub webhook payloads (`pull_request` opened, ready_for_review, closed+merged; `issues` closed completed, closed not_planned, reopened) in `backend/tests/fixtures/github/`
+- [x] T002 Add `closed: bool` and `end_date: date | None` to `Sprint` in `backend/app/domain/board.py` (spec 003's `ApplyPlan` fills `end_date` from the approval date and `sprint_length_weeks`), `origin` and the `discarded` status to `Proposal` in `backend/app/domain/proposals.py`, and the matching columns in `tables.py`
 
 ---
 
@@ -179,9 +179,9 @@ Request headers: `Content-Type: application/json`
 
 **⚠️ CRITICAL**: no user story work can begin until this phase is complete
 
-- [ ] T003 Define the GitHub domain events in `backend/app/domain/sync.py`: `PullRequestOpened(repo, number, author, closes, draft)`, `PullRequestReadyForReview`, `PullRequestMerged`, `IssueClosed(repo, number, reason)`, `IssueReopened`
-- [ ] T004 Add `WebhookDeliveryTable` and `WebhookDeliveryRepository` (`seen(delivery_id)`, `add`) with `deliveries` on the `UnitOfWork` port, `SqlUnitOfWork` and `backend/tests/fakes.py`
-- [ ] T005 Create `backend/app/adapters/inbound/webhooks/github.py`: `POST /webhooks/github` verifies `X-Hub-Signature-256` against `GITHUB_WEBHOOK_SECRET` with `hmac.compare_digest` (401 if invalid), maps `X-GitHub-Event` + action to the domain events, answers 202 and processes in the background with `spawn`; include it in `main.py`
+- [x] T003 Define the GitHub domain events in `backend/app/domain/sync.py`: `PullRequestOpened(repo, number, author, closes, draft)`, `PullRequestReadyForReview`, `PullRequestMerged`, `IssueClosed(repo, number, reason)`, `IssueReopened`
+- [x] T004 Add `WebhookDeliveryTable` and `WebhookDeliveryRepository` (`seen(delivery_id)`, `add`) with `deliveries` on the `UnitOfWork` port, `SqlUnitOfWork` and `backend/tests/fakes.py`
+- [x] T005 Create `backend/app/adapters/inbound/webhooks/github.py`: `POST /webhooks/github` verifies `X-Hub-Signature-256` against `GITHUB_WEBHOOK_SECRET` with `hmac.compare_digest` (401 if invalid), maps `X-GitHub-Event` + action to the domain events, answers 202 and processes in the background with `spawn`; include it in `main.py`
 
 **Checkpoint**: signed events reach a use case, and unsigned ones are rejected
 
@@ -195,15 +195,15 @@ Request headers: `Content-Type: application/json`
 
 ### Tests for User Story 1
 
-- [ ] T006 [P] [US1] `next_status(current, event)` tests for every row of the spec table, plus "never out of done except reopen" and "not planned → no change", in `backend/tests/unit/domain/test_sync_rules.py`
-- [ ] T007 [P] [US1] `HandleGithubEvent` tests (unknown repo or unlinked issue → ignored; same delivery twice → applied once; event matching an `OwnWrite` → ignored and consumed; merge completes the checklist; PR closing two issues moves both; `TaskStatusChanged` published) in `backend/tests/unit/application/test_handle_github_event.py`
-- [ ] T008 [P] [US1] Webhook API tests (valid signature → 202; invalid → 401 and no change; fixtures end to end with `FakeCodeHost`) in `backend/tests/integration/adapters/test_github_webhook.py`
+- [x] T006 [P] [US1] `next_status(current, event)` tests for every row of the spec table, plus "never out of done except reopen" and "not planned → no change", in `backend/tests/unit/domain/test_sync_rules.py`
+- [x] T007 [P] [US1] `HandleGithubEvent` tests (unknown repo or unlinked issue → ignored; same delivery twice → applied once; event matching an `OwnWrite` → ignored and consumed; merge completes the checklist; PR closing two issues moves both; `TaskStatusChanged` published) in `backend/tests/unit/application/test_handle_github_event.py`
+- [x] T008 [P] [US1] Webhook API tests (valid signature → 202; invalid → 401 and no change; fixtures end to end with `FakeCodeHost`) in `backend/tests/integration/adapters/test_github_webhook.py`
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] Implement `next_status()` in `backend/app/domain/sync.py`
-- [ ] T010 [US1] Implement `HandleGithubEvent` in `backend/app/application/use_cases/integrations/handle_github_event.py`: dedupe by delivery id, find the project by repository and tasks by `ExternalLink` (spec 007), skip events matching an `OwnWrite` (FR-015), apply `next_status`, complete the checklist on merge, update the link state, commit, publish events; "not planned" closes publish `GithubEventIgnored` for the activity feed
-- [ ] T011 [US1] Route `pull_request.opened` to spec 007's `ProposeReview` as well (if 007 isn't merged yet, leave the call behind a no-op default)
+- [x] T009 [US1] Implement `next_status()` in `backend/app/domain/sync.py`
+- [x] T010 [US1] Implement `HandleGithubEvent` in `backend/app/application/use_cases/integrations/handle_github_event.py`: dedupe by delivery id, find the project by repository and tasks by `ExternalLink` (spec 007), skip events matching an `OwnWrite` (FR-015), apply `next_status`, complete the checklist on merge, update the link state, commit, publish events; "not planned" closes publish `GithubEventIgnored` for the activity feed
+- [x] T011 [US1] Route `pull_request.opened` to spec 007's `ProposeReview` as well (if 007 isn't merged yet, leave the call behind a no-op default)
 
 **Checkpoint**: GitHub progress shows up live on the board
 
@@ -217,17 +217,17 @@ Request headers: `Content-Type: application/json`
 
 ### Tests for User Story 2
 
-- [ ] T012 [P] [US2] `validate_replan` tests (rejects changes to done tasks, unknown task keys, unknown members or sprints) in `backend/tests/unit/domain/test_replan_validation.py`
-- [ ] T013 [P] [US2] `Replan` tests (context = approved plan + team + board + velocity + reason; one retry on invalid output; a new request supersedes the pending one, merging reasons, old one `discarded`; leader replans follow auto-approve) in `backend/tests/unit/application/test_replan.py`
-- [ ] T014 [P] [US2] `ApplyReplan` tests (all changes in one transaction; adjusted proposal with removed changes; stale changes discarded and reported in `ReplanApplied`; follow-up handlers called) in `backend/tests/unit/application/test_apply_replan.py`
+- [x] T012 [P] [US2] `validate_replan` tests (rejects changes to done tasks, unknown task keys, unknown members or sprints) in `backend/tests/unit/domain/test_replan_validation.py`
+- [x] T013 [P] [US2] `Replan` tests (context = approved plan + team + board + velocity + reason; one retry on invalid output; a new request supersedes the pending one, merging reasons, old one `discarded`; leader replans follow auto-approve) in `backend/tests/unit/application/test_replan.py`
+- [x] T014 [P] [US2] `ApplyReplan` tests (all changes in one transaction; adjusted proposal with removed changes; stale changes discarded and reported in `ReplanApplied`; follow-up handlers called) in `backend/tests/unit/application/test_apply_replan.py`
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] Add `ReplanChange(kind: move|reassign|add|discard, task_key, to_sprint, to_member, new_story, expected_status, rationale)`, `Replan(changes, rationale)`, `REPLAN_STAGE` (inputs: project, plan, board, velocity, reason) and `validate_replan()` to `backend/app/domain/plan.py`; add the prompt and a mock output
-- [ ] T016 [US2] Implement `Replan(project_id, reason, origin)` in `backend/app/application/use_cases/planning/replan.py`: build the context (velocity = done points per closed sprint), run the stage with one retry, supersede any pending replan (FR-014), create the `replan` proposal with `origin`, auto-approve only when `origin == "leader"` (FR-016)
-- [ ] T017 [US2] Implement `ApplyReplan(proposal_id)` in `backend/app/application/use_cases/planning/apply_replan.py`: apply the final content's changes in one UoW, skip changes whose task isn't in `expected_status`, publish `ReplanApplied(applied, discarded)`; then call the follow-ups: spec 007's `ProposeIssues` for added tasks and `CloseDiscardedIssue` for discarded ones, spec 006's `MarkDocumentsOutdated`
-- [ ] T018 [US2] Add `POST /api/projects/{id}/replan` (`{reason}`, 202) to `backend/app/adapters/inbound/http/planning.py`
-- [ ] T019 [US2] Create `ReplanDialog` (reason, from the board header) and `ReplanDiff` (changes grouped by kind, each with its rationale and a checkbox to drop it before approving, for spec 005's proposal card)
+- [x] T015 [US2] Add `ReplanChange(kind: move|reassign|add|discard, task_key, to_sprint, to_member, new_story, expected_status, rationale)`, `Replan(changes, rationale)`, `REPLAN_STAGE` (inputs: project, plan, board, velocity, reason) and `validate_replan()` to `backend/app/domain/plan.py`; add the prompt and a mock output
+- [x] T016 [US2] Implement `Replan(project_id, reason, origin)` in `backend/app/application/use_cases/planning/replan.py`: build the context (velocity = done points per closed sprint), run the stage with one retry, supersede any pending replan (FR-014), create the `replan` proposal with `origin`, auto-approve only when `origin == "leader"` (FR-016)
+- [x] T017 [US2] Implement `ApplyReplan(proposal_id)` in `backend/app/application/use_cases/planning/apply_replan.py`: apply the final content's changes in one UoW, skip changes whose task isn't in `expected_status`, publish `ReplanApplied(applied, discarded)`; then call the follow-ups: spec 007's `ProposeIssues` for added tasks and `CloseDiscardedIssue` for discarded ones, spec 006's `MarkDocumentsOutdated`
+- [x] T018 [US2] Add `POST /api/projects/{id}/replan` (`{reason}`, 202) to `backend/app/adapters/inbound/http/planning.py`
+- [ ] T019 [US2] Create `ReplanDialog` (reason, from the board header) and `ReplanDiff` (changes grouped by kind, each with its rationale and a checkbox to drop it before approving, for spec 005's proposal card) — handed off to spec 009 (frontend)
 
 **Checkpoint**: User Stories 1 and 2 work independently
 
@@ -241,13 +241,13 @@ Request headers: `Content-Type: application/json`
 
 ### Tests for User Story 3
 
-- [ ] T020 [P] [US3] `objectives_to_close` and `EvaluateObjectives` tests (closes when all done; reopens if a task leaves done; `ObjectiveClosed` published) in `backend/tests/unit/application/test_evaluate_objectives.py`
+- [x] T020 [P] [US3] `objectives_to_close` and `EvaluateObjectives` tests (closes when all done; reopens if a task leaves done; `ObjectiveClosed` published) in `backend/tests/unit/application/test_evaluate_objectives.py`
 
 ### Implementation for User Story 3
 
-- [ ] T021 [US3] Implement `objectives_to_close(objectives, tasks)` in `backend/app/domain/board.py` and `EvaluateObjectives(project_id, task_ids)` in `backend/app/application/use_cases/board/evaluate_objectives.py`
-- [ ] T022 [US3] Call `EvaluateObjectives` from `HandleGithubEvent` and register it as an `after_task_changed` handler of spec 003's `MoveTask`
-- [ ] T023 [US3] Show `ObjectiveBadge` (met / in progress) next to each sprint in the board
+- [x] T021 [US3] Implement `objectives_to_close(objectives, tasks)` in `backend/app/domain/board.py` and `EvaluateObjectives(project_id, task_ids)` in `backend/app/application/use_cases/board/evaluate_objectives.py`
+- [x] T022 [US3] Call `EvaluateObjectives` from `HandleGithubEvent` and register it as an `after_task_changed` handler of spec 003's `MoveTask`
+- [ ] T023 [US3] Show `ObjectiveBadge` (met / in progress) next to each sprint in the board — handed off to spec 009 (frontend)
 
 **Checkpoint**: User Stories 1–3 work independently
 
@@ -261,13 +261,13 @@ Request headers: `Content-Type: application/json`
 
 ### Tests for User Story 4
 
-- [ ] T024 [P] [US4] `CloseSprint` and `ProposeReplanOnDrift` tests (pending tasks → `Replan(origin="automatic")` with them in the reason; no pending → nothing; `TeamChanged` with joins, leaves, role, seniority or hours → replan; only renames or skills → nothing; never auto-approved) in `backend/tests/unit/application/test_propose_replan_on_drift.py`
+- [x] T024 [P] [US4] `CloseSprint` and `ProposeReplanOnDrift` tests (pending tasks → `Replan(origin="automatic")` with them in the reason; no pending → nothing; `TeamChanged` with joins, leaves, role, seniority or hours → replan; only renames or skills → nothing; never auto-approved) in `backend/tests/unit/application/test_propose_replan_on_drift.py`
 
 ### Implementation for User Story 4
 
-- [ ] T025 [US4] Implement `CloseSprint(sprint_id)` in `backend/app/application/use_cases/board/close_sprint.py` and `POST /api/sprints/{id}/close`; publish `SprintClosed(pending_task_keys)`
-- [ ] T026 [US4] Implement `ProposeReplanOnDrift` in `backend/app/application/use_cases/planning/propose_replan_on_drift.py` with two entry points: `on_sprint_closed` and `on_team_changed`; register the latter as an `on_team_changed` handler of spec 001's `UpdateProject`
-- [ ] T027 [US4] Add `CloseSprintButton` to the sprint selector (shows the end date and a warning when it's past)
+- [x] T025 [US4] Implement `CloseSprint(sprint_id)` in `backend/app/application/use_cases/board/close_sprint.py` and `POST /api/sprints/{id}/close`; publish `SprintClosed(pending_task_keys)`
+- [x] T026 [US4] Implement `ProposeReplanOnDrift` in `backend/app/application/use_cases/planning/propose_replan_on_drift.py` with two entry points: `on_sprint_closed` and `on_team_changed`; register the latter as an `on_team_changed` handler of spec 001's `UpdateProject`
+- [ ] T027 [US4] Add `CloseSprintButton` to the sprint selector (shows the end date and a warning when it's past) — handed off to spec 009 (frontend)
 
 **Checkpoint**: all user stories work independently
 
@@ -275,9 +275,9 @@ Request headers: `Content-Type: application/json`
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T028 [P] Prune `webhook_delivery` and consumed `own_write` rows older than 7 days on startup
-- [ ] T029 [P] Add a dev-only `POST /api/dev/github-events` that replays a fixture through `HandleGithubEvent`, to demo sync without a tunnel
-- [ ] T030 Update `plan/use-cases.md` (UC-12, UC-13) if the implementation drifted
+- [x] T028 [P] Prune `webhook_delivery` and consumed `own_write` rows older than 7 days on startup
+- [x] T029 [P] Add a dev-only `POST /api/dev/github-events` that replays a fixture through `HandleGithubEvent`, to demo sync without a tunnel
+- [x] T030 Update `plan/use-cases.md` (UC-12, UC-13) if the implementation drifted
 
 ---
 
@@ -314,3 +314,18 @@ Request headers: `Content-Type: application/json`
 - Each user story is independently completable and testable
 - Commit after each task or logical group, and check the box here
 - Avoid: vague tasks, editing the same file from two parallel tasks, cross-story dependencies that break independence
+
+### Implementation notes (backend)
+
+- **T002**: `origin` and the `discarded` status were already on `Proposal` (spec 005 added them first). `ApplyPlan` sets each sprint's `end_date` back to back from the day the plan is applied (`sprint_end_date`); a continuous (Kanban) board has none. `create_db()` doesn't migrate: delete a local `agile.db` (new `sprint.closed`, `sprint.end_date` and the `webhook_delivery` table).
+- **Webhook (T005, T010)**: `HandleGithubEvent` has two steps: `receive` (in the request: records the delivery, answers `duplicate` / `unhandled_event` / `unknown_repository`) and `execute` (background). Signature checked on the raw body with `hmac.compare_digest` before any parsing; without `GITHUB_WEBHOOK_SECRET` every delivery is `401`. Rejected deliveries aren't recorded. `pull_request.closed` without merge is handled (closes the PR link, tasks don't move). Issue events for PRs are ignored.
+- **Status rules (T009)**: progress only moves forward (a PR opened on a task in review leaves it there); reopening moves to `todo` only from `in_progress`/`review`/`done`.
+- **Own writes (FR-015)**: only `issue_closed` can echo into a handled event (our writes otherwise trigger `opened`/`edited`/`review_requested`/comments, which the board ignores); the matching `OwnWrite` is consumed.
+- **Merge**: completing the checklist publishes `task_updated` (`fields: ["checklist"]`, actor `github`), so spec 007's issue sync also updates the issue body.
+- **T011 / 007 T033**: `deps.get_handle_github_event` passes `ProposeReview.execute` as `on_pull_request_opened`; it runs after the board is updated, and a failure there never undoes the sync.
+- **Replan (T015–T018)**: the agent's output is `Replan`; the proposal content is `ReplanContent` (`Replan` + `reason`, registered in `proposal_schemas.py` as `("replan", "replan")`). Moves and adds use sprint **numbers**; `to_sprint: null` = backlog. The agent call reuses spec 002's retry loop: after merging spec 006, `run_agent()` (006) is the single loop in `run_planning_step.py`, and `run_validated()` is a thin wrapper over it that applies `validate_stage_output` (where the `replan` rules are registered) and raises `StageFailed` on issues left after the retry; `RunPlanningStep` and `Replan` use it. A failed replan publishes `ReplanFailed` (new event) and leaves the board and project untouched. `Replan` publishes `agent_started`/`agent_finished` (`agent: "replan"`).
+- **ApplyReplan**: a move keeps the task's status (backlog → `todo` into a sprint, anything → `backlog` to the backlog); a discard deletes the task (`TaskRepository.delete`, new) and keeps its issue link so spec 007's `CloseDiscardedIssue` (now with an optional `task_key`) can close it as not planned. Stale changes are reported as `{task_key, reason}` in `replan_applied` and in `proposal.result`. Follow-ups are `app.state.on_replan_applied` (`wire_replanning()` in `dependencies.py`): 007's `ProposePendingIssues` (only when tasks were added) and `CloseDiscardedIssue`, plus `EvaluateObjectives`. Spec 006's `MarkDocumentsOutdated` is the third follow-up (wired in `wire_replanning()` after merging spec 006; tested in `test_replan_api.py`).
+- **Objectives (T021–T022)**: `EvaluateObjectives.execute(project_id)` checks every objective of the project (a move between sprints changes two); it reopens an objective when a task leaves `done` and publishes `objective_reopened` (new event) besides `objective_closed`. It's in the shared `app.state.after_task_changed` list, which `HandleGithubEvent` also calls, and an `on_replan_applied` follow-up.
+- **Drift (T025–T026)**: `app.state.on_sprint_closed` (new hook of `CloseSprint`) and spec 001's `app.state.on_team_changed` run `ProposeReplanOnDrift` in the background. `replan_proposed` in the close response means "pending tasks and a drift handler registered"; the proposal itself arrives later. Reasons longer than 1000 chars are cut. Without an applied plan nothing is proposed. Spec 003's `409 sprint_closed` is now implemented (see plan 003).
+- **T028**: `PruneSyncRecords` runs in the lifespan; unconsumed own writes are kept.
+- **T029**: `ENV=dev` mounts `POST /api/dev/github-events`. For a `pull_request_*` fixture, `number` is the issue the PR closes (its body becomes `Closes #N`); for an `issues_*` fixture, the issue number.

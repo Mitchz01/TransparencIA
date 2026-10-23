@@ -54,7 +54,22 @@ class AgentFinished(DomainEvent):
 class PlanFailed(DomainEvent):
     type: Literal["plan_failed"] = "plan_failed"
     agent: str
-    error: str
+    error: str  # safe to show: never a stack trace or the raw service error
+
+
+class StageNeedsLeader(DomainEvent):
+    """A stage was rejected MAX_CONSECUTIVE_REJECTIONS times in a row: it isn't redone
+    automatically; the leader retries it or adjusts the last proposal (FR-011)."""
+
+    type: Literal["stage_needs_leader"] = "stage_needs_leader"
+    stage: str
+    rejections: int
+
+
+class PlanCompleted(DomainEvent):
+    """Every stage is approved: the on_plan_completed handlers run next (board, documents)."""
+
+    type: Literal["plan_completed"] = "plan_completed"
 
 
 # ---------- Proposals (spec 005) ----------
@@ -117,3 +132,183 @@ class TaskStatusChanged(DomainEvent):
     type: Literal["task_status_changed"] = "task_status_changed"
     task_id: int
     status: str
+    sprint_id: int | None = None
+    position: int | None = None
+
+
+class TaskUpdated(DomainEvent):
+    """A task's data or checklist was edited (moves publish TaskStatusChanged)."""
+
+    type: Literal["task_updated"] = "task_updated"
+    actor: Actor = "person"
+    task_id: int
+    fields: list[str]
+
+
+class PlanApplied(DomainEvent):
+    """The approved plan became a board (contract 005 → 003)."""
+
+    type: Literal["plan_applied"] = "plan_applied"
+    sprints: int
+    tasks: int
+    skipped_story_keys: list[str] = []
+
+
+# ---------- GitHub integration (spec 007) ----------
+# Every action taken on GitHub is recorded in the activity (FR-020): what, when and which
+# proposal authorized it (`proposal_id`; None for issue updates caused by a person, FR-021).
+
+
+class RepositoryConnected(DomainEvent):
+    type: Literal["repository_connected"] = "repository_connected"
+    actor: Actor = "person"
+    repository: str
+    replaced: str | None = None
+    mode: str = "github"
+    webhook_registered: bool = False
+
+
+class RepositoryDisconnected(DomainEvent):
+    type: Literal["repository_disconnected"] = "repository_disconnected"
+    actor: Actor = "person"
+    repository: str
+
+
+class PublishedIssue(BaseModel):
+    task_id: int
+    number: int
+
+
+class FailedIssue(BaseModel):
+    task_id: int
+    error: str
+
+
+class IssuesPublished(DomainEvent):
+    type: Literal["issues_published"] = "issues_published"
+    proposal_id: int
+    created: list[PublishedIssue]
+    failed: list[FailedIssue]
+
+
+class IssueUpdated(DomainEvent):
+    type: Literal["issue_updated"] = "issue_updated"
+    task_id: int
+    number: int
+    broken: bool = False  # the issue was deleted on GitHub
+
+
+class IssueClosed(DomainEvent):
+    type: Literal["issue_closed"] = "issue_closed"
+    task_id: int
+    number: int
+    reason: str
+
+
+class ReviewRequested(DomainEvent):
+    type: Literal["review_requested"] = "review_requested"
+    proposal_id: int
+    pr_number: int
+    reviewers: list[str]
+
+
+class GithubActionDelayed(DomainEvent):
+    """GitHub is failing (5xx, timeout, rate limit) while a `github_action` proposal is being
+    applied, and the call will be retried in `retry_in_seconds` (T034). The proposal shows
+    "delayed" until its application ends: issues_published, review_requested or
+    proposal_apply_failed for the same proposal_id."""
+
+    type: Literal["github_action_delayed"] = "github_action_delayed"
+    proposal_id: int
+    attempt: int  # the retry about to be made: 1 = first retry
+    retry_in_seconds: float
+
+
+# ---------- GitHub sync and replanning (spec 008) ----------
+
+
+class GithubEventIgnored(DomainEvent):
+    """A GitHub change the board doesn't apply on its own, shown so the leader decides:
+    today, an issue closed as "not planned" by someone on GitHub."""
+
+    type: Literal["github_event_ignored"] = "github_event_ignored"
+    actor: Actor = "github"
+    repository: str
+    number: int
+    task_id: int | None = None
+    reason: str
+
+
+class ObjectiveClosed(DomainEvent):
+    """Every task of the sprint's objective is done (FR-007), from GitHub or by hand."""
+
+    type: Literal["objective_closed"] = "objective_closed"
+    objective_id: int
+    sprint_id: int
+
+
+class ObjectiveReopened(DomainEvent):
+    """A task of a met objective left "done": the objective is in progress again."""
+
+    type: Literal["objective_reopened"] = "objective_reopened"
+    objective_id: int
+    sprint_id: int
+
+
+class SprintClosed(DomainEvent):
+    type: Literal["sprint_closed"] = "sprint_closed"
+    actor: Actor = "person"
+    sprint_id: int
+    pending_task_keys: list[str]
+
+
+class ReplanDiscardedChange(BaseModel):
+    task_key: str
+    reason: str
+
+
+class ReplanApplied(DomainEvent):
+    """An approved replan changed the board; stale changes were discarded and reported (FR-012)."""
+
+    type: Literal["replan_applied"] = "replan_applied"
+    proposal_id: int
+    applied: list[str]  # task keys (the new story's key for an added task)
+    discarded: list[ReplanDiscardedChange]
+
+
+class ReplanFailed(DomainEvent):
+    """The replan agent couldn't produce a valid proposal after its retry. The board is untouched."""
+
+    type: Literal["replan_failed"] = "replan_failed"
+    actor: Actor = "agent"
+    error: str  # safe to show
+
+
+# ---------- Documents (spec 006) ----------
+
+
+class DocumentsGenerated(DomainEvent):
+    """The writer finished after the plan was completed. `missing` names what couldn't be
+    proposed (a diagram that still wouldn't render after its retry, a failed spec)."""
+
+    type: Literal["documents_generated"] = "documents_generated"
+    actor: Actor = "agent"
+    proposed: int
+    missing: list[str] = []
+
+
+class DocumentSaved(DomainEvent):
+    """A document got a new version: an approved proposal ("agent") or a leader's edit."""
+
+    type: Literal["document_saved"] = "document_saved"
+    document_id: int
+    key: str
+    version: int
+    source: str
+
+
+class DocumentsOutdated(DomainEvent):
+    """The plan changed after the documents were approved (spec 008's replan)."""
+
+    type: Literal["documents_outdated"] = "documents_outdated"
+    document_ids: list[int]

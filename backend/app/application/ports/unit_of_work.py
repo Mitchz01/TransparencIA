@@ -3,10 +3,15 @@ from typing import Protocol, Self
 
 from app.application.ports.repositories import (
     ActivityRepository,
+    ExternalLinkRepository,
+    DocumentRepository,
+    ObjectiveRepository,
+    OwnWriteRepository,
     ProjectRepository,
     ProposalRepository,
     SprintRepository,
     TaskRepository,
+    WebhookDeliveryRepository,
 )
 
 
@@ -16,9 +21,14 @@ class UnitOfWork(Protocol):
 
     projects: ProjectRepository
     sprints: SprintRepository
+    objectives: ObjectiveRepository
     tasks: TaskRepository
     proposals: ProposalRepository
     activity: ActivityRepository
+    links: ExternalLinkRepository  # spec 007
+    own_writes: OwnWriteRepository  # spec 007
+    deliveries: WebhookDeliveryRepository  # spec 008
+    documents: DocumentRepository
 
     def __enter__(self) -> Self: ...
     def __exit__(self, *exc: object) -> None: ...
