@@ -1,7 +1,7 @@
 # Feature Specification: 006 · Generated specs and diagrams
 
 **Created**: 2026-10-23  
-**Status**: Draft  
+**Status**: Approved  
 **Owner**: Mitchz01  
 **Reviewer**: sandredev  
 **Use cases**: UC-08 ([plan/use-cases.md](../../plan/use-cases.md))  

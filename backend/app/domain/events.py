@@ -270,3 +270,33 @@ class ReplanFailed(DomainEvent):
     type: Literal["replan_failed"] = "replan_failed"
     actor: Actor = "agent"
     error: str  # safe to show
+
+
+# ---------- Documents (spec 006) ----------
+
+
+class DocumentsGenerated(DomainEvent):
+    """The writer finished after the plan was completed. `missing` names what couldn't be
+    proposed (a diagram that still wouldn't render after its retry, a failed spec)."""
+
+    type: Literal["documents_generated"] = "documents_generated"
+    actor: Actor = "agent"
+    proposed: int
+    missing: list[str] = []
+
+
+class DocumentSaved(DomainEvent):
+    """A document got a new version: an approved proposal ("agent") or a leader's edit."""
+
+    type: Literal["document_saved"] = "document_saved"
+    document_id: int
+    key: str
+    version: int
+    source: str
+
+
+class DocumentsOutdated(DomainEvent):
+    """The plan changed after the documents were approved (spec 008's replan)."""
+
+    type: Literal["documents_outdated"] = "documents_outdated"
+    document_ids: list[int]

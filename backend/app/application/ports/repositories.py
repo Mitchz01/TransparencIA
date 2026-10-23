@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Protocol
 
 from app.domain.board import Objective, Sprint, Task
-from app.domain.documents import Document
+from app.domain.documents import Document, DocumentVersion
 from app.domain.events import DomainEvent
 from app.domain.integrations import ExternalKind, ExternalLink, OwnWrite, OwnWriteAction
 from app.domain.project import Project
@@ -77,9 +77,17 @@ class ActivityRepository(Protocol):
 
 
 class DocumentRepository(Protocol):
+    def get(self, document_id: int) -> Document | None: ...
+    def find(self, project_id: int, key: str) -> Document | None:
+        """The project's document versioned by proposals with this key ("epic_spec:EP-2")."""
+        ...
     def list_by_project(self, project_id: int) -> list[Document]: ...
     def add(self, document: Document) -> Document: ...
     def save(self, document: Document) -> Document: ...
+    def add_version(self, version: DocumentVersion) -> DocumentVersion: ...
+    def versions(self, document_id: int) -> list[DocumentVersion]:
+        """Oldest first; versions are never deleted."""
+        ...
 
 
 # ---------- GitHub integration (spec 007) ----------

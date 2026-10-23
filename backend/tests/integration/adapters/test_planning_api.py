@@ -68,7 +68,7 @@ def test_auto_approve_generates_the_whole_plan_and_the_board(client):
     assert response.json() == {"project_id": pid, "status": "planning", "stage": "analysis"}
 
     project = _wait(lambda: (p := client.get(f"/api/projects/{pid}").json())["status"] == "ready" and p)
-    proposals = _proposals(client, pid)
+    proposals = [p for p in _proposals(client, pid) if p["kind"] == "plan_stage"]  # documents follow (spec 006)
     assert [p["key"] for p in proposals] == STAGE_KEYS
     assert all(p["status"] == "approved" and p["auto_approved"] and p["rationale"] for p in proposals)
     assert set(project["plan"]) == set(STAGE_KEYS)
@@ -77,8 +77,10 @@ def test_auto_approve_generates_the_whole_plan_and_the_board(client):
     assert len(board["tasks"]) == len(MOCK_PLAN["backlog"]["stories"])
     assert not any(s["load"]["overloaded"] for s in board["sprints"])  # same capacity rule (FR-010)
 
-    types = [e["type"] for e in reversed(client.get(f"/api/projects/{pid}/activity?limit=200").json())]
-    assert types[0] == "agent_started" and types.count("agent_started") == 6
+    events = list(reversed(client.get(f"/api/projects/{pid}/activity?limit=200").json()))
+    types = [e["type"] for e in events]
+    assert types[0] == "agent_started"
+    assert [e["agent"] for e in events if e["type"] == "agent_started"][:6] == STAGE_KEYS
     assert types.index("plan_completed") < types.index("plan_applied")
 
     _assert_error(client.post(f"/api/projects/{pid}/planning"), 409, "planning_not_startable")

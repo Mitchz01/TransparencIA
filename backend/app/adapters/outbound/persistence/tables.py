@@ -161,3 +161,32 @@ class OwnWriteTable(SQLModel, table=True):
     action: str
     created_at: datetime = Field(default_factory=_now)
     consumed_at: datetime | None = None
+
+
+class DocumentTable(SQLModel, table=True):
+    __tablename__ = "document"
+
+    id: int | None = Field(default=None, primary_key=True)
+    project_id: int = Field(foreign_key="project.id", index=True)
+    key: str  # the proposal key that versions it: "general_spec", "epic_spec:EP-2", "flow_diagram:1"
+    kind: str
+    epic_key: str | None = None
+    title: str
+    content: str  # the latest version's, so reading a document needs no join
+    version: int = 1
+    outdated: bool = False
+    updated_at: datetime = Field(default_factory=_now)
+
+
+class DocumentVersionTable(SQLModel, table=True):
+    """Every approved content of a document; never deleted (spec 006, FR-008)."""
+
+    __tablename__ = "document_version"
+
+    id: int | None = Field(default=None, primary_key=True)
+    document_id: int = Field(foreign_key="document.id", index=True)
+    version: int
+    content: str
+    source: str = "agent"
+    proposal_id: int | None = Field(default=None, foreign_key="proposal.id")
+    created_at: datetime = Field(default_factory=_now)

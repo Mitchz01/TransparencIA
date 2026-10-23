@@ -6,8 +6,9 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
+from app.domain.diagrams import check_mermaid
 from app.domain.errors import StageNotFound
 
 Level = Literal["low", "medium", "high"]
@@ -159,6 +160,48 @@ class SprintPlanning(BaseModel):
     rationale: str = Field(description=RATIONALE)
 
 
+# ---------- Writer: specs and diagrams (spec 006) ----------
+
+
+class GeneralSpec(BaseModel):
+    title: str = Field(description="E.g. 'General spec: <product name>'")
+    markdown: str = Field(description="The whole spec in Markdown, with the structure of SPEC_STRUCTURE")
+    rationale: str = Field(description=RATIONALE)
+
+
+class EpicSpec(BaseModel):
+    epic_key: str = Field(description="Key of the roadmap epic this spec describes, e.g. EP-2")
+    title: str
+    markdown: str = Field(description="The whole spec in Markdown, with the structure of SPEC_STRUCTURE")
+    rationale: str = Field(description=RATIONALE)
+
+
+class Diagram(BaseModel):
+    title: str
+    kind: Literal["flow", "architecture"]
+    mermaid: str = Field(description="Mermaid source, starting with its type (e.g. 'flowchart TD')")
+
+
+class FlowDiagrams(BaseModel):
+    diagrams: list[Diagram] = Field(description="One architecture diagram plus one flow per main user journey")
+    rationale: str = Field(description=RATIONALE)
+
+
+class DiagramProposal(Diagram):
+    """What one `flow_diagram:<n>` proposal carries: each diagram is approved on its own.
+    The check runs here too, so an adjusted diagram that wouldn't render is refused (422)."""
+
+    rationale: str = ""
+
+    @field_validator("mermaid")
+    @classmethod
+    def _renders(cls, value: str) -> str:
+        issues = check_mermaid(value)
+        if issues:
+            raise ValueError(" ".join(issues))
+        return value
+
+
 # ---------- Stages ----------
 
 
@@ -182,6 +225,23 @@ PLANNING_STAGES: tuple[PlanningStage, ...] = (
         "sprints", "Scrum master", SprintPlanning, ("project", "methodology", "roadmap", "backlog", "capacity")
     ),
 )
+
+# The writer's stages (spec 006). They run once the plan is complete, through the same
+# PlanningAgents port; "epic" and "stories" are derived per roadmap epic (one call each).
+DOCUMENT_STAGES: tuple[PlanningStage, ...] = (
+    PlanningStage("general_spec", "Spec writer", GeneralSpec, ("project", "analysis", "architecture", "roadmap", "backlog")),
+    PlanningStage("epic_spec", "Spec writer", EpicSpec, ("project", "epic", "stories")),
+    PlanningStage("flow_diagrams", "Diagram writer", FlowDiagrams, ("project", "analysis", "architecture", "roadmap")),
+)
+
+_DOCUMENT_STAGES = {stage.key: stage for stage in DOCUMENT_STAGES}
+
+
+def document_stage(key: str) -> PlanningStage:
+    if key not in _DOCUMENT_STAGES:
+        raise StageNotFound(key)
+    return _DOCUMENT_STAGES[key]
+
 
 _BY_KEY = {stage.key: stage for stage in PLANNING_STAGES}
 

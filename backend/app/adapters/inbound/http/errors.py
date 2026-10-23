@@ -15,6 +15,7 @@ from app.domain.errors import (
     CodeHostUnavailable,
     CapacityNotApplicable,
     DomainError,
+    InvalidDiagram,
     MethodologyLocked,
     NotFound,
     PlanningAlreadyRunning,
@@ -25,8 +26,10 @@ from app.domain.errors import (
     RepositoryNotAccessible,
     SprintAlreadyClosed,
     SprintClosed,
+    RegenerationInProgress,
     StageNotRetryable,
     ValidationFailed,
+    VersionConflict,
 )
 
 REQUEST_ID_HEADER = "X-Request-Id"
@@ -46,6 +49,9 @@ _STATUS: dict[type[DomainError], int] = {
     PlanNotApplied: 409,  # spec 008
     SprintAlreadyClosed: 409,  # spec 008
     SprintClosed: 409,  # spec 003, once spec 008 closes sprints
+    InvalidDiagram: 422,
+    RegenerationInProgress: 409,
+    VersionConflict: 409,
 }
 
 

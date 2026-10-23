@@ -5,6 +5,7 @@ from sqlmodel import Session
 from app.adapters.outbound.persistence.repositories import (
     SqlActivityRepository,
     SqlExternalLinkRepository,
+    SqlDocumentRepository,
     SqlObjectiveRepository,
     SqlOwnWriteRepository,
     SqlProjectRepository,
@@ -28,6 +29,7 @@ class SqlUnitOfWork:
         self.links = SqlExternalLinkRepository(session)  # spec 007
         self.own_writes = SqlOwnWriteRepository(session)  # spec 007
         self.deliveries = SqlWebhookDeliveryRepository(session)  # spec 008
+        self.documents = SqlDocumentRepository(session)
 
     def __enter__(self) -> Self:
         return self

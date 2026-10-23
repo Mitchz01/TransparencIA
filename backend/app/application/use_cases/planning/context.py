@@ -52,6 +52,33 @@ def rejection_feedback(proposal: Proposal) -> dict[str, Any]:
     return {"reason": proposal.rejection_reason or "", "rejected_content": proposal.content}
 
 
+def roadmap_epics(roadmap: dict[str, Any] | None) -> list[dict[str, Any]]:
+    """The approved roadmap's epics in roadmap order, each with its phase name (spec 006)."""
+    return [
+        {**epic, "phase": phase["name"]} for phase in (roadmap or {}).get("phases", []) for epic in phase.get("epics", [])
+    ]
+
+
+def build_document_context(
+    stage: PlanningStage,
+    project: Project,
+    outputs: dict[str, dict[str, Any]],
+    epic: dict[str, Any] | None = None,
+    feedback: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Like build_stage_context, for the writer (spec 006, FR-003): the approved finals in
+    `outputs` plus, per epic, the derived `epic` and `stories` (only that epic's)."""
+    available: dict[str, Any] = {**outputs, "project": project_context(project)}
+    if epic is not None:
+        available["epic"] = epic
+        stories = (outputs.get("backlog") or {}).get("stories", [])
+        available["stories"] = [s for s in stories if s["epic_key"] == epic["key"]]
+    context = {key: available.get(key) for key in stage.inputs}
+    if feedback is not None:
+        context["feedback"] = feedback
+    return context
+
+
 def build_stage_context(
     stage: PlanningStage,
     project: Project,

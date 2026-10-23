@@ -277,7 +277,7 @@ sequenceDiagram
 | Proposal kind | What applying it does | Registered step |
 |---|---|---|
 | `plan_stage` | Saves the stage in `project.plan` and launches the next one; after `sprints`, triggers UC-05. On rejection, redoes the stage | `AdvancePlanning.on_proposal_resolved` (002) |
-| `document` | Creates or versions a `Document` (UC-08) | `ApplyDocumentProposal` (006) |
+| `document` | Creates or versions a `Document` (UC-08). On rejection, rewrites it with the reason (same 3-in-a-row cap) | `ApplyDocumentProposal`; rejections: `GenerateDocuments.on_proposal_resolved` (006) |
 | `github_action` | Runs the action on `CodeHost` (UC-10, UC-11) | `PublishIssues` / `ApplyReview` (007) |
 | `replan` | Applies the changes to the board (UC-13) | `ApplyReplan` (008) |
 
@@ -403,29 +403,31 @@ sequenceDiagram
 
 ### UC-08 · Generate specs and diagrams
 
-- **Trigger**: the plan finishes being approved (after `sprints`), or the leader asks to regenerate a document.
-- **Result**: proposals of kind `document`: general spec, one spec per roadmap epic, and flow diagrams in Mermaid. Once approved they become versioned `Document`s.
-- **New stages** in `PLANNING_STAGES`: `general_spec`, `epic_specs`, `flow_diagrams`, each with its output schema.
-- **Use case**: `planning/generate_documents.py`, which reuses `RunPlanningStep`.
+- **Trigger**: the plan finishes being approved (after `sprints`, as an `on_plan_completed` handler after UC-05), a document proposal is rejected, or the leader asks to regenerate a document.
+- **Result**: proposals of kind `document`, in order: the general spec (`general_spec`), one spec per roadmap epic (`epic_spec:EP-n`) and the flow and architecture diagrams in Mermaid (`flow_diagram:n`, one proposal each). Once approved they become versioned `Document`s; the proposal key names the document, so approving a regeneration adds the next version. A diagram that still fails `check_mermaid` after one retry isn't proposed and `DocumentsGenerated.missing` names it. The leader's manual edit (`PUT /api/documents/{id}`) saves a version directly, without a proposal. A replan (UC-13) flags the documents as outdated (`MarkDocumentsOutdated`).
+- **New stages** in `DOCUMENT_STAGES` (next to `PLANNING_STAGES`, same `PlanningAgents` port): `general_spec`, `epic_spec` (one call per epic, with only that epic and its stories) and `flow_diagrams`, each with its output schema.
+- **Use cases**: `planning/generate_documents.py` (reuses `RunPlanningStep`'s agent call and retry, `run_agent`), `documents/apply_document.py`, `documents/regenerate_document.py`, `documents/edit_document.py`, `documents/list_documents.py`, `documents/mark_outdated.py`
 
 ```mermaid
 sequenceDiagram
-    participant AP as ApproveProposal
+    participant AP as AdvancePlanning
     participant UC as GenerateDocuments
     participant AG as Agents
     participant UoW
     participant Bus as EventBus
+    participant AD as ApplyDocumentProposal
 
-    AP->>UC: full plan approved
-    loop general_spec, epic_specs, flow_diagrams
+    AP->>UC: on_plan_completed(project_id), after ApplyPlan
+    loop general_spec, epic_spec per epic, flow_diagrams
         UC->>Bus: publish(AgentStarted)
-        UC->>AG: run_stage(stage, approved plan)
-        AG-->>UC: documents (Markdown or Mermaid)
+        UC->>AG: run_stage(stage, approved finals)
+        AG-->>UC: Markdown or Mermaid (one retry if invalid)
         UC->>UoW: proposals.add(Proposal kind document)
         UC->>UoW: commit()
         UC->>Bus: publish(ProposalCreated)
     end
-    Note over AP,Bus: on approval, ApproveProposal creates or versions the Document
+    UC->>Bus: publish(DocumentsGenerated(missing))
+    Note over AD: on approval (spec 005), ApplyDocumentProposal creates the Document or its next version
 ```
 
 ### UC-09 · Connect the GitHub repo

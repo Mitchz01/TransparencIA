@@ -5,9 +5,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.adapters.inbound.http import activity, board, dev, health, integrations, planning, projects, proposals
+from app.adapters.inbound.http import activity, board, dev, documents, health, integrations, planning, projects, proposals
 from app.adapters.inbound.http.background import spawn
-from app.adapters.inbound.http.dependencies import open_uow, wire_planning, wire_replanning
+from app.adapters.inbound.http.dependencies import open_uow, wire_documents, wire_planning, wire_replanning
 from app.adapters.inbound.http.errors import register_error_handlers
 from app.adapters.inbound.webhooks import github as github_webhooks
 from app.adapters.outbound.code_host.fake import FakeCodeHost
@@ -77,7 +77,8 @@ async def lifespan(app: FastAPI):
     app.state.event_bus = PersistentEventBus(InMemoryEventBus(), open_uow)
     # Steps that apply each kind of proposal, registered by their owner specs (spec 005, "Applying"):
     #   002: "plan_stage" → AdvancePlanning.on_proposal_resolved (registered by wire_planning below)
-    #   006: "document" → ApplyDocumentProposal · 007: "github_action" create_issues/request_review → PublishIssues/ApplyReview
+    #   006: "document" → ApplyDocumentProposal, rejections → GenerateDocuments (registered by wire_documents)
+    #   007: "github_action" create_issues/request_review → PublishIssues/ApplyReview
     #   008: "replan" → ApplyReplan
     app.state.appliers = ApplierRegistry()
     # Spec 007: approving a github_action proposal writes to GitHub.
@@ -85,9 +86,13 @@ async def lifespan(app: FastAPI):
     app.state.appliers.register("github_action", publish_issues.execute, key="create_issues")
     apply_review = ApplyReview(open_uow, app.state.event_bus, app.state.code_host_factory)
     app.state.appliers.register("github_action", apply_review.execute, key="request_review")
-    # Run once every stage is approved (spec 002): 003's ApplyPlan (added by wire_planning); 006 adds GenerateDocuments.
+    # Run once every stage is approved (spec 002), in order: 003's ApplyPlan (wire_planning, with 007's
+    # ProposePendingIssues as its follow-up), then 006's GenerateDocuments (wire_documents).
     app.state.on_plan_completed = []
     app.state.run_planning_step = wire_planning(
+        open_uow, app.state.event_bus, app.state.agents, app.state.appliers, app.state.on_plan_completed
+    )
+    app.state.generate_documents = wire_documents(
         open_uow, app.state.event_bus, app.state.agents, app.state.appliers, app.state.on_plan_completed
     )
     # Spec 008: on-demand and drift replans; approving one runs ApplyReplan, then these follow-ups
@@ -145,7 +150,7 @@ app.include_router(proposals.router)
 app.include_router(activity.router)
 app.include_router(integrations.router)  # spec 007
 app.include_router(board.router)
+app.include_router(documents.router)  # spec 006
 app.include_router(github_webhooks.router)  # spec 008
 if ENV == "dev":
     app.include_router(dev.router)  # spec 008 (T029): replay GitHub events without a tunnel
-# TODO: documents (spec 006)

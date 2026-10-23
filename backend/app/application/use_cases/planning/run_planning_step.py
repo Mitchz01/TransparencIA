@@ -8,6 +8,7 @@ the proposal is approved right away, which chains to the next stage through Adva
 
 import logging
 import time
+from collections.abc import Callable
 from typing import Any
 
 from pydantic import BaseModel
@@ -122,11 +123,20 @@ class RunPlanningStep:
         )
 
 
-async def run_validated(agents: PlanningAgents, stage: PlanningStage, context: dict[str, Any]) -> dict[str, Any]:
-    """The stage's validated output as JSON, or StageFailed after ATTEMPTS tries.
-    Shared with spec 008's Replan."""
+OutputCheck = Callable[[dict[str, Any], dict[str, Any]], list[str]]
+
+
+async def run_agent(
+    agents: PlanningAgents, stage: PlanningStage, context: dict[str, Any], check: OutputCheck
+) -> tuple[dict[str, Any], list[str]]:
+    """Runs the stage's agent up to ATTEMPTS times. An agent failure or a schema-invalid output
+    is retried; so is an output with issues (`check`), with them as feedback. Returns the
+    output as JSON with the issues still left after the last try (empty = valid), or raises
+    StageFailed if the last try didn't even match the schema. Shared with spec 006's writer."""
     attempt_context = context
     message = ""
+    output: dict[str, Any] | None = None
+    issues: list[str] = []
     started = time.monotonic()
     for attempt in range(1, ATTEMPTS + 1):
         try:
@@ -136,17 +146,29 @@ async def run_validated(agents: PlanningAgents, stage: PlanningStage, context: d
         except Exception:  # noqa: BLE001  the service failed or the output broke the schema
             logger.warning("Stage %s failed (attempt %d/%d)", stage.key, attempt, ATTEMPTS, exc_info=True)
             message = f"The {stage.title} didn't return a valid result. Retry to run the stage again."
+            output = None
             continue
 
-        issues = validate_stage_output(stage.key, output, context)
+        issues = check(output, context)
         if not issues:
             # SC-001: how long each stage takes against the real model, and how many tries.
             logger.info("Stage %s done in %.1fs (attempt %d)", stage.key, time.monotonic() - started, attempt)
-            return output
+            return output, []
         logger.warning("Stage %s broke %d rule(s) (attempt %d/%d): %s", stage.key, len(issues), attempt, ATTEMPTS, issues)
-        message = f"The {stage.title}'s result broke these rules: " + " ".join(issues)
         attempt_context = {**context, "feedback": _issues_feedback(context, issues, output)}
-    raise StageFailed(message)
+    if output is None:
+        raise StageFailed(message)
+    return output, issues
+
+
+async def run_validated(agents: PlanningAgents, stage: PlanningStage, context: dict[str, Any]) -> dict[str, Any]:
+    """`run_agent` with the stage's consistency rules (validate_stage_output): the valid output
+    as JSON, or StageFailed if it still broke a rule after the retry. Used by RunPlanningStep
+    and spec 008's Replan (the `replan` rules are registered there too)."""
+    output, issues = await run_agent(agents, stage, context, lambda out, ctx: validate_stage_output(stage.key, out, ctx))
+    if issues:
+        raise StageFailed(f"The {stage.title}'s result broke these rules: " + " ".join(issues))
+    return output
 
 
 def _issues_feedback(context: dict[str, Any], issues: list[str], output: dict[str, Any]) -> dict[str, Any]:

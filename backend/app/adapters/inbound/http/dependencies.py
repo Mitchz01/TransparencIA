@@ -21,10 +21,16 @@ from app.application.use_cases.board.move_task import MoveTask
 from app.application.use_cases.board.set_capacity import SetCapacity
 from app.application.use_cases.board.update_checklist import UpdateChecklist
 from app.application.use_cases.board.update_task import UpdateTask
+from app.application.use_cases.documents.apply_document import ApplyDocumentProposal
+from app.application.use_cases.documents.edit_document import EditDocument
+from app.application.use_cases.documents.list_documents import GetDocument, ListDocuments
+from app.application.use_cases.documents.mark_outdated import MarkDocumentsOutdated
+from app.application.use_cases.documents.regenerate_document import RegenerateDocument
 from app.application.use_cases.planning.advance_planning import AdvancePlanning, PlanCompletedHandler
 from app.application.use_cases.planning.apply_plan import ApplyPlan
 from app.application.use_cases.planning.apply_replan import ApplyReplan, ReplanFollowUp, ReplanOutcome
 from app.application.use_cases.planning.replan import Replan
+from app.application.use_cases.planning.generate_documents import GenerateDocuments
 from app.application.use_cases.planning.retry_stage import RetryStage
 from app.application.use_cases.planning.run_planning_step import RunPlanningStep
 from app.application.use_cases.planning.start_planning import StartPlanning
@@ -331,10 +337,28 @@ def wire_planning(
     # and the approved backlog/sprints only reach project.plan through AdvancePlanning.
     # Spec 007 (T019): with a repo connected, the new board's tasks are proposed as issues.
     # ApplyPlan already runs in the background, so auto-approve applies in that same job.
-    # Spec 006 appends GenerateDocuments to the same list.
+    # Spec 006 appends GenerateDocuments to the same list, after ApplyPlan (wire_documents).
     propose_issues = ProposePendingIssues(uow_factory, bus, auto_approve.after_created)
     on_plan_completed.append(ApplyPlan(uow_factory, bus, [propose_issues]).execute)
     return run_step
+
+
+def wire_documents(
+    uow_factory: UnitOfWorkFactory,
+    bus: EventBus,
+    agents: PlanningAgents,
+    appliers: ApplierRegistry,
+    on_plan_completed: list[PlanCompletedHandler],
+) -> GenerateDocuments:
+    """Spec 006's writer, once at startup (main.py, after wire_planning so ApplyPlan runs first)."""
+    auto_approve = AutoApprove(uow_factory, bus, ApplyProposal(uow_factory, bus, appliers))
+    generate = GenerateDocuments(uow_factory, agents, bus, auto_approve)
+    # An approved or adjusted document proposal creates or versions the document; a rejected
+    # one is rewritten with the reason, following spec 002's redo rule (spec 005, "Applying").
+    appliers.register("document", ApplyDocumentProposal(uow_factory, bus).execute)
+    appliers.register("document", generate.on_proposal_resolved, on=("rejected",))
+    on_plan_completed.append(generate.execute)
+    return generate
 
 
 def get_run_planning_step(request: Request) -> RunPlanningStep:
@@ -411,3 +435,35 @@ def get_close_sprint(
 ) -> CloseSprint:
     # ProposeReplanOnDrift.on_sprint_closed is registered in main.py (runs in the background).
     return CloseSprint(uow, bus, getattr(request.app.state, "on_sprint_closed", ()))
+
+
+# ---------- Documents (spec 006) ----------
+
+
+def get_generate_documents(request: Request) -> GenerateDocuments:
+    return request.app.state.generate_documents
+
+
+def get_list_documents(uow: UnitOfWork = Depends(get_uow)) -> ListDocuments:
+    return ListDocuments(uow)
+
+
+def get_get_document(uow: UnitOfWork = Depends(get_uow)) -> GetDocument:
+    return GetDocument(uow)
+
+
+def get_regenerate_document(
+    uow: UnitOfWork = Depends(get_uow), generate: GenerateDocuments = Depends(get_generate_documents)
+) -> RegenerateDocument:
+    return RegenerateDocument(uow, generate)
+
+
+def get_edit_document(uow: UnitOfWork = Depends(get_uow), bus: EventBus = Depends(get_event_bus)) -> EditDocument:
+    return EditDocument(uow, bus)
+
+
+def get_mark_documents_outdated(
+    uow_factory: UnitOfWorkFactory = Depends(get_uow_factory), bus: EventBus = Depends(get_event_bus)
+) -> MarkDocumentsOutdated:
+    """For spec 008: call execute(project_id) after a replan is applied (FR-011)."""
+    return MarkDocumentsOutdated(uow_factory, bus)

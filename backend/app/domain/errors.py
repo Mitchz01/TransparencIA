@@ -169,6 +169,52 @@ class PlanNotApplied(DomainError):
         self.project_id = project_id
 
 
+class DocumentNotFound(NotFound):
+    def __init__(self, id: int | None):
+        super().__init__("Document", id)
+
+
+class VersionNotFound(NotFound):
+    """The document exists but has no such version (spec 006, `?version=`)."""
+
+    def __init__(self, document_id: int | None, version: int):
+        super().__init__("Version", version)
+        self.detail = f"Document {document_id} has no version {version}."
+        self.args = (self.detail,)
+
+
+class RegenerationInProgress(DomainError):
+    """The writer is already rewriting this document, or its proposal waits for the leader."""
+
+    code = "regeneration_in_progress"
+
+    def __init__(self, document_id: int | None):
+        super().__init__(f"Document {document_id} is already being regenerated or has a pending proposal.")
+        self.document_id = document_id
+
+
+class VersionConflict(DomainError):
+    """The leader edited an old version: someone saved a newer one in between (spec 006, US4)."""
+
+    code = "version_conflict"
+
+    def __init__(self, document_id: int | None, base_version: int, current_version: int):
+        super().__init__(f"Document {document_id} is at version {current_version}, not {base_version}: reload it.")
+        self.current_version = current_version
+
+    def extra(self) -> dict[str, Any]:
+        return {"current_version": self.current_version}
+
+
+class InvalidDiagram(ValidationFailed):
+    """A diagram that wouldn't render (check_mermaid): one error per issue, on `content`."""
+
+    code = "invalid_diagram"
+
+    def __init__(self, issues: list[str], field: str = "content"):
+        super().__init__([FieldError(field, issue) for issue in issues], "The diagram can't be rendered.")
+
+
 class NoApplierForProposal(DomainError):
     """No spec registered a step to apply this kind of proposal (yet). The decision stays
     saved and the application is reported as failed, so it can be retried later."""

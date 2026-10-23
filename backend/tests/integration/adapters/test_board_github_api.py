@@ -123,13 +123,17 @@ def test_applying_a_plan_with_a_connected_repo_proposes_the_issues(client):
     _complete_plan(client, pid)
 
     board = client.get(f"/api/projects/{pid}/board").json()
-    [proposal] = client.get(f"/api/projects/{pid}/proposals").json()
-    assert (proposal["kind"], proposal["key"], proposal["status"]) == ("github_action", "create_issues", "pending")
+    proposals = client.get(f"/api/projects/{pid}/proposals").json()
+    [proposal] = [p for p in proposals if p["kind"] == "github_action"]
+    assert (proposal["key"], proposal["status"]) == ("create_issues", "pending")
     assert [t["task_id"] for t in proposal["content"]["tasks"]] == [t["id"] for t in board["tasks"]]
+    # The whole on_plan_completed chain ran: ApplyPlan (+ issues), then spec 006's writer
+    assert {"general_spec", "flow_diagram"} <= {p["key"].split(":")[0] for p in proposals if p["kind"] == "document"}
 
 
-def test_applying_a_plan_without_a_repo_proposes_nothing(client):
+def test_applying_a_plan_without_a_repo_proposes_no_issues(client):
     pid = _project_with_plan(client)
     _complete_plan(client, pid)
     assert client.get(f"/api/projects/{pid}/board").json()["tasks"]
-    assert client.get(f"/api/projects/{pid}/proposals").json() == []
+    proposals = client.get(f"/api/projects/{pid}/proposals").json()
+    assert proposals and all(p["kind"] == "document" for p in proposals)  # only spec 006's documents
