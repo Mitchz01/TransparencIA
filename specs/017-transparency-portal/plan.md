@@ -22,7 +22,7 @@ in that order if time runs out.
 images); new on the frontend: `qrcode`  
 **Storage**: SQLite; uploaded files as bytes in their own table  
 **Testing**: pytest (rules + API); vitest where it's cheap  
-**Target Platform**: laptop for the demo, reached from the jury's phones through a tunnel  
+**Target Platform**: a deployment the jury's phones reach over the internet (not run by this team)  
 **Constraints**: 3 hours; must work in mock mode with the seeded project
 
 ### Decisions
@@ -50,8 +50,10 @@ images); new on the frontend: `qrcode`
 - **D9 — Publication**: `Project.public_slug` (`secrets.token_urlsafe(8)`, generated on first publish,
   kept on unpublish) and `Project.public: bool`. The QR encodes `{PUBLIC_APP_URL}/p/{slug}` (env var,
   falls back to the current origin).
-- **D10 — Public exposure**: `cloudflared tunnel --url http://localhost:5174` (the portal app, spec 018) (quick tunnel, no account),
-  Vite `server.allowedHosts` for the tunnel domain. Cloud Run stays the real target, not tonight.
+- **D10 — Public exposure**: the app is deployed by someone outside this team; no tunnel. What the deployment
+  needs: the portal (`apps/portal`, a static build) and the backend under one origin, with `/api` proxied to
+  the backend (the portal calls `/api` relative), and `PUBLIC_APP_URL` set to the portal's public origin so
+  the QR points at it.
 - **D11 — The seed builds the demo project directly** (planned mangrove board with tasks done across
   past weeks, budget, 3 confirmed expenses, portal published), without running the agents.
 - **D12 — Alerts can't be cleared by the executing entity** (spec US5): it only answers; answered alerts
@@ -63,6 +65,21 @@ images); new on the frontend: `qrcode`
   at 0:00.
 - **D15 — Permissions (spec 015)**: budget, publication and alert answers need a leader (`403 forbidden`);
   uploading and confirming evidence needs a member. Public endpoints need nothing.
+- **D16 — US7, quick version**: the contract fills the project and its budget; the planning pipeline
+  doesn't change. Storing the contract as structured data for the agents and aligning sprint dates to the
+  milestones are left for after the hackathon.
+- **D17 — The agents see the contract through the description**: the backend composes it in code from the
+  purpose, the obligations and the milestones with their dates ("Hitos del contrato: … (antes del
+  2026-09-30)"), within the 5,000 characters of `DESCRIPTION_MAX`, cutting the obligations first. The
+  leader can edit it in the draft. The planning prompts get one line (P2's `prompts.py`): "If the
+  description lists contract milestones, plan each one before its date."
+- **D18 — Its own port, `ContractReader`** (`read(file, mime) → ContractReading`), apart from P2's
+  `TransparencyAgents`, so nobody shares a file. Same ADK pattern (file as `Part.from_bytes`, an
+  `output_schema`), same mock switch.
+- **D19 — No team from the contract** (FR-019): `ContractReading` has no people or roles; the creator is
+  the only member, as in `POST /api/projects`.
+- **D20 — The duration follows from the dates** in code: `ceil((end - start + 1 day) / 7)` weeks, within
+  `WEEKS_RANGE` (1–52); the budget's start date is the contract's start date.
 
 ## Project Structure
 
@@ -219,6 +236,44 @@ with the file's own `Content-Type` · `404 file_not_found`.
 Body `{ "question": "…" }` (1–300 chars). `200` → `{ "answer": "…" }` · `404 project_not_found` ·
 `422 validation_failed` · `502 agent_unavailable`.
 
+### `POST /api/contracts/read` — read a contract into a project draft (US7)
+
+Session required. `multipart/form-data`, field `file`: a PDF up to 10 MB. Runs the contract agent inside
+the request (D2). Nothing is saved.
+
+**ContractReading**
+
+```json
+{ "name": "Restauración de manglar en la Ciénaga Grande", "purpose": "…",
+  "contracting_entity": "Corpamag", "contractor": "Fundación Manglares Vivos",
+  "contract_value": 180000000, "start_date": "2026-08-03", "end_date": "2027-01-31",
+  "duration_weeks": 26,
+  "lines": [{ "id": "R1", "name": "Plántulas de mangle", "amount": 45000000 }],
+  "obligations": ["Instalar un vivero de 20.000 plántulas", "…"],
+  "milestones": [{ "name": "Vivero instalado", "date": "2026-09-30", "deliverable": "Informe con fotos" }],
+  "description": "…" }
+```
+
+Any field may be `null` (or an empty list) when the contract doesn't state it; `duration_weeks` and
+`description` are computed by the backend (D17, D20), not by the AI.
+
+| Status | When | Body |
+|---|---|---|
+| `200` | Read | `ContractReading` |
+| `422` | Missing file, not a PDF, > 10 MB | `unsupported_file` |
+| `502` | The agent failed | `agent_unavailable` |
+
+### `POST /api/projects/from-contract` — create the project and its budget (US7)
+
+Session required. Body: `{ "name", "description", "duration_weeks", "requested_methodology",
+"auto_approve", "role", "budget": BudgetInput }`, the project fields as in `POST /api/projects` and
+`budget` as in `PUT /api/projects/{id}/budget`. Project and budget are saved in one commit (FR-020).
+
+| Status | When | Body |
+|---|---|---|
+| `201` | Created, the caller as its leader | `Project` + `Location` |
+| `422` | The project's or the budget's rules (`budget.lines[1].amount`…) | `validation_failed` with `errors` |
+
 ---
 
 ## What we cut from the existing product
@@ -244,7 +299,8 @@ it says so out loud first.
 | **P2 — AI** | The evidence and chat prompts and adapters; generalized planning prompts; demo files | T002, T007, T009, T010, T021 | `ports/transparency_agents.py`, `agents/adk/*`, `agents/mock/transparency_*`, `transparency/ask_citizen.py`, `apps/api/demo/` |
 | **P3 — API** | Persistence, use cases, endpoints, cuts in the backend, seed | T008, T011–T013, T015, T018, T019, T023 | `ports/repositories.py`, `ports/unit_of_work.py`, `persistence/*`, `domain/project.py`, the other `transparency/*`, `http/transparency.py`, `http/public.py`, `main.py`, `config.py`, `seed.py` |
 | **P4 — Team UI** | The "Transparencia" tab and the cuts in navigation | T001 (frontend), T016, T017, T024 | `@agile/domain` (types, fixture), `ports.ts`, `adapters/*/transparencyGateway.ts`, `useTransparency.ts`, `TransparencyPage`, `QrCard`, `routes.tsx`, project nav |
-| **P5 — Portal + demo** | What the jury sees on their phone; tunnel, pitch | T020, T022, T025–T027, pitch + backup video | `apps/portal/*`, `packages/ui/src/transparency/*`, docs |
+| **P5 — Portal + demo** | What the jury sees on their phone; deployment notes, pitch | T020, T022, T025–T027, pitch + backup video | `apps/portal/*`, `packages/ui/src/transparency/*`, docs |
+| **Claude — US7** | The project from the contract | T028–T033 | In `apps/api`: `domain/contracts.py`, `ports/contract_reader.py`, `agents/*/contract_reader.py`, `use_cases/contracts/*`, `http/contracts.py`, `demo/contrato-manglar.pdf`. In `apps/team`: `domain/contracts.ts`, `adapters/*/contractGateway.ts`, `useContracts.ts`, `NewProjectFromContractPage.tsx`. One line each in `main.py` (P3), `routes.tsx` and `ports.ts` (P4), and in `prompts.py` (P2), announced first |
 
 P4 owns `QrCard` and the forms in `apps/team`; P5 owns `apps/portal` and the read-only components in
 `packages/ui/src/transparency/` (the team tab reuses P5's `TrafficLight`, `ProgressBars`, `BudgetLines`).
@@ -322,13 +378,29 @@ Sync points:
 - [ ] T019 [US5] Use case `answer_alert` + endpoint + test
 - [ ] (P4) "Responder" on each alert in the Transparencia tab; the portal shows the answer
 
+## Phase 8b: US7 — The project starts from the contract (~50 min, Claude, in parallel)
+
+- [ ] T028 [US7] `domain/contracts.py`: `ContractReading` (agent output) and the rules
+  `duration_weeks(start, end)` and `compose_description(reading)` (D17, D20), with unit tests
+- [ ] T029 [US7] Port `ContractReader`; mock adapter (the mangrove contract of the team README) and ADK
+  adapter with the contract prompt (FR-018, FR-019: no people, no invented amounts)
+- [ ] T030 [US7] Use cases `ReadContract` and `CreateProjectFromContract` (project + budget in one commit,
+  reusing `CreateProject`'s rules and P1's `budget_errors`) + `http/contracts.py` + API tests
+- [ ] T031 [US7] Frontend: `ContractGateway` (http + fake), `useContracts`, `NewProjectFromContractPage`
+  (upload with spinner → editable draft: project fields, budget lines, obligations and milestones as a
+  read-only preview of the description → "Crear proyecto"); a "Crear desde contrato" entry on the new
+  project screen
+- [ ] T032 [US7] `apps/api/demo/contrato-manglar.pdf`: 2 pages, the numbers of the team README
+- [ ] T033 [US7] The milestones line in the planning prompts (D17, with P2); plan the demo contract's
+  project with the real key and check every milestone lands before its date
+
 ## Phase 9: Polish & demo (~20 min)
 
 - [ ] T023 Cuts in the backend (D13): `GENERATE_DOCUMENTS` flag, skip issue proposals; hide GitHub and
   Documents from the nav (P4)
 - [ ] T025 plan/api-conventions.md (D2, D3 and new errors), apps/team/docs/api-contract.md, plan/context.md
   and README updated to the transparency module
-- [ ] T026 Tunnel + `allowedHosts`; QR tested from a real phone on mobile data
+- [ ] T026 Deployment notes for whoever deploys (D10); QR tested from a real phone on mobile data once deployed
 - [ ] T027 Full demo with the real key and in mock mode; `pytest`, `npm run typecheck`, `npm run lint`
 
 ## Dependencies & Execution Order
@@ -336,3 +408,5 @@ Sync points:
 - Phase 2 blocks everything except T010 (US6) and the frontend on the fake gateway.
 - US1 → US2 → US3 (each needs the previous one's data); US4 and US5 only need US3.
 - If at 2:00 phase 6 isn't done: skip phases 7–8, go straight to T018 and T026.
+- US7 (phase 8b) only needs P1's `budget_errors` (done) and the existing `CreateProject`; it runs in
+  parallel with everything. If it isn't working by 2:00, the demo starts from the seeded project.

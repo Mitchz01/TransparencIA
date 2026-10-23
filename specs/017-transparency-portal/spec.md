@@ -189,6 +189,42 @@ sprint talks about software.
 
 ---
 
+### User Story 7 - The project starts from the contract (Priority: P2)
+
+The leader uploads the signed contract (a public works contract, a service, a restoration, anything) as
+a PDF. The AI reads it and drafts the project: a short name, the contract's purpose, the parties, the
+value, the start and end dates, the budget lines with their amounts, the obligations and deliverables,
+and the milestones with their dates. The leader reviews and fixes the draft and confirms it. That creates
+the project with its duration and its budget in one step, and the planning agents plan it from the
+contract's purpose, obligations and milestones. **The team and its roles are not read from the
+contract**: the leader forms the team as today, from the Equipo screen and the invitation link.
+
+**Why this priority**: it turns moment 1 of the demo into "I upload the contract and the project builds
+itself". The module works without it (the budget can be typed in), so it comes after US1–US3.
+
+**Independent Test**: upload the demo contract PDF, confirm the draft, check the project's duration and
+budget, and plan it: the epics follow the contract's deliverables.
+
+**Acceptance Scenarios**:
+
+1. **Scenario**: Draft from a contract
+   - **Given** a signed-in user
+   - **When** they upload the mangrove contract PDF
+   - **Then** they see an editable draft with the name, purpose, Corpamag and the foundation,
+     COP 180,000,000, the start and end dates, the 4 budget lines, the obligations and the milestones
+2. **Scenario**: Missing data stays missing
+   - **Given** a contract that doesn't state an amount for a budget line
+   - **Then** that amount is empty and marked "no aparece en el contrato"; the AI never invents amounts
+3. **Scenario**: Confirm
+   - **When** the leader confirms the draft
+   - **Then** the project exists with them as its only member and leader, its duration in weeks
+     follows from the dates, its budget is set, and planning can start
+4. **Scenario**: The plan follows the contract
+   - **When** the project is planned
+   - **Then** every milestone of the contract shows up in the plan before its date
+
+---
+
 ### Edge Cases
 
 - A file that isn't a PDF or an image, or is larger than 10 MB: rejected with a clear message.
@@ -200,6 +236,10 @@ sprint talks about software.
 - An expense the AI can't assign: it stays unassigned with an alert; the member assigns it before
   confirming.
 - A task linked to evidence is deleted from the board: the evidence keeps the task's title.
+- A contract without dates: the draft asks for them; the project can't be created without a start date
+  and a duration.
+- A contract whose text doesn't fit what the agents read (very long annexes): the obligations and
+  milestones are kept, the rest is cut, and the leader can edit the description.
 - Without an AI key (mock mode): the demo evidence comes back with fixed, realistic data.
 
 ## Requirements *(mandatory)*
@@ -245,6 +285,15 @@ sprint talks about software.
 - **FR-017**: The demo seed MUST create the mangrove project planned, with work done on the board over
   several weeks, its budget, 3 confirmed pieces of evidence (one with an open alert) and the portal
   published, so the demo works even if the AI is down.
+- **FR-018**: A signed-in user MUST be able to upload a contract PDF and get an editable draft: name,
+  purpose, contracting entity, contractor, value, start and end dates, budget lines, obligations and
+  milestones (name, date, deliverable). The AI MUST leave empty what the contract doesn't state.
+- **FR-019**: The AI MUST NOT read the team, its roles or its people from the contract; the leader forms
+  the team.
+- **FR-020**: Confirming the draft MUST create, in one step, the project (the person as its leader, the
+  duration in weeks from the dates) and its budget; if any part fails, nothing is created.
+- **FR-021**: The planning agents MUST see the contract's purpose, obligations and milestones with their
+  dates, and plan the milestones before their dates.
 
 ### Key Entities
 
@@ -255,6 +304,8 @@ sprint talks about software.
 - **Alert**: level, reason, source (AI or rule), the executing entity's answer; belongs to an evidence.
 - **Portal publication**: of a project; public or not, its stable link.
 - **Activity**: the board's tasks (already exist); this feature needs to know when each one was done.
+- **Contract reading** (US7): the AI's draft of a project from its contract (name, purpose, parties,
+  value, dates, budget lines, obligations, milestones); it isn't kept once the project is created.
 
 ## Success Criteria *(mandatory)*
 
@@ -272,6 +323,7 @@ sprint talks about software.
 
 - Accounts for the contracting entity (it follows the public portal like everyone else); supervisor
   (interventoría) sign-off on activities or alerts.
-- Reading the budget from the contract or the quote PDF (it's typed in).
+- Reading the budget from a quote (only from the contract, US7); contract annexes beyond the obligations
+  and milestones.
 - Pulling contracts from SECOP; contract changes (otrosíes, adiciones).
 - Rate limiting the public chat.
