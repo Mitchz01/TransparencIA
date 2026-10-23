@@ -2,6 +2,7 @@ from collections.abc import Callable
 from typing import Protocol, Self
 
 from app.application.ports.repositories import (
+    AccountRepository,
     ActivityRepository,
     ExternalLinkRepository,
     DocumentRepository,
@@ -9,6 +10,7 @@ from app.application.ports.repositories import (
     OwnWriteRepository,
     ProjectRepository,
     ProposalRepository,
+    SessionRepository,
     SprintRepository,
     TaskRepository,
     WebhookDeliveryRepository,
@@ -29,6 +31,8 @@ class UnitOfWork(Protocol):
     own_writes: OwnWriteRepository  # spec 007
     deliveries: WebhookDeliveryRepository  # spec 008
     documents: DocumentRepository
+    accounts: AccountRepository  # spec 015
+    sessions: SessionRepository  # spec 015
 
     def __enter__(self) -> Self: ...
     def __exit__(self, *exc: object) -> None: ...

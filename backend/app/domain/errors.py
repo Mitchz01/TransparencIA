@@ -286,3 +286,45 @@ class CodeHostUnavailable(DomainError):
 
     def __init__(self, detail: str = "GitHub didn't answer. Try again in a moment."):
         super().__init__(detail)
+
+
+# ---------- Accounts and project roles (spec 015) ----------
+
+
+class NotAuthenticated(DomainError):
+    code = "not_authenticated"
+
+    def __init__(self) -> None:
+        super().__init__("Sign in to continue.")
+
+
+class InvalidCredentials(DomainError):
+    """Same message for a wrong password and an unknown email (FR-002)."""
+
+    code = "invalid_credentials"
+
+    def __init__(self) -> None:
+        super().__init__("Wrong email or password.")
+
+
+class Forbidden(DomainError):
+    code = "forbidden"
+
+    def __init__(self, detail: str = "Only the project's leaders can do this.") -> None:
+        super().__init__(detail)
+
+
+class InvitationNotFound(NotFound):
+    """Unknown or replaced token, or invitations turned off. The token isn't echoed back."""
+
+    def __init__(self) -> None:
+        super().__init__("Invitation", None)
+        self.detail = "This invitation isn't valid anymore. Ask the leader for a new link."
+        self.args = (self.detail,)
+
+
+class LastLeader(DomainError):
+    code = "last_leader"
+
+    def __init__(self) -> None:
+        super().__init__("The project needs a leader: make someone else Leader first.")

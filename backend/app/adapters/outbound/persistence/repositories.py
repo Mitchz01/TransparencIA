@@ -7,6 +7,7 @@ from sqlmodel import Session, col, select
 
 from app.adapters.outbound.persistence import mappers
 from app.adapters.outbound.persistence.tables import (
+    AccountTable,
     ActivityTable,
     ExternalLinkTable,
     DocumentTable,
@@ -16,10 +17,12 @@ from app.adapters.outbound.persistence.tables import (
     OwnWriteTable,
     ProjectTable,
     ProposalTable,
+    SessionTable,
     SprintTable,
     TaskTable,
     WebhookDeliveryTable,
 )
+from app.domain.accounts import Account, AuthSession
 from app.domain.board import Objective, Sprint, Task
 from app.domain.documents import Document, DocumentVersion
 from app.domain.errors import ProposalAlreadyResolved
@@ -94,6 +97,20 @@ class SqlProjectRepository:
         row = self._session.exec(
             select(ProjectTable).where(func.lower(ProjectTable.repository) == repository.lower()).order_by(ProjectTable.id)
         ).first()
+        return self._to_domain(row) if row else None
+
+    def list_by_account(self, account_id: int) -> list[Project]:
+        """Projects where the account is an active member (spec 015)."""
+        rows = self._session.exec(
+            select(ProjectTable)
+            .join(MemberTable, col(MemberTable.project_id) == ProjectTable.id)
+            .where(MemberTable.account_id == account_id, col(MemberTable.active).is_(True))
+            .order_by(ProjectTable.id)
+        ).all()
+        return [self._to_domain(row) for row in rows]
+
+    def get_by_invite_token(self, token: str) -> Project | None:
+        row = self._session.exec(select(ProjectTable).where(ProjectTable.invite_token == token)).first()
         return self._to_domain(row) if row else None
 
 
@@ -411,3 +428,52 @@ class SqlDocumentRepository:
             .order_by(DocumentVersionTable.version)
         ).all()
         return [mappers.document_version_to_domain(row) for row in rows]
+
+
+# ---------- Accounts (spec 015) ----------
+
+
+class SqlAccountRepository:
+    def __init__(self, session: Session):
+        self._session = session
+
+    def get(self, account_id: int) -> Account | None:
+        row = self._session.get(AccountTable, account_id)
+        return mappers.account_to_domain(row) if row else None
+
+    def get_by_email(self, email: str) -> Account | None:
+        row = self._session.exec(select(AccountTable).where(AccountTable.email == email)).first()
+        return mappers.account_to_domain(row) if row else None
+
+    def add(self, account: Account) -> Account:
+        row = mappers.account_to_table(account)
+        self._session.add(row)
+        self._session.flush()
+        return mappers.account_to_domain(row)
+
+    def save(self, account: Account) -> Account:
+        row = self._session.merge(mappers.account_to_table(account))
+        self._session.flush()
+        return mappers.account_to_domain(row)
+
+
+class SqlSessionRepository:
+    def __init__(self, session: Session):
+        self._session = session
+
+    def add(self, auth_session: AuthSession) -> AuthSession:
+        row = mappers.session_to_table(auth_session)
+        self._session.add(row)
+        self._session.flush()
+        return mappers.session_to_domain(row)
+
+    def get_by_digest(self, digest: str) -> AuthSession | None:
+        row = self._session.exec(select(SessionTable).where(SessionTable.token_digest == digest)).first()
+        return mappers.session_to_domain(row) if row else None
+
+    def delete(self, session_id: int) -> None:
+        self._session.exec(delete(SessionTable).where(col(SessionTable.id) == session_id))  # type: ignore[call-overload]
+
+    def prune_expired(self, now: datetime) -> int:
+        result = self._session.exec(delete(SessionTable).where(col(SessionTable.expires_at) <= now))  # type: ignore[call-overload]
+        return result.rowcount or 0

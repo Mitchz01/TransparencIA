@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Protocol
 
+from app.domain.accounts import Account, AuthSession
 from app.domain.board import Objective, Sprint, Task
 from app.domain.documents import Document, DocumentVersion
 from app.domain.events import DomainEvent
@@ -26,6 +27,12 @@ class ProjectRepository(Protocol):
         ...
     def get_by_repository(self, repository: str) -> Project | None:
         """The project connected to `owner/name`, case-insensitive (spec 007)."""
+        ...
+    def list_by_account(self, account_id: int) -> list[Project]:
+        """Projects where the account is an active member (spec 015)."""
+        ...
+    def get_by_invite_token(self, token: str) -> Project | None:
+        """The project whose current invitation link has this token (spec 015)."""
         ...
 
 
@@ -125,4 +132,25 @@ class WebhookDeliveryRepository(Protocol):
     def add(self, delivery: WebhookDelivery) -> WebhookDelivery: ...
     def prune(self, before: datetime) -> int:
         """Deletes deliveries received before `before`; returns how many."""
+        ...
+
+
+# ---------- Accounts (spec 015) ----------
+
+
+class AccountRepository(Protocol):
+    def get(self, account_id: int) -> Account | None: ...
+    def get_by_email(self, email: str) -> Account | None:
+        """`email` already normalized (lowercase, trimmed)."""
+        ...
+    def add(self, account: Account) -> Account: ...
+    def save(self, account: Account) -> Account: ...
+
+
+class SessionRepository(Protocol):
+    def add(self, session: AuthSession) -> AuthSession: ...
+    def get_by_digest(self, digest: str) -> AuthSession | None: ...
+    def delete(self, session_id: int) -> None: ...
+    def prune_expired(self, now: datetime) -> int:
+        """Deletes sessions expired at `now`; returns how many."""
         ...
