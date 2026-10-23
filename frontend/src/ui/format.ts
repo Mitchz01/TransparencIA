@@ -1,22 +1,22 @@
-// Dates and amounts in words (design system, "Voice"): "Oct 23", "2 members", "5 pts".
+// Dates and amounts in words, in Spanish (design system, "Voice"): "23 oct", "2 miembros", "5 pts".
 
-const dateFormat = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' })
-const timeFormat = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' })
+const dateFormat = new Intl.DateTimeFormat('es', { month: 'short', day: 'numeric' })
+const timeFormat = new Intl.DateTimeFormat('es', { hour: 'numeric', minute: '2-digit' })
 
-/** "Oct 23" for an ISO date or datetime. */
-export const formatDate = (iso: string) => dateFormat.format(new Date(iso.length === 10 ? `${iso}T12:00:00` : iso))
+/** "23 oct" for an ISO date or datetime. */
+export const formatDate = (iso: string) => dateFormat.format(new Date(iso.length === 10 ? `${iso}T12:00:00` : iso)).replace('.', '')
 
-/** "Just now", "5 min ago", "3:40 PM", or "Oct 23" for older ones. */
+/** "Recién", "hace 5 min", "15:40", or "23 oct" for older ones. */
 export function timeAgo(iso: string, now = Date.now()): string {
   const then = new Date(iso).getTime()
   const minutes = Math.floor((now - then) / 60000)
-  if (minutes < 1) return 'Just now'
-  if (minutes < 60) return `${minutes} min ago`
+  if (minutes < 1) return 'Recién'
+  if (minutes < 60) return `Hace ${minutes} min`
   if (new Date(then).toDateString() === new Date(now).toDateString()) return timeFormat.format(then)
   return formatDate(iso)
 }
 
-/** "1 member", "2 members". */
+/** "1 miembro", "2 miembros"; pass the plural when it isn't the singular plus "s" ("decisión", "decisiones"). */
 export const plural = (count: number, one: string, many = `${one}s`) => `${count} ${count === 1 ? one : many}`
 
 export const points = (count: number) => `${count} ${count === 1 ? 'pt' : 'pts'}`

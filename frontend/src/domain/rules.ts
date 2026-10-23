@@ -18,16 +18,16 @@ export function validateProject(body: ProjectCreate | ProjectUpdate): FieldError
   const issues = 'name' in body && 'description' in body && 'members' in body
     ? validateProjectCreate(body as ProjectCreate)
     : [
-        ...(body.name !== undefined && !body.name.trim() ? [{ field: 'name', message: 'Required.' }] : []),
-        ...(body.name && body.name.trim().length > LIMITS.name ? [{ field: 'name', message: `Max ${LIMITS.name} characters.` }] : []),
+        ...(body.name !== undefined && !body.name.trim() ? [{ field: 'name', message: 'Obligatorio.' }] : []),
+        ...(body.name && body.name.trim().length > LIMITS.name ? [{ field: 'name', message: `Máximo ${LIMITS.name} caracteres.` }] : []),
         ...(body.members ? validateMembers(body.members) : []),
       ]
   if (body.requested_methodology !== undefined && !REQUESTED_METHODOLOGIES.includes(body.requested_methodology)) {
-    issues.push({ field: 'requested_methodology', message: 'Pick one of the list.' })
+    issues.push({ field: 'requested_methodology', message: 'Elige una opción de la lista.' })
   }
   body.members?.forEach((member, i) => {
     if (member.seniority !== undefined && !SENIORITIES.includes(member.seniority)) {
-      issues.push({ field: `members[${i}].seniority`, message: 'Pick junior, mid or senior.' })
+      issues.push({ field: `members[${i}].seniority`, message: 'Elige junior, semisenior o senior.' })
     }
   })
   return firstPerField(issues)

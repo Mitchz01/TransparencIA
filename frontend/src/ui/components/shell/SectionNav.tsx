@@ -6,7 +6,7 @@ import { SECTIONS } from './sections'
 /** The sections as a pill group; the active one in `primary`. */
 export function SectionNav({ projectId }: { projectId: number }) {
   return (
-    <nav aria-label="Sections" className="inline-flex gap-1 rounded-pill bg-surface p-1">
+    <nav aria-label="Secciones" className="inline-flex gap-1 rounded-pill bg-surface p-1">
       {SECTIONS.map((section) => (
         <NavLink
           key={section.path}
@@ -32,7 +32,7 @@ export function SectionMenu({ projectId }: { projectId: number }) {
   const current = SECTIONS.find((s) => pathname.startsWith(`/projects/${projectId}/${s.path}`))
   return (
     <Menu
-      label={`Section: ${current?.label ?? 'Settings'}`}
+      label={`Sección: ${current?.label ?? 'Ajustes'}`}
       icon={Menu01Icon}
       className="w-full"
       buttonClassName="w-full justify-start bg-surface [&>span]:flex-1 [&>span]:text-left"
@@ -43,7 +43,7 @@ export function SectionMenu({ projectId }: { projectId: number }) {
         onSelect: () => navigate(`/projects/${projectId}/${s.path}`),
       }))}
     >
-      {current?.label ?? 'Settings'}
+      {current?.label ?? 'Ajustes'}
     </Menu>
   )
 }

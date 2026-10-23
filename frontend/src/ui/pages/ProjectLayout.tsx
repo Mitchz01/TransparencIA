@@ -23,7 +23,7 @@ export function ProjectLayout() {
   if (notFound) return <NotFoundPage />
 
   return (
-    <AppLayout topBar={<ProjectTopBar projectId={projectId} projectName={project?.name ?? 'Project'} onOpenActivity={() => setActivityOpen(true)} />}>
+    <AppLayout topBar={<ProjectTopBar projectId={projectId} projectName={project?.name ?? 'Proyecto'} onOpenActivity={() => setActivityOpen(true)} />}>
       {project ? (
         <>
           <LiveUpdates projectId={projectId} />

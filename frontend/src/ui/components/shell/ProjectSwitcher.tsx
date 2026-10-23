@@ -10,7 +10,7 @@ export function ProjectSwitcher({ projectId, name }: { projectId: number; name: 
   const { data: projects = [] } = useProjects()
   return (
     <Menu
-      label={`Project: ${name}`}
+      label={`Proyecto: ${name}`}
       variant="quiet"
       className="min-w-0"
       buttonClassName="px-3 font-semibold text-ink!"
@@ -22,8 +22,8 @@ export function ProjectSwitcher({ projectId, name }: { projectId: number; name: 
         onSelect: () => navigate(`/projects/${p.id}`),
       }))}
       footer={[
-        { key: 'all', label: 'All projects', icon: DashboardSquare01Icon, onSelect: () => navigate('/') },
-        { key: 'new', label: 'New project', icon: Add01Icon, onSelect: () => navigate('/projects/new') },
+        { key: 'all', label: 'Todos los proyectos', icon: DashboardSquare01Icon, onSelect: () => navigate('/') },
+        { key: 'new', label: 'Nuevo proyecto', icon: Add01Icon, onSelect: () => navigate('/projects/new') },
       ]}
     >
       {name}

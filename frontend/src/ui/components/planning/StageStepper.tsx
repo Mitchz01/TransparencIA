@@ -1,6 +1,7 @@
 import type { StageKey } from '../../../domain/plan'
 import type { StageStep } from '../../../domain/stepper'
 import { cn, StateLabel } from '../ds'
+import { STAGE_LABELS } from './stageLabels'
 import { STAGE_STATES } from './stageStates'
 
 interface StageStepperProps {
@@ -12,7 +13,7 @@ interface StageStepperProps {
 /** Six rows, one per stage: its name, its agent and its state as icon + word. No numbered circles, no lines between steps. */
 export function StageStepper({ steps, selected, onSelect }: StageStepperProps) {
   return (
-    <nav aria-label="Planning stages" className="rounded-lg bg-surface p-2 sm:p-3">
+    <nav aria-label="Etapas de la planificación" className="rounded-lg bg-surface p-2 sm:p-3">
       <ol className="grid gap-1">
         {steps.map((step) => {
           const look = STAGE_STATES[step.state]
@@ -29,8 +30,8 @@ export function StageStepper({ steps, selected, onSelect }: StageStepperProps) {
                 )}
               >
                 <span className="grid min-w-0">
-                  <span className="text-label text-ink">{step.name}</span>
-                  <span className="truncate text-caption text-ink-muted">{step.agent}</span>
+                  <span className="text-label text-ink">{STAGE_LABELS[step.key].name}</span>
+                  <span className="truncate text-caption text-ink-muted">{STAGE_LABELS[step.key].agent}</span>
                 </span>
                 <StateLabel hue={look.hue} icon={look.icon} spin={look.spin}>
                   {look.label}

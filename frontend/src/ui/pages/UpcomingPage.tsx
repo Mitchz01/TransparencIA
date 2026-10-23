@@ -16,8 +16,8 @@ export function UpcomingPage({ title, icon, children }: UpcomingPageProps) {
       <PageHeader title={title} />
       <EmptyState
         icon={icon}
-        title="Coming in the next round"
-        action={<ButtonLink to={`/projects/${project.id}/${project.status === 'ready' ? 'board' : 'planning'}`}>Back to {project.status === 'ready' ? 'the board' : 'planning'}</ButtonLink>}
+        title="Llega en la próxima ronda"
+        action={<ButtonLink to={`/projects/${project.id}/${project.status === 'ready' ? 'board' : 'planning'}`}>Volver {project.status === 'ready' ? 'al tablero' : 'a la planificación'}</ButtonLink>}
       >
         {children}
       </EmptyState>

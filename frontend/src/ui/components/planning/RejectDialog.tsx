@@ -4,7 +4,7 @@ import type { FieldErrors } from '../../../domain/rules'
 import { Button, Dialog, TextArea } from '../ds'
 
 interface RejectDialogProps {
-  what: string // "the roadmap"
+  what: string // "el roadmap"
   onReject: (reason: string) => Promise<FieldErrors>
   onClose: () => void
 }
@@ -20,12 +20,12 @@ export function RejectDialog({ what, onReject, onClose }: RejectDialogProps) {
     event.preventDefault()
     const clean = reason.trim()
     if (!clean) {
-      setError('Write a reason so the agent can do better.')
+      setError('Escribe un motivo para que el agente lo haga mejor.')
       field.current?.focus()
       return
     }
     if (clean.length > REASON_MAX) {
-      setError(`Keep it under ${REASON_MAX} characters.`)
+      setError(`Usa menos de ${REASON_MAX} caracteres.`)
       return
     }
     setSending(true)
@@ -36,23 +36,23 @@ export function RejectDialog({ what, onReject, onClose }: RejectDialogProps) {
   }
 
   return (
-    <Dialog title={`Reject ${what}`} description="The agent tries again with your reason." onClose={onClose} initialFocus={field}>
+    <Dialog title={`Rechazar ${what}`} description="El agente lo vuelve a intentar con tu motivo." onClose={onClose} initialFocus={field}>
       <form noValidate onSubmit={submit} className="grid gap-5">
         <TextArea
           ref={field}
-          label="Reason"
+          label="Motivo"
           value={reason}
           error={error}
-          hint={`Up to ${REASON_MAX} characters.`}
-          placeholder="What should the agent change?"
+          hint={`Hasta ${REASON_MAX} caracteres.`}
+          placeholder="¿Qué debería cambiar el agente?"
           onChange={(e) => {
             setReason(e.target.value)
             setError(undefined)
           }}
         />
         <div className="flex flex-wrap justify-end gap-2">
-          <Button variant="quiet" onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="primary" loading={sending}>Reject</Button>
+          <Button variant="quiet" onClick={onClose}>Cancelar</Button>
+          <Button type="submit" variant="primary" loading={sending}>Rechazar</Button>
         </div>
       </form>
     </Dialog>

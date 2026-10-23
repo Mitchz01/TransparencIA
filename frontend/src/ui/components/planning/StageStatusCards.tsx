@@ -1,6 +1,7 @@
 import type { StageStep } from '../../../domain/stepper'
 import { Button, Card, Icon, Skeleton, StateLabel } from '../ds'
 import { AiMagicIcon, Alert02Icon, PlayIcon, RefreshIcon } from '../ds/icons'
+import { STAGE_LABELS } from './stageLabels'
 
 function AgentHeading({ title, caption }: { title: string; caption: string }) {
   return (
@@ -18,10 +19,11 @@ function AgentHeading({ title, caption }: { title: string; caption: string }) {
 
 /** The agent is on it: no actions, the proposal arrives by itself. */
 export function WorkingCard({ step }: { step: StageStep }) {
+  const label = STAGE_LABELS[step.key]
   return (
     <Card as="article" padding="lg" className="grid gap-5" aria-busy="true">
-      <AgentHeading title={`Working on the ${step.name.toLowerCase()}`} caption={step.agent} />
-      <p className="text-body text-ink-muted">The proposal shows up here in a few seconds. You can leave this screen, the agent keeps going.</p>
+      <AgentHeading title={`Trabajando en ${label.the}`} caption={label.agent} />
+      <p className="text-body text-ink-muted">La propuesta aparece aquí en unos segundos. Puedes salir de esta pantalla, el agente sigue trabajando.</p>
       <div className="grid gap-3" aria-hidden="true">
         <Skeleton className="h-14 w-full" />
         <div className="grid gap-3 sm:grid-cols-3">
@@ -33,32 +35,34 @@ export function WorkingCard({ step }: { step: StageStep }) {
 }
 
 export function FailedCard({ step, onRetry, retrying }: { step: StageStep; onRetry: () => void; retrying: boolean }) {
+  const label = STAGE_LABELS[step.key]
   return (
     <Card as="article" padding="lg" className="grid gap-5">
-      <AgentHeading title={`The ${step.name.toLowerCase()} failed`} caption={step.agent} />
+      <AgentHeading title={`La etapa de ${label.name.toLowerCase()} falló`} caption={label.agent} />
       <div className="grid gap-1 rounded-md bg-coral-soft p-4">
-        <StateLabel hue="coral" icon={Alert02Icon}>Failed</StateLabel>
-        <p className="text-body text-ink">{step.reason ?? 'The agent couldn’t finish this stage.'}</p>
+        <StateLabel hue="coral" icon={Alert02Icon}>Falló</StateLabel>
+        <p className="text-body text-ink">{step.reason ?? 'El agente no pudo terminar esta etapa.'}</p>
       </div>
       <div>
-        <Button variant="primary" icon={RefreshIcon} loading={retrying} onClick={onRetry}>Retry</Button>
+        <Button variant="primary" icon={RefreshIcon} loading={retrying} onClick={onRetry}>Reintentar</Button>
       </div>
     </Card>
   )
 }
 
 export function NotStartedCard({ step, previous, onStart, starting }: { step: StageStep; previous?: StageStep; onStart?: () => void; starting: boolean }) {
+  const label = STAGE_LABELS[step.key]
   return (
     <Card as="article" padding="lg" className="grid gap-5">
-      <AgentHeading title={step.name} caption={step.agent} />
+      <AgentHeading title={label.name} caption={label.agent} />
       <p className="text-body text-ink-muted">
         {onStart
-          ? 'The agents haven’t started yet. Each stage waits for your approval before the next one begins.'
-          : `It starts when the ${previous?.name.toLowerCase() ?? 'previous stage'} is approved.`}
+          ? 'Los agentes todavía no empezaron. Cada etapa espera tu aprobación antes de pasar a la siguiente.'
+          : `Empieza cuando apruebes ${previous ? STAGE_LABELS[previous.key].the : 'la etapa anterior'}.`}
       </p>
       {onStart && (
         <div>
-          <Button variant="primary" icon={PlayIcon} loading={starting} onClick={onStart}>Start planning</Button>
+          <Button variant="primary" icon={PlayIcon} loading={starting} onClick={onStart}>Empezar a planificar</Button>
         </div>
       )}
     </Card>

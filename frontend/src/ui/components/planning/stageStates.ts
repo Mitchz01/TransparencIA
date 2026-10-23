@@ -11,28 +11,28 @@ interface StateLook {
 }
 
 export const STAGE_STATES: Record<StageState, StateLook> = {
-  approved: { label: 'Approved', hue: 'teal', icon: Tick02Icon },
-  waiting: { label: 'Waiting for you', hue: 'amber', icon: HourglassIcon },
-  needs_leader: { label: 'Needs you', hue: 'amber', icon: UserWarning01Icon },
-  failed: { label: 'Failed', hue: 'coral', icon: Alert02Icon },
-  working: { label: 'Working', hue: 'blue', icon: Loading03Icon, spin: true },
-  not_started: { label: 'Not started', hue: 'neutral' },
+  approved: { label: 'Aprobada', hue: 'teal', icon: Tick02Icon },
+  waiting: { label: 'Espera tu decisión', hue: 'amber', icon: HourglassIcon },
+  needs_leader: { label: 'Te necesita', hue: 'amber', icon: UserWarning01Icon },
+  failed: { label: 'Falló', hue: 'coral', icon: Alert02Icon },
+  working: { label: 'Trabajando', hue: 'blue', icon: Loading03Icon, spin: true },
+  not_started: { label: 'Sin empezar', hue: 'neutral' },
 }
 
 /** How a proposal ended (or that it's still open), for its pill. */
 export function proposalLook(proposal: Proposal, applying: boolean): StateLook {
-  if (proposal.apply_failed) return { label: 'Couldn’t apply', hue: 'coral', icon: Alert02Icon }
-  if (applying) return { label: 'Applying', hue: 'blue', icon: Loading03Icon }
+  if (proposal.apply_failed) return { label: 'No se pudo aplicar', hue: 'coral', icon: Alert02Icon }
+  if (applying) return { label: 'Aplicando', hue: 'blue', icon: Loading03Icon }
   switch (proposal.status) {
     case 'pending':
-      return { label: 'Waiting for you', hue: 'amber', icon: HourglassIcon }
+      return { label: 'Espera tu decisión', hue: 'amber', icon: HourglassIcon }
     case 'approved':
-      return { label: proposal.auto_approved ? 'Approved automatically' : 'Approved', hue: 'lime', icon: Tick02Icon }
+      return { label: proposal.auto_approved ? 'Aprobada automáticamente' : 'Aprobada', hue: 'lime', icon: Tick02Icon }
     case 'adjusted':
-      return { label: 'Adjusted by you', hue: 'lime', icon: Edit02Icon }
+      return { label: 'Ajustada por ti', hue: 'lime', icon: Edit02Icon }
     case 'rejected':
-      return { label: 'Rejected', hue: 'coral', icon: Cancel01Icon }
+      return { label: 'Rechazada', hue: 'coral', icon: Cancel01Icon }
     case 'discarded':
-      return { label: 'Discarded', hue: 'neutral', icon: Cancel01Icon }
+      return { label: 'Descartada', hue: 'neutral', icon: Cancel01Icon }
   }
 }

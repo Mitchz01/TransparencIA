@@ -17,13 +17,13 @@ export function NewProjectPage() {
   return (
     <AppLayout topBar={<HomeTopBar />}>
       <div className="mx-auto max-w-4xl">
-        <PageHeader title="New project" description="Describe it and add your team. When you save, the agents start planning." />
+        <PageHeader title="Nuevo proyecto" description="Descríbelo y suma a tu equipo. Al guardar, los agentes empiezan a planificar." />
         <ProjectForm
           initial={initial}
-          submitLabel="Create and start planning"
+          submitLabel="Crear y planificar"
           submitIcon={AiMagicIcon}
           onSubmit={(draft) => create(toProjectCreate(draft))}
-          secondaryAction={<ButtonLink to="/" variant="quiet" size="lg">Cancel</ButtonLink>}
+          secondaryAction={<ButtonLink to="/" variant="quiet" size="lg">Cancelar</ButtonLink>}
         />
       </div>
     </AppLayout>

@@ -25,19 +25,19 @@ export const routes: RouteObject[] = [
           { path: 'board', element: <BoardPage /> },
           {
             path: 'plan',
-            element: <UpcomingPage title="Plan" icon={Calendar03Icon}>The roadmap, the methodology and the architecture, each with where it came from.</UpcomingPage>,
+            element: <UpcomingPage title="Plan" icon={Calendar03Icon}>El roadmap, la metodología y la arquitectura, cada uno con su origen.</UpcomingPage>,
           },
           {
             path: 'documents',
-            element: <UpcomingPage title="Documents" icon={File01Icon}>The generated specs and diagrams, with their versions.</UpcomingPage>,
+            element: <UpcomingPage title="Documentos" icon={File01Icon}>Las specs y los diagramas generados, con sus versiones.</UpcomingPage>,
           },
           {
             path: 'integrations',
-            element: <UpcomingPage title="Integrations" icon={Plug01Icon}>Connect a GitHub repo and publish the tasks as issues.</UpcomingPage>,
+            element: <UpcomingPage title="Integraciones" icon={Plug01Icon}>Conecta un repo de GitHub y publica las tareas como issues.</UpcomingPage>,
           },
           {
             path: 'settings',
-            element: <UpcomingPage title="Settings" icon={Settings01Icon}>Edit the project, its team and auto-approve.</UpcomingPage>,
+            element: <UpcomingPage title="Ajustes" icon={Settings01Icon}>Edita el proyecto, su equipo y la aprobación automática.</UpcomingPage>,
           },
           { path: '*', element: <NotFoundPage /> },
         ],

@@ -15,7 +15,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
       <Icon icon={ICONS[toast.tone]} />
       <div className="grid min-w-0 flex-1">
         <span className="text-label">{toast.message}</span>
-        {toast.requestId && <span className="text-caption tabular-nums opacity-80">Request {toast.requestId.slice(0, 8)}</span>}
+        {toast.requestId && <span className="text-caption tabular-nums opacity-80">Solicitud {toast.requestId.slice(0, 8)}</span>}
       </div>
       {toast.action && (
         <Button
@@ -30,7 +30,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
           {toast.action.label}
         </Button>
       )}
-      <IconButton icon={Cancel01Icon} label="Dismiss" size="sm" variant="quiet" tooltip="none" className="text-on-inverse opacity-80 hover:bg-transparent hover:text-on-inverse hover:opacity-100" onClick={onDismiss} />
+      <IconButton icon={Cancel01Icon} label="Cerrar aviso" size="sm" variant="quiet" tooltip="none" className="text-on-inverse opacity-80 hover:bg-transparent hover:text-on-inverse hover:opacity-100" onClick={onDismiss} />
     </div>
   )
 }

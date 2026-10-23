@@ -9,10 +9,10 @@ export function NotFoundPage() {
       <div className="mx-auto max-w-lg pt-16">
         <EmptyState
           icon={Folder01Icon}
-          title="Not found"
-          action={<ButtonLink to="/" variant="primary" icon={ArrowLeft01Icon}>Back to projects</ButtonLink>}
+          title="No encontrado"
+          action={<ButtonLink to="/" variant="primary" icon={ArrowLeft01Icon}>Volver a los proyectos</ButtonLink>}
         >
-          This project or page doesn’t exist. It may have been removed, or the address has a typo.
+          Este proyecto o página no existe. Puede que lo hayan borrado o que la dirección tenga un error.
         </EmptyState>
       </div>
     </AppLayout>

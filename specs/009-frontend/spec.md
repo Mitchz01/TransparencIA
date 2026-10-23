@@ -284,7 +284,7 @@ From the board, the leader closes a sprint or asks for a replan with a reason. T
 - **FR-009**: A state MUST always be shown as an icon plus a word; color alone never carries meaning.
 - **FR-010**: Everything MUST be usable with the keyboard, including moving cards, with a visible focus ring, and every icon-only button MUST have an accessible name.
 - **FR-011**: Every text MUST meet 4.5:1 contrast in both themes.
-- **FR-012**: The UI text MUST be in English, short and direct, following the design system's voice.
+- **FR-012**: The UI text MUST be in Spanish (the language of the team and the demo), short and direct, following the design system's voice. Code, identifiers and docs stay in English.
 
 ### Key Entities
 

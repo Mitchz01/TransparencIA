@@ -8,7 +8,7 @@ export function Skeleton({ className }: { className?: string }) {
 /** A card-shaped group of skeleton lines, announced once as loading. */
 export function SkeletonCard({ lines = 3, className }: { lines?: number; className?: string }) {
   return (
-    <div role="status" aria-label="Loading" className={cn('grid gap-3 rounded-lg bg-surface p-5', className)}>
+    <div role="status" aria-label="Cargando" className={cn('grid gap-3 rounded-lg bg-surface p-5', className)}>
       <Skeleton className="h-4 w-1/2" />
       {Array.from({ length: lines - 1 }, (_, i) => (
         <Skeleton key={i} className={cn('h-3.5', i % 2 ? 'w-4/5' : 'w-full')} />

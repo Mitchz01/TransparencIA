@@ -107,7 +107,7 @@ export function Drawer({ title, onClose, children, actions, initialFocus, wide =
           <h2 id={titleId} className="text-heading">
             {title}
           </h2>
-          <IconButton icon={Cancel01Icon} label="Close" variant="quiet" tooltip="none" onClick={onClose} />
+          <IconButton icon={Cancel01Icon} label="Cerrar" variant="quiet" tooltip="none" onClick={onClose} />
         </div>
         <div className="flex-1 overflow-y-auto px-6 pb-6">{children}</div>
         {actions && <div className="flex flex-wrap justify-end gap-2 px-6 pb-5">{actions}</div>}

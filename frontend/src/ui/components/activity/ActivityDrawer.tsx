@@ -5,22 +5,22 @@ import { Drawer, EmptyState, Icon, SkeletonCard, type IconGlyph } from '../ds'
 import { Activity01Icon, AiMagicIcon, GithubIcon, Settings01Icon, UserIcon } from '../ds/icons'
 
 const ACTORS: Record<Actor, { icon: IconGlyph; label: string }> = {
-  agent: { icon: AiMagicIcon, label: 'Agent' },
-  person: { icon: UserIcon, label: 'Person' },
+  agent: { icon: AiMagicIcon, label: 'Agente' },
+  person: { icon: UserIcon, label: 'Persona' },
   github: { icon: GithubIcon, label: 'GitHub' },
-  system: { icon: Settings01Icon, label: 'System' },
+  system: { icon: Settings01Icon, label: 'Sistema' },
 }
 
 /** What's happening in the project, live, newest first. */
 export function ActivityDrawer({ projectId, onClose }: { projectId: number; onClose: () => void }) {
   const { data: events, isPending } = useActivityFeed(projectId)
   return (
-    <Drawer title="Activity" onClose={onClose}>
+    <Drawer title="Actividad" onClose={onClose}>
       {isPending ? (
         <SkeletonCard lines={4} />
       ) : !events?.length ? (
-        <EmptyState icon={Activity01Icon} title="Nothing yet" className="bg-inset">
-          Agents, people and GitHub show up here as they work.
+        <EmptyState icon={Activity01Icon} title="Todavía nada" className="bg-inset">
+          Aquí aparecen los agentes, las personas y GitHub a medida que trabajan.
         </EmptyState>
       ) : (
         <ol className="grid gap-1">

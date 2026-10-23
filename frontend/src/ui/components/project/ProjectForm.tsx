@@ -6,7 +6,7 @@ import { MemberRows } from './MemberRows'
 import { toProjectCreate, type ProjectDraft } from './projectDraft'
 
 export const METHODOLOGY_LABELS: Record<RequestedMethodology, string> = {
-  auto: 'Let the agents choose',
+  auto: 'Que elijan los agentes',
   scrum: 'Scrum',
   kanban: 'Kanban',
   scrumban: 'Scrumban',
@@ -80,20 +80,20 @@ export function ProjectForm({ initial, submitLabel, submitIcon, onSubmit, second
   return (
     <form ref={form} noValidate onSubmit={submit} className="grid gap-3">
       {errors[''] && <FieldError>{errors['']}</FieldError>}
-      <Section title="Project" description="What you want to build, for whom, and anything the agents should know.">
-        <TextField label="Project name" value={draft.name} error={errors.name} placeholder="Online store" onChange={(e) => change({ name: e.target.value })} />
+      <Section title="Proyecto" description="Qué quieres construir, para quién y todo lo que los agentes deban saber.">
+        <TextField label="Nombre del proyecto" value={draft.name} error={errors.name} placeholder="Tienda online" onChange={(e) => change({ name: e.target.value })} />
         <TextArea
-          label="Description"
+          label="Descripción"
           rows={5}
           value={draft.description}
           error={errors.description}
-          placeholder="A store for handmade furniture, with a catalog, a cart and payments."
+          placeholder="Una tienda de muebles artesanales, con catálogo, carrito y pagos."
           onChange={(e) => change({ description: e.target.value })}
         />
         <div className="grid gap-5 sm:grid-cols-2">
-          <NumberField label="Duration" unit="weeks" value={draft.duration} error={errors.duration_weeks} hint="Between 1 and 52." onChange={(e) => change({ duration: e.target.value })} />
+          <NumberField label="Duración" unit="semanas" value={draft.duration} error={errors.duration_weeks} hint="Entre 1 y 52." onChange={(e) => change({ duration: e.target.value })} />
           <Select
-            label="Methodology"
+            label="Metodología"
             value={draft.methodology}
             disabled={Boolean(methodologyLocked)}
             hint={methodologyLocked}
@@ -104,18 +104,18 @@ export function ProjectForm({ initial, submitLabel, submitIcon, onSubmit, second
         </div>
       </Section>
 
-      <Section title="Team" description="Who works on it and how many hours a week. The agents plan around them.">
+      <Section title="Equipo" description="Quién trabaja y cuántas horas por semana. Los agentes planifican a partir de eso.">
         <MemberRows members={draft.members} errors={errors} onChange={(members) => change({ members })} />
       </Section>
 
-      <Section title="Auto-approve" description="On: each proposal is approved as it arrives, and still shows why. Off: every stage waits for you.">
+      <Section title="Aprobación automática" description="Activada: cada propuesta se aprueba al llegar y sigue mostrando por qué. Desactivada: cada etapa espera tu decisión.">
         <div>
           <Segmented
-            label="Auto-approve"
+            label="Aprobación automática"
             inset
             value={draft.autoApprove ? 'on' : 'off'}
             onChange={(v) => change({ autoApprove: v === 'on' })}
-            options={[{ value: 'off', label: 'Off' }, { value: 'on', label: 'On' }]}
+            options={[{ value: 'off', label: 'Desactivada' }, { value: 'on', label: 'Activada' }]}
           />
         </div>
       </Section>

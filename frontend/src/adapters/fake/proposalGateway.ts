@@ -6,8 +6,13 @@ import { isStageKey } from '../../domain/proposalContent'
 import { rejectedInARow, stageProposals } from '../../domain/stepper'
 import { type FakeStore, fail, invalid, notFound, online, reply } from './store'
 
+const KEYS: Record<string, string> = {
+  analysis: 'análisis', methodology: 'metodología', architecture: 'arquitectura', roadmap: 'roadmap',
+  backlog: 'backlog', sprints: 'sprints', general_spec: 'spec general', create_issues: 'publicar issues',
+}
+
 const VERBS: Record<Proposal['status'], string> = {
-  pending: 'Reopened', approved: 'Approved', adjusted: 'Adjusted', rejected: 'Rejected', discarded: 'Discarded',
+  pending: 'Reabriste', approved: 'Aprobaste', adjusted: 'Ajustaste', rejected: 'Rechazaste', discarded: 'Descartaste',
 }
 
 export function fakeProposalGateway(store: FakeStore): ProposalGateway {
@@ -22,13 +27,13 @@ export function fakeProposalGateway(store: FakeStore): ProposalGateway {
   function decide(id: number, change: Partial<Proposal>): Proposal {
     const proposal = find(id)
     if (proposal.status !== 'pending' && !(change.status === 'adjusted' && adjustableAfterRejections(proposal))) {
-      fail(409, { code: 'proposal_already_resolved', detail: `Proposal ${id} is already ${proposal.status}.`, status: proposal.status })
+      fail(409, { code: 'proposal_already_resolved', detail: 'Esta propuesta ya se resolvió.', status: proposal.status })
     }
     const resolved: Proposal = { ...proposal, ...change, resolved_at: store.now() }
     store.proposals.set(id, resolved)
     store.publish({
       type: 'proposal_resolved', project_id: resolved.project_id, actor: 'person', ref: { kind: 'proposal', id },
-      summary: `${VERBS[resolved.status]} the ${resolved.key.replace(/_/g, ' ')} proposal`, proposal_id: id, kind: resolved.kind, key: resolved.key,
+      summary: `${VERBS[resolved.status]} la propuesta de ${KEYS[resolved.key] ?? resolved.key.replace(/_/g, ' ')}`, proposal_id: id, kind: resolved.kind, key: resolved.key,
       status: resolved.status, auto: false, reason: resolved.rejection_reason,
     })
     return resolved
@@ -56,13 +61,13 @@ export function fakeProposalGateway(store: FakeStore): ProposalGateway {
     async reject(id, reason) {
       await online()
       const clean = reason.trim()
-      if (!clean) invalid([{ field: 'reason', message: 'Required.' }])
-      if (clean.length > REASON_MAX) invalid([{ field: 'reason', message: `Max ${REASON_MAX} characters.` }])
+      if (!clean) invalid([{ field: 'reason', message: 'Obligatorio.' }])
+      if (clean.length > REASON_MAX) invalid([{ field: 'reason', message: `Máximo ${REASON_MAX} caracteres.` }])
       return reply(decide(id, { status: 'rejected', rejection_reason: clean }))
     },
     async retryApply(id) {
       const proposal = find(id)
-      if (!canRetryApply(proposal)) fail(409, { code: 'proposal_not_retryable', detail: `Proposal ${id} has no failed application to retry.` })
+      if (!canRetryApply(proposal)) fail(409, { code: 'proposal_not_retryable', detail: 'Esta propuesta no tiene nada que reintentar.' })
       store.proposals.set(id, { ...proposal, apply_failed: false, apply_error: null })
       return reply({ proposal_id: id, status: 'applying' as const })
     },

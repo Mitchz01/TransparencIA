@@ -1,9 +1,8 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { Level, Methodology, StageKey, StageOutputs } from '../../../domain/plan'
-import { useState } from 'react'
+import { plural, points } from '../../format'
 import { Button, Pill, StateLabel } from '../ds'
 import { Flag02Icon } from '../ds/icons'
-import { plural, points } from '../../format'
 
 export interface Fact {
   value: string
@@ -17,10 +16,10 @@ export interface StageSummary {
 }
 
 export const METHODOLOGY_NAMES: Record<Methodology, string> = { scrum: 'Scrum', kanban: 'Kanban', scrumban: 'Scrumban', xp: 'XP', shape_up: 'Shape Up' }
-const LEVELS: Record<Level, string> = { low: 'Low', medium: 'Medium', high: 'High' }
+export const LEVELS: Record<Level, string> = { low: 'Baja', medium: 'Media', high: 'Alta' }
 const PRIORITY_HUE = { high: 'coral', medium: 'amber', low: 'teal' } as const
 
-const listText = (items: string[]) => (items.length <= 3 ? items.join(', ') : `${items.slice(0, 3).join(', ')} and ${items.length - 3} more`)
+const listText = (items: string[]) => (items.length <= 3 ? items.join(', ') : `${items.slice(0, 3).join(', ')} y ${items.length - 3} más`)
 
 function Block({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -59,7 +58,7 @@ function ShortList<T>({ items, noun, render }: { items: T[]; noun: string; rende
       {items.length > SHORT && (
         <div>
           <Button size="sm" variant="quiet" aria-expanded={open} onClick={() => setOpen(!open)}>
-            {open ? 'Show fewer' : `Show all ${items.length} ${noun}`}
+            {open ? 'Ver menos' : `Ver las ${items.length} ${noun}`}
           </Button>
         </div>
       )}
@@ -70,24 +69,24 @@ function ShortList<T>({ items, noun, render }: { items: T[]; noun: string; rende
 function analysis(c: StageOutputs['analysis']): StageSummary {
   const high = c.risks.filter((r) => r.impact === 'high').length
   return {
-    title: 'Scope, goals and risks',
+    title: 'Alcance, objetivos y riesgos',
     facts: [
-      { value: LEVELS[c.complexity], name: 'Complexity' },
-      { value: plural(c.goals.length, 'goal'), name: listText(c.goals) },
-      { value: plural(c.risks.length, 'risk'), name: high ? `${high} with high impact` : 'None with high impact' },
+      { value: LEVELS[c.complexity], name: 'Complejidad' },
+      { value: plural(c.goals.length, 'objetivo'), name: listText(c.goals) },
+      { value: plural(c.risks.length, 'riesgo'), name: high ? `${high} de impacto alto` : 'Ninguno de impacto alto' },
     ],
     body: (
       <>
         <p className="text-body">{c.summary}</p>
-        <Block title="In scope">
+        <Block title="Dentro del alcance">
           <p className="text-body text-ink-muted">{c.in_scope.join(', ')}.</p>
         </Block>
         {c.out_of_scope.length > 0 && (
-          <Block title="Out of scope">
+          <Block title="Fuera del alcance">
             <p className="text-body text-ink-muted">{c.out_of_scope.join(', ')}.</p>
           </Block>
         )}
-        <Block title="Risks">
+        <Block title="Riesgos">
           <Rows>
             {c.risks.map((r) => (
               <Row key={r.description} title={r.description} detail={r.mitigation} aside={<Pill hue={PRIORITY_HUE[r.impact]} icon={Flag02Icon}>{LEVELS[r.impact]}</Pill>} />
@@ -95,7 +94,7 @@ function analysis(c: StageOutputs['analysis']): StageSummary {
           </Rows>
         </Block>
         {c.team_gaps.length > 0 && (
-          <Block title="What the team is missing">
+          <Block title="Lo que le falta al equipo">
             <p className="text-body text-ink-muted">{c.team_gaps.join(', ')}.</p>
           </Block>
         )}
@@ -108,21 +107,21 @@ function methodology(c: StageOutputs['methodology']): StageSummary {
   const wip = c.wip_limits.find((w) => w.column === 'in_progress')
   const continuous = c.methodology === 'kanban'
   return {
-    title: continuous ? 'Kanban, continuous flow' : `${METHODOLOGY_NAMES[c.methodology]}, ${c.sprint_length_weeks}-week iterations`,
+    title: continuous ? 'Kanban, flujo continuo' : `${METHODOLOGY_NAMES[c.methodology]}, iteraciones de ${plural(c.sprint_length_weeks, 'semana')}`,
     facts: [
-      { value: continuous ? 'Continuous' : plural(c.sprint_length_weeks, 'week'), name: 'Iteration' },
-      { value: plural(c.ceremonies.length, 'ceremony', 'ceremonies'), name: listText(c.ceremonies.map((x) => x.name)) },
-      ...(wip ? [{ value: `${wip.limit} in progress`, name: 'WIP limit' }] : []),
+      { value: continuous ? 'Continua' : plural(c.sprint_length_weeks, 'semana'), name: 'Iteración' },
+      { value: plural(c.ceremonies.length, 'ceremonia'), name: listText(c.ceremonies.map((x) => x.name)) },
+      ...(wip ? [{ value: `${wip.limit} en curso`, name: 'Límite WIP' }] : []),
     ],
     body: (
       <>
-        <Block title="Ceremonies">
+        <Block title="Ceremonias">
           <Rows>
             {c.ceremonies.map((x) => <Row key={x.name} title={x.name} detail={`${x.frequency}. ${x.purpose}.`} />)}
           </Rows>
         </Block>
         {c.alternatives.length > 0 && (
-          <Block title="Discarded">
+          <Block title="Descartadas">
             <Rows>
               {c.alternatives.map((a) => <Row key={a.methodology} title={METHODOLOGY_NAMES[a.methodology as Methodology] ?? a.methodology} detail={a.why_not} />)}
             </Rows>
@@ -137,19 +136,19 @@ function architecture(c: StageOutputs['architecture']): StageSummary {
   return {
     title: c.style,
     facts: [
-      { value: plural(c.components.length, 'component'), name: listText(c.components.map((x) => x.name)) },
-      { value: plural(c.stack.length, 'layer'), name: listText(c.stack.map((x) => x.technology)) },
-      { value: plural(c.decisions.length, 'decision'), name: listText(c.decisions.map((x) => x.title)) },
+      { value: plural(c.components.length, 'componente'), name: listText(c.components.map((x) => x.name)) },
+      { value: plural(c.stack.length, 'capa'), name: listText(c.stack.map((x) => x.technology)) },
+      { value: plural(c.decisions.length, 'decisión', 'decisiones'), name: listText(c.decisions.map((x) => x.title)) },
     ],
     body: (
       <>
         <p className="text-body">{c.summary}</p>
-        <Block title="Components">
+        <Block title="Componentes">
           <Rows>
             {c.components.map((x) => <Row key={x.name} title={x.name} detail={x.responsibility} aside={<span className="text-caption text-ink-muted">{x.technology}</span>} />)}
           </Rows>
         </Block>
-        <Block title="Decisions">
+        <Block title="Decisiones">
           <Rows>
             {c.decisions.map((x) => <Row key={x.title} title={x.decision} detail={x.rationale} />)}
           </Rows>
@@ -163,21 +162,21 @@ function roadmap(c: StageOutputs['roadmap']): StageSummary {
   const weeks = Math.max(0, ...c.phases.map((p) => p.end_week))
   const epics = c.phases.flatMap((p) => p.epics)
   return {
-    title: `${plural(c.phases.length, 'phase')} in ${plural(weeks, 'week')}`,
+    title: `${plural(c.phases.length, 'fase')} en ${plural(weeks, 'semana')}`,
     facts: [
-      { value: plural(c.phases.length, 'phase'), name: listText(c.phases.map((p) => p.name)) },
-      { value: plural(weeks, 'week'), name: 'From start to finish' },
-      { value: plural(epics.length, 'epic'), name: listText(epics.map((e) => e.title)) },
+      { value: plural(c.phases.length, 'fase'), name: listText(c.phases.map((p) => p.name)) },
+      { value: plural(weeks, 'semana'), name: 'De principio a fin' },
+      { value: plural(epics.length, 'épica'), name: listText(epics.map((e) => e.title)) },
     ],
     body: (
-      <Block title="Phases">
+      <Block title="Fases">
         <Rows>
           {c.phases.map((p) => (
             <Row
               key={p.name}
               title={p.name}
               detail={`${p.goal}. ${p.epics.map((e) => `${e.key} ${e.title}`).join(', ')}.`}
-              aside={<span className="text-caption whitespace-nowrap text-ink-muted tabular-nums">{p.start_week === p.end_week ? `Week ${p.start_week}` : `Weeks ${p.start_week} to ${p.end_week}`}</span>}
+              aside={<span className="text-caption whitespace-nowrap text-ink-muted tabular-nums">{p.start_week === p.end_week ? `Semana ${p.start_week}` : `Semanas ${p.start_week} a ${p.end_week}`}</span>}
             />
           ))}
         </Rows>
@@ -190,17 +189,17 @@ function backlog(c: StageOutputs['backlog']): StageSummary {
   const epics = [...new Set(c.stories.map((s) => s.epic_key))]
   const total = c.stories.reduce((sum, s) => sum + s.points, 0)
   return {
-    title: `${plural(c.stories.length, 'story', 'stories')} in ${plural(epics.length, 'epic')}`,
+    title: `${plural(c.stories.length, 'historia')} en ${plural(epics.length, 'épica')}`,
     facts: [
-      { value: plural(c.stories.length, 'story', 'stories'), name: `${c.stories.filter((s) => s.priority === 'high').length} with high priority` },
-      { value: points(total), name: 'Estimated' },
-      { value: plural(epics.length, 'epic'), name: listText(epics) },
+      { value: plural(c.stories.length, 'historia'), name: `${c.stories.filter((s) => s.priority === 'high').length} de prioridad alta` },
+      { value: points(total), name: 'Estimados' },
+      { value: plural(epics.length, 'épica'), name: listText(epics) },
     ],
     body: (
-      <Block title="Stories">
+      <Block title="Historias">
         <ShortList
           items={c.stories}
-          noun="stories"
+          noun="historias"
           render={(s) => (
             <Row
               key={s.key}
@@ -209,7 +208,7 @@ function backlog(c: StageOutputs['backlog']): StageSummary {
               aside={
                 <span className="flex shrink-0 items-center gap-3">
                   <span className="text-key text-ink-muted">{points(s.points)}</span>
-                  <StateLabel hue={PRIORITY_HUE[s.priority]} icon={Flag02Icon} className="w-20">{LEVELS[s.priority]}</StateLabel>
+                  <StateLabel hue={PRIORITY_HUE[s.priority]} icon={Flag02Icon} className="w-16">{LEVELS[s.priority]}</StateLabel>
                 </span>
               }
             />
@@ -226,8 +225,8 @@ function sprints(c: StageOutputs['sprints']): StageSummary {
     title: plural(c.sprints.length, 'sprint'),
     facts: [
       { value: plural(c.sprints.length, 'sprint'), name: listText(c.sprints.map((s) => s.phase)) },
-      { value: plural(Math.max(0, ...sizes), 'story', 'stories'), name: 'In the fullest sprint' },
-      { value: plural(sizes.reduce((a, b) => a + b, 0), 'story', 'stories'), name: 'Across all sprints' },
+      { value: plural(Math.max(0, ...sizes), 'historia'), name: 'En el sprint más cargado' },
+      { value: plural(sizes.reduce((a, b) => a + b, 0), 'historia'), name: 'En todos los sprints' },
     ],
     body: (
       <Block title="Sprints">

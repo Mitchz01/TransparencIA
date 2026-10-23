@@ -20,10 +20,10 @@ function isApplying(steps: StageStep[], index: number, status: string): boolean 
 }
 
 const DESCRIPTIONS = {
-  draft: 'Six agents plan the project one stage at a time. Nothing moves on until you approve it.',
-  planning: 'The agents propose, you decide. Nothing reaches the board before you approve it.',
-  ready: 'The plan is complete and the board is ready.',
-  error: 'A stage failed. Retry it and planning continues from there.',
+  draft: 'Seis agentes planifican el proyecto etapa por etapa. Nada avanza hasta que lo apruebes.',
+  planning: 'Los agentes proponen, tú decides. Nada llega al tablero sin tu aprobación.',
+  ready: 'El plan está completo y el tablero, listo.',
+  error: 'Una etapa falló. Reinténtala y la planificación sigue desde ahí.',
 } as const
 
 export function PlanningPage() {
@@ -44,16 +44,16 @@ export function PlanningPage() {
 
   const actions = (
     <>
-      {project.auto_approve && <Pill hue="violet" icon={AiMagicIcon}>Auto-approve on</Pill>}
-      {project.status === 'draft' && <Button variant="primary" icon={PlayIcon} loading={start.isPending} onClick={() => start.mutate()}>Start planning</Button>}
-      {project.status === 'error' && <Button variant="primary" icon={RefreshIcon} loading={start.isPending} onClick={() => start.mutate()}>Retry</Button>}
-      {project.status === 'ready' && <ButtonLink to={`/projects/${project.id}/board`} variant="primary" icon={ArrowRight01Icon}>Open the board</ButtonLink>}
+      {project.auto_approve && <Pill hue="violet" icon={AiMagicIcon}>Aprobación automática</Pill>}
+      {project.status === 'draft' && <Button variant="primary" icon={PlayIcon} loading={start.isPending} onClick={() => start.mutate()}>Empezar a planificar</Button>}
+      {project.status === 'error' && <Button variant="primary" icon={RefreshIcon} loading={start.isPending} onClick={() => start.mutate()}>Reintentar</Button>}
+      {project.status === 'ready' && <ButtonLink to={`/projects/${project.id}/board`} variant="primary" icon={ArrowRight01Icon}>Abrir el tablero</ButtonLink>}
     </>
   )
 
   return (
     <>
-      <PageHeader title="Planning" description={DESCRIPTIONS[project.status]} actions={actions} />
+      <PageHeader title="Planificación" description={DESCRIPTIONS[project.status]} actions={actions} />
       {!steps || !step ? (
         <div className="grid gap-3 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)]">
           <SkeletonCard lines={6} />
@@ -70,7 +70,6 @@ export function PlanningPage() {
                 key={step.proposal.id}
                 projectId={project.id}
                 stageKey={step.key}
-                stageName={step.name}
                 state={step.state}
                 proposal={step.proposal}
                 applying={isApplying(steps, index, project.status)}

@@ -23,14 +23,14 @@ export function useCreateProject(onCreated: (projectId: number) => void) {
         client.setQueryData(queryKeys.project(project.id), project)
         void client.invalidateQueries({ queryKey: queryKeys.projects() })
       } catch (error) {
-        return reportError(error, { failure: 'The project wasn’t created', form: true })
+        return reportError(error, { failure: 'No se creó el proyecto', form: true })
       }
       try {
         await planning.start(projectId)
         void client.invalidateQueries({ queryKey: queryKeys.project(projectId) })
       } catch (error) {
         // The project exists: the planning screen offers "Start planning" again.
-        reportError(error, { failure: 'Planning didn’t start' })
+        reportError(error, { failure: 'La planificación no empezó' })
       }
       onCreated(projectId)
       return {}

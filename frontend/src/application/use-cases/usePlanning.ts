@@ -42,7 +42,7 @@ export function usePlanning(projectId: number) {
     onError: (error) => {
       // Already running: the stepper is about to show it, nothing to tell.
       if (hasCode(error, 'planning_already_running')) return refresh()
-      reportError(error, { failure: 'Planning didn’t start', retry: () => start.mutate(), refetch: [queryKeys.project(projectId)] })
+      reportError(error, { failure: 'La planificación no empezó', retry: () => start.mutate(), refetch: [queryKeys.project(projectId)] })
     },
   })
 
@@ -50,7 +50,7 @@ export function usePlanning(projectId: number) {
     mutationFn: (key: StageKey) => planning.retryStage(projectId, key),
     onSuccess: refresh,
     onError: (error, key) =>
-      reportError(error, { failure: 'The stage didn’t restart', retry: () => retryStage.mutate(key), refetch: [queryKeys.proposals(projectId)] }),
+      reportError(error, { failure: 'La etapa no se reinició', retry: () => retryStage.mutate(key), refetch: [queryKeys.proposals(projectId)] }),
   })
 
   return { project: project.data, steps, isPending: project.isPending || proposals.isPending, start, retryStage }
@@ -71,7 +71,7 @@ export function useProposalActions(projectId: number) {
 
   const onError = (error: unknown, failure: string, retry?: () => void): FieldErrors => {
     if (hasCode(error, 'proposal_already_resolved')) {
-      push({ tone: 'info', message: 'This proposal was already resolved. Here is how it ended.' })
+      push({ tone: 'info', message: 'Esta propuesta ya se resolvió. Así quedó.' })
       void client.invalidateQueries({ queryKey: queryKeys.proposals(projectId) })
       return {}
     }
@@ -81,13 +81,13 @@ export function useProposalActions(projectId: number) {
   const approve = useMutation({
     mutationFn: (id: number) => proposals.approve(id),
     onSuccess: saved,
-    onError: (error, id) => onError(error, 'The approval wasn’t saved', () => approve.mutate(id)),
+    onError: (error, id) => onError(error, 'No se guardó la aprobación', () => approve.mutate(id)),
   })
 
   const retryApply = useMutation({
     mutationFn: (id: number) => proposals.retryApply(id),
     onSuccess: () => void client.invalidateQueries({ queryKey: queryKeys.proposals(projectId) }),
-    onError: (error, id) => onError(error, 'It couldn’t be applied again', () => retryApply.mutate(id)),
+    onError: (error, id) => onError(error, 'No se pudo volver a aplicar', () => retryApply.mutate(id)),
   })
 
   /** Resolve with the field errors (paths without "content."), or {} when it worked. */
@@ -96,7 +96,7 @@ export function useProposalActions(projectId: number) {
       saved(await proposals.adjust(id, content))
       return {}
     } catch (error) {
-      const fields = onError(error, 'Your changes weren’t saved')
+      const fields = onError(error, 'No se guardaron tus cambios')
       return Object.fromEntries(Object.entries(fields).map(([path, message]) => [path.replace(/^content\.?/, ''), message]))
     }
   }
@@ -106,7 +106,7 @@ export function useProposalActions(projectId: number) {
       saved(await proposals.reject(id, reason))
       return {}
     } catch (error) {
-      return onError(error, 'The rejection wasn’t saved')
+      return onError(error, 'No se guardó el rechazo')
     }
   }
 

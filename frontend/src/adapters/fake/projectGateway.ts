@@ -64,7 +64,7 @@ export function fakeProjectGateway(store: FakeStore): ProjectGateway {
         members = body.members.map((m) => toMember(store, m, project.members.find((x) => x.id === m.id)))
       }
       if (body.requested_methodology && body.requested_methodology !== project.requested_methodology && !canChangeMethodology(project)) {
-        fail(409, { code: 'methodology_locked', detail: "The methodology can't change once planning has started." })
+        fail(409, { code: 'methodology_locked', detail: 'La metodología no se puede cambiar una vez que empezó la planificación.' })
       }
       const before = project.members
       const edited: Project = { ...project, ...body, members }
@@ -79,7 +79,7 @@ export function fakeProjectGateway(store: FakeStore): ProjectGateway {
         return fields.length ? [{ member_id: m.id, name: m.name, fields: [...fields] }] : []
       })
       if (joined.length || left.length || changed.length) {
-        store.publish({ type: 'team_changed', project_id: id, actor: 'person', summary: 'Team changed', ref: { kind: 'project', id }, joined, left, changed })
+        store.publish({ type: 'team_changed', project_id: id, actor: 'person', summary: 'Cambió el equipo', ref: { kind: 'project', id }, joined, left, changed })
       }
       return reply(edited)
     },

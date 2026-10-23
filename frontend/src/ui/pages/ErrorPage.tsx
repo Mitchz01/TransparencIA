@@ -10,8 +10,8 @@ export function ErrorPage() {
   return (
     <AppLayout topBar={<HomeTopBar />}>
       <div className="mx-auto max-w-lg pt-16">
-        <EmptyState icon={Alert02Icon} title="This screen stopped working" action={<Button variant="primary" icon={RefreshIcon} onClick={() => window.location.reload()}>Reload</Button>}>
-          Reloading usually fixes it. Your work is saved.
+        <EmptyState icon={Alert02Icon} title="Esta pantalla dejó de funcionar" action={<Button variant="primary" icon={RefreshIcon} onClick={() => window.location.reload()}>Recargar</Button>}>
+          Recargar suele resolverlo. Tu trabajo está guardado.
         </EmptyState>
       </div>
     </AppLayout>

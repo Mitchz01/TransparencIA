@@ -15,57 +15,15 @@ const created = '2026-10-23T14:05:00Z'
 
 export const demoPlan: NonNullable<Project['plan']> = {
   analysis: DEMO_STAGES.analysis,
-  methodology: {
-    methodology: 'scrumban',
-    rationale: 'A small team with changing priorities: sprints for rhythm, WIP limits for flow.',
-    sprint_length_weeks: 2,
-    ceremonies: [
-      { name: 'Planning', frequency: 'Every 2 weeks', purpose: 'Pick the next work' },
-      { name: 'Daily', frequency: 'Daily, 15 min', purpose: 'Unblock each other' },
-    ],
-    wip_limits: [
-      { column: 'in_progress', limit: 3 },
-      { column: 'review', limit: 2 },
-    ],
-    alternatives: [
-      { methodology: 'scrum', why_not: 'Fixed sprint scope fights the frequent changes.' },
-      { methodology: 'kanban', why_not: 'The team asked for a regular planning rhythm.' },
-    ],
-  },
-  architecture: {
-    style: 'Modular monolith',
-    summary: 'One FastAPI service with a React SPA; SQLite until there are real users.',
-    components: [
-      { name: 'API', responsibility: 'Projects, plan and board', technology: 'FastAPI' },
-      { name: 'Web app', responsibility: 'Screens', technology: 'React + Vite' },
-    ],
-    stack: [
-      { layer: 'Backend', technology: 'Python 3.13', reason: 'The team knows it' },
-      { layer: 'Storage', technology: 'SQLite', reason: 'Zero setup for the demo' },
-    ],
-    decisions: [{ title: 'Hexagonal core', decision: 'Ports and adapters', rationale: 'Swap Gemini or GitHub without rewrites.' }],
-  },
-  roadmap: {
-    phases: [
-      {
-        name: 'Foundations', goal: 'Base ready', start_week: 1, end_week: 2, deliverables: ['Repo and CI'],
-        epics: [{ key: 'EP-1', title: 'Setup', description: 'Repo, CI and deploy' }],
-      },
-      {
-        name: 'MVP', goal: 'First usable version', start_week: 3, end_week: 6, deliverables: ['Board', 'Plan views'],
-        epics: [
-          { key: 'EP-2', title: 'Board', description: 'Kanban board' },
-          { key: 'EP-3', title: 'Views', description: 'Roadmap and methodology' },
-        ],
-      },
-    ],
-  },
+  methodology: DEMO_STAGES.methodology,
+  architecture: DEMO_STAGES.architecture,
+  roadmap: DEMO_STAGES.roadmap,
 }
 
 export const demoProject: Project = {
   id: 1,
   name: 'Agile Planner (demo)',
-  description: 'Jira-like tool where AI agents plan the work.',
+  description: 'Herramienta tipo Jira donde agentes de IA planifican el trabajo.',
   duration_weeks: 6,
   requested_methodology: 'auto',
   status: 'planning',
@@ -99,8 +57,8 @@ const boardCreated = '2026-10-09T09:30:00Z'
 
 export const demoBoardProject: Project = {
   id: 2,
-  name: 'Online store',
-  description: 'A store for handmade furniture, with a catalog, a cart and payments.',
+  name: 'Tienda online',
+  description: 'Una tienda de muebles artesanales, con catálogo, carrito y pagos.',
   duration_weeks: 6,
   requested_methodology: 'auto',
   status: 'ready',

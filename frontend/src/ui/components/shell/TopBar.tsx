@@ -8,7 +8,7 @@ import { SectionMenu, SectionNav } from './SectionNav'
 
 function Brand({ withName = false }: { withName?: boolean }) {
   return (
-    <Link to="/" className="inline-flex shrink-0 items-center gap-2.5 rounded-pill" aria-label="Agile Planner, all projects">
+    <Link to="/" className="inline-flex shrink-0 items-center gap-2.5 rounded-pill" aria-label="Agile Planner, todos los proyectos">
       <span className="inline-flex size-9 items-center justify-center rounded-sm bg-primary text-on-primary">
         <Icon icon={Tick02Icon} />
       </span>
@@ -19,8 +19,8 @@ function Brand({ withName = false }: { withName?: boolean }) {
 
 export function ThemeToggle() {
   const { theme, toggle } = useTheme()
-  const next = theme === 'dark' ? 'light' : 'dark'
-  return <IconButton icon={theme === 'dark' ? Sun03Icon : Moon02Icon} label={`Switch to ${next} theme`} tooltipAlign="end" onClick={toggle} />
+  const label = theme === 'dark' ? 'Usar tema claro' : 'Usar tema oscuro'
+  return <IconButton icon={theme === 'dark' ? Sun03Icon : Moon02Icon} label={label} tooltipAlign="end" onClick={toggle} />
 }
 
 function Bar({ children }: { children: ReactNode }) {
@@ -63,9 +63,9 @@ export function ProjectTopBar({ projectId, projectName, onOpenActivity }: Projec
           <SectionNav projectId={projectId} />
         </div>
         <div className="flex items-center justify-end gap-2">
-          <IconButton icon={Notification01Icon} label="Activity" onClick={onOpenActivity} />
+          <IconButton icon={Notification01Icon} label="Actividad" onClick={onOpenActivity} />
           <ThemeToggle />
-          <IconButton icon={Settings01Icon} label="Settings" tooltipAlign="end" onClick={() => navigate(`/projects/${projectId}/settings`)} />
+          <IconButton icon={Settings01Icon} label="Ajustes" tooltipAlign="end" onClick={() => navigate(`/projects/${projectId}/settings`)} />
         </div>
         <div className="col-span-2 md:hidden">
           <SectionMenu projectId={projectId} />

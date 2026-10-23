@@ -9,12 +9,12 @@ import { AiMagicIcon, Alert02Icon, Edit02Icon, InformationCircleIcon, RefreshIco
 import { AdjustEditor, validateAdjust } from './AdjustEditor'
 import { RejectDialog } from './RejectDialog'
 import { summarizeStage } from './stageBodies'
+import { STAGE_LABELS } from './stageLabels'
 import { proposalLook } from './stageStates'
 
 interface ProposalCardProps {
   projectId: number
   stageKey: StageKey
-  stageName: string
   state: StageState
   proposal: Proposal
   /** Decided, and the next step hasn't started yet. */
@@ -24,7 +24,7 @@ interface ProposalCardProps {
 }
 
 /** What the agent decided, why, the main facts, and the leader's decision. */
-export function ProposalCard({ projectId, stageKey, stageName, state, proposal, applying, onRetryStage, retryingStage }: ProposalCardProps) {
+export function ProposalCard({ projectId, stageKey, state, proposal, applying, onRetryStage, retryingStage }: ProposalCardProps) {
   const { approve, adjust, reject, retryApply } = useProposalActions(projectId)
   const [draft, setDraft] = useState<Record<string, unknown> | null>(null)
   const [errors, setErrors] = useState<FieldErrors>({})
@@ -36,7 +36,7 @@ export function ProposalCard({ projectId, stageKey, stageName, state, proposal, 
   const look = proposalLook(proposal, applying)
   const waiting = proposal.status === 'pending'
   const needsLeader = state === 'needs_leader'
-  const lower = stageName.toLowerCase()
+  const label = STAGE_LABELS[stageKey]
 
   const saveAdjusted = async () => {
     const local = validateAdjust(stageKey, content)
@@ -50,7 +50,7 @@ export function ProposalCard({ projectId, stageKey, stageName, state, proposal, 
   }
 
   return (
-    <Card as="article" padding="lg" className="grid gap-5" aria-label={`${stageName} proposal`}>
+    <Card as="article" padding="lg" className="grid gap-5" aria-label={`Propuesta: ${label.name}`}>
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-md bg-violet-soft text-violet">
@@ -58,7 +58,7 @@ export function ProposalCard({ projectId, stageKey, stageName, state, proposal, 
           </span>
           <div className="grid min-w-0">
             <h2 className="text-heading">{summary.title}</h2>
-            <span className="text-caption text-ink-muted">{proposal.agent}</span>
+            <span className="text-caption text-ink-muted">{label.agent}</span>
           </div>
         </div>
         <Pill hue={look.hue} icon={look.icon}>{look.label}</Pill>
@@ -71,22 +71,22 @@ export function ProposalCard({ projectId, stageKey, stageName, state, proposal, 
 
       {needsLeader && (
         <div className="grid gap-1 rounded-md bg-amber-soft p-4">
-          <StateLabel hue="amber" icon={UserWarning01Icon}>Needs you</StateLabel>
-          <p className="text-body text-ink">Rejected three times in a row. Retry it with your last reason, or adjust this proposal yourself.</p>
+          <StateLabel hue="amber" icon={UserWarning01Icon}>Te necesita</StateLabel>
+          <p className="text-body text-ink">La rechazaste tres veces seguidas. Reinténtala con tu último motivo o ajusta esta propuesta tú mismo.</p>
         </div>
       )}
 
       {proposal.status === 'rejected' && proposal.rejection_reason && (
         <div className="grid gap-1 rounded-md bg-inset p-4">
-          <span className="text-label">Your reason</span>
+          <span className="text-label">Tu motivo</span>
           <p className="text-body text-ink-muted">{proposal.rejection_reason}</p>
         </div>
       )}
 
       {proposal.apply_failed && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-coral-soft p-4">
-          <StateLabel hue="coral" icon={Alert02Icon}>{proposal.apply_error ?? 'It was approved, but applying it failed.'}</StateLabel>
-          <Button size="sm" variant="primary" icon={RefreshIcon} loading={retryApply.isPending} onClick={() => retryApply.mutate(proposal.id)}>Retry</Button>
+          <StateLabel hue="coral" icon={Alert02Icon}>{proposal.apply_error ?? 'Se aprobó, pero no se pudo aplicar.'}</StateLabel>
+          <Button size="sm" variant="primary" icon={RefreshIcon} loading={retryApply.isPending} onClick={() => retryApply.mutate(proposal.id)}>Reintentar</Button>
         </div>
       )}
 
@@ -108,23 +108,23 @@ export function ProposalCard({ projectId, stageKey, stageName, state, proposal, 
 
       {draft ? (
         <div className="flex flex-wrap gap-2">
-          <Button variant="primary" icon={Tick02Icon} loading={saving} onClick={saveAdjusted}>Approve with changes</Button>
-          <Button variant="quiet" onClick={() => { setDraft(null); setErrors({}) }}>Cancel</Button>
+          <Button variant="primary" icon={Tick02Icon} loading={saving} onClick={saveAdjusted}>Aprobar con cambios</Button>
+          <Button variant="quiet" onClick={() => { setDraft(null); setErrors({}) }}>Cancelar</Button>
         </div>
       ) : waiting ? (
         <div className="flex flex-wrap gap-2">
-          <Button variant="primary" icon={Tick02Icon} loading={approve.isPending} onClick={() => approve.mutate(proposal.id)}>Approve</Button>
-          <Button icon={Edit02Icon} onClick={() => setDraft(structuredClone(finalContent(proposal)))}>Adjust</Button>
-          <Button variant="quiet" onClick={() => setRejecting(true)}>Reject</Button>
+          <Button variant="primary" icon={Tick02Icon} loading={approve.isPending} onClick={() => approve.mutate(proposal.id)}>Aprobar</Button>
+          <Button icon={Edit02Icon} onClick={() => setDraft(structuredClone(finalContent(proposal)))}>Ajustar</Button>
+          <Button variant="quiet" onClick={() => setRejecting(true)}>Rechazar</Button>
         </div>
       ) : needsLeader ? (
         <div className="flex flex-wrap gap-2">
-          <Button variant="primary" icon={RefreshIcon} loading={retryingStage} onClick={onRetryStage}>Retry the {lower}</Button>
-          <Button icon={Edit02Icon} onClick={() => setDraft(structuredClone(proposal.content))}>Adjust it yourself</Button>
+          <Button variant="primary" icon={RefreshIcon} loading={retryingStage} onClick={onRetryStage}>Reintentar {label.the}</Button>
+          <Button icon={Edit02Icon} onClick={() => setDraft(structuredClone(proposal.content))}>Ajustarla tú mismo</Button>
         </div>
       ) : null}
 
-      {rejecting && <RejectDialog what={`the ${lower}`} onReject={(reason) => reject(proposal.id, reason)} onClose={() => setRejecting(false)} />}
+      {rejecting && <RejectDialog what={label.the} onReject={(reason) => reject(proposal.id, reason)} onClose={() => setRejecting(false)} />}
     </Card>
   )
 }

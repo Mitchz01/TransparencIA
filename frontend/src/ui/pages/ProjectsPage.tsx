@@ -21,8 +21,8 @@ function ProjectCard({ project }: { project: ProjectSummary }) {
         <Pill hue={status.hue} icon={status.icon}>{status.label}</Pill>
       </div>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-caption text-ink-muted tabular-nums">
-        <span className="inline-flex items-center gap-1.5"><Icon icon={Clock01Icon} size={16} />{plural(project.duration_weeks, 'week')}</span>
-        <span className="inline-flex items-center gap-1.5"><Icon icon={UserGroupIcon} size={16} />{plural(project.member_count, 'member')}</span>
+        <span className="inline-flex items-center gap-1.5"><Icon icon={Clock01Icon} size={16} />{plural(project.duration_weeks, 'semana')}</span>
+        <span className="inline-flex items-center gap-1.5"><Icon icon={UserGroupIcon} size={16} />{plural(project.member_count, 'miembro')}</span>
         <span className="inline-flex items-center gap-1.5"><Icon icon={Calendar03Icon} size={16} />{formatDate(project.created_at)}</span>
       </div>
     </Link>
@@ -31,10 +31,10 @@ function ProjectCard({ project }: { project: ProjectSummary }) {
 
 export function ProjectsPage() {
   const { data: projects, isPending } = useProjects()
-  const newProject = <ButtonLink to="/projects/new" variant="primary" icon={Add01Icon}>New project</ButtonLink>
+  const newProject = <ButtonLink to="/projects/new" variant="primary" icon={Add01Icon}>Nuevo proyecto</ButtonLink>
   return (
     <AppLayout topBar={<HomeTopBar />}>
-      <PageHeader title="Projects" description="Describe what you want to build. The agents plan it, you decide." actions={projects?.length ? newProject : undefined} />
+      <PageHeader title="Proyectos" description="Describe lo que quieres construir. Los agentes lo planifican, tú decides." actions={projects?.length ? newProject : undefined} />
       {isPending ? (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <SkeletonCard /><SkeletonCard /><SkeletonCard />
@@ -48,8 +48,8 @@ export function ProjectsPage() {
           ))}
         </ul>
       ) : (
-        <EmptyState icon={Folder01Icon} title="No projects yet" action={newProject}>
-          Start with a description and your team. The agents take it from there.
+        <EmptyState icon={Folder01Icon} title="Todavía no hay proyectos" action={newProject}>
+          Empieza con una descripción y tu equipo. Los agentes siguen desde ahí.
         </EmptyState>
       )}
     </AppLayout>

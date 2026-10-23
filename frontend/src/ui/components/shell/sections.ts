@@ -5,9 +5,9 @@ export interface Section {
 
 /** The project sections, in top bar order (spec 009, screen map). Settings is an icon button. */
 export const SECTIONS: Section[] = [
-  { path: 'planning', label: 'Planning' },
-  { path: 'board', label: 'Board' },
+  { path: 'planning', label: 'Planificación' },
+  { path: 'board', label: 'Tablero' },
   { path: 'plan', label: 'Plan' },
-  { path: 'documents', label: 'Documents' },
-  { path: 'integrations', label: 'Integrations' },
+  { path: 'documents', label: 'Documentos' },
+  { path: 'integrations', label: 'Integraciones' },
 ]

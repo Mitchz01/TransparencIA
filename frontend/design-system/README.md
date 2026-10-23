@@ -137,6 +137,8 @@ Added for the first round of screens; all of them are in [preview.html](preview.
 
 ## Voice
 
+The interface speaks Spanish (spec 009, FR-012); the examples below are in English like the rest of the docs. Use "tú", sentence case, and the same rules in both languages.
+
 - Short, direct sentences. Buttons say what happens: "Approve", "Start planning", "Publish 12 issues". Never "OK" alone.
 - No exclamation marks, no emojis, no em dashes.
 - Errors say what happened and how to fix it, without apologizing.

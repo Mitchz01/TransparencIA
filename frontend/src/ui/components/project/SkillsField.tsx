@@ -49,7 +49,7 @@ export function SkillsField({ label, skills, onChange, errors = {} }: SkillsFiel
             {skill}
             <button
               type="button"
-              aria-label={`Remove ${skill}`}
+              aria-label={`Quitar ${skill}`}
               onClick={() => onChange(skills.filter((s) => s !== skill))}
               className="inline-flex size-5 items-center justify-center rounded-pill text-ink-muted hover:text-ink"
             >

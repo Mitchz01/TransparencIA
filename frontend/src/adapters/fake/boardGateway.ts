@@ -5,7 +5,7 @@ import { moveTask, sprintLoad, suggestsAdvance, teamCapacity, wipWarnings } from
 import { type FakeStore, fail, invalid, notFound, online, reply } from './store'
 
 const STATUS_NAMES: Record<Task['status'], string> = {
-  backlog: 'Backlog', todo: 'To do', in_progress: 'In progress', review: 'Review', done: 'Done',
+  backlog: 'Backlog', todo: 'Por hacer', in_progress: 'En curso', review: 'En revisión', done: 'Hecho',
 }
 
 const emptyBoard = (projectId: number): BoardView => ({
@@ -55,24 +55,24 @@ export function fakeBoardGateway(store: FakeStore): BoardGateway {
       const { board, task } = boardOfTask(taskId)
       const project = store.projects.get(board.project_id)
       const errors: FieldError[] = []
-      if (Object.keys(patch).length === 0) errors.push({ field: '', message: 'No fields to update.' })
-      if (patch.status !== undefined && !TASK_STATUSES.includes(patch.status)) errors.push({ field: 'status', message: 'Unknown status.' })
-      if (patch.priority !== undefined && !PRIORITIES.includes(patch.priority)) errors.push({ field: 'priority', message: 'Unknown priority.' })
-      if (patch.position !== undefined && (!Number.isInteger(patch.position) || patch.position < 0)) errors.push({ field: 'position', message: 'Must be 0 or more.' })
+      if (Object.keys(patch).length === 0) errors.push({ field: '', message: 'No hay cambios para guardar.' })
+      if (patch.status !== undefined && !TASK_STATUSES.includes(patch.status)) errors.push({ field: 'status', message: 'Estado desconocido.' })
+      if (patch.priority !== undefined && !PRIORITIES.includes(patch.priority)) errors.push({ field: 'priority', message: 'Prioridad desconocida.' })
+      if (patch.position !== undefined && (!Number.isInteger(patch.position) || patch.position < 0)) errors.push({ field: 'position', message: 'Debe ser 0 o más.' })
       if (patch.title !== undefined && (!patch.title.trim() || patch.title.trim().length > TASK_LIMITS.title)) {
-        errors.push({ field: 'title', message: `Between 1 and ${TASK_LIMITS.title} characters.` })
+        errors.push({ field: 'title', message: `Entre 1 y ${TASK_LIMITS.title} caracteres.` })
       }
       if (patch.points !== undefined && (!Number.isInteger(patch.points) || patch.points < 0 || patch.points > 100)) {
-        errors.push({ field: 'points', message: 'Must be between 0 and 100.' })
+        errors.push({ field: 'points', message: 'Debe estar entre 0 y 100.' })
       }
-      if (patch.sprint_id != null && !board.sprints.some((s) => s.id === patch.sprint_id)) errors.push({ field: 'sprint_id', message: 'Not a sprint of this project.' })
+      if (patch.sprint_id != null && !board.sprints.some((s) => s.id === patch.sprint_id)) errors.push({ field: 'sprint_id', message: 'No es un sprint de este proyecto.' })
       if (patch.assignee_id != null && !project?.members.some((m) => m.id === patch.assignee_id)) {
-        errors.push({ field: 'assignee_id', message: 'Not a member of this project.' })
+        errors.push({ field: 'assignee_id', message: 'No es miembro de este proyecto.' })
       }
       if (errors.length) invalid(errors)
 
       const targetSprint = patch.sprint_id === undefined ? task.sprint_id : patch.sprint_id
-      if (board.sprints.find((s) => s.id === targetSprint)?.closed) fail(409, { code: 'sprint_closed', detail: 'That sprint is closed.' })
+      if (board.sprints.find((s) => s.id === targetSprint)?.closed) fail(409, { code: 'sprint_closed', detail: 'Ese sprint está cerrado.' })
 
       const moves = patch.status !== undefined || patch.position !== undefined || patch.sprint_id !== undefined
       if (moves) {
@@ -97,12 +97,12 @@ export function fakeBoardGateway(store: FakeStore): BoardGateway {
       if (saved.status !== task.status) {
         store.publish({
           type: 'task_status_changed', project_id: board.project_id, actor: 'person', ref: { kind: 'task', id: taskId },
-          summary: `${saved.key} moved to ${STATUS_NAMES[saved.status]}`, task_id: taskId, status: saved.status,
+          summary: `${saved.key} pasó a ${STATUS_NAMES[saved.status]}`, task_id: taskId, status: saved.status,
         })
       } else {
         store.publish({
           type: 'task_updated', project_id: board.project_id, actor: 'person', ref: { kind: 'task', id: taskId },
-          summary: `${saved.key} was updated`, task_id: taskId,
+          summary: `${saved.key} se actualizó`, task_id: taskId,
         })
       }
       return reply(result(board, saved))
@@ -112,17 +112,17 @@ export function fakeBoardGateway(store: FakeStore): BoardGateway {
       await online()
       const { board } = boardOfTask(taskId)
       const errors: FieldError[] = []
-      if (items.length > TASK_LIMITS.checklistItems) errors.push({ field: 'items', message: `Max ${TASK_LIMITS.checklistItems} items.` })
+      if (items.length > TASK_LIMITS.checklistItems) errors.push({ field: 'items', message: `Máximo ${TASK_LIMITS.checklistItems} ítems.` })
       items.forEach((item, i) => {
         const text = item.text.trim()
-        if (!text || text.length > TASK_LIMITS.checklistText) errors.push({ field: `items[${i}].text`, message: `Between 1 and ${TASK_LIMITS.checklistText} characters.` })
+        if (!text || text.length > TASK_LIMITS.checklistText) errors.push({ field: `items[${i}].text`, message: `Entre 1 y ${TASK_LIMITS.checklistText} caracteres.` })
       })
       if (errors.length) invalid(errors)
       board.tasks = board.tasks.map((t) => (t.id === taskId ? { ...t, checklist: items.map((i) => ({ text: i.text.trim(), done: i.done })) } : t))
       const saved = board.tasks.find((t) => t.id === taskId)!
       store.publish({
         type: 'task_updated', project_id: board.project_id, actor: 'person', ref: { kind: 'task', id: taskId },
-        summary: `${saved.key} checklist updated`, task_id: taskId,
+        summary: `Se actualizó el checklist de ${saved.key}`, task_id: taskId,
       })
       return reply(result(board, saved))
     },
@@ -131,9 +131,9 @@ export function fakeBoardGateway(store: FakeStore): BoardGateway {
       await online()
       if (!store.projects.has(projectId)) notFound('project', projectId)
       const board = store.boards.get(projectId)
-      if (!board || board.continuous) fail(409, { code: 'capacity_not_applicable', detail: 'This board has no sprints.' })
+      if (!board || board.continuous) fail(409, { code: 'capacity_not_applicable', detail: 'Este tablero no tiene sprints.' })
       if (points !== null && (!Number.isInteger(points) || points < 1 || points > 500)) {
-        invalid([{ field: 'points_per_sprint', message: 'Must be between 1 and 500.' }])
+        invalid([{ field: 'points_per_sprint', message: 'Debe estar entre 1 y 500.' }])
       }
       board!.capacity_override = points
       refreshLoads(board!)
@@ -144,12 +144,12 @@ export function fakeBoardGateway(store: FakeStore): BoardGateway {
       await online()
       const board = [...store.boards.values()].find((b) => b.sprints.some((s) => s.id === sprintId))
       const sprint = board?.sprints.find((s) => s.id === sprintId) ?? notFound('sprint', sprintId)
-      if (sprint.closed) fail(409, { code: 'sprint_already_closed', detail: `${sprint.name} is already closed.` })
+      if (sprint.closed) fail(409, { code: 'sprint_already_closed', detail: `${sprint.name} ya está cerrado.` })
       sprint.closed = true
       const pending = board!.tasks.filter((t) => t.sprint_id === sprintId && t.status !== 'done').map((t) => t.key)
       store.publish({
         type: 'sprint_closed', project_id: board!.project_id, actor: 'person', ref: { kind: 'sprint', id: sprintId },
-        summary: `${sprint.name} was closed`, sprint_id: sprintId, pending_task_keys: pending,
+        summary: `Se cerró ${sprint.name}`, sprint_id: sprintId, pending_task_keys: pending,
       })
       return reply({ sprint, pending_task_keys: pending, replan_proposed: false })
     },

@@ -5,7 +5,7 @@
 import type { PlanningAccepted } from '../../application/ports'
 import type { StageKey } from '../../domain/plan'
 import type { Project } from '../../domain/project'
-import { STAGE_AGENTS, STAGE_KEYS, STAGE_NAMES, isStageKey } from '../../domain/proposalContent'
+import { STAGE_AGENTS, STAGE_KEYS, isStageKey } from '../../domain/proposalContent'
 import { REASON_MAX, finalContent, isDecided, type Proposal } from '../../domain/proposals'
 import { rejectedInARow, stageProposals } from '../../domain/stepper'
 import { buildBoard } from './demoBoard'
@@ -19,7 +19,16 @@ export interface FakePlanningOptions {
 
 export type FakePlanning = ReturnType<typeof createFakePlanning>
 
-const lower = (key: StageKey) => STAGE_NAMES[key].toLowerCase()
+// The demo speaks Spanish, like its projects: the summaries are what the activity feed shows.
+const THE: Record<StageKey, string> = {
+  analysis: 'el análisis', methodology: 'la metodología', architecture: 'la arquitectura',
+  roadmap: 'el roadmap', backlog: 'el backlog', sprints: 'los sprints',
+}
+const WHO: Record<StageKey, string> = {
+  analysis: 'El analista de producto', methodology: 'El coach ágil', architecture: 'El arquitecto de software',
+  roadmap: 'El product manager', backlog: 'El product owner', sprints: 'El scrum master',
+}
+const lower = (key: StageKey) => THE[key]
 
 export function createFakePlanning(store: FakeStore, { stageDelayMs = 1200 }: FakePlanningOptions = {}) {
   const timers = new Set<ReturnType<typeof setTimeout>>()
@@ -43,7 +52,7 @@ export function createFakePlanning(store: FakeStore, { stageDelayMs = 1200 }: Fa
     running.set(projectId, key)
     store.publish({
       type: 'agent_started', project_id: projectId, actor: 'agent', ref: { kind: 'project', id: projectId },
-      summary: `${STAGE_AGENTS[key]} is working on the ${lower(key)}`, agent: key, title: STAGE_AGENTS[key],
+      summary: `${WHO[key]} está trabajando en ${lower(key)}`, agent: key, title: STAGE_AGENTS[key],
     })
     later(() => finishStage(projectId, key, feedback))
   }
@@ -57,8 +66,8 @@ export function createFakePlanning(store: FakeStore, { stageDelayMs = 1200 }: Fa
       store.projects.set(projectId, { ...project, status: 'error' })
       store.publish({
         type: 'plan_failed', project_id: projectId, actor: 'agent', ref: { kind: 'project', id: projectId },
-        summary: `${STAGE_AGENTS[key]} couldn't finish the ${lower(key)}`, agent: key,
-        error: 'The agent took too long to answer.',
+        summary: `${WHO[key]} no pudo terminar ${lower(key)}`, agent: key,
+        error: 'El agente tardó demasiado en responder.',
       })
       return
     }
@@ -66,18 +75,18 @@ export function createFakePlanning(store: FakeStore, { stageDelayMs = 1200 }: Fa
     const content = demoStage(key, project.requested_methodology) as unknown as Record<string, unknown>
     const proposal: Proposal = {
       id: store.id(), project_id: projectId, kind: 'plan_stage', key, agent: STAGE_AGENTS[key], content,
-      rationale: feedback ? `Changed after your feedback ("${feedback}"). ${DEMO_RATIONALES[key]}` : DEMO_RATIONALES[key],
+      rationale: feedback ? `Cambiado según tu motivo ("${feedback}"). ${DEMO_RATIONALES[key]}` : DEMO_RATIONALES[key],
       status: 'pending', adjusted_content: null, rejection_reason: null, auto_approved: false, origin: 'leader',
       apply_failed: false, apply_error: null, created_at: store.now(), resolved_at: null,
     }
     store.proposals.set(proposal.id, proposal)
     store.publish({
       type: 'agent_finished', project_id: projectId, actor: 'agent', ref: { kind: 'proposal', id: proposal.id },
-      summary: `${STAGE_AGENTS[key]} finished the ${lower(key)}`, agent: key, title: STAGE_AGENTS[key], output: content,
+      summary: `${WHO[key]} terminó ${lower(key)}`, agent: key, title: STAGE_AGENTS[key], output: content,
     })
     store.publish({
       type: 'proposal_created', project_id: projectId, actor: 'agent', ref: { kind: 'proposal', id: proposal.id },
-      summary: `${STAGE_AGENTS[key]} proposed the ${lower(key)}`, proposal_id: proposal.id, kind: 'plan_stage', key,
+      summary: `${WHO[key]} propuso ${lower(key)}`, proposal_id: proposal.id, kind: 'plan_stage', key,
       agent: STAGE_AGENTS[key],
     })
     if (project.auto_approve) approveAutomatically(proposal)
@@ -88,7 +97,7 @@ export function createFakePlanning(store: FakeStore, { stageDelayMs = 1200 }: Fa
     store.proposals.set(approved.id, approved)
     store.publish({
       type: 'proposal_resolved', project_id: approved.project_id, actor: 'system', ref: { kind: 'proposal', id: approved.id },
-      summary: `The ${approved.kind === 'plan_stage' && isStageKey(approved.key) ? lower(approved.key) : 'proposal'} was approved automatically`,
+      summary: `Se aprobó automáticamente ${approved.kind === 'plan_stage' && isStageKey(approved.key) ? lower(approved.key) : 'la propuesta'}`,
       proposal_id: approved.id, kind: approved.kind, key: approved.key, status: 'approved', auto: true, reason: null,
     })
   }
@@ -109,7 +118,7 @@ export function createFakePlanning(store: FakeStore, { stageDelayMs = 1200 }: Fa
       if (rejectedInARow(proposalsOf(project.id), key)) {
         store.publish({
           type: 'stage_needs_leader', project_id: project.id, actor: 'system', ref: { kind: 'proposal', id: proposal.id },
-          summary: `The ${lower(key)} needs you after three rejections`, stage: key, rejections: 3,
+          summary: `Rechazaste ${lower(key)} tres veces: te necesita`, stage: key, rejections: 3,
         })
       } else {
         runStage(project.id, key, proposal.rejection_reason)
@@ -122,10 +131,10 @@ export function createFakePlanning(store: FakeStore, { stageDelayMs = 1200 }: Fa
     const board = buildBoard(project.id, project.members, plan, () => store.id(), store.now())
     store.boards.set(project.id, board)
     store.projects.set(project.id, { ...project, status: 'ready' })
-    store.publish({ type: 'plan_completed', project_id: project.id, actor: 'system', ref: { kind: 'project', id: project.id }, summary: 'The plan is complete' })
+    store.publish({ type: 'plan_completed', project_id: project.id, actor: 'system', ref: { kind: 'project', id: project.id }, summary: 'El plan está completo' })
     store.publish({
       type: 'plan_applied', project_id: project.id, actor: 'system', ref: { kind: 'project', id: project.id },
-      summary: `The board is ready with ${board.tasks.length} tasks`, skipped_story_keys: [],
+      summary: `El tablero está listo con ${board.tasks.length} tareas`, skipped_story_keys: [],
     })
     proposeGeneralSpec(project.id)
   }
@@ -135,18 +144,18 @@ export function createFakePlanning(store: FakeStore, { stageDelayMs = 1200 }: Fa
     const proposal: Proposal = {
       id: store.id(), project_id: projectId, kind: 'document', key: 'general_spec', agent: 'Spec writer',
       content: {
-        title: 'General spec',
-        markdown: `# ${project.name}\n\n${project.description}\n\n## Goals\n\n${DEMO_STAGES.analysis.goals.map((g) => `- ${g}`).join('\n')}\n`,
-        rationale: 'Built from the approved analysis, architecture, roadmap and backlog.',
+        title: 'Spec general',
+        markdown: `# ${project.name}\n\n${project.description}\n\n## Objetivos\n\n${DEMO_STAGES.analysis.goals.map((g) => `- ${g}`).join('\n')}\n`,
+        rationale: 'Armada con el análisis, la arquitectura, el roadmap y el backlog aprobados.',
       },
-      rationale: 'Built from the approved analysis, architecture, roadmap and backlog.',
+      rationale: 'Armada con el análisis, la arquitectura, el roadmap y el backlog aprobados.',
       status: 'pending', adjusted_content: null, rejection_reason: null, auto_approved: false, origin: 'leader',
       apply_failed: false, apply_error: null, created_at: store.now(), resolved_at: null,
     }
     store.proposals.set(proposal.id, proposal)
     store.publish({
       type: 'proposal_created', project_id: projectId, actor: 'agent', ref: { kind: 'proposal', id: proposal.id },
-      summary: 'Spec writer proposed the general spec', proposal_id: proposal.id, kind: 'document', key: 'general_spec', agent: 'Spec writer',
+      summary: 'El redactor de specs propuso la spec general', proposal_id: proposal.id, kind: 'document', key: 'general_spec', agent: 'Spec writer',
     })
     if (project.auto_approve) approveAutomatically(proposal)
   }
@@ -163,7 +172,7 @@ export function createFakePlanning(store: FakeStore, { stageDelayMs = 1200 }: Fa
     })
     store.publish({
       type: 'documents_generated', project_id: proposal.project_id, actor: 'agent', ref: { kind: 'document', id },
-      summary: 'The general spec is ready', missing: [],
+      summary: 'La spec general está lista', missing: [],
     })
   }
 
@@ -178,12 +187,12 @@ export function createFakePlanning(store: FakeStore, { stageDelayMs = 1200 }: Fa
     start(projectId: number): PlanningAccepted {
       const project = projectOf(projectId)
       if (project.status === 'ready') {
-        fail(409, { code: 'planning_not_startable', detail: 'The plan is already complete. Ask for a replan instead.' })
+        fail(409, { code: 'planning_not_startable', detail: 'El plan ya está completo. Pide una replanificación.' })
       }
       const stage = nextStage(projectId) ?? 'sprints'
       const waiting = running.has(projectId) || hasPending(projectId) || rejectedInARow(proposalsOf(projectId), stage)
       if (project.status === 'planning' && waiting) {
-        fail(409, { code: 'planning_already_running', detail: 'Planning is already running.' })
+        fail(409, { code: 'planning_already_running', detail: 'La planificación ya está en curso.' })
       }
       store.projects.set(projectId, { ...project, status: 'planning' })
       runStage(projectId, stage)
@@ -195,7 +204,7 @@ export function createFakePlanning(store: FakeStore, { stageDelayMs = 1200 }: Fa
       if (!isStageKey(key)) return notFound('stage', key)
       const proposals = proposalsOf(projectId)
       if (!rejectedInARow(proposals, key) || running.has(projectId)) {
-        fail(409, { code: 'stage_not_retryable', detail: `The ${lower(key)} isn't waiting for you.` })
+        fail(409, { code: 'stage_not_retryable', detail: 'Esta etapa no está esperando tu decisión.' })
       }
       runStage(projectId, key, stageProposals(proposals, key)[0]?.rejection_reason ?? null)
       return { project_id: projectId, status: 'planning', stage: key }
@@ -204,9 +213,9 @@ export function createFakePlanning(store: FakeStore, { stageDelayMs = 1200 }: Fa
     replan(projectId: number, reason: string) {
       const project = projectOf(projectId)
       const clean = reason.trim()
-      if (!clean) invalid([{ field: 'reason', message: 'Required.' }])
-      if (clean.length > REASON_MAX) invalid([{ field: 'reason', message: `Max ${REASON_MAX} characters.` }])
-      if (project.status !== 'ready') fail(409, { code: 'plan_not_applied', detail: 'The board must exist before replanning.' })
+      if (!clean) invalid([{ field: 'reason', message: 'Obligatorio.' }])
+      if (clean.length > REASON_MAX) invalid([{ field: 'reason', message: `Máximo ${REASON_MAX} caracteres.` }])
+      if (project.status !== 'ready') fail(409, { code: 'plan_not_applied', detail: 'Primero tiene que existir el tablero.' })
       const pending = proposalsOf(projectId).find((p) => p.kind === 'replan' && p.status === 'pending')
       if (pending) store.proposals.set(pending.id, { ...pending, status: 'discarded', resolved_at: store.now() })
       return { project_id: projectId, status: 'replanning' as const, supersedes: pending?.id ?? null }
