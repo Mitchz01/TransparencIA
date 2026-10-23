@@ -18,8 +18,11 @@ from app.application.use_cases.board.move_task import MoveTask
 from app.application.use_cases.board.set_capacity import SetCapacity
 from app.application.use_cases.board.update_checklist import UpdateChecklist
 from app.application.use_cases.board.update_task import UpdateTask
+from app.application.use_cases.documents.apply_document import ApplyDocumentProposal
+from app.application.use_cases.documents.list_documents import GetDocument, ListDocuments
 from app.application.use_cases.planning.advance_planning import AdvancePlanning, PlanCompletedHandler
 from app.application.use_cases.planning.apply_plan import ApplyPlan
+from app.application.use_cases.planning.generate_documents import GenerateDocuments
 from app.application.use_cases.planning.retry_stage import RetryStage
 from app.application.use_cases.planning.run_planning_step import RunPlanningStep
 from app.application.use_cases.planning.start_planning import StartPlanning
@@ -228,9 +231,27 @@ def wire_planning(
     # Spec 003 (plan 003, T012): the approved plan becomes the board. It's a plan-completed handler,
     # not a ("plan_stage", "sprints") applier: that would shadow AdvancePlanning for the last stage,
     # and the approved backlog/sprints only reach project.plan through AdvancePlanning.
-    # Spec 006 appends GenerateDocuments to the same list.
+    # Spec 006 appends GenerateDocuments to the same list (wire_documents).
     on_plan_completed.append(ApplyPlan(uow_factory, bus).execute)
     return run_step
+
+
+def wire_documents(
+    uow_factory: UnitOfWorkFactory,
+    bus: EventBus,
+    agents: PlanningAgents,
+    appliers: ApplierRegistry,
+    on_plan_completed: list[PlanCompletedHandler],
+) -> GenerateDocuments:
+    """Spec 006's writer, once at startup (main.py, after wire_planning so ApplyPlan runs first)."""
+    auto_approve = AutoApprove(uow_factory, bus, ApplyProposal(uow_factory, bus, appliers))
+    generate = GenerateDocuments(uow_factory, agents, bus, auto_approve)
+    # An approved or adjusted document proposal creates or versions the document; a rejected
+    # one is rewritten with the reason, following spec 002's redo rule (spec 005, "Applying").
+    appliers.register("document", ApplyDocumentProposal(uow_factory, bus).execute)
+    appliers.register("document", generate.on_proposal_resolved, on=("rejected",))
+    on_plan_completed.append(generate.execute)
+    return generate
 
 
 def get_run_planning_step(request: Request) -> RunPlanningStep:
@@ -243,3 +264,18 @@ def get_start_planning(uow: UnitOfWork = Depends(get_uow)) -> StartPlanning:
 
 def get_retry_stage(uow: UnitOfWork = Depends(get_uow)) -> RetryStage:
     return RetryStage(uow)
+
+
+# ---------- Documents (spec 006) ----------
+
+
+def get_generate_documents(request: Request) -> GenerateDocuments:
+    return request.app.state.generate_documents
+
+
+def get_list_documents(uow: UnitOfWork = Depends(get_uow)) -> ListDocuments:
+    return ListDocuments(uow)
+
+
+def get_get_document(uow: UnitOfWork = Depends(get_uow)) -> GetDocument:
+    return GetDocument(uow)

@@ -15,6 +15,7 @@ from app.domain.board import (
     Task,
     TaskStatus,
 )
+from app.domain.documents import Document, DocumentKind, DocumentVersion, VersionSource
 from app.domain.plan import WipLimit
 from app.domain.project import (
     MemberPatch,
@@ -229,3 +230,74 @@ class PlanningAccepted(BaseModel):
     project_id: int
     status: ProjectStatus = "planning"
     stage: str
+
+
+# ---------- Documents (spec 006) ----------
+
+
+class DocumentSummary(BaseModel):
+    id: int
+    kind: DocumentKind
+    epic_key: str | None
+    title: str
+    version: int
+    outdated: bool
+    updated_at: datetime
+
+    @classmethod
+    def of(cls, document: Document) -> "DocumentSummary":
+        return cls.model_validate(document.model_dump(include=set(cls.model_fields)))
+
+
+class DocumentVersionView(BaseModel):
+    version: int
+    created_at: datetime
+    source: VersionSource
+    proposal_id: int | None
+
+
+class DocumentView(BaseModel):
+    """`content` and `version` are the requested version's (the latest by default)."""
+
+    id: int
+    project_id: int
+    kind: DocumentKind
+    epic_key: str | None
+    title: str
+    content: str
+    version: int
+    outdated: bool
+    versions: list[DocumentVersionView]
+
+    @classmethod
+    def of(cls, document: Document, versions: list[DocumentVersion], shown: DocumentVersion | None = None) -> "DocumentView":
+        data = document.model_dump(include=set(cls.model_fields) - {"versions"})
+        if shown is not None:
+            data.update(content=shown.content, version=shown.version)
+        views = [DocumentVersionView.model_validate(v.model_dump(include=set(DocumentVersionView.model_fields))) for v in versions]
+        return cls(**data, versions=views)
+
+
+class DocumentRegenerate(BaseModel):
+    instructions: str
+
+
+class DocumentEdit(BaseModel):
+    content: str
+    base_version: int
+
+
+class DocumentRun(BaseModel):
+    """A document to rewrite in the background: RegenerateDocument decides it, the router spawns it."""
+
+    project_id: int
+    document_id: int
+    key: str
+    feedback: dict[str, Any]
+
+
+class RegenerationAccepted(BaseModel):
+    """202 body of POST /api/documents/{id}/regenerate."""
+
+    document_id: int
+    status: str = "regenerating"

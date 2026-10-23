@@ -5,8 +5,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.adapters.inbound.http import activity, board, health, planning, projects, proposals
-from app.adapters.inbound.http.dependencies import open_uow, wire_planning
+from app.adapters.inbound.http import activity, board, documents, health, planning, projects, proposals
+from app.adapters.inbound.http.dependencies import open_uow, wire_documents, wire_planning
 from app.adapters.inbound.http.errors import register_error_handlers
 from app.adapters.outbound.code_host.fake import FakeCodeHost
 from app.adapters.outbound.events.in_memory_bus import InMemoryEventBus
@@ -46,12 +46,16 @@ async def lifespan(app: FastAPI):
     app.state.event_bus = PersistentEventBus(InMemoryEventBus(), open_uow)
     # Steps that apply each kind of proposal, registered by their owner specs (spec 005, "Applying"):
     #   002: "plan_stage" → AdvancePlanning.on_proposal_resolved (registered by wire_planning below)
-    #   006: "document" → ApplyDocumentProposal · 007: "github_action" create_issues/request_review → PublishIssues/ApplyReview
+    #   006: "document" → ApplyDocumentProposal, rejections → GenerateDocuments (registered by wire_documents)
+    #   007: "github_action" create_issues/request_review → PublishIssues/ApplyReview
     #   008: "replan" → ApplyReplan
     app.state.appliers = ApplierRegistry()
-    # Run once every stage is approved (spec 002): 003's ApplyPlan (added by wire_planning); 006 adds GenerateDocuments.
+    # Run once every stage is approved (spec 002), in order: 003's ApplyPlan (wire_planning), then 006's GenerateDocuments.
     app.state.on_plan_completed = []
     app.state.run_planning_step = wire_planning(
+        open_uow, app.state.event_bus, app.state.agents, app.state.appliers, app.state.on_plan_completed
+    )
+    app.state.generate_documents = wire_documents(
         open_uow, app.state.event_bus, app.state.agents, app.state.appliers, app.state.on_plan_completed
     )
     app.state.on_team_changed = []  # spec 008 registers its drift-replan handler here
@@ -69,4 +73,5 @@ app.include_router(planning.router)
 app.include_router(proposals.router)
 app.include_router(activity.router)
 app.include_router(board.router)
-# TODO: projects, planning, proposals, board, documents (adapters/inbound/http) and webhooks/github
+app.include_router(documents.router)
+# TODO: webhooks/github (spec 008)

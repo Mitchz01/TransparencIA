@@ -201,16 +201,16 @@ Request headers: `Content-Type: application/json`. A leader edit isn't an agent 
 
 ### Tests for User Story 1
 
-- [ ] T008 [P] [US1] `GenerateDocuments` tests (runs on plan completion; `AgentStarted` + `ProposalCreated` for `general_spec`; context built only from approved finals; auto-approve applies it) in `backend/tests/unit/application/test_generate_documents.py`
-- [ ] T009 [P] [US1] `ApplyDocumentProposal` tests (creates v1; nothing exists before approval) in `backend/tests/unit/application/test_apply_document.py`
+- [x] T008 [P] [US1] `GenerateDocuments` tests (runs on plan completion; `AgentStarted` + `ProposalCreated` for `general_spec`; context built only from approved finals; auto-approve applies it) in `backend/tests/unit/application/test_generate_documents.py`
+- [x] T009 [P] [US1] `ApplyDocumentProposal` tests (creates v1; nothing exists before approval) in `backend/tests/unit/application/test_apply_document.py`
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] Implement `GenerateDocuments` in `backend/app/application/use_cases/planning/generate_documents.py`, starting with `general_spec`; each output becomes a `document` proposal with key `general_spec`
-- [ ] T011 [US1] Register `GenerateDocuments` as an `on_plan_completed` handler of spec 002's `AdvancePlanning` (after `ApplyPlan`) in `backend/app/adapters/inbound/http/dependencies.py`
-- [ ] T012 [US1] Implement `ApplyDocumentProposal` in `backend/app/application/use_cases/documents/apply_document.py`: find the document by kind and epic; create it at v1 or add a new version; save the `DocumentVersion` with its proposal id
-- [ ] T013 [US1] Implement `ListDocuments` and `GET /api/projects/{id}/documents` + `GET /api/documents/{id}` (with versions) in `backend/app/adapters/inbound/http/documents.py`; include the router in `main.py`
-- [ ] T014 [US1] Add `DocumentGateway` (ports, http, fake), `useDocuments`, `DocumentsPage` (list + viewer) and `MarkdownView`; route `/projects/:id/documents`
+- [x] T010 [US1] Implement `GenerateDocuments` in `backend/app/application/use_cases/planning/generate_documents.py`, starting with `general_spec`; each output becomes a `document` proposal with key `general_spec`
+- [x] T011 [US1] Register `GenerateDocuments` as an `on_plan_completed` handler of spec 002's `AdvancePlanning` (after `ApplyPlan`) in `backend/app/adapters/inbound/http/dependencies.py`
+- [x] T012 [US1] Implement `ApplyDocumentProposal` in `backend/app/application/use_cases/documents/apply_document.py`: find the document by kind and epic; create it at v1 or add a new version; save the `DocumentVersion` with its proposal id
+- [x] T013 [US1] Implement `ListDocuments` and `GET /api/projects/{id}/documents` + `GET /api/documents/{id}` (with versions) in `backend/app/adapters/inbound/http/documents.py`; include the router in `main.py`
+- [ ] T014 [US1] Add `DocumentGateway` (ports, http, fake), `useDocuments`, `DocumentsPage` (list + viewer) and `MarkdownView`; route `/projects/:id/documents` — handed off to spec 009 (frontend)
 
 **Checkpoint**: the general spec can be generated, approved and read
 
