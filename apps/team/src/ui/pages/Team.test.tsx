@@ -21,15 +21,15 @@ describe('Join with the link (spec 015, US4)', () => {
     backend.store.session = null
     const { router } = renderApp('/join/demo-1', backend)
 
-    expect(await screen.findByText('Te invitaron a TransparencIA (demo)')).toBeInTheDocument()
-    expect(screen.getByText('Líder: Ana Gómez')).toBeInTheDocument()
+    expect(await screen.findByText('Te invitaron a Restauración de manglar, segunda fase')).toBeInTheDocument()
+    expect(screen.getByText('Líder: Fundación Manglares Vivos')).toBeInTheDocument()
     await user.click(screen.getByRole('link', { name: 'Crear cuenta' }))
 
     await user.type(await screen.findByRole('textbox', { name: 'Nombre' }), 'Carla Pérez')
     await user.type(screen.getByRole('textbox', { name: 'Email' }), 'carla@team.dev')
     await user.type(screen.getByLabelText('Contraseña'), 'carla-pass')
     await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
-    await user.click(await screen.findByRole('button', { name: 'Omitir' }))
+    await user.click(await screen.findByRole('button', { name: 'Completar después' }))
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/join/demo-1'))
     const role = await screen.findByRole('textbox', { name: 'Tu cargo en este proyecto' })
@@ -66,7 +66,7 @@ describe('Team screen (spec 015, US4 and US6)', () => {
     await waitFor(() => expect(link).not.toHaveValue(`${window.location.origin}/join/demo-1`))
     await expect(backend.gateways.team.previewInvitation('demo-1')).rejects.toSatisfy((e) => hasCode(e, 'invitation_not_found'))
     const token = (link as HTMLInputElement).value.split('/join/')[1]
-    await expect(backend.gateways.team.previewInvitation(token)).resolves.toMatchObject({ project_name: 'TransparencIA (demo)' })
+    await expect(backend.gateways.team.previewInvitation(token)).resolves.toMatchObject({ project_name: 'Restauración de manglar, segunda fase' })
   })
 
   it('says next to the leader that the project needs one when the last leader steps down', async () => {
@@ -74,10 +74,10 @@ describe('Team screen (spec 015, US4 and US6)', () => {
     const backend = seeded()
     renderApp('/projects/1/team', backend)
 
-    await user.click(await screen.findByRole('button', { name: 'Opciones de Ana Gómez' }))
+    await user.click(await screen.findByRole('button', { name: 'Opciones de Fundación Manglares Vivos' }))
     await user.click(screen.getByRole('menuitem', { name: 'Quitar como líder' }))
 
-    const row = screen.getByText('Ana Gómez').closest('li')!
+    const row = screen.getByText('Fundación Manglares Vivos').closest('li')!
     expect(await within(row).findByText('El proyecto necesita un líder. Primero haz líder a otra persona.')).toBeInTheDocument()
     expect(backend.store.projects.get(1)!.members[0].permission).toBe('leader')
   })
@@ -96,7 +96,7 @@ describe('Team screen (spec 015, US4 and US6)', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Guardar' }))
 
     await waitFor(() => expect(backend.store.projects.get(1)!.members[1].role).toBe('Fullstack'))
-    expect(backend.store.accounts.get(2)!.role).toBe('Frontend')
+    expect(backend.store.accounts.get(2)!.role).toBe('Técnico de campo')
     expect(backend.store.events.at(-1)).toMatchObject({ type: 'team_changed', changed: [{ name: 'Leo Ruiz', fields: ['role'] }] })
   })
 
@@ -109,12 +109,12 @@ describe('Team screen (spec 015, US4 and US6)', () => {
     expect(screen.queryByRole('textbox', { name: 'Link de invitación' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^Opciones de/ })).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Salir del proyecto' }))
-    await user.click(within(screen.getByRole('dialog', { name: 'Salir de TransparencIA (demo)' })).getByRole('button', { name: 'Salir del proyecto' }))
+    await user.click(within(screen.getByRole('dialog', { name: 'Salir de Restauración de manglar, segunda fase' })).getByRole('button', { name: 'Salir del proyecto' }))
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/'))
     expect(backend.store.projects.get(1)!.members.some((m) => m.account_id === 2)).toBe(false)
     const panel = await screen.findByRole('region', { name: 'Tus proyectos' })
-    expect(await within(panel).findByRole('link', { name: /Tienda online/ })).toBeInTheDocument()
+    expect(await within(panel).findByRole('link', { name: /Piloto de restauración de manglar/ })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /Agile Planner \(demo\)/ })).not.toBeInTheDocument()
   })
 })

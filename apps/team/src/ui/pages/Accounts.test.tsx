@@ -19,7 +19,7 @@ describe('Sign in (spec 015, US1)', () => {
 
     const email = await screen.findByRole('textbox', { name: 'Email' })
     const password = screen.getByLabelText('Contraseña')
-    await user.type(email, 'ana@team.dev')
+    await user.type(email, 'ana@manglaresvivos.org')
     await user.type(password, 'not-the-password')
     await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Email o contraseña incorrectos.')
@@ -52,7 +52,7 @@ describe('Sign in (spec 015, US1)', () => {
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/login'))
     expect(router.state.location.search).toBe(`?next=${encodeURIComponent('/projects/2/board')}`)
-    await user.type(await screen.findByRole('textbox', { name: 'Email' }), 'ANA@team.dev')
+    await user.type(await screen.findByRole('textbox', { name: 'Email' }), 'ANA@manglaresvivos.org')
     await user.type(screen.getByLabelText('Contraseña'), DEMO_PASSWORD)
     await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
 
@@ -62,7 +62,7 @@ describe('Sign in (spec 015, US1)', () => {
   it('goes to sign in with `next` when any call answers 401 (the session ended)', async () => {
     const backend = createFakeBackend({ store: new FakeStore(), stageDelayMs: 10 })
     const { router } = renderApp('/', backend)
-    await within(await screen.findByRole('region', { name: 'Tus proyectos' })).findByRole('link', { name: /Tienda online/ })
+    await within(await screen.findByRole('region', { name: 'Tus proyectos' })).findByRole('link', { name: /Piloto de restauración de manglar/ })
 
     backend.store.session = null // the session expires while the list is open
     await router.navigate('/projects/2/board')
@@ -89,18 +89,25 @@ describe('Sign up and profile (spec 015, US1 and US2)', () => {
     await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/welcome'))
-    expect(await screen.findByRole('heading', { name: 'Cuéntanos qué haces' })).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Backend' }))
-    await user.click(screen.getByRole('radio', { name: 'Senior' }))
-    const hours = screen.getByRole('textbox', { name: 'Horas por semana' })
-    expect(hours).toHaveValue('20')
-    await user.clear(hours)
-    await user.type(hours, '30')
+    // Spec 020: who registers projects, a natural person here, with what Colombian rules ask.
+    expect(await screen.findByRole('heading', { name: 'Tus datos como ejecutor' })).toBeInTheDocument()
+    expect(screen.queryByText(/Backend|Seniority|GitHub|Habilidades/)).not.toBeInTheDocument()
+    await user.type(screen.getByRole('textbox', { name: 'Número de documento' }), '1.020.304.050')
+    await user.type(screen.getByRole('textbox', { name: 'Celular' }), '300 111 2233')
+    await user.type(screen.getByRole('textbox', { name: 'Dirección' }), 'Calle 10 # 5-20')
+    await user.type(screen.getByRole('textbox', { name: 'Municipio' }), 'Santa Marta')
+    await user.type(screen.getByRole('textbox', { name: 'Departamento' }), 'Magdalena')
+    await user.click(screen.getByRole('button', { name: 'Guardar y seguir' }))
+    expect(await screen.findByText('Necesitamos tu autorización para tratar estos datos.')).toBeInTheDocument()
+    await user.click(screen.getByRole('checkbox', { name: /Ley 1581 de 2012/ }))
     await user.click(screen.getByRole('button', { name: 'Guardar y seguir' }))
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/'))
     const account = [...backend.store.accounts.values()].find((a) => a.email === 'carla@team.dev')!
-    expect(account).toMatchObject({ name: 'Carla Pérez', role: 'Backend', seniority: 'senior', hours_per_week: 30 })
+    expect(account).toMatchObject({
+      name: 'Carla Pérez', person_type: 'natural', document_type: 'CC', document_number: '1020304050', phone: '3001112233', municipality: 'Santa Marta',
+    })
+    expect(account.data_consent_at).not.toBeNull()
     expect(await screen.findByText('Todavía no tienes proyectos')).toBeInTheDocument()
   })
 
@@ -109,12 +116,12 @@ describe('Sign up and profile (spec 015, US1 and US2)', () => {
     renderApp('/signup', signedOut())
 
     await user.type(await screen.findByRole('textbox', { name: 'Nombre' }), 'Ana')
-    await user.type(screen.getByRole('textbox', { name: 'Email' }), ' ANA@team.dev')
+    await user.type(screen.getByRole('textbox', { name: 'Email' }), ' ANA@manglaresvivos.org')
     await user.type(screen.getByLabelText('Contraseña'), '12345678')
     await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
 
     expect(await screen.findByText('Ese email ya tiene cuenta.')).toBeInTheDocument()
-    expect(screen.getByRole('textbox', { name: 'Email' })).toHaveValue('ANA@team.dev')
+    expect(screen.getByRole('textbox', { name: 'Email' })).toHaveValue('ANA@manglaresvivos.org')
     expect(screen.getAllByRole('link', { name: 'Iniciar sesión' }).length).toBeGreaterThan(0)
   })
 
@@ -123,8 +130,8 @@ describe('Sign up and profile (spec 015, US1 and US2)', () => {
     const backend = createFakeBackend({ store: new FakeStore(), stageDelayMs: 10 })
     const { router } = renderApp('/', backend)
 
-    await user.click(await screen.findByRole('button', { name: 'Cuenta: Ana Gómez' }))
-    expect(screen.getByText('ana@team.dev')).toBeInTheDocument()
+    await user.click(await screen.findByRole('button', { name: 'Cuenta: Fundación Manglares Vivos' }))
+    expect(screen.getByText('ana@manglaresvivos.org')).toBeInTheDocument()
     await user.click(screen.getByRole('menuitem', { name: 'Cerrar sesión' }))
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/login'))
@@ -133,27 +140,33 @@ describe('Sign up and profile (spec 015, US1 and US2)', () => {
 })
 
 describe('My profile (spec 015, US2)', () => {
-  it('shows how the team sees you, following the form as you type, and saves', async () => {
+  it('shows how entities see you, following the form as you type, and checks the NIT (spec 020)', async () => {
     const user = userEvent.setup()
     const backend = createFakeBackend({ store: new FakeStore(), stageDelayMs: 10 })
     const { router } = renderApp('/profile', backend)
 
-    const card = await screen.findByRole('article', { name: 'Así te ve tu equipo' })
+    const card = await screen.findByRole('article', { name: 'Así te ven las entidades' })
     expect(card.querySelector('img')).toHaveAttribute('src', '/avatars/ana-gomez.jpg')
-    expect(within(card).getByRole('heading', { name: 'Ana Gómez' })).toBeInTheDocument()
-    expect(within(card).getByText('Backend')).toBeInTheDocument()
+    expect(within(card).getByRole('heading', { name: 'Fundación Manglares Vivos' })).toBeInTheDocument()
+    expect(within(card).getByText('NIT 900.123.456-8')).toBeInTheDocument()
+    expect(within(card).getByText('Entidad sin ánimo de lucro')).toBeInTheDocument()
+    expect(within(card).getByText('Datos completos y autorizados')).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Fullstack' }))
-    const hours = screen.getByRole('textbox', { name: 'Horas por semana' })
-    await user.clear(hours)
-    expect(within(card).getByText('30 h por semana')).toBeInTheDocument() // half-written: keeps the saved value
-    await user.type(hours, '25')
-    expect(within(card).getByText('Fullstack')).toBeInTheDocument()
-    expect(within(card).getByText('25 h por semana')).toBeInTheDocument()
+    const digit = screen.getByRole('textbox', { name: 'Dígito de verificación' })
+    await user.clear(digit)
+    await user.type(digit, '3')
+    expect(within(card).getByText('NIT 900.123.456-3')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+    expect(await screen.findByText('No corresponde al NIT. Revisa el RUT.')).toBeInTheDocument()
 
+    await user.clear(digit)
+    await user.type(digit, '8')
+    const phone = screen.getByRole('textbox', { name: 'Teléfono' })
+    await user.clear(phone)
+    await user.type(phone, '605 4321000')
     await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
     await waitFor(() => expect(router.state.location.pathname).toBe('/'))
-    expect(backend.store.accounts.get(1)).toMatchObject({ role: 'Fullstack', hours_per_week: 25, avatar_url: '/avatars/ana-gomez.jpg' })
+    expect(backend.store.accounts.get(1)).toMatchObject({ phone: '6054321000', verification_digit: '8', avatar_url: '/avatars/ana-gomez.jpg' })
   })
 
   it('gives the demo people their photos in a demo saved before photos existed', () => {

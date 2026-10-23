@@ -8,7 +8,7 @@ import { METHODOLOGY_NAMES } from './stageBodies'
 
 type Content = Record<string, unknown>
 
-const COLUMN_NAMES = { todo: 'Por hacer', in_progress: 'En curso', review: 'En revisión' } as const
+const COLUMN_NAMES = { todo: 'Por hacer', in_progress: 'En ejecución', review: 'En verificación' } as const
 const LEVEL_NAMES: Record<Level, string> = { low: 'Baja', medium: 'Media', high: 'Alta' }
 const LEVEL_OPTIONS = (['low', 'medium', 'high'] as Level[]).map((l) => ({ value: l, label: LEVEL_NAMES[l] }))
 
@@ -64,7 +64,7 @@ function MethodologyEditor({ content, onChange, errors }: EditorProps<StageOutpu
           {content.wip_limits.map((w, i) => (
             <NumberField
               key={w.column}
-              label={`Límite WIP en ${COLUMN_NAMES[w.column]}`}
+              label={`Máximo a la vez en ${COLUMN_NAMES[w.column]}`}
               unit="tareas"
               value={shown(w.limit)}
               error={errors[`wip_limits[${i}].limit`]}
@@ -104,7 +104,7 @@ function BacklogEditor({ content, onChange, errors }: EditorProps<StageOutputs['
             <span className="text-key text-ink-muted">{s.key}</span>
             <span className="truncate">{s.title}</span>
           </span>
-          <NumberField label={`Puntos de ${s.key}`} hideLabel size="md" fill="surface" unit="pts" value={shown(s.points)} error={errors[`stories[${i}].points`]} onChange={(e) => setStory(i, { points: asNumber(e.target.value) })} />
+          <NumberField label={`Peso de ${s.key}`} hideLabel size="md" fill="surface" value={shown(s.points)} error={errors[`stories[${i}].points`]} onChange={(e) => setStory(i, { points: asNumber(e.target.value) })} />
           <Select label={`Prioridad de ${s.key}`} hideLabel size="md" fill="surface" value={s.priority} options={LEVEL_OPTIONS} onChange={(e) => setStory(i, { priority: e.target.value as Level })} />
         </li>
       ))}
@@ -129,7 +129,7 @@ function SprintsEditor({ content, onChange }: EditorProps<StageOutputs['sprints'
         <li key={key} className="flex items-center justify-between gap-3 rounded-md bg-inset py-2 pr-2 pl-4">
           <span className="text-key">{key}</span>
           <Select
-            label={`Sprint de ${key}`}
+            label={`Etapa de ${key}`}
             hideLabel
             size="md"
             fill="surface"

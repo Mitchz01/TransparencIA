@@ -14,8 +14,10 @@ import { useBoard, useMoveTask } from './useBoard'
 
 const PROJECT = 2 // the seeded project with a board
 
-function setup() {
-  const backend = createFakeBackend({ store: new FakeStore(), stageDelayMs: 10 })
+function setup(prepare?: (store: FakeStore) => void) {
+  const store = new FakeStore()
+  prepare?.(store)
+  const backend = createFakeBackend({ store, stageDelayMs: 10 })
   const client = createQueryClient()
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={client}>
@@ -67,7 +69,8 @@ describe('useMoveTask', () => {
   })
 
   it('keeps a move over the WIP limit and the column warns about it', async () => {
-    const { client, hook } = setup()
+    // The demo plan runs by stages without limits (spec 019): give the review column one for this test.
+    const { client, hook } = setup((store) => (store.boards.get(PROJECT)!.wip_limits = [{ column: 'review', limit: 2 }]))
     await waitFor(() => expect(hook.result.current.board.data).toBeDefined())
     const view = cached(client)
     const sprint = view.sprints[0].id

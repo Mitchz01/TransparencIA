@@ -2,9 +2,8 @@ import { useState } from 'react'
 import { useTeam } from '../../../application/use-cases/useTeam'
 import type { Account } from '../../../domain/account'
 import type { Member, Project } from '../../../domain/project'
-import { SENIORITY_LABELS } from '../account/profileLabels'
 import { Avatar, Button, Dialog, FieldError, Icon, Menu, Pill, type MenuItem } from '@agile/ui'
-import { Clock01Icon, CrownIcon, Layers01Icon, Logout01Icon, MoreHorizontalIcon, UserEdit01Icon, UserIcon, UserRemove01Icon } from '@agile/ui/icons'
+import { Clock01Icon, CrownIcon, Logout01Icon, MoreHorizontalIcon, UserEdit01Icon, UserIcon, UserRemove01Icon } from '@agile/ui/icons'
 import { MemberDialog } from './MemberDialog'
 
 interface MemberListProps {
@@ -74,16 +73,8 @@ export function MemberList({ project, me, manage, onLeft }: MemberListProps) {
                   </div>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-caption text-ink-muted tabular-nums">
                     <span className="inline-flex items-center gap-1.5"><Icon icon={UserIcon} size={16} />{member.role}</span>
-                    <span className="inline-flex items-center gap-1.5"><Icon icon={Layers01Icon} size={16} />{SENIORITY_LABELS[member.seniority]}</span>
-                    <span className="inline-flex items-center gap-1.5"><Icon icon={Clock01Icon} size={16} />{member.hours_per_week} h por semana</span>
+                    <span className="inline-flex items-center gap-1.5"><Icon icon={Clock01Icon} size={16} />Dedicación de {member.hours_per_week} h por semana</span>
                   </div>
-                  {member.skills.length > 0 && (
-                    <ul aria-label={`Habilidades de ${member.name}`} className="flex flex-wrap gap-1.5">
-                      {member.skills.map((skill) => (
-                        <li key={skill} className="inline-flex h-6 items-center rounded-pill bg-surface px-2.5 text-caption text-ink">{skill}</li>
-                      ))}
-                    </ul>
-                  )}
                 </div>
               </div>
               <div className="flex justify-end">

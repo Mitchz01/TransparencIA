@@ -1,7 +1,7 @@
 import type { Methodology } from '../../../domain/plan'
 import { ceremonyStep, orderCeremonies, type MethodologyView as View } from '../../../domain/planViews'
 import { Block, Card, Flow, Pill, Row, Rows, Slots, type IconGlyph } from '@agile/ui'
-import { AiMagicIcon, Calendar03Icon, CheckListIcon, Clock01Icon, RefreshIcon, RepeatIcon, Target02Icon, UserIcon } from '@agile/ui/icons'
+import { Calendar03Icon, CheckListIcon, Clock01Icon, RefreshIcon, RepeatIcon, Target02Icon } from '@agile/ui/icons'
 import { STATUS_LABELS } from '../board/boardLabels'
 import { METHODOLOGY_NAMES } from '../planning/stageBodies'
 import { plural, sentence } from '../../format'
@@ -23,18 +23,17 @@ export function MethodologyView({ view }: { view: View }) {
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="grid gap-1">
           <h2 className="text-heading">
-            {continuous ? 'Kanban, flujo continuo' : `${METHODOLOGY_NAMES[decision.methodology]}, iteraciones de ${plural(weeks, 'semana')}`}
+            {continuous ? 'Flujo continuo, sin etapas' : `Por etapas de ${plural(weeks, 'semana')}`}
           </h2>
           <p className="text-body text-ink-muted">{decision.rationale}</p>
         </div>
-        {view.chosen_by === 'leader'
-          ? <Pill hue="neutral" icon={UserIcon}>Elegida por ti</Pill>
-          : <Pill hue="violet" icon={AiMagicIcon}>Elegida por los agentes</Pill>}
+        {/* Spec 019: no methodology is chosen any more, every project runs by stages. */}
+        <Pill hue="neutral" icon={Calendar03Icon}>Trabajo por etapas</Pill>
       </header>
 
-      <Block title={continuous ? 'El ritmo del equipo' : 'Cada iteración'}>
+      <Block title={continuous ? 'El ritmo del equipo' : 'Cada etapa'}>
         <Flow
-          label="Ceremonias en orden"
+          label="Reuniones de seguimiento en orden"
           steps={[
             ...orderCeremonies(decision.ceremonies).map((c) => ({
               key: c.name,
@@ -45,16 +44,16 @@ export function MethodologyView({ view }: { view: View }) {
             })),
             {
               key: 'repeat',
-              title: continuous ? 'Flujo continuo, sin iteraciones' : `Se repite cada ${weeks === 1 ? 'semana' : plural(weeks, 'semana')}`,
+              title: continuous ? 'Flujo continuo, sin etapas' : `Se repite cada ${weeks === 1 ? 'semana' : plural(weeks, 'semana')}`,
               icon: RepeatIcon,
             },
           ]}
         />
       </Block>
 
-      <Block title="El tablero">
+      <Block title="Las actividades">
         <Flow
-          label="Columnas del tablero con su límite"
+          label="Columnas de las actividades con su límite"
           steps={BOARD_FLOW.map((column) => ({
             key: column,
             title: STATUS_LABELS[column],
@@ -64,7 +63,7 @@ export function MethodologyView({ view }: { view: View }) {
       </Block>
 
       {decision.alternatives.length > 0 && (
-        <Block title="Descartadas">
+        <Block title="Otras formas de trabajo">
           <Rows>
             {decision.alternatives.map((a) => <Row key={a.methodology} title={METHODOLOGY_NAMES[a.methodology as Methodology] ?? a.methodology} detail={a.why_not} />)}
           </Rows>

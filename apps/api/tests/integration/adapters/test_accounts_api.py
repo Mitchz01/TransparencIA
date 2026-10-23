@@ -18,7 +18,13 @@ def test_sign_up_sets_an_http_only_cookie_and_never_returns_the_hash(anonymous):
     cookie = response.headers["set-cookie"]
     assert cookie.startswith(f"{SESSION_COOKIE}=") and "HttpOnly" in cookie and "samesite=lax" in cookie.lower()
     account = response.json()
-    assert set(account) == {"id", "email", "name", "role", "seniority", "hours_per_week", "skills", "github_username", "avatar_url", "created_at"}
+    assert set(account) == {
+        "id", "email", "name", "role", "seniority", "hours_per_week", "skills", "github_username", "avatar_url", "created_at",
+        # Spec 020: a natural or legal person's identification.
+        "person_type", "document_type", "document_number", "verification_digit", "entity_nature",
+        "legal_rep_name", "legal_rep_document_type", "legal_rep_document_number",
+        "phone", "address", "municipality", "department", "data_consent_at",
+    }
     assert (account["email"], account["name"], account["role"]) == ("leo@team.dev", "Leo Ruiz", None)
     assert PASSWORD not in response.text and "scrypt" not in response.text
     assert anonymous.get("/api/me").json() == account
@@ -94,3 +100,31 @@ def test_every_api_endpoint_needs_a_session_except_the_public_ones(anonymous):
 
     assert anonymous.get("/api/health").status_code == 200
     assert anonymous.get("/api/invitations/abc").json()["code"] == "invitation_not_found"
+
+
+LEGAL_PERSON = {
+    "person_type": "juridica", "document_number": "900.123.456-8", "entity_nature": "esal",
+    "legal_rep_name": "Ana Gómez", "legal_rep_document_type": "CC", "legal_rep_document_number": "52123456",
+    "phone": "300 123 4567", "address": "Calle 22 # 3-45", "municipality": "Santa Marta", "department": "Magdalena",
+}
+
+
+def test_patch_me_with_a_legal_persons_identification_spec_020(client):
+    # Without the data authorization nothing is saved (Ley 1581 de 2012).
+    body = _error(client.patch("/api/me", json=LEGAL_PERSON), 422, "validation_failed")
+    assert [e["field"] for e in body["errors"]] == ["data_consent"]
+
+    saved = client.patch("/api/me", json={**LEGAL_PERSON, "data_consent": True})
+    assert saved.status_code == 200, saved.text
+    me = saved.json()
+    assert (me["document_type"], me["document_number"], me["verification_digit"], me["phone"]) == ("NIT", "900123456", "8", "3001234567")
+    assert me["data_consent_at"] is not None
+    assert client.get("/api/me").json()["data_consent_at"] == me["data_consent_at"]
+
+    body = _error(client.patch("/api/me", json={"verification_digit": "3"}), 422, "validation_failed")
+    assert [e["field"] for e in body["errors"]] == ["verification_digit"]
+
+    # Withdrawing the authorization leaves the profile incomplete: the API says what's missing.
+    body = _error(client.patch("/api/me", json={"data_consent": False}), 422, "validation_failed")
+    assert [e["field"] for e in body["errors"]] == ["data_consent"]
+    assert client.patch("/api/me", json={"person_type": None, "data_consent": False}).json()["data_consent_at"] is None

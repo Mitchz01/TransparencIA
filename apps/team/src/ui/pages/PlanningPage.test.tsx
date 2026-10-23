@@ -36,7 +36,7 @@ describe('Planning', () => {
 
     // Adjust the iteration length from 2 to 1 week and approve it.
     const methodology = await proposalCard('Forma de trabajo')
-    expect(within(methodology).getByRole('heading', { name: 'Scrumban, iteraciones de 2 semanas' })).toBeInTheDocument()
+    expect(within(methodology).getByRole('heading', { name: 'Por etapas de 2 semanas' })).toBeInTheDocument()
     await user.click(within(methodology).getByRole('button', { name: 'Ajustar' }))
     const length = within(methodology).getByRole('textbox', { name: 'Duración de la iteración' })
     await user.clear(length)

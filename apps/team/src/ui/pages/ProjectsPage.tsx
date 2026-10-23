@@ -4,7 +4,7 @@ import { useProjects } from '../../application/use-cases/useProjects'
 import { useMe } from '../../application/use-cases/useSession'
 import { firstName } from '../../domain/launchpad'
 import { ButtonLink } from '@agile/ui'
-import { Add01Icon } from '@agile/ui/icons'
+import { Add01Icon, File01Icon } from '@agile/ui/icons'
 import { ProjectsTracker } from '../components/home/ProjectsTracker'
 import { PageHeader } from '../components/shell/PageHeader'
 import { HomeShell, type HomeIntent } from '../components/shell/HomeShell'
@@ -16,7 +16,8 @@ export function ProjectsPage() {
   const { data: me } = useMe()
   const location = useLocation()
   const search = useRef<HTMLInputElement>(null)
-  const name = firstName(me?.name)
+  // A legal person's account greets its legal representative, not the organization (spec 020).
+  const name = firstName(me?.person_type === 'juridica' ? me.legal_rep_name : me?.name)
 
   const onIntent = useCallback((intent: HomeIntent) => {
     if (intent === 'search') search.current?.focus()
@@ -35,7 +36,12 @@ export function ProjectsPage() {
         <PageHeader
           title={name ? `Hola, ${name}` : 'Mis proyectos'}
           description="Los proyectos que ejecuta tu entidad: cuánto han avanzado, cuánto dinero se ha ejecutado y cuáles necesitan atención."
-          actions={<ButtonLink to="/projects/new" variant="primary" icon={Add01Icon}>Registrar proyecto</ButtonLink>}
+          actions={
+            <>
+              <ButtonLink to="/projects/new#contrato" icon={File01Icon}>Crear desde contrato</ButtonLink>
+              <ButtonLink to="/projects/new" variant="primary" icon={Add01Icon}>Registrar proyecto</ButtonLink>
+            </>
+          }
         />
         <ProjectsTracker projects={projects} isPending={isPending} searchRef={search} />
       </div>

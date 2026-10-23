@@ -2,6 +2,7 @@
 changes it there too; nothing else the projects copied changes (FR-013)."""
 
 from collections.abc import Sequence
+from datetime import datetime, timezone
 
 from app.application.dto import ProfileUpdate
 from app.application.ports.event_bus import EventBus
@@ -10,7 +11,13 @@ from app.application.use_cases.projects.team import TeamChangedHandler, TeamChan
 from app.domain.accounts import Account, member_of, unique_name, validate_profile
 from app.domain.errors import FieldError, ValidationFailed
 
-NULLABLE = frozenset({"role", "github_username", "avatar_url"})
+# Spec 020: every identification field can be cleared too (an incomplete profile is allowed).
+NULLABLE = frozenset({
+    "role", "github_username", "avatar_url",
+    "person_type", "document_type", "document_number", "verification_digit", "entity_nature",
+    "legal_rep_name", "legal_rep_document_type", "legal_rep_document_number",
+    "phone", "address", "municipality", "department",
+})
 
 
 class UpdateProfile:
@@ -25,6 +32,13 @@ class UpdateProfile:
         required = [FieldError(name, "Required.") for name, value in sent.items() if value is None and name not in NULLABLE]
         if required:
             raise ValidationFailed(required, "The profile has invalid fields.")
+
+        # The data authorization (Ley 1581 de 2012): true keeps the first date, false withdraws it.
+        if "data_consent" in sent:
+            consent = sent.pop("data_consent")
+            if consent is None:
+                raise ValidationFailed.single("data_consent", "Required.")
+            sent["data_consent_at"] = (account.data_consent_at or datetime.now(timezone.utc)) if consent else None
 
         saved = self._uow.accounts.save(validate_profile(account.model_copy(update=sent)))
         if saved.name != account.name or saved.avatar_url != account.avatar_url:

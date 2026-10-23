@@ -1,19 +1,34 @@
-import { useCallback, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useCreateProject } from '../../application/use-cases/useCreateProject'
 import { useMe } from '../../application/use-cases/useSession'
 import { ButtonLink, Icon } from '@agile/ui'
 import { Add01Icon } from '@agile/ui/icons'
+import type { ContractReading } from '../../domain/contracts'
+import { ContractUpload } from '../components/project/ContractUpload'
 import { ProjectForm } from '../components/project/ProjectForm'
 import { emptyDraft, toProjectCreate, type ProjectDraft } from '../components/project/projectDraft'
 import { TEMPLATES, type ProjectTemplate } from '../components/project/templates'
 import { PageHeader } from '../components/shell/PageHeader'
 import { HomeShell } from '../components/shell/HomeShell'
 
-function fromTemplate(profileRole: string | null, template: ProjectTemplate | null): ProjectDraft {
+/** Where the form's texts come from: an example, or what the AI read from the contract (spec 017, US7). */
+type Source = { key: string; name: string; description: string; weeks: number | null }
+
+const fromTemplate = (t: ProjectTemplate): Source => ({ key: t.key, name: t.name, description: t.description, weeks: t.weeks })
+
+let readings = 0
+const fromContract = (r: ContractReading): Source => ({
+  key: `contract-${++readings}`,
+  name: r.name ?? '',
+  description: r.description ?? r.purpose ?? '',
+  weeks: r.duration_weeks,
+})
+
+function draftFrom(profileRole: string | null, source: Source | null): ProjectDraft {
   const draft = emptyDraft(profileRole)
-  if (!template) return draft
-  return { ...draft, name: template.name, description: template.description, duration: String(template.weeks) }
+  if (!source) return draft
+  return { ...draft, name: source.name, description: source.description, duration: source.weeks ? String(source.weeks) : draft.duration }
 }
 
 /** Public projects to start from: one click fills the form, everything stays editable (spec 019). */
@@ -49,7 +64,12 @@ export function NewProjectPage() {
   const navigate = useNavigate()
   const { data: me } = useMe()
   const profileRole = me?.role ?? null
-  const [template, setTemplate] = useState<ProjectTemplate | null>(null)
+  const [source, setSource] = useState<Source | null>(null)
+  const { hash } = useLocation()
+  // "Crear desde contrato" on the home lands on the upload.
+  useEffect(() => {
+    if (hash === '#contrato') document.getElementById('contrato')?.scrollIntoView({ block: 'start' })
+  }, [hash])
   // Straight to the team, so the link to share is the first thing the leader sees.
   const create = useCreateProject(useCallback((id: number) => navigate(`/projects/${id}/team`), [navigate]))
   const roleField = profileRole ? 'optional' : 'required'
@@ -61,11 +81,14 @@ export function NewProjectPage() {
           title="Registrar proyecto"
           description="Cuenta qué se va a ejecutar, dónde y para quién. Los agentes arman el plan de trabajo por etapas y tú lo apruebas."
         />
-        <Examples chosen={template?.key ?? null} onPick={setTemplate} />
+        <div className="grid gap-3 pb-3">
+          <ContractUpload onRead={(reading) => setSource(fromContract(reading))} />
+        </div>
+        <Examples chosen={source?.key ?? null} onPick={(template) => setSource(fromTemplate(template))} />
         <ProjectForm
-          // A new example starts the form over with its texts; what was typed by hand is replaced on purpose.
-          key={template?.key ?? 'blank'}
-          initial={fromTemplate(profileRole, template)}
+          // A new example or contract starts the form over with its texts; what was typed by hand is replaced on purpose.
+          key={source?.key ?? 'blank'}
+          initial={draftFrom(profileRole, source)}
           roleField={roleField}
           submitLabel="Registrar proyecto"
           submitIcon={Add01Icon}

@@ -88,9 +88,10 @@ export function wipWarnings(tasks: Task[], limits: WipLimit[], sprintId: number 
 export const wipLimitOf = (limits: WipLimit[], status: TaskStatus) => limits.find((l) => l.column === status)?.limit ?? null
 
 /** "US-" plus one more than the highest "US-N" key; other key shapes are ignored (spec 014, as the service does). */
+/** "A-" plus one more than the highest "A-N" (spec 019: activities); other key shapes are ignored. */
 export function nextTaskKey(tasks: Pick<Task, 'key'>[]): string {
-  const numbers = tasks.map((t) => /^US-(\d+)$/.exec(t.key)?.[1]).filter((n): n is string => n !== undefined).map(Number)
-  return `US-${Math.max(0, ...numbers) + 1}`
+  const numbers = tasks.map((t) => /^A-(\d+)$/.exec(t.key)?.[1]).filter((n): n is string => n !== undefined).map(Number)
+  return `A-${Math.max(0, ...numbers) + 1}`
 }
 
 // ---------- Checklist (spec 003) ----------

@@ -138,8 +138,8 @@ describe('defaultSprint', () => {
 
 describe('new tasks (spec 014)', () => {
   it('take the key after the highest US-N, ignoring other shapes', () => {
-    expect(nextTaskKey([{ key: 'US-1' }, { key: 'US-12' }, { key: 'BUG-40' }])).toBe('US-13')
-    expect(nextTaskKey([{ key: 'BUG-3' }])).toBe('US-1')
+    expect(nextTaskKey([{ key: 'A-1' }, { key: 'A-12' }, { key: 'BUG-40' }, { key: 'US-99' }])).toBe('A-13')
+    expect(nextTaskKey([{ key: 'BUG-3' }])).toBe('A-1')
   })
 
   it('take the active filters, never "Sin asignar"', () => {

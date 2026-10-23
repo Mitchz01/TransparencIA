@@ -327,7 +327,7 @@ def task_change_errors(values: dict[str, Any], sprint_ids: set[int], member_ids:
 
 
 EPIC_KEY_MAX = 20
-NEW_TASK_PREFIX = "US-"
+NEW_TASK_PREFIX = "A-"  # spec 019: activities, A-1, A-2…
 
 
 def new_task_errors(values: dict[str, Any], sprint_ids: set[int], member_ids: set[int]) -> list[FieldError]:
@@ -342,8 +342,8 @@ def new_task_errors(values: dict[str, Any], sprint_ids: set[int], member_ids: se
 
 
 def next_task_key(tasks: Iterable[Task]) -> str:
-    """The prefix "US-" plus one more than the highest "US-N" of the project; other key shapes
-    (a replan's "BUG-3") are ignored."""
+    """The prefix "A-" plus one more than the highest "A-N" of the project (spec 019: activities);
+    other key shapes (a replan's "BUG-3", an older plan's "US-4") are ignored."""
     numbers = [int(t.key[len(NEW_TASK_PREFIX) :]) for t in tasks if t.key.startswith(NEW_TASK_PREFIX) and t.key[len(NEW_TASK_PREFIX) :].isdigit()]
     return f"{NEW_TASK_PREFIX}{max(numbers, default=0) + 1}"
 

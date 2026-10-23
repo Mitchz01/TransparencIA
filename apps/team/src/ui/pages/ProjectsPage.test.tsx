@@ -14,11 +14,11 @@ describe('Home: follow-up panel (spec 016, spec 019)', () => {
     expect(screen.queryByText(/GitHub|SaaS|Scrum/)).not.toBeInTheDocument()
     const panel = await screen.findByRole('region', { name: 'Tus proyectos' })
     // Project 2 has the demo budget (spec 017's fixture): its numbers and its light.
-    const planned = (await within(panel).findByRole('link', { name: 'Tienda online' })).closest('li')!
+    const planned = (await within(panel).findByRole('link', { name: 'Piloto de restauración de manglar' })).closest('li')!
     expect(await within(planned).findByText('En amarillo')).toBeInTheDocument()
     expect(within(planned).getByText('Avance de actividades')).toBeInTheDocument()
     // Project 1 has no budget yet.
-    const draft = within(panel).getByRole('link', { name: 'TransparencIA (demo)' }).closest('li')!
+    const draft = within(panel).getByRole('link', { name: 'Restauración de manglar, segunda fase' }).closest('li')!
     expect(await within(draft).findByText(/Sin presupuesto cargado/)).toBeInTheDocument()
     backend.planning.dispose()
   }, 30000)

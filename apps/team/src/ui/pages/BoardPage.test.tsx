@@ -99,11 +99,11 @@ describe('Filters behind one button (spec 014, US2)', () => {
     const button = screen.getByRole('button', { name: 'Filtrar, 2 activos' })
     expect(button).toHaveFocus()
     const shown = sprintTasks.filter((t) => t.assignee_id === member.id && t.priority === 'high')
-    expect(screen.getAllByRole('button', { name: /^US-\d+ / })).toHaveLength(shown.length)
+    expect(screen.getAllByRole('button', { name: /^A-\d+ / })).toHaveLength(shown.length)
 
     await user.click(screen.getByRole('button', { name: 'Quitar filtros' }))
     expect(screen.getByRole('button', { name: 'Filtrar' })).toBeInTheDocument()
-    expect(screen.getAllByRole('button', { name: /^US-\d+ / })).toHaveLength(sprintTasks.length)
+    expect(screen.getAllByRole('button', { name: /^A-\d+ / })).toHaveLength(sprintTasks.length)
   })
 })
 
@@ -129,7 +129,7 @@ describe('Team in the header (spec 014, US4)', () => {
     project.members.push({ id: 26, name: 'Eva Paz', role: 'UX', seniority: 'mid', hours_per_week: 20, skills: [], account_id: null, permission: 'member' })
     renderApp(`/projects/${PROJECT}/board?sprint=${sprint.id}`, backend)
 
-    const team = await screen.findByRole('link', { name: 'Equipo: Ana Gómez, Marta Díaz, Pablo Ortiz, Sara Vidal, Leo Ruiz y Eva Paz' })
+    const team = await screen.findByRole('link', { name: 'Equipo: Fundación Manglares Vivos, Marta Díaz, Pablo Ortiz, Sara Vidal, Leo Ruiz y Eva Paz' })
     expect(within(team).getByText('+2')).toBeInTheDocument()
     expect(team).toHaveAttribute('href', `/projects/${PROJECT}/team`)
   })
