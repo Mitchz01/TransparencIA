@@ -383,7 +383,7 @@ sequenceDiagram
 ### UC-08 · Generar specs y diagramas
 
 - **Disparador**: termina de aprobarse el plan (después de `sprints`), o el líder pide regenerar un documento.
-- **Resultado**: propuestas de tipo `document`: spec general, una spec por caso de uso o épica, y diagramas de flujo en Mermaid. Al aprobarse se convierten en `Document` versionados.
+- **Resultado**: propuestas de tipo `document`: spec general, una spec por épica del roadmap, y diagramas de flujo en Mermaid. Al aprobarse se convierten en `Document` versionados.
 - **Etapas nuevas** en `PLANNING_STAGES`: `general_spec`, `use_case_specs`, `flow_diagrams`, cada una con su esquema de salida.
 - **Caso de uso**: `planning/generate_documents.py`, que reutiliza `RunPlanningStep`.
 

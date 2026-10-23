@@ -97,7 +97,7 @@ El líder puede pedir que se regenere un documento con indicaciones ("agregá el
 - **FR-002**: Cada documento generado DEBE llegar como propuesta y no existir como documento del proyecto hasta que se apruebe (constitución, principio 8). Con auto-aprobar, se aprueba solo.
 - **FR-003**: Los documentos DEBEN armarse solo con la versión final del plan aprobado y los datos del proyecto.
 - **FR-004**: La spec general y las specs por épica DEBEN seguir la misma estructura que las specs de este repo: historias priorizadas con escenarios Dado/Cuando/Entonces, casos borde, requisitos y criterios de éxito.
-- **FR-005**: El sistema DEBE generar una spec por cada épica del roadmap aprobado. [NEEDS CLARIFICATION: use-cases.md dice "por caso de uso o épica". Recomendación: por épica, porque las épicas son lo que el plan ya tiene. Los casos de uso podrían ser una etapa aparte más adelante.]
+- **FR-005**: El sistema DEBE generar una spec por cada épica del roadmap aprobado (no por caso de uso: las épicas ya existen en el plan y agrupan sus historias, así que no hace falta una etapa extra).
 - **FR-006**: Cada diagrama DEBE comprobarse antes de proponerlo; no se propone un diagrama que no se pueda dibujar.
 - **FR-007**: Los documentos DEBEN estar en un formato de texto que se vea igual en la herramienta y en GitHub.
 - **FR-008**: Al aprobar el regenerado de un documento existente, el sistema DEBE crear una nueva versión y conservar las anteriores.
