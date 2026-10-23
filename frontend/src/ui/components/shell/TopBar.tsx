@@ -4,11 +4,11 @@ import { useTheme } from '../../../application/theme'
 import { Icon, IconButton } from '../ds'
 import { Moon02Icon, Notification01Icon, Settings01Icon, Sun03Icon, Tick02Icon } from '../ds/icons'
 import { ProjectSwitcher } from './ProjectSwitcher'
-import { SectionMenu, SectionNav } from './SectionNav'
+import { SectionMenu } from './SectionNav'
 
-function Brand({ withName = false }: { withName?: boolean }) {
+function Brand({ withName = false, className }: { withName?: boolean; className?: string }) {
   return (
-    <Link to="/" className="inline-flex shrink-0 items-center gap-2.5 rounded-pill" aria-label="Agile Planner, todos los proyectos">
+    <Link to="/" className={`inline-flex shrink-0 items-center gap-2.5 rounded-pill ${className ?? ''}`} aria-label="Agile Planner, todos los proyectos">
       <span className="inline-flex size-9 items-center justify-center rounded-sm bg-primary text-on-primary">
         <Icon icon={Tick02Icon} />
       </span>
@@ -47,25 +47,28 @@ interface ProjectTopBarProps {
   projectId: number
   projectName: string
   onOpenActivity: () => void
+  /** Receives the element where the current section renders its views. */
+  viewsRef: (element: HTMLDivElement | null) => void
 }
 
-/** Inside a project: switcher left, sections center, activity, theme and settings right. No sidebar. */
-export function ProjectTopBar({ projectId, projectName, onOpenActivity }: ProjectTopBarProps) {
+/** Inside a project: the project on the left, the section's views in the center, activity on the right.
+ *  The sections live in the rail; under 768px they move into a menu here. */
+export function ProjectTopBar({ projectId, projectName, onOpenActivity, viewsRef }: ProjectTopBarProps) {
   const navigate = useNavigate()
   return (
     <Bar>
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
         <div className="flex min-w-0 items-center gap-1">
-          <Brand />
+          <Brand className="md:hidden" />
           <ProjectSwitcher projectId={projectId} name={projectName} />
         </div>
-        <div className="hidden justify-center md:max-lg:col-span-2 md:max-lg:row-start-2 md:flex lg:col-auto lg:row-auto">
-          <SectionNav projectId={projectId} />
-        </div>
-        <div className="flex items-center justify-end gap-2">
-          <IconButton icon={Notification01Icon} label="Actividad" onClick={onOpenActivity} />
-          <ThemeToggle />
-          <IconButton icon={Settings01Icon} label="Ajustes" tooltipAlign="end" onClick={() => navigate(`/projects/${projectId}/settings`)} />
+        <div ref={viewsRef} className="col-span-2 row-start-3 flex min-w-0 justify-start overflow-x-auto empty:hidden md:row-start-2 lg:col-span-1 lg:row-start-1 lg:justify-center" />
+        <div className="col-start-2 row-start-1 flex items-center justify-end gap-2 lg:col-start-3">
+          <IconButton icon={Notification01Icon} label="Actividad" tooltipAlign="end" onClick={onOpenActivity} />
+          <span className="contents md:hidden">
+            <ThemeToggle />
+            <IconButton icon={Settings01Icon} label="Ajustes" tooltipAlign="end" onClick={() => navigate(`/projects/${projectId}/settings`)} />
+          </span>
         </div>
         <div className="col-span-2 md:hidden">
           <SectionMenu projectId={projectId} />

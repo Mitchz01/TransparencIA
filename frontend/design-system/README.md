@@ -108,7 +108,12 @@ Headings use `letter-spacing: -0.01em`; `text-display` uses `-0.02em`.
 
 ## Navigation
 
-No generic sidebar. The project screens use a **floating top bar**: the project switcher on the left, the sections as a pill group in the center (Planning, Board, Plan, Documents, Integrations; the active one in `primary`), and activity, theme and settings as icon buttons on the right. Under 768px the sections collapse into a menu button that shows the current section. The live activity opens as a right drawer, not a permanent column.
+No wide sidebar with labels. The project screens use two pieces:
+
+- A **rail**: a narrow `surface` column (72px, `radius-lg`, floating with a `space-3` margin) with the brand on top, the sections as 48px icon buttons in the middle (Planning, Board, Plan, Documents, Integrations; the active one is a `primary` square with `radius-md`, the rest `ink-muted`) and theme and settings at the bottom. Each icon has a tooltip with its name on the right and an accessible name.
+- A **top bar**: the project switcher on the left, the views of the current section in the center as a segmented control (the sprints on the board; Roadmap, Methodology and Architecture in the plan), and activity on the right.
+
+Under 768px the rail hides and the top bar shows a menu button with the current section, plus theme and settings. The live activity opens as a right drawer, not a permanent column.
 
 ## Components
 

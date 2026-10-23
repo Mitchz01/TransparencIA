@@ -92,6 +92,7 @@ frontend/
 | Font bundled with the app | Loading it from the web | The demo can't depend on the venue's network |
 | Fake planning engine inside the fake store | Recorded demo data only | The demo needs live progress, approvals and the board appearing, without a backend |
 | A script that checks the design rules | Only manual review | The rules are absolute (spec FR-002); a script catches regressions on every commit |
+| Narrow icon rail for the sections, views of each section in the top bar | Sections as a pill group in the top bar | Asked for by the leader after seeing the first screens: the top bar is free for the views (sprints, plan parts), and the rail keeps the sections one click away without a wide sidebar |
 
 ## API Contract
 

@@ -26,7 +26,7 @@
 | Settings | Edit the project and the team, auto-approve | 001 |
 | Activity | Drawer available from every project screen: live feed and history | 005 |
 
-Inside a project, a top bar shows the project name on the left, the sections (Planning, Board, Plan, Documents, Integrations) in the center and activity, theme and settings on the right.
+Inside a project, a narrow rail on the left holds the sections as icons (Planning, Board, Plan, Documents, Integrations) and, at the bottom, theme and settings. A top bar shows the project switcher on the left, the views of the current section in the center (the sprints on the board; Roadmap, Methodology and Architecture in the plan) and activity on the right.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -266,14 +266,14 @@ From the board, the leader closes a sprint or asks for a replan with a reason. T
 - What if a project has no plan yet? The board, plan and documents say what's missing and link to the planning screen; no empty grids.
 - What if names or descriptions are very long? They're cut with an ellipsis in cards and shown in full when opened.
 - What if there are many pending proposals (documents per epic)? They're listed with "Approve all" and the result of each.
-- What if the screen is narrow? The top bar collapses the sections into a menu and the board scrolls sideways by column; nothing overlaps.
+- What if the screen is narrow? Under 768px the rail turns into a section menu in the top bar and the board scrolls sideways by column; nothing overlaps.
 - What if the person prefers less motion? Movements and transitions are turned off.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: The app MUST provide the screens in the screen map and the top bar navigation inside a project, without a sidebar.
+- **FR-001**: The app MUST provide the screens in the screen map and, inside a project, a narrow icon rail for the sections plus a top bar with the views of the current section. No wide sidebar with labels.
 - **FR-002**: Every screen MUST be built only with the approved design system: its colors, type, shapes, spacing and icon set, and its rules (no status dots, no separator lines, no lines or small labels around text, no em dashes, no dot separators, no emojis, no side strokes on cards, at most three numbers per screen). If something is missing, it's added to the design system first.
 - **FR-003**: The app MUST offer light and dark themes, follow the system preference by default and remember the person's choice.
 - **FR-004**: The app MUST talk to the service only as the API contract describes, and react to each error code as the contract says.

@@ -10,7 +10,7 @@ interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 
   size?: 'sm' | 'md'
   variant?: 'filled' | 'quiet'
   /** Where the tooltip opens; "none" when the label is already visible nearby. */
-  tooltip?: 'below' | 'above' | 'none'
+  tooltip?: 'below' | 'above' | 'right' | 'none'
   tooltipAlign?: 'center' | 'end'
 }
 
