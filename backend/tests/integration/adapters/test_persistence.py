@@ -20,7 +20,7 @@ def test_project_roundtrip_with_team(session):
         saved = uow.projects.add(
             Project(
                 name="Demo",
-                description="Algo",
+                description="Something",
                 auto_approve=True,
                 members=[Member(name="Ana", role="Backend"), Member(name="Leo", role="Frontend")],
             )
@@ -37,7 +37,7 @@ def test_project_roundtrip_with_team(session):
 
 def test_task_checklist_is_persisted(session):
     with SqlUnitOfWork(session) as uow:
-        project = uow.projects.add(Project(name="Demo", description="Algo"))
+        project = uow.projects.add(Project(name="Demo", description="Something"))
         task = uow.tasks.add(
             Task(project_id=project.id, key="US-1", title="Login", checklist=[ChecklistItem(text="Form")])
         )
@@ -55,7 +55,7 @@ def test_task_checklist_is_persisted(session):
 
 def test_without_commit_nothing_is_saved(session):
     with SqlUnitOfWork(session) as uow:
-        uow.projects.add(Project(name="Demo", description="Algo"))
+        uow.projects.add(Project(name="Demo", description="Something"))
 
     with SqlUnitOfWork(session) as uow:
         assert uow.projects.list() == []

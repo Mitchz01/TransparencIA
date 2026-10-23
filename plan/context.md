@@ -1,54 +1,54 @@
-# Contexto del producto
+# Product context
 
-Qué es Agile Planner, para quién es y cómo se usa. Sin detalles técnicos: para eso están [hexagonal-architecture.md](hexagonal-architecture.md) y [use-cases.md](use-cases.md).
+What Agile Planner is, who it's for and how it's used. No technical details: those are in [hexagonal-architecture.md](hexagonal-architecture.md) and [use-cases.md](use-cases.md).
 
-## Qué es
+## What it is
 
-Un sistema tipo Jira que organiza equipos de desarrollo de software, orquestado por agentes de IA. El líder carga a su equipo y lo que quieren construir, y los agentes arman todo el plan de trabajo, lo mantienen actualizado mientras avanza el desarrollo y se conectan con las herramientas que usa el equipo, como GitHub.
+A Jira-like system that organizes software development teams, orchestrated by AI agents. The leader enters their team and what they want to build, and the agents put together the whole work plan, keep it up to date as development moves forward and connect to the tools the team uses, like GitHub.
 
-## Para quién
+## Who it's for
 
-- **Líder de equipo** (o quien use la herramienta): define el equipo y la meta, y aprueba o ajusta lo que proponen los agentes.
-- **Miembros del equipo**: trabajan sobre el tablero y en GitHub; el sistema se actualiza solo con su avance.
+- **Team leader** (or whoever uses the tool): defines the team and the goal, and approves or adjusts what the agents propose.
+- **Team members**: work on the board and on GitHub; the system updates itself with their progress.
 
-## Qué hace
+## What it does
 
-1. **Definir el equipo y la meta**: quiénes son, qué rol cumple cada uno (con seniority y horas disponibles) y qué producto u objetivo buscan.
-2. **Elegir la metodología**: los agentes recomiendan la más adecuada (Scrum, Kanban, Scrumban, XP, Shape Up) y explican por qué. Si el usuario ya eligió una, la respetan y la adaptan al equipo.
-3. **Armar el trabajo**: sprints, tareas o tarjetas con prioridad, asignación según el rol de cada miembro y un checklist en cada tarea.
-4. **Documentar**: roadmap gráfico por fases, diagramas de flujo, una spec general del producto y specs por caso de uso.
-5. **Conectarse con GitHub**: abrir issues, PRs y pedidos de code review, e ir cerrando tareas y objetivos a medida que el código avanza.
-6. **Mantenerse vivo**: el plan se actualiza con el desarrollo real. Si hay atrasos o aparece trabajo nuevo, los agentes proponen re-planificar.
+1. **Define the team and the goal**: who they are, what role each one plays (with seniority and available hours) and what product or goal they're after.
+2. **Choose the methodology**: the agents recommend the best fit (Scrum, Kanban, Scrumban, XP, Shape Up) and explain why. If the user already picked one, they respect it and adapt it to the team.
+3. **Lay out the work**: sprints, tasks or cards with priority, assignment based on each member's role, and a checklist on each task.
+4. **Document**: a visual roadmap by phases, flow diagrams, a general product spec and one spec per epic.
+5. **Connect with GitHub**: open issues and code review requests, and close tasks and objectives as the code moves forward.
+6. **Stay alive**: the plan updates with real development. If there are delays or new work shows up, the agents propose replanning.
 
-## Principio central: todo pasa por el usuario
+## Core principle: everything goes through the user
 
-Cada decisión de los agentes llega como una **propuesta** con su justificación: qué decidieron y por qué. El usuario la **aprueba**, la **ajusta** o la **rechaza**, y nada se aplica al tablero ni a GitHub antes de eso.
+Every agent decision arrives as a **proposal** with its rationale: what they decided and why. The user **approves**, **adjusts** or **rejects** it, and nothing is applied to the board or to GitHub before that.
 
-**Auto-aprobar**: cada proyecto puede activarlo para avanzar rápido (por ejemplo, en una demo). Las propuestas siguen quedando registradas con su justificación y el usuario puede revisarlas y pedir cambios después.
+**Auto-approve**: each project can turn it on to move fast (for example, in a demo). Proposals are still recorded with their rationale, and the user can review them and ask for changes later.
 
-## Cómo se usa (recorrido típico)
+## How it's used (typical journey)
 
-1. El líder crea el proyecto: describe el producto, carga el equipo y, si quiere, elige la metodología.
-2. Los agentes trabajan por etapas: análisis → metodología → arquitectura → roadmap → backlog → sprints → specs y diagramas. El usuario ve en vivo qué agente está trabajando.
-3. Al terminar cada etapa, el usuario aprueba o ajusta la propuesta (o se aprueba sola si activó auto-aprobar).
-4. Con el plan aprobado, aparece el tablero con sprints y tareas, junto con el roadmap y los documentos.
-5. El líder conecta el repo de GitHub; las tareas aprobadas se convierten en issues.
-6. A medida que el equipo abre y mergea PRs, las tareas avanzan solas en el tablero, se tildan los checklists y se cierran los objetivos.
+1. The leader creates the project: describes the product, enters the team and, optionally, picks the methodology.
+2. The agents work in stages: analysis → methodology → architecture → roadmap → backlog → sprints → specs and diagrams. The user sees live which agent is working.
+3. When each stage finishes, the user approves or adjusts the proposal (or it's approved automatically if auto-approve is on).
+4. With the plan approved, the board appears with sprints and tasks, along with the roadmap and the documents.
+5. The leader connects the GitHub repo; the approved tasks become issues.
+6. As the team opens and merges PRs, tasks move forward on the board by themselves, checklists get checked and objectives get closed.
 
-## Decisiones tomadas
+## Decisions made
 
-| Tema | Decisión |
+| Topic | Decision |
 |---|---|
-| Aprobación | Manual por defecto, con opción de auto-aprobar en cada proyecto. |
-| GitHub | Cada proyecto se conecta con **un solo repo**. |
-| Fuente de verdad | **Nuestro tablero.** GitHub refleja las tareas; desde GitHub sólo llega el avance (PR abierto, mergeado, issue cerrada). No se sincroniza con GitHub Projects. |
+| Approval | Manual by default, with an auto-approve option per project. |
+| GitHub | Each project connects to **a single repo**. |
+| Source of truth | **Our board.** GitHub mirrors the tasks; only progress comes in from GitHub (PR opened, PR merged, issue closed). No sync with GitHub Projects. |
 
-## Conceptos
+## Concepts
 
-| Término | Qué significa |
+| Term | Meaning |
 |---|---|
-| Propuesta | Algo que decidió un agente y espera la aprobación del usuario. |
-| Objetivo | Meta concreta de una fase o sprint; se cierra cuando se completan sus tareas. |
-| Checklist | Pasos concretos dentro de una tarea, que se tildan a medida que se hacen. |
-| Spec | Documento que describe qué hace el producto (general) o un caso de uso puntual. |
-| Re-planificación | Propuesta de los agentes para ajustar el plan cuando la realidad se desvía. |
+| Proposal | Something an agent decided that is waiting for the user's approval. |
+| Objective | Concrete goal of a sprint; it closes when its tasks are done. |
+| Checklist | Concrete steps inside a task, checked off as they're done. |
+| Spec | Document that describes what the product does (general) or a specific epic. |
+| Replanning | The agents' proposal to adjust the plan when reality drifts from it. |

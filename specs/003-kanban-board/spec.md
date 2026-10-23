@@ -1,4 +1,4 @@
-# Feature Specification: 003 · Tablero kanban y sprints
+# Feature Specification: 003 · Kanban board and sprints
 
 **Created**: 2026-10-23  
 **Status**: Approved  
@@ -8,228 +8,228 @@
 
 ## User Scenarios & Testing *(mandatory)*
 
-Cuando el líder aprueba el plan, el trabajo aparece en un tablero listo para usar: sprints, tarjetas con prioridad, puntos, responsable y checklist. Desde ahí el equipo mueve las tarjetas, las edita y va tildando los pasos.
+When the leader approves the plan, the work shows up on a ready-to-use board: sprints, cards with priority, points, owner and checklist. From there the team moves cards, edits them and checks off their steps.
 
-Columnas del tablero, en orden: **Backlog**, **Por hacer**, **En progreso**, **En revisión**, **Hecho**.
+Board columns, in order: **Backlog**, **To do**, **In progress**, **In review**, **Done**.
 
-### User Story 1 - El plan aprobado se convierte en tablero (Priority: P1)
+### User Story 1 - The approved plan becomes a board (Priority: P1)
 
-Cuando se aprueba la última etapa del plan (los sprints), el líder ve el tablero armado sin cargar nada a mano. Cada historia del backlog es una tarjeta dentro de su sprint, con su prioridad, puntos, criterios de aceptación, un checklist y el miembro asignado.
+When the last stage of the plan (sprints) is approved, the leader sees the board built without entering anything by hand. Each backlog story is a card inside its sprint, with its priority, points, acceptance criteria, a checklist and the assigned member.
 
-**Why this priority**: Es el final de la demo (proyecto → plan → aprobación → tablero, constitución principio 1). Sin esto, el plan queda en texto y no se puede trabajar.
+**Why this priority**: it's the end of the demo (project → plan → approval → board, constitution principle 1). Without it, the plan stays as text and nobody can work on it.
 
-**Independent Test**: Con un plan aprobado del modo de ejemplo (sin API key), abrir el tablero y verificar que cada historia aparece una sola vez, en su sprint y con todos sus datos.
+**Independent Test**: with an approved plan from mock mode (no API key), open the board and verify that each story appears exactly once, in its sprint and with all its data.
 
 **Acceptance Scenarios**:
 
-1. **Scenario**: Plan aprobado manualmente
-   - **Given** un proyecto con las etapas del plan aprobadas hasta el backlog
-   - **When** el líder aprueba la etapa de sprints
-   - **Then** el tablero muestra un sprint por cada iteración del plan, cada historia como tarjeta en "Por hacer" dentro de su sprint, y el proyecto pasa a "listo"
+1. **Scenario**: Plan approved manually
+   - **Given** a project with the plan stages approved up to the backlog
+   - **When** the leader approves the sprints stage
+   - **Then** the board shows one sprint per plan iteration, each story as a card in "To do" inside its sprint, and the project moves to "ready"
 
-2. **Scenario**: Plan con auto-aprobar
-   - **Given** un proyecto con auto-aprobar activo
-   - **When** el agente termina la etapa de sprints
-   - **Then** el tablero se arma solo, igual que en el escenario anterior
+2. **Scenario**: Plan with auto-approve
+   - **Given** a project with auto-approve on
+   - **When** the agent finishes the sprints stage
+   - **Then** the board builds itself, same as the previous scenario
 
-3. **Scenario**: Asignación por nombre
-   - **Given** el agente asignó una historia a "Ana" y en el equipo hay una miembro llamada "Ana"
-   - **When** se arma el tablero
-   - **Then** la tarjeta queda asignada a Ana
+3. **Scenario**: Assignment by name
+   - **Given** the agent assigned a story to "Ana" and the team has a member named "Ana"
+   - **When** the board is built
+   - **Then** the card is assigned to Ana
 
-4. **Scenario**: Asignación por rol cuando el nombre no coincide
-   - **Given** el agente asignó una historia a un nombre que no está en el equipo, y la historia pide el rol "Backend"
-   - **When** se arma el tablero
-   - **Then** la tarjeta queda asignada al miembro con rol "Backend" que tenga menos puntos asignados en ese sprint
+4. **Scenario**: Assignment by role when the name doesn't match
+   - **Given** the agent assigned a story to a name that isn't on the team, and the story asks for the "Backend" role
+   - **When** the board is built
+   - **Then** the card is assigned to the "Backend" member with the fewest points assigned in that sprint
 
-5. **Scenario**: Nadie cubre el rol
-   - **Given** una historia pide el rol "Diseño UX" y nadie del equipo lo tiene
-   - **When** se arma el tablero
-   - **Then** la tarjeta queda sin asignar y marcada como "falta rol: Diseño UX"
+5. **Scenario**: Nobody covers the role
+   - **Given** a story asks for the "UX Design" role and nobody on the team has it
+   - **When** the board is built
+   - **Then** the card stays unassigned and flagged as "missing role: UX Design"
 
-6. **Scenario**: Checklist inicial
-   - **Given** una historia con tres criterios de aceptación
-   - **When** se arma el tablero
-   - **Then** la tarjeta tiene un checklist de tres ítems sin tildar, uno por criterio
+6. **Scenario**: Initial checklist
+   - **Given** a story with three acceptance criteria
+   - **When** the board is built
+   - **Then** the card has a three-item unchecked checklist, one per criterion
 
 ---
 
-### User Story 2 - Mover tarjetas entre columnas (Priority: P1)
+### User Story 2 - Move cards between columns (Priority: P1)
 
-Un miembro arrastra una tarjeta de una columna a otra (por ejemplo, de "Por hacer" a "En progreso") o la reordena dentro de la columna. El cambio queda guardado.
+A member drags a card from one column to another (for example, from "To do" to "In progress") or reorders it within the column. The change is saved.
 
-**Why this priority**: Es la interacción básica de un tablero; sin ella, el tablero es solo una lista.
+**Why this priority**: it's the basic interaction of a board; without it, the board is just a list.
 
-**Independent Test**: Con un tablero armado, arrastrar una tarjeta a otra columna, recargar la página y verificar que sigue ahí.
+**Independent Test**: with a built board, drag a card to another column, reload the page and verify it's still there.
 
 **Acceptance Scenarios**:
 
-1. **Scenario**: Cambiar de columna
-   - **Given** una tarjeta en "Por hacer"
-   - **When** un miembro la arrastra a "En progreso"
-   - **Then** la tarjeta queda en "En progreso" y sigue ahí después de recargar
+1. **Scenario**: Change column
+   - **Given** a card in "To do"
+   - **When** a member drags it to "In progress"
+   - **Then** the card is in "In progress" and stays there after reloading
 
-2. **Scenario**: Reordenar dentro de la columna
-   - **Given** tres tarjetas en "Por hacer"
-   - **When** un miembro arrastra la tercera al primer lugar
-   - **Then** el nuevo orden se mantiene después de recargar
+2. **Scenario**: Reorder within the column
+   - **Given** three cards in "To do"
+   - **When** a member drags the third one to the top
+   - **Then** the new order is kept after reloading
 
-3. **Scenario**: Superar el límite WIP
-   - **Given** la metodología fija un límite de 3 tarjetas en "En progreso" y ya hay 3
-   - **When** un miembro mueve una cuarta tarjeta a "En progreso"
-   - **Then** la tarjeta se mueve igual y la columna muestra un aviso de límite superado (no se bloquea: "El usuario manda")
+3. **Scenario**: WIP limit exceeded
+   - **Given** the methodology sets a limit of 3 cards in "In progress" and there are already 3
+   - **When** a member moves a fourth card to "In progress"
+   - **Then** the card moves anyway and the column shows a limit-exceeded warning (nothing is blocked: "The user is in charge")
 
-4. **Scenario**: Falla al guardar
-   - **Given** se pierde la conexión con el servidor
-   - **When** un miembro mueve una tarjeta
-   - **Then** la tarjeta vuelve a su lugar original y se muestra un mensaje de que no se pudo guardar
+4. **Scenario**: Save fails
+   - **Given** the connection to the server is lost
+   - **When** a member moves a card
+   - **Then** the card goes back to its original place and a message says it couldn't be saved
 
 ---
 
-### User Story 3 - Editar una tarea y su checklist (Priority: P2)
+### User Story 3 - Edit a task and its checklist (Priority: P2)
 
-Un miembro abre una tarjeta, corrige lo que generaron los agentes (título, descripción, puntos, prioridad, responsable) y va tildando los pasos del checklist. También puede agregar, editar o quitar pasos.
+A member opens a card, corrects what the agents generated (title, description, points, priority, owner) and checks off the checklist steps. They can also add, edit or remove steps.
 
-**Why this priority**: Todo lo generado tiene que ser editable (constitución principio 4), y el checklist es parte central del producto. Pero se puede demostrar el tablero sin editar.
+**Why this priority**: everything generated has to be editable (constitution principle 4), and the checklist is a central part of the product. But the board can be demoed without editing.
 
-**Independent Test**: Abrir una tarjeta, cambiar su prioridad, tildar un ítem del checklist y agregar uno nuevo; recargar y verificar los cambios.
+**Independent Test**: open a card, change its priority, check a checklist item and add a new one; reload and verify the changes.
 
 **Acceptance Scenarios**:
 
-1. **Scenario**: Editar datos de la tarea
-   - **Given** una tarjeta con prioridad "media"
-   - **When** un miembro la cambia a "alta" y guarda
-   - **Then** la tarjeta muestra prioridad "alta"
+1. **Scenario**: Edit task data
+   - **Given** a card with "medium" priority
+   - **When** a member changes it to "high" and saves
+   - **Then** the card shows "high" priority
 
-2. **Scenario**: Tildar un paso
-   - **Given** una tarjeta con un checklist de 4 ítems sin tildar
-   - **When** un miembro tilda uno
-   - **Then** la tarjeta muestra el progreso "1/4" en el tablero
+2. **Scenario**: Check a step
+   - **Given** a card with a 4-item unchecked checklist
+   - **When** a member checks one
+   - **Then** the card shows "1/4" progress on the board
 
-3. **Scenario**: Agregar y quitar pasos
-   - **Given** una tarjeta con checklist
-   - **When** un miembro agrega un ítem y quita otro
-   - **Then** el checklist refleja los cambios y el progreso se recalcula
+3. **Scenario**: Add and remove steps
+   - **Given** a card with a checklist
+   - **When** a member adds an item and removes another
+   - **Then** the checklist reflects the changes and the progress is recalculated
 
-4. **Scenario**: Checklist completo
-   - **Given** una tarjeta en "En progreso" con todos los ítems menos uno tildados
-   - **When** un miembro tilda el último
-   - **Then** la tarjeta sugiere moverla a "En revisión", pero no se mueve sola
+4. **Scenario**: Checklist complete
+   - **Given** a card in "In progress" with all items but one checked
+   - **When** a member checks the last one
+   - **Then** the card suggests moving it to "In review", but doesn't move by itself
 
-5. **Scenario**: Reasignar
-   - **Given** una tarjeta sin asignar por falta de rol
-   - **When** el líder la asigna a un miembro
-   - **Then** desaparece la marca "falta rol" y la tarjeta muestra al nuevo responsable
+5. **Scenario**: Reassign
+   - **Given** a card unassigned because of a missing role
+   - **When** the leader assigns it to a member
+   - **Then** the "missing role" flag disappears and the card shows the new owner
 
 ---
 
-### User Story 4 - Navegar y reorganizar los sprints (Priority: P2)
+### User Story 4 - Navigate and reorganize sprints (Priority: P2)
 
-El tablero muestra un sprint a la vez, con un selector para cambiar de sprint o ver el backlog. El líder puede mover una tarjeta de un sprint a otro o devolverla al backlog, y ve cuántos puntos tiene cada sprint frente a la capacidad del equipo.
+The board shows one sprint at a time, with a selector to switch sprints or see the backlog. The leader can move a card from one sprint to another or back to the backlog, and sees how many points each sprint has against the team's capacity.
 
-**Why this priority**: Un plan real tiene varios sprints; sin esto solo se ve un montón de tarjetas mezcladas. Sigue siendo útil sin reorganizar.
+**Why this priority**: a real plan has several sprints; without this you only see a pile of mixed cards. It's still useful without reorganizing.
 
-**Independent Test**: Con un plan de 3 sprints, cambiar de sprint con el selector, mover una tarjeta del sprint 1 al 2 y verificar que los totales de puntos de ambos se actualizan.
+**Independent Test**: with a 3-sprint plan, switch sprints with the selector, move a card from sprint 1 to 2 and verify that both sprints' point totals update.
 
 **Acceptance Scenarios**:
 
-1. **Scenario**: Sprint por defecto
-   - **Given** un tablero con 3 sprints y el primero con tareas pendientes
-   - **When** un miembro abre el tablero
-   - **Then** ve el primer sprint que tiene tareas sin terminar
+1. **Scenario**: Default sprint
+   - **Given** a board with 3 sprints and the first one with pending tasks
+   - **When** a member opens the board
+   - **Then** they see the first sprint that has unfinished tasks
 
-2. **Scenario**: Mover entre sprints
-   - **Given** una tarjeta de 5 puntos en el sprint 1
-   - **When** el líder la mueve al sprint 2
-   - **Then** el sprint 1 baja 5 puntos, el sprint 2 sube 5, y la tarjeta queda en "Por hacer" del sprint 2
+2. **Scenario**: Move between sprints
+   - **Given** a 5-point card in sprint 1
+   - **When** the leader moves it to sprint 2
+   - **Then** sprint 1 drops 5 points, sprint 2 gains 5, and the card lands in "To do" of sprint 2
 
-3. **Scenario**: Sprint sobrecargado
-   - **Given** un sprint cuyos puntos superan la capacidad estimada del equipo
-   - **When** el líder ve ese sprint
-   - **Then** se muestra un aviso de sobrecarga, sin bloquear
+3. **Scenario**: Overloaded sprint
+   - **Given** a sprint whose points exceed the team's estimated capacity
+   - **When** the leader looks at that sprint
+   - **Then** an overload warning is shown, without blocking
 
 ---
 
-### User Story 5 - Filtrar el tablero (Priority: P3)
+### User Story 5 - Filter the board (Priority: P3)
 
-Un miembro filtra el tablero para ver solo sus tarjetas, o por prioridad o épica.
+A member filters the board to see only their cards, or by priority or epic.
 
-**Why this priority**: Mejora el uso diario, pero no es necesario para la demo.
+**Why this priority**: it improves daily use, but it isn't needed for the demo.
 
-**Independent Test**: Activar el filtro "Mis tareas" y verificar que solo quedan las tarjetas asignadas a ese miembro.
+**Independent Test**: turn on the "My tasks" filter and verify that only the cards assigned to that member remain.
 
 **Acceptance Scenarios**:
 
-1. **Scenario**: Mis tareas
-   - **Given** un sprint con tarjetas de varios miembros
-   - **When** un miembro filtra por su nombre
-   - **Then** solo ve sus tarjetas, y el filtro se mantiene al cambiar de sprint
+1. **Scenario**: My tasks
+   - **Given** a sprint with cards from several members
+   - **When** a member filters by their name
+   - **Then** they only see their cards, and the filter is kept when switching sprints
 
 ---
 
 ### Edge Cases
 
-- ¿Qué pasa si una historia del backlog no quedó en ningún sprint? Va a la columna "Backlog", fuera de los sprints.
-- ¿Qué pasa si el plan referencia una historia que no existe en el backlog? Se ignora y se avisa al líder; no se crea una tarjeta vacía.
-- ¿Qué pasa si hay dos miembros con el mismo nombre? Se asigna por rol, como si el nombre no coincidiera.
-- ¿Qué pasa si se intenta armar el tablero dos veces para el mismo plan? No se duplican tarjetas; volver a planificar es re-planificación (spec 008).
-- ¿Qué pasa si se quita del equipo a un miembro con tareas? Sus tarjetas quedan sin asignar y marcadas para reasignar, y el sistema propone re-planificar (spec 008, FR-010).
-- ¿Qué pasa si dos personas mueven la misma tarjeta a la vez? Queda el último cambio, y ambos lo ven (actividad en vivo, spec 005).
-- ¿Qué pasa si una tarea vinculada a una issue de GitHub se mueve a mano? Se respeta: el tablero es la fuente de verdad. Un evento posterior de GitHub puede volver a moverla, pero nunca la saca de "Hecho" salvo que se reabra la issue (spec 008, FR-004).
-- ¿Qué pasa con una historia sin criterios de aceptación? La tarjeta queda con el checklist vacío.
-- ¿Qué pasa si la metodología elegida es Kanban (sin iteraciones)? El tablero es continuo: todas las tareas en una sola vista, sin selector de sprint ni aviso de capacidad por sprint. Las iteraciones que arma el agente se guardan igual, con su objetivo y sus tareas, pero el tablero no las separa: se muestran como **objetivos** que se pueden usar como filtro y que se cumplen igual que en Scrum (FR-002).
+- What if a backlog story wasn't placed in any sprint? It goes to the "Backlog" column, outside the sprints.
+- What if the plan references a story that doesn't exist in the backlog? It's ignored and the leader is warned; no empty card is created.
+- What if two members have the same name? It's assigned by role, as if the name didn't match.
+- What if the board is built twice for the same plan? No cards are duplicated; planning again is a replan (spec 008).
+- What if a member with tasks is removed from the team? Their cards become unassigned and flagged for reassignment, and the system proposes a replan (spec 008, FR-010).
+- What if two people move the same card at the same time? The last change wins, and both see it (live activity, spec 005).
+- What if a task linked to a GitHub issue is moved by hand? It's respected: the board is the source of truth. A later GitHub event can move it again, but never out of "Done" unless the issue is reopened (spec 008, FR-004).
+- What about a story without acceptance criteria? The card gets an empty checklist.
+- What if the chosen methodology is Kanban (no iterations)? The board is continuous: all tasks in a single view, no sprint selector and no per-sprint capacity warning. The iterations the agent builds are still saved, with their objective and tasks, but the board doesn't separate them: they're shown as **objectives** that can be used as a filter and that are met the same way as in Scrum (FR-002).
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-**Armado del tablero (UC-05)**
+**Building the board (UC-05)**
 
-- **FR-001**: El sistema MUST crear el tablero automáticamente cuando se aprueba la etapa de sprints del plan, manual o por auto-aprobar.
-- **FR-002**: El sistema MUST crear un sprint por cada iteración del plan, con su número, nombre y fase del roadmap, y un **objetivo** formado por la meta de la iteración y sus tareas. El objetivo se cumple cuando todas sus tareas están hechas (lo cierra la spec 008).
-- **FR-003**: El sistema MUST crear una tarea por cada historia del backlog aprobado, sin duplicados ni pérdidas, en el sprint que le asignó el plan.
-- **FR-004**: Cada tarea MUST conservar de la historia: clave (US-n), épica, título, descripción, criterios de aceptación, tipo, puntos y prioridad.
-- **FR-005**: El sistema MUST generar el checklist inicial de cada tarea con un ítem por criterio de aceptación.
-- **FR-006**: El sistema MUST asignar cada tarea al miembro que nombró el agente; si el nombre no coincide, al miembro con el rol pedido y menos puntos en ese sprint; si nadie tiene el rol, la deja sin asignar y marcada con el rol faltante.
-- **FR-007**: Las tareas que el plan no ubicó en ningún sprint MUST quedar en "Backlog".
-- **FR-008**: Al terminar el armado, el proyecto MUST pasar a estado "listo" y el tablero MUST quedar disponible para todo el equipo.
+- **FR-001**: The system MUST build the board automatically when the plan's sprints stage is approved, manually or through auto-approve.
+- **FR-002**: The system MUST create one sprint per plan iteration, with its number, name and roadmap phase, and an **objective** made of the iteration's goal and its tasks. The objective is met when all its tasks are done (spec 008 closes it).
+- **FR-003**: The system MUST create one task per story in the approved backlog, with no duplicates or losses, in the sprint the plan assigned to it.
+- **FR-004**: Each task MUST keep from the story: key (US-n), epic, title, description, acceptance criteria, type, points and priority.
+- **FR-005**: The system MUST generate each task's initial checklist with one item per acceptance criterion.
+- **FR-006**: The system MUST assign each task to the member the agent named; if the name doesn't match, to the member with the requested role and the fewest points in that sprint; if nobody has the role, it leaves it unassigned and flagged with the missing role.
+- **FR-007**: Tasks the plan didn't place in any sprint MUST stay in "Backlog".
+- **FR-008**: When the board is built, the project MUST move to "ready" and the board MUST be available to the whole team.
 
-**Trabajo en el tablero (UC-06)**
+**Working on the board (UC-06)**
 
-- **FR-009**: Los usuarios MUST poder mover una tarjeta entre las columnas Backlog, Por hacer, En progreso, En revisión y Hecho, y reordenarla dentro de una columna.
-- **FR-010**: El sistema MUST guardar cada movimiento y mostrarlo igual después de recargar o desde otro dispositivo.
-- **FR-011**: Si un movimiento no se puede guardar, la tarjeta MUST volver a su lugar y el usuario MUST ver un aviso.
-- **FR-012**: El sistema MUST avisar, sin bloquear, cuando una columna supera el límite WIP definido por la metodología aprobada.
-- **FR-013**: Los usuarios MUST poder editar título, descripción, puntos, prioridad y responsable de una tarea.
-- **FR-014**: Los usuarios MUST poder tildar, destildar, agregar, editar y quitar ítems del checklist; la tarjeta MUST mostrar el progreso (tildados sobre total).
-- **FR-015**: Cuando se completa el checklist, el sistema MUST sugerir avanzar la tarjeta, sin moverla solo.
-- **FR-016**: Los usuarios MUST poder cambiar de sprint con un selector, ver el backlog y mover tarjetas entre sprints o al backlog. Si la metodología es Kanban, el tablero MUST ser continuo y las iteraciones se muestran como objetivos (ver casos borde).
-- **FR-017**: El sistema MUST mostrar los puntos totales de cada sprint frente a la capacidad del equipo y avisar si hay sobrecarga. La capacidad se estima sola a partir de las horas por semana de cada miembro, su seniority y la duración del sprint, con la misma regla que usan los agentes para armar los sprints (spec 002, FR-010), para que un plan recién generado nunca aparezca sobrecargado; el líder MUST poder reemplazarla por un valor fijo de puntos por sprint (por ejemplo, cuando ya conoce la velocidad real del equipo).
-- **FR-018**: Los usuarios MUST poder filtrar el tablero por responsable, prioridad y épica.
-- **FR-019**: Cada cambio en el tablero MUST publicarse como actividad del proyecto para que los demás lo vean en vivo (spec 005).
+- **FR-009**: Users MUST be able to move a card between the Backlog, To do, In progress, In review and Done columns, and reorder it within a column.
+- **FR-010**: The system MUST save every move and show it the same way after reloading or from another device.
+- **FR-011**: If a move can't be saved, the card MUST go back to its place and the user MUST see a warning.
+- **FR-012**: The system MUST warn, without blocking, when a column exceeds the WIP limit defined by the approved methodology.
+- **FR-013**: Users MUST be able to edit a task's title, description, points, priority and owner.
+- **FR-014**: Users MUST be able to check, uncheck, add, edit and remove checklist items; the card MUST show the progress (checked over total).
+- **FR-015**: When the checklist is complete, the system MUST suggest moving the card forward, without moving it by itself.
+- **FR-016**: Users MUST be able to switch sprints with a selector, see the backlog and move cards between sprints or to the backlog. If the methodology is Kanban, the board MUST be continuous and the iterations are shown as objectives (see edge cases).
+- **FR-017**: The system MUST show each sprint's total points against the team's capacity and warn when it's overloaded. Capacity is estimated automatically from each member's hours per week, their seniority and the sprint length, with the same rule the agents use to build the sprints (spec 002, FR-010), so a freshly generated plan never shows up as overloaded; the leader MUST be able to replace it with a fixed number of points per sprint (for example, when they already know the team's real velocity).
+- **FR-018**: Users MUST be able to filter the board by owner, priority and epic.
+- **FR-019**: Every board change MUST be published as project activity so others see it live (spec 005).
 
 ### Key Entities *(include if feature involves data)*
 
-- **Sprint**: iteración del proyecto. Número, nombre, objetivo y fase del roadmap a la que pertenece. Agrupa tareas.
-- **Objetivo**: la meta de un sprint junto con sus tareas. Se cumple cuando todas están hechas; lo cierra la spec 008. Con Kanban, es lo único que queda visible de cada iteración.
-- **Tarea (tarjeta)**: unidad de trabajo que sale de una historia. Clave, épica, título, descripción, criterios de aceptación, tipo, puntos, prioridad, columna, posición dentro de la columna, sprint (o backlog) y responsable (o rol faltante).
-- **Ítem de checklist**: paso concreto de una tarea. Texto y si está hecho.
-- **Límite WIP**: máximo de tarjetas por columna según la metodología aprobada. Solo genera avisos.
-- **Miembro**: viene de la spec 001. Se usa su nombre, rol y horas para asignar y calcular capacidad.
+- **Sprint**: an iteration of the project. Number, name, objective and the roadmap phase it belongs to. Groups tasks.
+- **Objective**: a sprint's goal together with its tasks. It's met when all of them are done; spec 008 closes it. With Kanban, it's the only visible trace of each iteration.
+- **Task (card)**: a unit of work that comes from a story. Key, epic, title, description, acceptance criteria, type, points, priority, column, position within the column, sprint (or backlog) and owner (or missing role).
+- **Checklist item**: a concrete step of a task. Text and whether it's done.
+- **WIP limit**: maximum cards per column according to the approved methodology. It only produces warnings.
+- **Member**: comes from spec 001. Its name, role and hours are used to assign and to compute capacity.
 
 ### Dependencies
 
-- **005 → 003**: el armado del tablero arranca cuando se aprueba la etapa de sprints. Hay que acordar con sandredev qué datos trae la aprobación (contrato `PlanApplied` en [specs/README.md](../README.md)).
-- **002**: la forma del backlog y de los sprints que generan los agentes, y la regla de capacidad, que tiene que ser la misma en las dos specs.
-- **008**: cierra los objetivos y propone re-planificar cuando cambia el equipo o un sprint termina con pendientes.
-- **005**: los eventos del tablero que se muestran en la actividad en vivo (contrato 003, 005).
+- **005 → 003**: building the board starts when the sprints stage is approved. Agree with sandredev on what data the approval carries (`PlanApplied` contract in [specs/README.md](../README.md)).
+- **002**: the shape of the backlog and sprints the agents generate, and the capacity rule, which has to be the same in both specs.
+- **005**: the board events shown in the live activity feed (contract 003, 005).
+- **008**: closes the objectives and proposes a replan when the team changes or a sprint ends with pending work.
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
-- **SC-001**: El tablero aparece en menos de 5 segundos después de aprobar la etapa de sprints.
-- **SC-002**: El 100% de las historias aprobadas aparece como tarjeta exactamente una vez.
-- **SC-003**: Cuando el equipo cubre todos los roles que pide el plan, al menos el 90% de las tarjetas queda asignada sin intervención del líder.
-- **SC-004**: Mover una tarjeta se ve reflejado al instante para quien la mueve, y el 100% de los movimientos guardados sigue igual después de recargar.
-- **SC-005**: En la demo, un miembro que nunca usó la herramienta logra mover una tarjeta y tildar un paso del checklist en su primer intento, sin ayuda.
+- **SC-001**: The board appears less than 5 seconds after approving the sprints stage.
+- **SC-002**: 100% of the approved stories appear as a card exactly once.
+- **SC-003**: When the team covers all the roles the plan asks for, at least 90% of the cards are assigned without the leader's intervention.
+- **SC-004**: Moving a card is reflected instantly for whoever moves it, and 100% of the saved moves stay the same after reloading.
+- **SC-005**: In the demo, a member who never used the tool manages to move a card and check a checklist step on their first try, without help.

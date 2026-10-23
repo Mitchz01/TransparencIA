@@ -1,4 +1,4 @@
-// Espejo de backend/app/domain/board.py
+// Mirrors backend/app/domain/board.py
 
 export type TaskStatus = 'backlog' | 'todo' | 'in_progress' | 'review' | 'done'
 export type TaskType = 'feature' | 'bug' | 'chore' | 'spike'

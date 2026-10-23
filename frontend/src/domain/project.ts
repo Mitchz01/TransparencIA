@@ -1,4 +1,4 @@
-// Espejo de backend/app/domain/project.py
+// Mirrors backend/app/domain/project.py
 
 export type ProjectStatus = 'draft' | 'planning' | 'ready' | 'error'
 export type RequestedMethodology = 'auto' | 'scrum' | 'kanban' | 'scrumban' | 'xp' | 'shape_up'

@@ -8,7 +8,7 @@ from app.domain.plan import PlanningStage
 
 
 class MockPlanningAgents:
-    """Devuelve el plan de ejemplo con una demora, para desarrollar el front sin API key."""
+    """Returns the sample plan after a delay, to develop the frontend without an API key."""
 
     def __init__(self, delay_seconds: float = 0.8):
         self._delay = delay_seconds

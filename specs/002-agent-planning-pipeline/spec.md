@@ -1,4 +1,4 @@
-# Feature Specification: 002 · Pipeline de agentes de planificación
+# Feature Specification: 002 · Agent planning pipeline
 
 **Created**: 2026-10-23  
 **Status**: Draft  
@@ -8,166 +8,166 @@
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 - Generar el plan por etapas (Priority: P1)
+### User Story 1 - Generate the plan by stages (Priority: P1)
 
-Cuando el líder termina de crear el proyecto y el equipo, un grupo de agentes arma el plan de trabajo en seis etapas, siempre en este orden: **análisis → metodología → arquitectura → roadmap → backlog → sprints**. Cada etapa está a cargo de un agente con un rol (analista, agile coach, arquitecto, product manager, product owner, scrum master). Al terminar, cada etapa deja una **propuesta** con lo que decidió y por qué. La etapa siguiente arranca recién cuando se aprueba la anterior.
+When the leader has created the project and the team and starts planning, a group of agents builds the work plan in six stages, always in this order: **analysis → methodology → architecture → roadmap → backlog → sprints**. Each stage is handled by an agent with a role (product analyst, agile coach, architect, product manager, product owner, scrum master). When it finishes, each stage leaves a **proposal** with what it decided and why. The next stage only starts once the previous one is approved.
 
-**Why this priority**: es el corazón del producto y lo que se muestra en la demo. Sin esto no hay tablero, roadmap ni documentos.
+**Why this priority**: it's the heart of the product and what the demo shows. Without it there's no board, roadmap or documents.
 
-**Independent Test**: crear un proyecto con auto-aprobar activado, iniciar la planificación y verificar que, sin otra intervención, quedan seis propuestas aprobadas en orden, cada una con su justificación.
+**Independent Test**: create a project with auto-approve on, start planning and verify that, without any other intervention, there are six approved proposals in order, each with its rationale.
 
 **Acceptance Scenarios**:
 
-1. **Scenario**: Arranque del plan
-   - **Given** un proyecto recién creado con al menos un miembro
-   - **When** se inicia la planificación
-   - **Then** el proyecto pasa a "planificando", empieza la etapa de análisis y se avisa qué agente está trabajando
+1. **Scenario**: Planning starts
+   - **Given** a newly created project with at least one member
+   - **When** planning is started
+   - **Then** the project moves to "planning", the analysis stage starts and the UI is told which agent is working
 
-2. **Scenario**: Avance etapa por etapa
-   - **Given** la propuesta de análisis está pendiente
-   - **When** el líder la aprueba
-   - **Then** empieza la etapa de metodología, que usa el análisis aprobado como contexto
+2. **Scenario**: Stage by stage
+   - **Given** the analysis proposal is pending
+   - **When** the leader approves it
+   - **Then** the methodology stage starts, using the approved analysis as context
 
-3. **Scenario**: Contenido ajustado por el líder
-   - **Given** el líder ajustó la propuesta de arquitectura antes de aprobarla
-   - **When** corre la etapa de roadmap
-   - **Then** el roadmap usa la versión ajustada, no la original del agente
+3. **Scenario**: Content adjusted by the leader
+   - **Given** the leader adjusted the architecture proposal before approving it
+   - **When** the roadmap stage runs
+   - **Then** the roadmap uses the adjusted version, not the agent's original
 
-4. **Scenario**: Plan completo con auto-aprobar
-   - **Given** un proyecto con auto-aprobar activado
-   - **When** se inicia la planificación
-   - **Then** las seis etapas corren seguidas, cada propuesta queda registrada como aprobada automáticamente y al final se dispara la carga del tablero (spec 003)
+4. **Scenario**: Full plan with auto-approve
+   - **Given** a project with auto-approve on
+   - **When** planning is started
+   - **Then** the six stages run back to back, each proposal is recorded as automatically approved, and at the end the board is built (spec 003)
 
 ---
 
-### User Story 2 - Metodología recomendada o respetada (Priority: P1)
+### User Story 2 - Methodology recommended or respected (Priority: P1)
 
-Si el líder no eligió metodología, el agile coach recomienda la más adecuada (Scrum, Kanban, Scrumban, XP o Shape Up) según el tamaño del equipo, la incertidumbre y el plazo, y explica por qué descartó las otras. Si el líder ya eligió una, el agente la respeta y explica cómo adaptarla a ese equipo.
+If the leader didn't pick a methodology, the agile coach recommends the best fit (Scrum, Kanban, Scrumban, XP or Shape Up) based on team size, uncertainty and deadline, and explains why it discarded the others. If the leader already picked one, the agent respects it and explains how to adapt it to that team.
 
-**Why this priority**: es el diferencial frente a Jira y uno de los principios del producto ("El usuario manda").
+**Why this priority**: it's what sets the product apart from Jira and one of its principles ("The user is in charge").
 
-**Independent Test**: correr la planificación dos veces con el mismo proyecto, una con metodología "automática" y otra con "Kanban", y comparar las propuestas de metodología.
+**Independent Test**: run planning twice with the same project, once with "automatic" methodology and once with "Kanban", and compare the methodology proposals.
 
 **Acceptance Scenarios**:
 
-1. **Scenario**: Recomendación automática
-   - **Given** un proyecto sin metodología elegida
-   - **When** termina la etapa de metodología
-   - **Then** la propuesta indica la metodología elegida, la justificación, las ceremonias, la duración de iteración, los límites WIP y al menos dos alternativas descartadas con su motivo
+1. **Scenario**: Automatic recommendation
+   - **Given** a project without a chosen methodology
+   - **When** the methodology stage finishes
+   - **Then** the proposal states the chosen methodology, the rationale, the ceremonies, the iteration length, the WIP limits and at least two discarded alternatives with their reason
 
-2. **Scenario**: Metodología elegida por el líder
-   - **Given** un proyecto en el que el líder eligió Kanban
-   - **When** termina la etapa de metodología
-   - **Then** la propuesta es Kanban y la justificación explica cómo se adapta a este equipo
+2. **Scenario**: Methodology chosen by the leader
+   - **Given** a project where the leader chose Kanban
+   - **When** the methodology stage finishes
+   - **Then** the proposal is Kanban and the rationale explains how it fits this team
 
 ---
 
-### User Story 3 - Plan realista para el equipo (Priority: P2)
+### User Story 3 - A realistic plan for the team (Priority: P2)
 
-El backlog y los sprints tienen en cuenta quién forma el equipo: cada historia queda asignada a un miembro con un rol adecuado, y ninguna iteración tiene más trabajo del que el equipo puede hacer con sus horas disponibles.
+The backlog and the sprints take into account who's on the team: each story is assigned to a member with a suitable role, and no iteration has more work than the team can do with its available hours.
 
-**Why this priority**: un plan que no se puede cumplir le quita credibilidad al producto, pero la demo funciona aunque la estimación no sea perfecta.
+**Why this priority**: a plan that can't be met hurts the product's credibility, but the demo works even if the estimate isn't perfect.
 
-**Independent Test**: con un equipo de 3 personas a 10 horas por semana, verificar que ninguna iteración supera la capacidad estimada y que todas las historias tienen un responsable del equipo.
+**Independent Test**: with a team of 3 people at 10 hours per week, verify that no iteration exceeds the estimated capacity and that every story has an owner from the team.
 
 **Acceptance Scenarios**:
 
-1. **Scenario**: Asignación por rol
-   - **Given** un equipo con un desarrollador frontend y uno backend
-   - **When** termina la etapa de sprints
-   - **Then** cada historia está asignada por nombre a un miembro real del equipo cuyo rol encaja con la historia
+1. **Scenario**: Assignment by role
+   - **Given** a team with a frontend developer and a backend developer
+   - **When** the sprints stage finishes
+   - **Then** each story is assigned by name to a real team member whose role fits the story
 
-2. **Scenario**: Historias sin huecos
-   - **Given** un backlog aprobado con 20 historias
-   - **When** termina la etapa de sprints
-   - **Then** cada historia está en exactamente una iteración y ninguna queda afuera
+2. **Scenario**: No gaps
+   - **Given** an approved backlog with 20 stories
+   - **When** the sprints stage finishes
+   - **Then** each story is in exactly one iteration and none is left out
 
 ---
 
-### User Story 4 - Rehacer una etapa rechazada (Priority: P2)
+### User Story 4 - Redo a rejected stage (Priority: P2)
 
-Si el líder rechaza una propuesta y da un motivo ("es demasiado ambicioso para 4 semanas"), el agente vuelve a hacer esa etapa teniendo en cuenta el motivo.
+If the leader rejects a proposal and gives a reason ("too ambitious for 4 weeks"), the agent redoes that stage taking the reason into account.
 
-**Why this priority**: completa el ciclo de aprobación, pero la demo puede hacerse solo aprobando.
+**Why this priority**: it completes the approval cycle, but the demo can be done just by approving.
 
-**Independent Test**: rechazar la propuesta de roadmap con un motivo y verificar que la nueva propuesta lo tiene en cuenta y que la anterior queda en el historial como rechazada.
+**Independent Test**: reject the roadmap proposal with a reason and verify that the new proposal takes it into account and that the previous one stays in the history as rejected.
 
 **Acceptance Scenarios**:
 
-1. **Scenario**: Rechazo con motivo
-   - **Given** una propuesta de roadmap pendiente
-   - **When** el líder la rechaza con el motivo "son 4 semanas, no 8"
-   - **Then** sin otra acción del líder se genera una nueva propuesta de roadmap que entra en 4 semanas, y la anterior queda registrada como rechazada con su motivo
+1. **Scenario**: Rejection with a reason
+   - **Given** a pending roadmap proposal
+   - **When** the leader rejects it with the reason "it's 4 weeks, not 8"
+   - **Then** without any other action from the leader a new roadmap proposal is generated that fits in 4 weeks, and the previous one is recorded as rejected with its reason
 
-2. **Scenario**: Tope de rechazos
-   - **Given** la etapa de roadmap ya fue rechazada 3 veces seguidas
-   - **When** el líder ve la etapa
-   - **Then** el agente no la rehace solo; el líder puede reintentarla o ajustar la última propuesta y aprobarla
+2. **Scenario**: Rejection cap
+   - **Given** the roadmap stage has already been rejected 3 times in a row
+   - **When** the leader looks at the stage
+   - **Then** the agent doesn't redo it by itself; the leader can retry it or adjust the last proposal and approve it
 
 ---
 
-### User Story 5 - Recuperarse de un error del agente (Priority: P3)
+### User Story 5 - Recover from an agent error (Priority: P3)
 
-Si un agente falla (el servicio no responde o devuelve algo inválido), el líder ve en qué etapa falló y puede reintentar desde esa etapa sin perder lo ya aprobado.
+If an agent fails (the service doesn't respond or returns something invalid), the leader sees which stage failed and can retry from that stage without losing what was already approved.
 
-**Why this priority**: evita que un error a mitad de la demo obligue a empezar de cero.
+**Why this priority**: it avoids having to start over because of an error in the middle of the demo.
 
-**Independent Test**: simular un fallo en la etapa de backlog, reintentar y verificar que análisis, metodología, arquitectura y roadmap no se vuelven a generar.
+**Independent Test**: simulate a failure in the backlog stage, retry and verify that analysis, methodology, architecture and roadmap aren't generated again.
 
 **Acceptance Scenarios**:
 
-1. **Scenario**: Fallo y reintento
-   - **Given** la etapa de backlog falló
-   - **When** el líder reintenta
-   - **Then** corre de nuevo solo la etapa de backlog con el mismo contexto aprobado
+1. **Scenario**: Failure and retry
+   - **Given** the backlog stage failed
+   - **When** the leader retries
+   - **Then** only the backlog stage runs again, with the same approved context
 
 ---
 
 ### Edge Cases
 
-- ¿Qué pasa si la descripción del proyecto es muy vaga ("una app")? El analista igual propone, y lista en riesgos y en el alcance lo que hace falta definir.
-- ¿Qué pasa si el agente asigna una historia a alguien que no está en el equipo? La asignación se descarta y la historia se asigna a otro miembro con el mismo rol (regla de la spec 003).
-- ¿Qué pasa si ningún miembro tiene el rol que pide una historia? La historia queda sin asignar y el análisis lo muestra como hueco del equipo.
-- ¿Qué pasa si la duración no alcanza para el alcance? El roadmap ajusta el alcance al plazo y deja lo que no entra en "fuera de alcance", sin estirar el plazo.
-- ¿Qué pasa si se inicia la planificación de un proyecto que ya está planificando? Se rechaza: hay una sola ejecución activa por proyecto.
-- ¿Qué pasa si el agente devuelve algo con el formato incorrecto? Se reintenta una vez; si vuelve a fallar, la etapa queda en error (User Story 5).
-- ¿Qué pasa si el líder cambia el equipo mientras se planifica? Se permite (spec 001): las etapas ya aprobadas no cambian, las siguientes usan el equipo nuevo y luego se puede re-planificar (spec 008).
-- ¿Qué pasa si el líder quiere cambiar la metodología mientras se planifica? No se permite una vez que arrancó la planificación, porque la etapa de metodología ya la usó o la está usando (spec 001, FR-009). Para cambiarla hay que rechazar la propuesta de metodología con ese motivo.
+- What if the project description is very vague ("an app")? The analyst still proposes, and lists what needs defining under risks and scope.
+- What if the agent assigns a story to someone who isn't on the team? The assignment is discarded and the story goes to another member with the same role (spec 003 rule).
+- What if no member has the role a story asks for? The story stays unassigned and the analysis shows it as a team gap.
+- What if the duration isn't enough for the scope? The roadmap fits the scope to the deadline and moves what doesn't fit to "out of scope", without stretching the deadline.
+- What if planning is started on a project that's already planning? It's rejected: there's a single active run per project.
+- What if the agent returns something with the wrong format? It's retried once; if it fails again, the stage ends in error (User Story 5).
+- What if the leader changes the team while planning? It's allowed (spec 001): already approved stages don't change, the following ones use the new team, and a replan can happen later (spec 008).
+- What if the leader wants to change the methodology while planning? Not allowed once planning has started, because the methodology stage already used it or is using it (spec 001, FR-009). To change it, reject the methodology proposal with that reason.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: El sistema DEBE correr las seis etapas en orden fijo: análisis, metodología, arquitectura, roadmap, backlog y sprints.
-- **FR-002**: Cada etapa DEBE recibir los datos del proyecto y del equipo y la versión final (aprobada o ajustada) de las etapas anteriores que necesita. Nunca recibe propuestas pendientes ni rechazadas.
-- **FR-003**: Cada etapa DEBE producir un resultado con una estructura fija y validada. No se aceptan resultados que no se puedan mostrar en pantalla (constitución, principio 2).
-- **FR-004**: Cada resultado DEBE convertirse en una propuesta con su justificación visible para el líder.
-- **FR-005**: La etapa siguiente DEBE arrancar solo cuando la anterior está aprobada o ajustada.
-- **FR-006**: Con auto-aprobar activado, cada propuesta DEBE aprobarse sola y quedar registrada como aprobada automáticamente.
-- **FR-007**: El sistema DEBE avisar en vivo cuándo empieza, termina o falla cada etapa y qué agente la corre (lo muestra la spec 005).
-- **FR-008**: Si el líder eligió una metodología, la etapa de metodología DEBE respetarla. Si no, DEBE recomendar una y justificar al menos dos alternativas descartadas.
-- **FR-009**: Cada historia del backlog DEBE pertenecer a una épica del roadmap aprobado y estar en exactamente una iteración.
-- **FR-010**: Las asignaciones DEBEN referirse a miembros reales del equipo; el trabajo de cada iteración NO DEBE superar la capacidad estimada del equipo según sus horas y seniority. Esa estimación usa la misma regla que el aviso de sobrecarga del tablero (spec 003, FR-017), para que un plan recién generado nunca aparezca sobrecargado.
-- **FR-011**: Al rechazar una propuesta con motivo, el sistema DEBE rehacer esa etapa automáticamente, sin que el líder lo pida, usando como contexto el motivo y la propuesta rechazada. Después de 3 rechazos seguidos de la misma etapa, deja de rehacerla sola y espera a que el líder la reintente o escriba la versión que quiere ajustando la última propuesta.
-- **FR-012**: Si una etapa falla, el proyecto DEBE quedar en error indicando la etapa, y el líder DEBE poder reintentarla sin rehacer las etapas aprobadas.
-- **FR-013**: Solo PUEDE haber una planificación activa por proyecto.
-- **FR-014**: Los resultados DEBEN estar en el idioma de la descripción del proyecto.
-- **FR-015**: El pipeline DEBE poder correr sin conexión al servicio de IA, con un plan de ejemplo, para desarrollar y hacer demos (constitución, principio 6).
-- **FR-016**: La planificación DEBE arrancar con un pedido explícito de "empezar a planificar" sobre un proyecto en borrador o en error; crear el proyecto no la arranca (spec 001, FR-005). Este pedido es de esta spec, junto con la regla de FR-013.
+- **FR-001**: The system MUST run the six stages in a fixed order: analysis, methodology, architecture, roadmap, backlog and sprints.
+- **FR-002**: Each stage MUST receive the project and team data and the final version (approved or adjusted) of the previous stages it needs. It never receives pending or rejected proposals.
+- **FR-003**: Each stage MUST produce a result with a fixed, validated structure. Results that can't be displayed aren't accepted (constitution, principle 2).
+- **FR-004**: Each result MUST become a proposal with its rationale visible to the leader.
+- **FR-005**: The next stage MUST start only when the previous one is approved or adjusted.
+- **FR-006**: With auto-approve on, each proposal MUST be approved by itself and recorded as automatically approved.
+- **FR-007**: The system MUST report live when each stage starts, finishes or fails and which agent runs it (spec 005 shows it).
+- **FR-008**: If the leader picked a methodology, the methodology stage MUST respect it. Otherwise, it MUST recommend one and justify at least two discarded alternatives.
+- **FR-009**: Each backlog story MUST belong to an epic of the approved roadmap and be in exactly one iteration.
+- **FR-010**: Assignments MUST refer to real team members; the work in each iteration MUST NOT exceed the team's estimated capacity based on their hours and seniority. That estimate uses the same rule as the board's overload warning (spec 003, FR-017), so a freshly generated plan never shows up as overloaded.
+- **FR-011**: When a proposal is rejected with a reason, the system MUST redo that stage automatically, without the leader asking, using the reason and the rejected proposal as context. After 3 rejections in a row of the same stage, it stops redoing it by itself and waits for the leader to retry it or to write the version they want by adjusting the last proposal.
+- **FR-012**: If a stage fails, the project MUST end up in error indicating the stage, and the leader MUST be able to retry it without redoing the approved stages.
+- **FR-013**: There CAN only be one active planning run per project.
+- **FR-014**: Results MUST be in the language of the project description.
+- **FR-015**: The pipeline MUST be able to run without a connection to the AI service, with a sample plan, for development and demos (constitution, principle 6).
+- **FR-016**: Planning MUST start with an explicit "start planning" request on a project in draft or error; creating the project doesn't start it (spec 001, FR-005). This request belongs to this spec, together with the FR-013 rule.
 
 ### Key Entities
 
-- **Etapa**: un paso del plan. Tiene nombre, el agente (rol) que la corre, qué etapas anteriores usa como entrada y la estructura de su resultado.
-- **Propuesta de etapa**: el resultado de una etapa esperando decisión. Tiene contenido, justificación, estado (pendiente, aprobada, ajustada, rechazada), motivo de rechazo y si fue auto-aprobada. Su ciclo de vida lo define la spec 005.
-- **Plan**: la versión final de todas las etapas aprobadas de un proyecto. Es lo que leen el tablero (003), las vistas (004) y los documentos (006).
+- **Stage**: a step of the plan. It has a name, the agent (role) that runs it, which previous stages it uses as input and the structure of its result.
+- **Stage proposal**: a stage's result waiting for a decision. It has content, rationale, status (pending, approved, adjusted, rejected), rejection reason and whether it was auto-approved. Its lifecycle is defined by spec 005.
+- **Plan**: the final version of all the approved stages of a project. It's what the board (003), the views (004) and the documents (006) read.
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
-- **SC-001**: Con auto-aprobar, el plan completo (las seis etapas) se genera en menos de 3 minutos para un proyecto de 3 a 5 personas.
-- **SC-002**: El líder ve qué agente está trabajando en menos de 2 segundos desde que empieza cada etapa.
-- **SC-003**: El 100% de las historias del plan final está en una iteración y pertenece a una épica existente.
-- **SC-004**: Ninguna iteración supera la capacidad estimada del equipo.
-- **SC-005**: Tras un fallo, el reintento no vuelve a generar ninguna etapa ya aprobada.
-- **SC-006**: Sin conexión al servicio de IA, la demo completa (proyecto, plan y tablero) funciona de punta a punta.
+- **SC-001**: With auto-approve, the full plan (all six stages) is generated in under 3 minutes for a project of 3 to 5 people.
+- **SC-002**: The leader sees which agent is working less than 2 seconds after each stage starts.
+- **SC-003**: 100% of the stories in the final plan are in an iteration and belong to an existing epic.
+- **SC-004**: No iteration exceeds the team's estimated capacity.
+- **SC-005**: After a failure, the retry doesn't regenerate any already approved stage.
+- **SC-006**: Without a connection to the AI service, the full demo (project, plan and board) works end to end.

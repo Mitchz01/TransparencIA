@@ -6,7 +6,7 @@ from app.domain.integrations import IssueRef, PullRequestRef
 
 @dataclass
 class FakeCodeHost:
-    """CodeHost en memoria: registra las llamadas en vez de ir a GitHub (demo sin token y tests)."""
+    """In-memory CodeHost: records calls instead of calling GitHub (tokenless demo and tests)."""
 
     calls: list[tuple[str, dict[str, Any]]] = field(default_factory=list)
     _next_number: int = 1

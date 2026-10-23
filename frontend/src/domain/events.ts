@@ -1,4 +1,4 @@
-// Espejo de backend/app/domain/events.py
+// Mirrors backend/app/domain/events.py
 
 interface BaseEvent {
   project_id: number | null

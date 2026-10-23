@@ -1,4 +1,4 @@
-"""Arma los casos de uso por request con los adaptadores que eligió main.py (en app.state)."""
+"""Builds the use cases per request with the adapters main.py picked (in app.state)."""
 
 from collections.abc import Iterator
 

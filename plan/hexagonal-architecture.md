@@ -1,24 +1,24 @@
-# Plan técnico: Arquitectura hexagonal
+# Technical plan: Hexagonal architecture
 
-- **Estado**: Aprobado
-- **Alcance**: estructura de carpetas, capas y reglas de dependencia de backend y frontend. No implementa features; define dónde va a vivir cada una.
+- **Status**: Approved
+- **Scope**: folder structure, layers and dependency rules for backend and frontend. It doesn't implement features; it defines where each one will live.
 
-- **Contexto del producto**: [context.md](context.md). Este documento asume que ya lo leíste.
+- **Product context**: [context.md](context.md). This document assumes you've read it.
 
-## Por qué hexagonal
+## Why hexagonal
 
-El producto se conecta con varios sistemas externos (LLM, base de datos, GitHub, UI, webhooks). Por eso elegimos hexagonal: el núcleo (proyectos, planes, aprobaciones) tiene que sobrevivir a cambios de LLM (Gemini o mock), de proveedor de código (GitHub, después GitLab o Jira) y de canal de entrada (UI, webhooks, jobs), sin reescribirse.
+The product connects to several external systems (LLM, database, GitHub, UI, webhooks). That's why we chose hexagonal: the core (projects, plans, approvals) has to survive changes of LLM (Gemini or mock), code host (GitHub, later GitLab or Jira) and input channel (UI, webhooks, jobs) without being rewritten.
 
-## Enfoque
+## Approach
 
-- **Dominio**: entidades y reglas del negocio. No conoce FastAPI, SQLModel, ADK ni GitHub.
-- **Aplicación**: casos de uso más los **puertos** (interfaces) que necesitan del exterior.
-- **Adaptadores**: implementaciones concretas.
-  - **De entrada** (quién nos llama): API HTTP + SSE, webhooks de GitHub.
-  - **De salida** (a quién llamamos): SQLite, agentes ADK/Gemini, GitHub y sus mocks.
-- **Composition root** (`main.py`): el único lugar que conoce todo y conecta puertos con adaptadores.
+- **Domain**: business entities and rules. It doesn't know FastAPI, SQLModel, ADK or GitHub.
+- **Application**: use cases plus the **ports** (interfaces) they need from the outside.
+- **Adapters**: concrete implementations.
+  - **Inbound** (who calls us): HTTP API + SSE, GitHub webhooks.
+  - **Outbound** (who we call): SQLite, ADK/Gemini agents, GitHub and their mocks.
+- **Composition root** (`main.py`): the only place that knows everything and wires ports to adapters.
 
-Regla de dependencia: `adapters → application → domain`. Nunca al revés.
+Dependency rule: `adapters → application → domain`. Never the other way around.
 
 ```
    ┌────────────────────────── adapters/inbound ──────────────────────────┐
@@ -26,46 +26,46 @@ Regla de dependencia: `adapters → application → domain`. Nunca al revés.
    └──────────────────────────────────┬───────────────────────────────────┘
                                       ▼
    ┌───────────────────────────── application ────────────────────────────┐
-   │   use_cases/  ──usan──▶  ports/ (Protocol)                            │
+   │   use_cases/  ──use──▶  ports/ (Protocol)                             │
    └─────────┬────────────────────────────────────────────▲───────────────┘
-             ▼                                            │ implementan
+             ▼                                            │ implement
    ┌──────── domain ────────┐   ┌──────────────── adapters/outbound ────────────────┐
-   │ proyecto, equipo,      │   │ persistence/  SQLModel + SQLite                    │
-   │ tablero, plan,         │   │ agents/       ADK + Gemini  ·  mock                │
-   │ propuestas, docs,      │   │ code_host/    GitHub (REST) ·  fake                │
-   │ eventos                │   │ events/       bus en memoria → SSE                 │
+   │ project, team,         │   │ persistence/  SQLModel + SQLite                    │
+   │ board, plan,           │   │ agents/       ADK + Gemini  ·  mock                │
+   │ proposals, docs,       │   │ code_host/    GitHub (REST) ·  fake                │
+   │ events                 │   │ events/       in-memory bus → SSE                  │
    └────────────────────────┘   └────────────────────────────────────────────────────┘
 ```
 
-## Conceptos de dominio nuevos que impone el contexto
+## New domain concepts required by the context
 
-| Concepto | Por qué existe |
+| Concept | Why it exists |
 |---|---|
-| **Proposal** (propuesta) | Toda salida de un agente (metodología, roadmap, backlog, sprints, docs, re-planificación, acción en GitHub) se guarda como `Proposal` con `status: pending → approved / adjusted / rejected`. Nada se aplica al tablero ni a GitHub sin aprobación. Es el corazón de "todo pasa por el usuario". |
-| **Checklist** en `Task` | Ítems tildables por tarea, generados por el agente y editables. |
-| **Document** | Spec general, specs por caso de uso y diagramas (fuente **Mermaid**, se renderiza en el front). Versionados y con aprobación. |
-| **ExternalLink** | Vínculo `Task ↔ issue/PR` de GitHub (número, url, estado). Permite sincronizar en ambos sentidos. |
-| **Objective** | Meta medible del proyecto (de la fase o del sprint); se cierra cuando se cierran sus tareas o PRs. |
-| **DomainEvent** | `AgentStarted`, `ProposalCreated`, `ProposalApproved`, `TaskStatusChanged`, `PullRequestMerged`... Alimentan el SSE (UI en vivo) y disparan reacciones (re-planificar, cerrar objetivos). |
+| **Proposal** | Every agent output (methodology, roadmap, backlog, sprints, docs, replanning, GitHub action) is stored as a `Proposal` with `status: pending → approved / adjusted / rejected`. Nothing is applied to the board or to GitHub without approval. It's the heart of "everything goes through the user". |
+| **Checklist** in `Task` | Checkable items per task, generated by the agent and editable. |
+| **Document** | General spec, per-epic specs and diagrams (**Mermaid** source, rendered in the frontend). Versioned and approved. |
+| **ExternalLink** | `Task ↔ issue/PR` link on GitHub (number, url, state). Lets progress come back from GitHub. |
+| **Objective** | Measurable goal of a sprint; it closes when its tasks are done. |
+| **DomainEvent** | `AgentStarted`, `ProposalCreated`, `ProposalResolved`, `TaskStatusChanged`, `PullRequestMerged`... They feed the SSE stream (live UI) and trigger reactions (replanning, closing objectives). |
 
 ## Backend
 
-### Estructura
+### Structure
 
 ```
 backend/app/
   main.py                           composition root
   config.py                         env vars (+ GITHUB_TOKEN, GITHUB_WEBHOOK_SECRET, MOCK_GITHUB)
 
-  domain/                           Python puro + Pydantic, sin I/O
+  domain/                           plain Python + Pydantic, no I/O
     project.py                      Project, Member, Objective, RequestedMethodology
     board.py                        Sprint, Task, ChecklistItem, TaskStatus, Priority
     plan.py                         Analysis, MethodologyDecision, Architecture, Roadmap,
-                                    Backlog, SprintPlanning  (hoy agents/schemas.py) + PLANNING_STAGES
-    documents.py                    Document (spec general, spec de caso de uso, diagrama)
-    proposals.py                    Proposal, ProposalKind, ProposalStatus, reglas de transición
+                                    Backlog, SprintPlanning + PLANNING_STAGES
+    documents.py                    Document (general spec, epic spec, diagram)
+    proposals.py                    Proposal, ProposalKind, ProposalStatus, transition rules
     integrations.py                 ExternalLink, IssueRef, PullRequestRef
-    events.py                       DomainEvent y subclases
+    events.py                       DomainEvent and subclasses
     errors.py                       ProjectNotFound, ProposalAlreadyResolved, ...
 
   application/
@@ -73,112 +73,113 @@ backend/app/
       repositories.py               ProjectRepository, TaskRepository, ProposalRepository,
                                     DocumentRepository (Protocol)
       unit_of_work.py               UnitOfWork: repos + commit/rollback
-      agents.py                     PlanningAgents: run_stage(stage, context). Las etapas (clave,
-                                    agente, esquema, inputs) viven en domain/plan.py (PLANNING_STAGES);
-                                    specs, diagramas y replan se suman como etapas nuevas
-      code_host.py                  CodeHost: create_issue, open_pull_request, request_review,
-                                    close_issue, get_pull_request
-      event_bus.py                  EventBus: publish / subscribe (para SSE)
+      agents.py                     PlanningAgents: run_stage(stage, context). The stages (key,
+                                    agent, schema, inputs) live in domain/plan.py (PLANNING_STAGES);
+                                    specs, diagrams and replan are added as new stages
+      code_host.py                  CodeHost: create_issue, update_issue, close_issue,
+                                    request_review, comment_on_pull_request, ...
+      event_bus.py                  EventBus: publish / subscribe (for SSE)
     use_cases/
-      projects/                     create_project, get_project, list_projects, update_team
-      planning/                     start_planning, run_planning_step, generate_documents, replan
+      projects/                     create_project, get_project, list_projects, update_project
+      planning/                     start_planning, run_planning_step, apply_plan,
+                                    generate_documents, replan
       proposals/                    approve_proposal, adjust_proposal, reject_proposal
-                                    (aprobar = aplicar la propuesta al tablero, a los docs o a GitHub)
+                                    (approving = applying the proposal to the board, docs or GitHub)
       board/                        update_task, toggle_checklist_item, move_task
-      integrations/                 connect_repository, sync_task_to_github,
+      integrations/                 connect_repository, propose_issues, propose_review,
                                     handle_pull_request_event, handle_issue_event
-    dto.py                          payloads de entrada y salida de los casos de uso
+    dto.py                          use case input and output payloads
 
   adapters/
     inbound/
       http/
-        dependencies.py             Depends() que arman los casos de uso
+        dependencies.py             Depends() that build the use cases
         projects.py                 /api/projects
-        planning.py                 /api/projects/{id}/planning (+ SSE de eventos)
+        planning.py                 /api/projects/{id}/planning (+ events SSE)
         proposals.py                /api/proposals/{id}/approve|adjust|reject
         board.py                    /api/tasks
         documents.py                /api/projects/{id}/documents
         errors.py                   domain/errors → HTTP
       webhooks/
-        github.py                   /webhooks/github: valida firma HMAC → caso de uso
+        github.py                   /webhooks/github: validates the HMAC signature → use case
     outbound/
       persistence/
         db.py                       engine, create_db, Session
-        tables.py                   tablas SQLModel
-        mappers.py                  tabla ↔ entidad
+        tables.py                   SQLModel tables
+        mappers.py                  table ↔ entity
         repositories.py             Sql*Repository
         unit_of_work.py             SqlUnitOfWork
       agents/
         adk/
-          prompts.py                instrucciones por agente
-          agents.py                 AdkPlanningAgents (implementa PlanningAgents): un LlmAgent
-                                    con output_schema por etapa
+          prompts.py                instructions per agent
+          agents.py                 AdkPlanningAgents (implements PlanningAgents): one LlmAgent
+                                    with output_schema per stage
         mock/
-          data.py                   MOCK_PLAN (+ docs y diagramas de ejemplo)
+          data.py                   MOCK_PLAN (+ sample docs and diagrams)
           agents.py                 MockPlanningAgents
       code_host/
         github/
-          client.py                 cliente REST (httpx)
-          code_host.py              GitHubCodeHost (implementa CodeHost)
-        fake.py                     FakeCodeHost: registra las llamadas en memoria (dev y tests)
+          client.py                 REST client (httpx)
+          code_host.py              GitHubCodeHost (implements CodeHost)
+        fake.py                     FakeCodeHost: records calls in memory (dev and tests)
       events/
-        in_memory_bus.py            InMemoryEventBus (asyncio.Queue por suscriptor)
+        in_memory_bus.py            InMemoryEventBus (one asyncio.Queue per subscriber)
 
 backend/tests/
-  unit/domain/                      reglas (transiciones de Proposal, checklist, objetivos)
-  unit/application/                 casos de uso con fakes en memoria
-  integration/adapters/             repos sobre SQLite en memoria, routers y webhook con TestClient
-  architecture/test_layers.py       falla si domain/ o application/ importan fastapi,
-                                    sqlmodel, google.adk o httpx
+  unit/domain/                      rules (Proposal transitions, checklist, objectives)
+  unit/application/                 use cases with in-memory fakes
+  integration/adapters/             repos on in-memory SQLite, routers and webhook with TestClient
+  architecture/test_layers.py       fails if domain/ or application/ import fastapi,
+                                    sqlmodel, google.adk or httpx
 ```
 
-### Flujo clave: planificación con aprobación
+### Key flow: planning with approval
 
-Hoy el pipeline es un `SequentialAgent` que corre las 6 etapas de corrido. Con aprobación humana se **parte por etapas**:
+The original pipeline was a `SequentialAgent` that ran the 6 stages back to back. With human approval it's **split by stage**:
 
 ```
-start_planning ──▶ run_planning_step(analysis) ──▶ Proposal(pending) ──▶ SSE a la UI
+start_planning ──▶ run_planning_step(analysis) ──▶ Proposal(pending) ──▶ SSE to the UI
                                                          │
-                         usuario: approve / adjust ◀─────┘
+                         user: approve / adjust ◀────────┘
                                      │
                                      ▼
-              run_planning_step(siguiente etapa, con lo aprobado como contexto)
+              run_planning_step(next stage, with what was approved as context)
                                      │
                                     ...
-              plan_sprints aprobado ──▶ se aplica al tablero (Sprint, Task, Checklist)
-              write_specs / draw_diagrams aprobados ──▶ Document
+              sprints approved ──▶ applied to the board (Sprint, Task, Checklist)
+              general_spec / epic_specs / flow_diagrams approved ──▶ Document
 ```
 
-- Cada etapa es una llamada al puerto `PlanningAgents`; el caso de uso decide cuál sigue. El estado vive en la DB (`Proposal`), no en la sesión de ADK, así que se puede cerrar el navegador y volver.
-- `adjust` guarda la versión editada por el usuario y la pasa como contexto a la etapa siguiente ("El usuario manda").
-- **Auto-aprobar** (`Project.auto_approve`, se elige al crear el proyecto y se puede cambiar): las propuestas se crean igual, quedan auditadas y visibles con su justificación, pero pasan solas a `approved` y el pipeline sigue sin pausa. El usuario puede revisarlas después y pedir un ajuste, que entra como re-planificación.
+- Each stage is one call to the `PlanningAgents` port; the use case decides which one comes next. State lives in the DB (`Proposal`), not in the ADK session, so you can close the browser and come back.
+- `adjust` stores the version edited by the user and passes it as context to the next stage ("The user is in charge").
+- **Auto-approve** (`Project.auto_approve`, chosen when creating the project and changeable later): proposals are still created, audited and visible with their rationale, but they move to `approved` by themselves and the pipeline continues without pausing. The user can review them later and ask for an adjustment, which comes in as a replan.
 
-### Flujo clave: sincronización con GitHub
+### Key flow: GitHub sync
 
 ```
-Tarea aprobada ──▶ Proposal(kind=github_action, "crear issue #") ──▶ aprobación ──▶ CodeHost.create_issue
-                                                                                      └▶ ExternalLink
+Approved task ──▶ Proposal(kind=github_action, "create issue") ──▶ approval ──▶ CodeHost.create_issue
+                                                                                   └▶ ExternalLink
 
 GitHub ──webhook──▶ handle_pull_request_event
-                      ├─ PR abierto que referencia la issue → Task: in_progress / review
-                      ├─ PR mergeado → Task: done, tilda el checklist, evalúa el Objective
-                      └─ desvío (atraso, scope nuevo) → PlanningAgents.run_stage(replan) → Proposal(pending)
+                      ├─ PR opened that references the issue → Task: in_progress / review
+                      ├─ PR merged → Task: done, checks the checklist, evaluates the Objective
+                      └─ drift (sprint ended with pending work, team change) → PlanningAgents.run_stage(replan) → Proposal(pending)
 ```
 
-Las acciones que **escriben** en GitHub pasan por propuesta (son visibles para terceros); las que **leen** o actualizan el tablero desde un webhook se aplican directo y quedan registradas como evento.
+Actions that **write** to GitHub go through a proposal (they're visible to third parties); the ones that **read** or update the board from a webhook are applied directly and recorded as an event.
 
-- **Un solo repo por proyecto**: `Project.repository` (`owner/name`). `CodeHost` recibe ese repo; no hay ruteo entre repos.
-- **Nuestro tablero es la fuente de verdad**: las issues de GitHub son un espejo de las tareas. Desde GitHub sólo entran los cambios de estado (PR abierto, mergeado, issue cerrada); si alguien edita el título o el cuerpo de una issue, no se pisa la tarea. No sincronizamos con GitHub Projects.
+- **One repo per project**: `Project.repository` (`owner/name`). `CodeHost` receives that repo; there's no routing between repos.
+- **Our board is the source of truth**: GitHub issues mirror the tasks. Only state changes come in from GitHub (PR opened, merged, issue closed); if someone edits an issue's title or body, the task isn't overwritten. We don't sync with GitHub Projects.
 
-### Mapeo desde la estructura actual
+### Mapping from the original structure
 
-| Hoy | Pasa a |
+| Before | Now |
 |---|---|
-| `app/models.py` (tablas `table=True`) | `adapters/outbound/persistence/tables.py` |
-| `app/models.py` (entidades / Literals) | `domain/project.py`, `domain/board.py` |
-| `app/models.py` (payloads API) | `application/dto.py` |
+| `app/models.py` (`table=True` tables) | `adapters/outbound/persistence/tables.py` |
+| `app/models.py` (entities / Literals) | `domain/project.py`, `domain/board.py` |
+| `app/models.py` (API payloads) | `application/dto.py` |
 | `app/agents/schemas.py` | `domain/plan.py` |
-| `app/agents/pipeline.py` | `adapters/outbound/agents/adk/{prompts,agents}.py` (por etapas) |
+| `app/agents/pipeline.py` | `adapters/outbound/agents/adk/{prompts,agents}.py` (per stage) |
 | `app/agents/mock.py` | `adapters/outbound/agents/mock/{data,agents}.py` |
 | `app/db.py` | `adapters/outbound/persistence/db.py` |
 | `app/routers/` | `adapters/inbound/http/` |
@@ -186,18 +187,18 @@ Las acciones que **escriben** en GitHub pasan por propuesta (son visibles para t
 
 ## Frontend
 
-Mismo patrón, en versión liviana: la UI no llama a `fetch` directamente sino a puertos, así se puede reemplazar el backend por un fake en demos y tests.
+Same pattern, lighter version: the UI doesn't call `fetch` directly but goes through ports, so the backend can be replaced by a fake in demos and tests.
 
 ```
 frontend/src/
   main.tsx
   app/
     App.tsx, routes.tsx             router + layout
-    container.tsx                   composition root: contexto con los gateways concretos
+    container.tsx                   composition root: context with the concrete gateways
 
-  domain/                           TS puro: tipos espejo de backend/app/domain/*.py
+  domain/                           plain TS: types mirroring backend/app/domain/*.py
     project.ts, board.ts, plan.ts, proposals.ts, documents.ts, integrations.ts, events.ts
-    rules.ts                        reglas puras (límites WIP, capacidad, progreso del checklist)
+    rules.ts                        pure rules (WIP limits, capacity, checklist progress)
 
   application/
     ports.ts                        ProjectGateway, PlanningGateway, ProposalGateway,
@@ -206,88 +207,88 @@ frontend/src/
                                     useMoveTask, useProjectEvents
 
   adapters/
-    http/                           client.ts, sse.ts, *Gateway.ts (implementan los puertos)
-    fake/                           gateways en memoria para desarrollo sin backend
+    http/                           client.ts, sse.ts, *Gateway.ts (implement the ports)
+    fake/                           in-memory gateways for development without a backend
 
   ui/
-    pages/                          NewProject, Planning (propuestas para aprobar), Board,
+    pages/                          NewProject, Planning (proposals to approve), Board,
                                     Roadmap, Documents, Integrations
     components/
       board/                        Kanban (dnd-kit), TaskCard, Checklist
       proposals/                    ProposalCard, DiffView, ApproveBar
-      roadmap/                      timeline por fases
+      roadmap/                      timeline by phase
       diagrams/                     MermaidView
     styles/
 ```
 
-Regla: `ui → application → domain`. `adapters` implementa `application/ports` y sólo `app/container.tsx` importa `adapters`.
+Rule: `ui → application → domain`. `adapters` implements `application/ports` and only `app/container.tsx` imports `adapters`.
 
-## Decisiones y alternativas
+## Decisions and alternatives
 
-| Decisión | Alternativa descartada | Por qué |
+| Decision | Discarded alternative | Why |
 |---|---|---|
-| Pydantic permitido en `domain/` | Dataclasses + duplicar los esquemas en el adaptador ADK | `output_schema` de ADK necesita Pydantic; duplicarlo viola "Simple antes que escalable". |
-| Tablas SQLModel separadas de las entidades, con mappers | Tablas SQLModel como entidades | Evita atar el dominio a la DB; el costo son mappers chicos. |
-| `Proposal` como entidad de dominio de primera clase | Flag "aprobado" en cada entidad | Un único mecanismo de aprobación para todo: plan, docs, re-planificación y acciones en GitHub. Queda auditado. |
-| Pipeline partido por etapas, con el estado en la DB | Un `SequentialAgent` de corrido | Hace falta una pausa humana entre etapas, y una sesión de ADK en memoria no sobrevive horas. |
-| Puerto `CodeHost` genérico | Llamar a GitHub desde los casos de uso | Habilita GitLab o Jira después, y un `FakeCodeHost` para la demo sin token. |
-| Escrituras a GitHub siempre con propuesta | Automatizar todo | Son acciones visibles para terceros; principio "El usuario manda". |
-| Diagramas en Mermaid (texto) | Imágenes generadas | El LLM lo genera bien con esquema, es editable por el usuario y se versiona. |
-| `EventBus` en memoria | Redis o PubSub | Monolito + SQLite ("Simple antes que escalable"); el puerto permite cambiarlo en Cloud Run. |
-| Auto-aprobar configurable por proyecto | Aprobación siempre manual | Demo ágil; las propuestas igual quedan auditadas y se pueden ajustar después. |
-| Un repo de GitHub por proyecto | Varios repos por proyecto | Simplifica `CodeHost`, los webhooks y los vínculos tarea ↔ issue. |
-| Nuestro tablero como fuente de verdad | Sincronizar con GitHub Projects | Evita conflictos bidireccionales; GitHub sólo aporta cambios de estado. |
-| Un solo método `run_stage` con etapas declaradas en el dominio | Un método por etapa en el puerto | Agregar una etapa (specs, diagramas, replan) es sumar una entrada a `PLANNING_STAGES` + su prompt, sin tocar el puerto ni los adaptadores. |
-| Puertos con `typing.Protocol` | `ABC` | Los fakes no necesitan heredar. |
-| Test de arquitectura casero | `import-linter` | Cero dependencias nuevas. |
+| Pydantic allowed in `domain/` | Dataclasses + duplicating the schemas in the ADK adapter | ADK's `output_schema` needs Pydantic; duplicating it breaks "Simple before scalable". |
+| SQLModel tables separate from entities, with mappers | SQLModel tables as entities | Keeps the domain from being tied to the DB; the cost is small mappers. |
+| `Proposal` as a first-class domain entity | An "approved" flag on each entity | A single approval mechanism for everything: plan, docs, replanning and GitHub actions. It's audited. |
+| Pipeline split by stage, with state in the DB | One back-to-back `SequentialAgent` | A human pause is needed between stages, and an in-memory ADK session doesn't survive for hours. |
+| Generic `CodeHost` port | Calling GitHub from the use cases | Enables GitLab or Jira later, and a `FakeCodeHost` for the demo without a token. |
+| GitHub writes always go through a proposal | Automate everything | They're visible to third parties; "The user is in charge" principle. |
+| Diagrams in Mermaid (text) | Generated images | The LLM generates it well with a schema, the user can edit it, and it's versioned. |
+| In-memory `EventBus` | Redis or Pub/Sub | Monolith + SQLite ("Simple before scalable"); the port allows swapping it on Cloud Run. |
+| Auto-approve configurable per project | Always manual approval | Fast demo; proposals are still audited and can be adjusted later. |
+| One GitHub repo per project | Several repos per project | Simplifies `CodeHost`, webhooks and task ↔ issue links. |
+| Our board as the source of truth | Syncing with GitHub Projects | Avoids two-way conflicts; GitHub only provides state changes. |
+| A single `run_stage` method with stages declared in the domain | One method per stage in the port | Adding a stage (specs, diagrams, replan) means adding an entry to `PLANNING_STAGES` + its prompt, without touching the port or the adapters. |
+| Ports with `typing.Protocol` | `ABC` | Fakes don't need to inherit. |
+| Homemade architecture test | `import-linter` | Zero new dependencies. |
 
-## Pasos de migración (sólo la estructura)
+## Migration steps (structure only)
 
-1. Crear las carpetas de backend y frontend (`__init__.py` / `.gitkeep`).
-2. Mover `agents/schemas.py` → `domain/plan.py` y extraer entidades a `domain/`.
-3. Separar `models.py` en `domain/`, `application/dto.py` y `persistence/tables.py`.
-4. Mover `db.py` a `persistence/` y crear los puertos de repositorios + `SqlUnitOfWork`.
-5. Partir `agents/pipeline.py` en `AdkPlanningAgents` por etapas y `agents/mock.py` en `MockPlanningAgents`.
-6. Dejar los puertos `CodeHost` y `EventBus` con sus fakes (GitHub real queda para su spec).
-7. `main.py` como composition root; borrar `routers/`, `services/`, `agents/`, `models.py`, `db.py`.
-8. Front: mover a `app/`, `domain/`, `application/`, `adapters/`, `ui/`; borrar las carpetas viejas vacías.
-9. Agregar `tests/architecture/test_layers.py`.
-10. Actualizar `AGENTS.md`, `README.md`, `specs/_templates/plan.md` ("Dominio / Puertos / Adaptadores" en lugar de "cambios en `models.py`") y la constitución (ver abajo).
-11. Verificar: `/api/health` responde, el test de capas pasa y `npm run build` compila.
+1. Create the backend and frontend folders (`__init__.py` / `.gitkeep`).
+2. Move `agents/schemas.py` → `domain/plan.py` and extract entities into `domain/`.
+3. Split `models.py` into `domain/`, `application/dto.py` and `persistence/tables.py`.
+4. Move `db.py` to `persistence/` and create the repository ports + `SqlUnitOfWork`.
+5. Split `agents/pipeline.py` into per-stage `AdkPlanningAgents` and `agents/mock.py` into `MockPlanningAgents`.
+6. Leave the `CodeHost` and `EventBus` ports with their fakes (real GitHub comes with its spec).
+7. `main.py` as composition root; delete `routers/`, `services/`, `agents/`, `models.py`, `db.py`.
+8. Frontend: move to `app/`, `domain/`, `application/`, `adapters/`, `ui/`; delete the old empty folders.
+9. Add `tests/architecture/test_layers.py`.
+10. Update `AGENTS.md`, `README.md`, the plan template ("Domain / Ports / Adapters" instead of "changes in `models.py`") and the constitution (see below).
+11. Verify: `/api/health` responds, the layer test passes and `npm run build` compiles.
 
-## Impacto en specs y constitución
+## Impact on specs and constitution
 
-Specs nuevas a escribir (después de aprobar este plan):
+New specs to write (after approving this plan):
 
 | ID | Feature |
 |---|---|
-| 005 | Propuestas y aprobación del usuario |
-| 006 | Specs y diagramas generados (spec general, por caso de uso, flujos) |
-| 007 | Integración con GitHub (issues, PRs, reviews) |
-| 008 | Sincronización dinámica y re-planificación |
+| 005 | Proposals and user approval |
+| 006 | Generated specs and diagrams (general spec, per epic, flows) |
+| 007 | GitHub integration (issues, reviews) |
+| 008 | GitHub sync and replanning |
 
-La 002 (pipeline) cambia: pasa a ser por etapas con aprobación.
+Spec 002 (pipeline) changes: it becomes per-stage with approval.
 
-Constitución: agregar **"8. Nada se aplica sin aprobación: toda decisión de un agente es una propuesta"** y matizar el punto 5 ("sin auth"): GitHub necesita un token por proyecto.
+Constitution: add **"8. Nothing is applied without approval: every agent decision is a proposal"** and qualify point 5 ("no auth"): GitHub needs one token per project.
 
-## Riesgos
+## Risks
 
-- **Más archivos para un proyecto chico**: mitigado con un archivo por agregado, no por clase.
-- **Aprobar etapa por etapa puede hacer lenta la demo**: se mitiga con el modo auto-aprobar.
-- **Webhooks en local**: GitHub no llega a `localhost`; usar `FakeCodeHost` + un endpoint para simular eventos, o un túnel (smee.io o similar).
-- **Tokens de GitHub**: arrancar con un PAT en `.env`; migrar a GitHub App cuando haya multiusuario.
+- **More files for a small project**: mitigated with one file per aggregate, not per class.
+- **Approving stage by stage can slow the demo down**: mitigated with auto-approve mode.
+- **Webhooks locally**: GitHub can't reach `localhost`; use `FakeCodeHost` + an endpoint to simulate events, or a tunnel (smee.io or similar).
+- **GitHub tokens**: start with a PAT in `.env`; move to a GitHub App when there are multiple users.
 
-Las decisiones de producto (auto-aprobar, un solo repo, nuestro tablero como fuente de verdad) están en [context.md](context.md#decisiones-tomadas); acá sólo figuran sus consecuencias técnicas.
+The product decisions (auto-approve, a single repo, our board as the source of truth) are in [context.md](context.md#decisions-made); only their technical consequences are listed here.
 
-## Estado de la migración (2026-10-23)
+## Migration status (2026-10-23)
 
-Hecho:
-- Estructura de carpetas de backend y frontend.
-- Dominio (`project`, `board`, `plan` + `PLANNING_STAGES`, `proposals` con sus transiciones, `documents`, `integrations`, `events`, `errors`).
-- Puertos: repositorios, `UnitOfWork`, `PlanningAgents`, `CodeHost`, `EventBus`.
-- Adaptadores: persistencia SQLModel (proyecto + equipo, sprints, tareas con checklist), `AdkPlanningAgents` y `MockPlanningAgents` por etapa, `FakeCodeHost`, `InMemoryEventBus`, HTTP (`/api/health` + errores de dominio → HTTP).
-- Caso de uso `RunPlanning`: mismo comportamiento que el pipeline anterior (todas las etapas de corrido).
-- Tests: capas, transiciones de `Proposal`, `RunPlanning`, persistencia y wiring HTTP.
-- Front: carpetas nuevas y tipos espejo en `domain/`.
+Done:
+- Backend and frontend folder structure.
+- Domain (`project`, `board`, `plan` + `PLANNING_STAGES`, `proposals` with its transitions, `documents`, `integrations`, `events`, `errors`).
+- Ports: repositories, `UnitOfWork`, `PlanningAgents`, `CodeHost`, `EventBus`.
+- Adapters: SQLModel persistence (project + team, sprints, tasks with checklist), per-stage `AdkPlanningAgents` and `MockPlanningAgents`, `FakeCodeHost`, `InMemoryEventBus`, HTTP (`/api/health` + domain errors → HTTP).
+- `RunPlanning` use case: same behavior as the previous pipeline (all stages back to back).
+- Tests: layers, `Proposal` transitions, `RunPlanning`, persistence and HTTP wiring.
+- Frontend: new folders and mirror types in `domain/`.
 
-Queda para las specs de cada feature: routers de proyectos, planning, propuestas, tablero y documentos; repos y tablas de `Proposal`, `Document`, `Objective` y `ExternalLink`; `GitHubCodeHost` y el webhook; gateways, `container.tsx` y pantallas del front.
+Left for each feature's spec: projects, planning, proposals, board and documents routers; repos and tables for `Proposal`, `Document`, `Objective` and `ExternalLink`; `GitHubCodeHost` and the webhook; gateways, `container.tsx` and frontend screens.

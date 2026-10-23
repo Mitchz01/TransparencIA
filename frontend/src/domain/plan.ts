@@ -1,4 +1,4 @@
-// Espejo de backend/app/domain/plan.py
+// Mirrors backend/app/domain/plan.py
 
 export type Level = 'low' | 'medium' | 'high'
 export type Methodology = 'scrum' | 'kanban' | 'scrumban' | 'xp' | 'shape_up'

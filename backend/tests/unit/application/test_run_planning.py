@@ -6,7 +6,7 @@ from app.domain.events import AgentFinished, AgentStarted
 from app.domain.plan import PLANNING_STAGES
 from app.domain.project import Member, Project
 
-PROJECT = Project(id=1, name="Demo", description="Algo", members=[Member(id=7, name="Ana", role="Backend")])
+PROJECT = Project(id=1, name="Demo", description="Something", members=[Member(id=7, name="Ana", role="Backend")])
 
 
 class RecordingAgents(MockPlanningAgents):

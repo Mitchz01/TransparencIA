@@ -1,4 +1,4 @@
-"""Composition root: el único módulo que conoce todas las capas y conecta puertos con adaptadores."""
+"""Composition root: the only module that knows every layer and wires ports to adapters."""
 
 from contextlib import asynccontextmanager
 
@@ -20,7 +20,7 @@ def build_agents() -> PlanningAgents:
         from app.adapters.outbound.agents.mock.agents import MockPlanningAgents
 
         return MockPlanningAgents()
-    # Import diferido: ADK es pesado y no hace falta en modo mock.
+    # Deferred import: ADK is heavy and isn't needed in mock mode.
     from app.adapters.outbound.agents.adk.agents import AdkPlanningAgents
 
     return AdkPlanningAgents(model=GEMINI_MODEL)
@@ -29,7 +29,7 @@ def build_agents() -> PlanningAgents:
 def build_code_host() -> CodeHost:
     if not MOCK_GITHUB:
         # TODO(spec 007): return GitHubCodeHost(token=GITHUB_TOKEN)
-        logger.warning("GitHubCodeHost todavía no existe (spec 007): se usa FakeCodeHost")
+        logger.warning("GitHubCodeHost doesn't exist yet (spec 007): using FakeCodeHost")
     return FakeCodeHost()
 
 
@@ -47,4 +47,4 @@ app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS, allow_methods=["*
 register_error_handlers(app)
 
 app.include_router(health.router)
-# TODO: projects, planning, proposals, board, documents (adapters/inbound/http) y webhooks/github
+# TODO: projects, planning, proposals, board, documents (adapters/inbound/http) and webhooks/github

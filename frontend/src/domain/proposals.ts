@@ -1,4 +1,4 @@
-// Espejo de backend/app/domain/proposals.py
+// Mirrors backend/app/domain/proposals.py
 
 export type ProposalKind = 'plan_stage' | 'document' | 'replan' | 'github_action'
 export type ProposalStatus = 'pending' | 'approved' | 'adjusted' | 'rejected'

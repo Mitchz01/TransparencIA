@@ -1,5 +1,5 @@
-// Puertos del front: la UI depende de estas interfaces, no de fetch.
-// Los implementan adapters/http (backend real) y adapters/fake (sin backend).
+// Frontend ports: the UI depends on these interfaces, not on fetch.
+// adapters/http (real backend) and adapters/fake (no backend) implement them.
 
 import type { DomainEvent } from '../domain/events'
 
@@ -7,5 +7,5 @@ export interface EventStream {
   subscribe(projectId: number, onEvent: (event: DomainEvent) => void): () => void
 }
 
-// ProjectGateway, PlanningGateway, ProposalGateway, BoardGateway y DocumentGateway
-// se agregan con la spec de cada feature (001-008).
+// ProjectGateway, PlanningGateway, ProposalGateway, BoardGateway and DocumentGateway
+// are added with each feature's spec (001-008).

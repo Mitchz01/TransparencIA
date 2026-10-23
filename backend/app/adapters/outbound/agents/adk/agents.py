@@ -1,8 +1,8 @@
-"""Agentes con Google ADK + Gemini.
+"""Agents with Google ADK + Gemini.
 
-Cada etapa es un LlmAgent con output_schema que corre en su propia sesión:
-el contexto (lo aprobado en etapas anteriores) llega por parámetro, así el
-caso de uso puede pausar entre etapas para que el usuario apruebe.
+Each stage is an LlmAgent with output_schema that runs in its own session:
+the context (what was approved in previous stages) comes in as a parameter,
+so the use case can pause between stages for the user to approve.
 """
 
 import json
@@ -23,11 +23,11 @@ USER_ID = "planner"
 
 
 def _instruction(stage: PlanningStage, context: dict[str, Any]):
-    # Provider en vez de string: ADK no intenta reemplazar las llaves del JSON como variables.
+    # A provider instead of a string: ADK doesn't try to replace the JSON braces as variables.
     def provider(_: ReadonlyContext) -> str:
         return (
-            f"{COMMON}\n\nTu rol: {stage.title}.\n{PROMPTS[stage.key]}\n\n"
-            f"Contexto (JSON):\n{json.dumps(context, ensure_ascii=False, indent=2, default=str)}"
+            f"{COMMON}\n\nYour role: {stage.title}.\n{PROMPTS[stage.key]}\n\n"
+            f"Context (JSON):\n{json.dumps(context, ensure_ascii=False, indent=2, default=str)}"
         )
 
     return provider
@@ -49,7 +49,7 @@ class AdkPlanningAgents:
         session_service = InMemorySessionService()
         runner = Runner(app_name=APP_NAME, agent=agent, session_service=session_service)
         session = await session_service.create_session(app_name=APP_NAME, user_id=USER_ID)
-        message = types.Content(role="user", parts=[types.Part(text="Generá tu parte del plan.")])
+        message = types.Content(role="user", parts=[types.Part(text="Generate your part of the plan.")])
 
         output: Any = None
         async for event in runner.run_async(user_id=USER_ID, session_id=session.id, new_message=message):
@@ -57,5 +57,5 @@ class AdkPlanningAgents:
             output = delta.get(stage.key, output)
 
         if output is None:
-            raise RuntimeError(f"El agente {stage.key} no devolvió resultado")
+            raise RuntimeError(f"Agent {stage.key} returned no result")
         return stage.schema.model_validate(output)

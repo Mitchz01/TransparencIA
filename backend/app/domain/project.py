@@ -35,11 +35,11 @@ class Project(BaseModel):
     duration_weeks: int = 8
     requested_methodology: RequestedMethodology = "auto"
     status: ProjectStatus = "draft"
-    # Si está activo, las propuestas de los agentes se aprueban solas (quedan auditadas igual).
+    # When on, the agents' proposals are approved automatically (they're still audited).
     auto_approve: bool = False
-    # Repo de GitHub conectado, formato "owner/name". Uno solo por proyecto.
+    # Connected GitHub repo, "owner/name" format. Only one per project.
     repository: str | None = None
-    # analysis, methodology, architecture, roadmap aprobados
+    # approved analysis, methodology, architecture, roadmap
     plan: dict[str, Any] | None = None
     members: list[Member] = []
     created_at: datetime = Field(default_factory=_now)

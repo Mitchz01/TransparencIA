@@ -28,7 +28,7 @@ class SqlProjectRepository:
         return self._to_domain(row)
 
     def save(self, project: Project) -> Project:
-        """Actualiza los datos del proyecto; el equipo se edita con su propio caso de uso."""
+        """Updates the project data; the team is edited through its own use case."""
         row = self._session.merge(mappers.project_to_table(project))
         self._session.flush()
         return self._to_domain(row)

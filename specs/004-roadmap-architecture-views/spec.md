@@ -1,4 +1,4 @@
-# Feature Specification: 004 · Vistas de roadmap, metodología y arquitectura
+# Feature Specification: 004 · Roadmap, methodology and architecture views
 
 **Created**: 2026-10-23  
 **Status**: Draft  

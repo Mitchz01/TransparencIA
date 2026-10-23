@@ -10,6 +10,6 @@ class Document(BaseModel):
     project_id: int
     kind: DocumentKind
     title: str
-    # Markdown para specs, Mermaid para diagramas.
+    # Markdown for specs, Mermaid for diagrams.
     content: str
     version: int = 1

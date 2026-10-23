@@ -1,4 +1,4 @@
-# Feature Specification: 007 · Integración con GitHub
+# Feature Specification: 007 · GitHub integration
 
 **Created**: 2026-10-23  
 **Status**: Approved  
@@ -8,219 +8,219 @@
 
 ## User Scenarios & Testing *(mandatory)*
 
-El líder conecta el repositorio de GitHub del proyecto. A partir de ahí, las tareas del tablero se publican como issues y, cuando alguien abre un PR que resuelve una tarea, los agentes proponen quién lo revisa y dejan una primera revisión.
+The leader connects the project's GitHub repository. From then on, board tasks are published as issues and, when someone opens a PR that resolves a task, the agents propose who should review it and leave a first review.
 
-Reglas que vienen del contexto del producto:
-- **Un solo repo por proyecto.**
-- **Nuestro tablero es la fuente de verdad**: las issues son un espejo de las tareas.
-- **Todo lo que se escribe en GitHub pasa por una propuesta**, porque lo ven terceros. Se aprueba a mano o con auto-aprobar (spec 005).
+Rules that come from the product context:
+- **One repo per project.**
+- **Our board is the source of truth**: issues mirror the tasks.
+- **Everything written to GitHub goes through a proposal**, because third parties see it. It's approved by hand or with auto-approve (spec 005).
 
-### User Story 1 - Conectar el repo del proyecto (Priority: P1)
+### User Story 1 - Connect the project's repo (Priority: P1)
 
-El líder entra a Integraciones, escribe el repo (`owner/nombre`) y lo conecta. El sistema verifica que tiene acceso y muestra el repo conectado.
+The leader goes to Integrations, types the repo (`owner/name`) and connects it. The system checks it has access and shows the connected repo.
 
-**Why this priority**: Sin repo conectado no funciona nada del resto de la integración.
+**Why this priority**: without a connected repo, nothing else in the integration works.
 
-**Independent Test**: Conectar un repo de prueba al que se tiene acceso y verificar que el proyecto lo muestra como conectado. Probar también con un repo inexistente.
+**Independent Test**: connect a test repo the system has access to and verify that the project shows it as connected. Also try a repo that doesn't exist.
 
 **Acceptance Scenarios**:
 
-1. **Scenario**: Conexión exitosa
-   - **Given** un proyecto sin repo y un repo al que el sistema tiene acceso
-   - **When** el líder ingresa `owner/nombre` y confirma
-   - **Then** el proyecto muestra el repo como conectado, con un link a GitHub
+1. **Scenario**: Successful connection
+   - **Given** a project without a repo and a repo the system has access to
+   - **When** the leader enters `owner/name` and confirms
+   - **Then** the project shows the repo as connected, with a link to GitHub
 
-2. **Scenario**: Repo inexistente o sin acceso
-   - **Given** un repo que no existe o al que el sistema no tiene acceso
-   - **When** el líder intenta conectarlo
-   - **Then** se muestra un mensaje claro ("no existe" o "sin permisos") y el proyecto queda sin repo
+2. **Scenario**: Repo missing or without access
+   - **Given** a repo that doesn't exist or that the system can't access
+   - **When** the leader tries to connect it
+   - **Then** a clear message is shown ("doesn't exist" or "no permissions") and the project stays without a repo
 
-3. **Scenario**: Cambiar de repo
-   - **Given** un proyecto que ya tiene un repo conectado
-   - **When** el líder conecta otro
-   - **Then** se le avisa que reemplaza al anterior y, si confirma, queda conectado solo el nuevo
+3. **Scenario**: Switch repos
+   - **Given** a project that already has a connected repo
+   - **When** the leader connects another one
+   - **Then** they're warned that it replaces the previous one and, if they confirm, only the new one stays connected
 
-4. **Scenario**: Desconectar
-   - **Given** un proyecto con repo conectado
-   - **When** el líder lo desconecta
-   - **Then** el proyecto deja de recibir y enviar cambios a GitHub; las tarjetas conservan los links a las issues ya creadas
+4. **Scenario**: Disconnect
+   - **Given** a project with a connected repo
+   - **When** the leader disconnects it
+   - **Then** the project stops receiving and sending changes to GitHub; cards keep the links to the issues already created
 
 ---
 
-### User Story 2 - Publicar las tareas como issues (Priority: P1)
+### User Story 2 - Publish tasks as issues (Priority: P1)
 
-Con el tablero armado y el repo conectado, el sistema propone publicar las tareas como issues. El líder ve la lista, la aprueba (o quita algunas) y se crean las issues. Cada tarjeta muestra el número y el link de su issue.
+With the board built and the repo connected, the system proposes publishing the tasks as issues. The leader sees the list, approves it (or removes some) and the issues are created. Each card shows its issue number and link.
 
-**Why this priority**: Es el puente entre el plan y el trabajo real del equipo en GitHub, y la base para sincronizar el avance (spec 008).
+**Why this priority**: it's the bridge between the plan and the team's real work on GitHub, and the basis for syncing progress (spec 008).
 
-**Independent Test**: Con un tablero de 5 tareas y un repo de prueba, aprobar la propuesta y verificar que se crean 5 issues y que cada tarjeta muestra su link.
+**Independent Test**: with a 5-task board and a test repo, approve the proposal and verify that 5 issues are created and that each card shows its link.
 
 **Acceptance Scenarios**:
 
-1. **Scenario**: Propuesta de publicación
-   - **Given** un proyecto con tablero armado y repo conectado
-   - **When** se conecta el repo o se arma el tablero (lo que pase último)
-   - **Then** aparece una propuesta "Publicar N tareas como issues" con la lista de tareas
+1. **Scenario**: Publishing proposal
+   - **Given** a project with a built board and a connected repo
+   - **When** the repo is connected or the board is built (whichever happens last)
+   - **Then** a "Publish N tasks as issues" proposal appears with the list of tasks
 
-2. **Scenario**: Aprobar la publicación
-   - **Given** la propuesta de publicación pendiente
-   - **When** el líder la aprueba
-   - **Then** se crea una issue por tarea, con título, descripción, criterios de aceptación, checklist como lista de tareas de GitHub, etiquetas de tipo y prioridad, y el responsable si tiene usuario de GitHub; cada tarjeta muestra "#número" con link
+2. **Scenario**: Approve publishing
+   - **Given** the pending publishing proposal
+   - **When** the leader approves it
+   - **Then** one issue per task is created, with title, description, acceptance criteria, the checklist as a GitHub task list, type and priority labels, and the assignee if they have a GitHub username; each card shows "#number" with a link
 
-3. **Scenario**: Ajustar antes de aprobar
-   - **Given** la propuesta de publicación pendiente
-   - **When** el líder quita dos tareas de la lista y aprueba
-   - **Then** solo se publican las tareas que quedaron; las otras pueden publicarse más adelante
+3. **Scenario**: Adjust before approving
+   - **Given** the pending publishing proposal
+   - **When** the leader removes two tasks from the list and approves
+   - **Then** only the remaining tasks are published; the others can be published later
 
-4. **Scenario**: Tareas nuevas
-   - **Given** tareas ya publicadas y tareas nuevas sin issue
-   - **When** se aprueba una re-planificación que agrega tareas (spec 008), o el líder pide "Publicar tareas pendientes"
-   - **Then** aparece una propuesta que incluye solo las tareas sin issue; nunca se publica dos veces la misma tarea
+4. **Scenario**: New tasks
+   - **Given** tasks already published and new tasks without an issue
+   - **When** a replan that adds tasks is approved (spec 008), or the leader asks to "Publish pending tasks"
+   - **Then** a proposal appears that includes only the tasks without an issue; the same task is never published twice
 
-6. **Scenario**: Tarea descartada
-   - **Given** una tarea publicada como issue #12
-   - **When** se aprueba una re-planificación que la descarta, o el líder la borra
-   - **Then** la issue #12 se cierra como "no planificada", con un comentario que explica el motivo, y eso no marca ninguna tarea como hecha
+5. **Scenario**: Partial failure
+   - **Given** GitHub rejects the creation of some issues
+   - **When** publishing finishes
+   - **Then** the created issues stay linked and the leader sees which ones failed and can retry them
 
-5. **Scenario**: Falla parcial
-   - **Given** GitHub rechaza la creación de algunas issues
-   - **When** termina la publicación
-   - **Then** las issues creadas quedan vinculadas y el líder ve cuáles fallaron y puede reintentarlas
+6. **Scenario**: Discarded task
+   - **Given** a task published as issue #12
+   - **When** a replan that discards it is approved, or the leader deletes it
+   - **Then** issue #12 is closed as "not planned", with a comment explaining the reason, and that doesn't mark any task as done
 
 ---
 
-### User Story 3 - Registrar el usuario de GitHub de cada miembro (Priority: P2)
+### User Story 3 - Register each member's GitHub username (Priority: P2)
 
-El líder carga el usuario de GitHub de cada miembro del equipo. Así las issues se asignan a la persona correcta y se pueden sugerir revisores.
+The leader enters each team member's GitHub username. That way issues are assigned to the right person and reviewers can be suggested.
 
-**Why this priority**: Sin esto las issues se publican igual, pero sin asignar y sin revisores sugeridos.
+**Why this priority**: without it, issues are still published, but unassigned and without suggested reviewers.
 
-**Independent Test**: Cargar el usuario de GitHub de un miembro, publicar una tarea asignada a él y verificar que la issue queda asignada a ese usuario.
+**Independent Test**: enter a member's GitHub username, publish a task assigned to them and verify that the issue is assigned to that user.
 
 **Acceptance Scenarios**:
 
-1. **Scenario**: Usuario válido
-   - **Given** un miembro sin usuario de GitHub
-   - **When** el líder carga un usuario que existe y tiene acceso al repo
-   - **Then** el miembro queda vinculado y sus próximas issues se asignan a ese usuario
+1. **Scenario**: Valid username
+   - **Given** a member without a GitHub username
+   - **When** the leader enters a username that exists and has access to the repo
+   - **Then** the member is linked and their next issues are assigned to that user
 
-2. **Scenario**: Usuario sin acceso al repo
-   - **Given** un usuario de GitHub que existe pero no tiene acceso al repo
-   - **When** el líder lo carga
-   - **Then** se guarda con un aviso de que no se le podrán asignar issues ni reviews hasta que tenga acceso
+2. **Scenario**: Username without repo access
+   - **Given** a GitHub user that exists but has no access to the repo
+   - **When** the leader enters it
+   - **Then** it's saved with a warning that issues and reviews can't be assigned to them until they have access
 
 ---
 
-### User Story 4 - Code review asistido de un PR (Priority: P2)
+### User Story 4 - Assisted code review of a PR (Priority: P2)
 
-Cuando alguien abre un PR que resuelve una tarea del proyecto, el sistema propone quién debería revisarlo y prepara una primera revisión hecha por un agente, que compara el cambio con los criterios de aceptación de la tarea. Si el líder lo aprueba, se piden las reviews y se publica el comentario en el PR.
+When someone opens a PR that resolves a project task, the system proposes who should review it and prepares a first review written by an agent, which compares the change against the task's acceptance criteria. If the leader approves, the reviews are requested and the comment is posted on the PR.
 
-**Why this priority**: Es la parte de "automatización con agentes" que más valor muestra, pero depende de que ya existan issues y usuarios de GitHub.
+**Why this priority**: it's the "automation with agents" part that shows the most value, but it depends on issues and GitHub usernames already existing.
 
-**Independent Test**: Abrir un PR en el repo de prueba que diga "Closes #N" para una issue del proyecto, y verificar que aparece la propuesta con revisores y comentario; aprobarla y ver el pedido de review y el comentario en GitHub.
+**Independent Test**: open a PR in the test repo that says "Closes #N" for a project issue, and verify that the proposal with reviewers and a comment shows up; approve it and see the review request and the comment on GitHub.
 
 **Acceptance Scenarios**:
 
-1. **Scenario**: PR vinculado a una tarea
-   - **Given** una tarea publicada como issue #12
-   - **When** un miembro abre un PR que dice "Closes #12"
-   - **Then** aparece una propuesta con revisores sugeridos y un comentario de revisión del agente, con su justificación
+1. **Scenario**: PR linked to a task
+   - **Given** a task published as issue #12
+   - **When** a member opens a PR that says "Closes #12"
+   - **Then** a proposal appears with suggested reviewers and a review comment from the agent, with its rationale
 
-2. **Scenario**: Elección de revisores
-   - **Given** un PR de un miembro Backend en un equipo con otros dos miembros Backend
-   - **When** el sistema sugiere revisores
-   - **Then** sugiere al miembro Backend con menos reviews pendientes, nunca al autor del PR
+2. **Scenario**: Choosing reviewers
+   - **Given** a PR from a Backend member in a team with two other Backend members
+   - **When** the system suggests reviewers
+   - **Then** it suggests the Backend member with the fewest pending reviews, never the PR author
 
-3. **Scenario**: Aprobar la revisión
-   - **Given** la propuesta de revisión pendiente
-   - **When** el líder la aprueba (o cambia los revisores y aprueba)
-   - **Then** se pide review a los revisores elegidos y se publica el comentario en el PR, identificado como generado por un agente
+3. **Scenario**: Approve the review
+   - **Given** the pending review proposal
+   - **When** the leader approves it (or changes the reviewers and approves)
+   - **Then** reviews are requested from the chosen reviewers and the comment is posted on the PR, marked as generated by an agent
 
-4. **Scenario**: PR sin tarea
-   - **Given** un PR que no referencia ninguna issue del proyecto
-   - **When** se abre
-   - **Then** el sistema no propone nada
+4. **Scenario**: PR without a task
+   - **Given** a PR that doesn't reference any project issue
+   - **When** it's opened
+   - **Then** the system doesn't propose anything
 
 ---
 
 ### Edge Cases
 
-- ¿Qué pasa si se cambia de repo con issues ya publicadas? Las tarjetas conservan los links al repo anterior; las tareas sin issue se publican en el nuevo.
-- ¿Qué pasa si se edita una tarea ya publicada (título, descripción, criterios, checklist, responsable)? La issue se actualiza sola, sin propuesta: publicarla ya se aprobó, la issue es un espejo de la tarea, y el cambio lo hizo una persona, no un agente. Queda registrado en la actividad.
-- ¿Qué pasa si alguien edita la issue directamente en GitHub? No se toca la tarea; desde GitHub solo entran cambios de estado (spec 008).
-- ¿Qué pasa si la issue se borra en GitHub? La tarjeta muestra el link como roto y la tarea vuelve a poder publicarse.
-- ¿Qué pasa si el autor del PR es el único miembro con ese rol? Se sugiere al miembro con usuario de GitHub que tenga menos reviews pendientes, aunque sea de otro rol, y se lo justifica. Si no hay nadie más con usuario de GitHub, la propuesta sale sin revisores, solo con el comentario del agente, y el líder puede agregarlos.
-- ¿Qué pasa con los avisos que GitHub manda por cambios que hizo el propio sistema (crear, editar o cerrar una issue)? Se ignoran: no vuelven a entrar como avance (spec 008). Por ejemplo, cerrar la issue de una tarea descartada nunca la marca como hecha.
-- ¿Qué pasa si el PR es muy grande para revisar entero? El agente revisa lo que alcanza y lo dice explícitamente en el comentario.
-- ¿Qué pasa si GitHub no responde o limita las llamadas? La acción queda pendiente y se reintenta; el líder ve que está demorada.
-- ¿Qué pasa si se abren varios PRs para la misma tarea? Se propone revisión para cada uno.
-- ¿El sistema también abre PRs? No. Los PRs los abre el equipo con su código; el sistema pide reviews y comenta. Crear ramas o PRs borrador por tarea queda fuera de alcance de esta spec (se puede sumar después sin cambiar lo demás).
+- What if the repo is switched with issues already published? Cards keep the links to the previous repo; tasks without an issue are published in the new one.
+- What if a published task is edited (title, description, criteria, checklist, assignee)? The issue updates by itself, without a proposal: publishing it was already approved, the issue mirrors the task, and the change was made by a person, not an agent. It's recorded in the activity feed.
+- What if someone edits the issue directly on GitHub? The task isn't touched; only state changes come in from GitHub (spec 008).
+- What if the issue is deleted on GitHub? The card shows the link as broken and the task can be published again.
+- What if the PR author is the only member with that role? The member with a GitHub username and the fewest pending reviews is suggested, even from another role, with the reason. If nobody else has a GitHub username, the proposal goes out without reviewers, only with the agent's comment, and the leader can add them.
+- What about the events GitHub sends for changes the system itself made (creating, editing or closing an issue)? They're ignored: they don't come back in as progress (spec 008). For example, closing the issue of a discarded task never marks it as done.
+- What if the PR is too big to review entirely? The agent reviews what it can and says so explicitly in the comment.
+- What if GitHub doesn't respond or rate-limits the calls? The action stays pending and is retried; the leader sees that it's delayed.
+- What if several PRs are opened for the same task? A review is proposed for each one.
+- Does the system also open PRs? No. The team opens PRs with their code; the system requests reviews and comments. Creating branches or draft PRs per task is out of scope for this spec (it can be added later without changing the rest).
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-**Conexión (UC-09)**
+**Connection (UC-09)**
 
-- **FR-001**: El líder MUST poder conectar un único repo de GitHub por proyecto, indicando `owner/nombre`.
-- **FR-002**: El sistema MUST verificar que el repo existe y que tiene permisos para crear issues y comentar antes de darlo por conectado, y mostrar el motivo si falla.
-- **FR-003**: El sistema MUST quedar suscrito a los cambios del repo (PRs e issues) al conectarlo, y dejar de estarlo al desconectarlo o reemplazarlo.
-- **FR-004**: El líder MUST poder cargar un token de GitHub para su proyecto al conectarlo (constitución, principio 5). Si no carga uno, el sistema usa el token de la instalación si existe (útil para la demo). El token nunca se vuelve a mostrar en la interfaz; solo se puede reemplazar o borrar.
-- **FR-005**: Sin ningún token (ni del proyecto ni de la instalación), el sistema MUST funcionar en modo de prueba: registra las acciones en vez de enviarlas a GitHub, para poder hacer la demo (constitución, principio 6).
+- **FR-001**: The leader MUST be able to connect a single GitHub repo per project, entering `owner/name`.
+- **FR-002**: The system MUST verify that the repo exists and that it has permissions to create issues and comment before treating it as connected, and show the reason if it fails.
+- **FR-003**: The system MUST subscribe to the repo's changes (PRs and issues) when connecting it, and unsubscribe when disconnecting or replacing it.
+- **FR-004**: The leader MUST be able to enter a GitHub token for their project when connecting it (constitution, principle 5). If they don't, the system uses the installation's token if there is one (useful for the demo). The token is never shown again in the UI; it can only be replaced or deleted.
+- **FR-005**: With no token at all (neither the project's nor the installation's), the system MUST work in test mode: it records the actions instead of sending them to GitHub, so the demo can run (constitution, principle 6).
 
-**Publicación de issues (UC-10)**
+**Publishing issues (UC-10)**
 
-- **FR-006**: Con tablero y repo, el sistema MUST proponer la publicación de todas las tareas que todavía no tienen issue en tres momentos: cuando se tienen ambos por primera vez, cuando se aprueba una re-planificación que agrega tareas (spec 008) y cuando el líder lo pide. Crear una tarea a mano no genera una propuesta por sí sola, para no llenar al líder de propuestas.
-- **FR-007**: El líder MUST poder quitar tareas de la propuesta antes de aprobarla.
-- **FR-008**: Al aprobarse, el sistema MUST crear una issue por tarea con título, descripción, criterios de aceptación, checklist como lista de tareas, etiquetas de tipo y prioridad, y el responsable si tiene usuario de GitHub.
-- **FR-009**: Cada tarjeta publicada MUST mostrar el número y el link de su issue.
-- **FR-010**: El sistema MUST garantizar que una tarea tenga como máximo una issue.
-- **FR-011**: Ante fallas parciales, el sistema MUST conservar las issues creadas, mostrar cuáles fallaron y permitir reintentarlas.
+- **FR-006**: With a board and a repo, the system MUST propose publishing all the tasks that don't have an issue yet at three moments: the first time it has both, when a replan that adds tasks is approved (spec 008) and when the leader asks for it. Creating a task by hand doesn't generate a proposal by itself, to avoid flooding the leader with proposals.
+- **FR-007**: The leader MUST be able to remove tasks from the proposal before approving it.
+- **FR-008**: When approved, the system MUST create one issue per task with title, description, acceptance criteria, the checklist as a task list, type and priority labels, and the assignee if they have a GitHub username.
+- **FR-009**: Each published card MUST show its issue number and link.
+- **FR-010**: The system MUST guarantee that a task has at most one issue.
+- **FR-011**: On partial failures, the system MUST keep the created issues, show which ones failed and allow retrying them.
 
-**Usuarios de GitHub**
+**GitHub usernames**
 
-- **FR-012**: El líder MUST poder cargar y editar el usuario de GitHub de cada miembro, y el sistema MUST avisar si ese usuario no tiene acceso al repo.
+- **FR-012**: The leader MUST be able to enter and edit each member's GitHub username, and the system MUST warn if that user has no access to the repo.
 
-**Code review asistido (UC-11)**
+**Assisted code review (UC-11)**
 
-- **FR-013**: Cuando se abre un PR que referencia una issue del proyecto, el sistema MUST generar una propuesta de revisión con revisores sugeridos y un comentario del agente revisor.
-- **FR-014**: El sistema MUST sugerir revisores con el rol adecuado para la tarea y la menor cantidad de reviews pendientes, excluyendo al autor del PR.
-- **FR-015**: El comentario del agente MUST evaluar el cambio contra los criterios de aceptación de la tarea, justificar cada observación e indicar si no revisó el PR completo.
-- **FR-016**: El líder MUST poder cambiar los revisores o editar el comentario antes de aprobar.
-- **FR-017**: Al aprobarse, el sistema MUST pedir las reviews y publicar el comentario en el PR, marcado como generado por un agente.
-- **FR-018**: El sistema MUST ignorar los PRs que no referencian issues del proyecto.
+- **FR-013**: When a PR that references a project issue is opened, the system MUST generate a review proposal with suggested reviewers and a comment from the reviewer agent.
+- **FR-014**: The system MUST suggest reviewers with the right role for the task and the fewest pending reviews, excluding the PR author.
+- **FR-015**: The agent's comment MUST evaluate the change against the task's acceptance criteria, justify each remark and say if it didn't review the whole PR.
+- **FR-016**: The leader MUST be able to change the reviewers or edit the comment before approving.
+- **FR-017**: When approved, the system MUST request the reviews and post the comment on the PR, marked as generated by an agent.
+- **FR-018**: The system MUST ignore PRs that don't reference project issues.
 
-**Transversales**
+**Cross-cutting**
 
-- **FR-019**: Toda escritura nueva en GitHub (crear issues, pedir reviews, comentar) MUST pasar por una propuesta aprobada, manual o por auto-aprobar (spec 005).
-- **FR-020**: Cada acción hecha en GitHub MUST quedar registrada en la actividad del proyecto: qué, cuándo y qué propuesta la autorizó.
-- **FR-021**: Cuando se edita una tarea ya publicada, el sistema MUST actualizar su issue sin propuesta (título, descripción, criterios, checklist y responsable), porque la publicación ya fue aprobada y el cambio lo hizo una persona (o una re-planificación aprobada).
-- **FR-022**: Cuando una tarea publicada se descarta en una re-planificación aprobada (spec 008) o se borra, el sistema MUST cerrar su issue como "no planificada", con un comentario que explique el motivo.
-- **FR-023**: El sistema MUST reconocer los cambios que él mismo hizo en GitHub, para que no vuelvan a entrar como avance del equipo (spec 008, FR-015).
+- **FR-019**: Every new write to GitHub (creating issues, requesting reviews, commenting) MUST go through an approved proposal, manually or through auto-approve (spec 005).
+- **FR-020**: Every action taken on GitHub MUST be recorded in the project activity: what, when and which proposal authorized it.
+- **FR-021**: When a published task is edited, the system MUST update its issue without a proposal (title, description, criteria, checklist and assignee), because publishing was already approved and the change was made by a person (or an approved replan).
+- **FR-022**: When a published task is discarded in an approved replan (spec 008) or deleted, the system MUST close its issue as "not planned", with a comment explaining the reason.
+- **FR-023**: The system MUST recognize the changes it made itself on GitHub, so they don't come back in as team progress (spec 008, FR-015).
 
 ### Key Entities *(include if feature involves data)*
 
-- **Repositorio conectado**: el repo `owner/nombre` del proyecto. Uno por proyecto, con su estado de conexión.
-- **Vínculo tarea ↔ issue**: une una tarea con su issue (número, link y estado). Una tarea tiene como máximo una issue.
-- **Vínculo tarea ↔ PR**: une una tarea con los PRs que la resuelven.
-- **Propuesta de acción en GitHub**: una propuesta (spec 005) que describe lo que se va a escribir en GitHub: issues a crear, o revisores y comentario de una revisión.
-- **Revisión sugerida**: revisores propuestos con su justificación y el comentario del agente para un PR.
-- **Usuario de GitHub del miembro**: dato extra del miembro (spec 001) para asignar issues y pedir reviews.
+- **Connected repository**: the project's `owner/name` repo. One per project, with its connection status.
+- **Task ↔ issue link**: links a task to its issue (number, link and state). A task has at most one issue.
+- **Task ↔ PR link**: links a task to the PRs that resolve it.
+- **GitHub action proposal**: a proposal (spec 005) that describes what's going to be written to GitHub: issues to create, or the reviewers and comment of a review.
+- **Suggested review**: proposed reviewers with their rationale and the agent's comment for a PR.
+- **Member's GitHub username**: extra member data (spec 001) to assign issues and request reviews.
 
 ### Dependencies
 
-- **003**: las tareas que se publican salen del tablero.
-- **005**: todas las escrituras en GitHub son propuestas con aprobación.
-- **001**: el usuario de GitHub es un dato del miembro; hay que acordar con sandredev si se carga al crear el equipo o solo en Integraciones.
-- **007 → 008**: qué eventos de GitHub llegan y cómo mueven las tareas lo define la 008; esta spec solo usa el evento "PR abierto" para la revisión (contrato en [specs/README.md](../README.md)). Las dos specs comparten una regla: los cambios que hizo el propio sistema en GitHub no vuelven como avance (FR-023 acá, FR-015 en la 008).
+- **003**: the published tasks come from the board.
+- **005**: every write to GitHub is a proposal with approval.
+- **001**: the GitHub username is member data; it's entered from Integrations (FR-012), not when creating the team.
+- **007 → 008**: which GitHub events arrive and how they move tasks is defined by 008; this spec only uses the "PR opened" event for the review (contract in [specs/README.md](../README.md)). Both specs share one rule: changes the system itself made on GitHub don't come back as progress (FR-023 here, FR-015 in 008).
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
-- **SC-001**: El líder conecta el repo en menos de 1 minuto, sin salir de la herramienta.
-- **SC-002**: El 100% de las tareas aprobadas para publicar termina con exactamente una issue vinculada, o con un error visible que se puede reintentar.
-- **SC-003**: La propuesta de revisión aparece en menos de 2 minutos desde que se abre un PR vinculado.
-- **SC-004**: En al menos el 80% de las propuestas de revisión, el líder aprueba los revisores sugeridos sin cambiarlos.
-- **SC-005**: Ninguna issue, pedido de review o comentario nuevo llega a GitHub sin una propuesta aprobada que lo respalde.
-- **SC-006**: Un cambio en una tarea publicada se ve en su issue en menos de 1 minuto.
+- **SC-001**: The leader connects the repo in under 1 minute, without leaving the tool.
+- **SC-002**: 100% of the tasks approved for publishing end up with exactly one linked issue, or with a visible error that can be retried.
+- **SC-003**: The review proposal appears less than 2 minutes after a linked PR is opened.
+- **SC-004**: In at least 80% of the review proposals, the leader approves the suggested reviewers without changing them.
+- **SC-005**: No new issue, review request or comment reaches GitHub without an approved proposal backing it.
+- **SC-006**: A change to a published task shows up in its issue in under 1 minute.

@@ -1,60 +1,59 @@
-# Instrucciones para agentes de IA
+# Instructions for AI agents
 
-Este repo usa **Spec-Driven Development (SDD)**. Vale para cualquier asistente (Claude Code, Gemini CLI, Copilot, Cursor).
+This repo uses **Spec-Driven Development (SDD)**. It applies to any assistant (Claude Code, Gemini CLI, Copilot, Cursor).
 
-## Flujo obligatorio
+## Required workflow
 
-1. **Spec** → `specs/NNN-feature/spec.md`: qué y por qué (usuario, historias, criterios de aceptación). Nada técnico.
-2. **Plan** → `specs/NNN-feature/plan.md`: cómo (endpoints, modelos, componentes, decisiones).
-3. **Tasks** → `specs/NNN-feature/tasks.md`: checklist ordenada, cada tarea chica y verificable.
-4. **Implementar** una tarea a la vez y marcarla `[x]` en `tasks.md`.
+1. **Spec** → `specs/NNN-feature/spec.md`: what and why (users, stories, acceptance criteria). Nothing technical.
+2. **Plan** → `specs/NNN-feature/plan.md`: how (technical context, files to touch, decisions) and the **tasks**, grouped in phases: setup, foundational, one phase per user story, polish.
+3. **Implement** one task at a time and mark it `[x]` in `plan.md`.
 
-Reglas:
-- No escribir código de una feature sin `spec.md` y `plan.md` aprobados (`Estado: Aprobado`).
-- Si la implementación contradice la spec, se actualiza la spec primero.
-- Respetar [specs/constitution.md](specs/constitution.md).
-- Plantillas: spec en [specs/spec-template.md](specs/spec-template.md); plan y tasks en [specs/_templates/](specs/_templates/).
-- Para trabajo de frontend, seguir las skills de [.claude/skills/](.claude/skills/README.md) (diseño visual, composición y rendimiento en React, auditoría de UI).
+Rules:
+- Don't write code for a feature without an approved `spec.md` and `plan.md` (`Status: Approved`).
+- If the implementation contradicts the spec, update the spec first.
+- Follow [specs/constitution.md](specs/constitution.md).
+- Templates: [specs/spec-template.md](specs/spec-template.md) and [specs/plan-template.md](specs/plan-template.md).
+- For frontend work, follow the skills in [.claude/skills/](.claude/skills/README.md) (visual design, React composition and performance, UI audit).
 
 ## Stack
 
 - **Backend**: Python 3.13, FastAPI, SQLModel (SQLite), Google ADK + Gemini (`gemini-3.5-flash`)
 - **Frontend**: React 19 + TypeScript + Vite, Tailwind, dnd-kit, React Router
 
-## Estructura (arquitectura hexagonal)
+## Structure (hexagonal architecture)
 
-Contexto del producto en [plan/context.md](plan/context.md); arquitectura y decisiones en [plan/hexagonal-architecture.md](plan/hexagonal-architecture.md).
+Product context in [plan/context.md](plan/context.md); architecture and decisions in [plan/hexagonal-architecture.md](plan/hexagonal-architecture.md); use cases in [plan/use-cases.md](plan/use-cases.md).
 
-Regla de dependencia: `adapters → application → domain`, nunca al revés (lo verifica `tests/architecture/test_layers.py`).
+Dependency rule: `adapters → application → domain`, never the other way around (checked by `tests/architecture/test_layers.py`).
 
 ```
 backend/app/
-  main.py              composition root: elige adaptadores (mock o real) y monta routers
-  config.py            env vars (sin API key → MOCK_AGENTS, sin GITHUB_TOKEN → MOCK_GITHUB)
-  domain/              entidades, esquemas del plan (PLANNING_STAGES), propuestas, eventos. Sin I/O
+  main.py              composition root: picks adapters (mock or real) and mounts routers
+  config.py            env vars (no API key → MOCK_AGENTS, no GITHUB_TOKEN → MOCK_GITHUB)
+  domain/              entities, plan schemas (PLANNING_STAGES), proposals, events. No I/O
   application/
     ports/             interfaces (Protocol): repos, UnitOfWork, PlanningAgents, CodeHost, EventBus
-    use_cases/         un módulo por caso de uso, agrupados por feature
-    dto.py             entradas/salidas de los casos de uso
+    use_cases/         one module per use case, grouped by feature
+    dto.py             use case inputs/outputs
   adapters/
-    inbound/http/      routers FastAPI + SSE
-    inbound/webhooks/  webhooks de GitHub
-    outbound/persistence/  SQLModel: tablas, mappers, repos, UnitOfWork
-    outbound/agents/   adk/ (Gemini) y mock/
-    outbound/code_host/    github/ y fake
-    outbound/events/   bus de eventos en memoria
+    inbound/http/      FastAPI routers + SSE
+    inbound/webhooks/  GitHub webhooks
+    outbound/persistence/  SQLModel: tables, mappers, repos, UnitOfWork
+    outbound/agents/   adk/ (Gemini) and mock/
+    outbound/code_host/    github/ and fake
+    outbound/events/   in-memory event bus
 backend/tests/         unit/ (domain, application), integration/adapters/, architecture/
 frontend/src/
-  app/                 App, rutas, composition root (container)
-  domain/              tipos espejo de backend/app/domain + reglas puras
+  app/                 App, routes, composition root (container)
+  domain/              types mirroring backend/app/domain + pure rules
   application/         ports.ts (gateways) + use-cases/ (hooks)
-  adapters/            http/ (backend real) y fake/ (sin backend)
+  adapters/            http/ (real backend) and fake/ (no backend)
   ui/                  pages/, components/, styles/, assets/
-plan/                  contexto del producto y arquitectura
-specs/               SDD: constitution, plantillas, features
+plan/                  product context, architecture and use cases
+specs/                 SDD: constitution, templates, features
 ```
 
-## Comandos
+## Commands
 
 ```bash
 # backend
@@ -64,11 +63,10 @@ cd backend && pip install -r requirements-dev.txt && pytest       # tests
 cd frontend && npm run dev                                         # :5173, /api → :8000
 ```
 
-## Convenciones
+## Conventions
 
-- Código e identificadores en inglés; textos de UI y specs en español.
-- Las salidas de agentes siempre con `output_schema` (Pydantic), nunca texto libre.
-- Tipos del front en `src/domain` alineados con `backend/app/domain/`.
-- Nombres de carpetas y archivos siempre en inglés (también en `plan/` y `specs/`); el contenido de docs y la UI, en español.
-- Nada del exterior (FastAPI, SQLModel, ADK, GitHub) se importa en `domain/` ni en `application/`: se agrega un puerto y un adaptador.
-- Las tablas SQLModel son del adaptador de persistencia; el resto del código usa las entidades de `domain/`.
+- **Everything in English**: code, identifiers, comments, docs, specs, plans, commit messages and UI text. The only exception is what the agents generate for a project, which follows the language of the project description (spec 002, FR-014).
+- Agent outputs always use `output_schema` (Pydantic), never free text.
+- Frontend types in `src/domain` stay aligned with `backend/app/domain/`.
+- Nothing external (FastAPI, SQLModel, ADK, GitHub) is imported in `domain/` or `application/`: add a port and an adapter.
+- SQLModel tables belong to the persistence adapter; the rest of the code uses the `domain/` entities.

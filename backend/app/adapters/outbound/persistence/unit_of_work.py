@@ -20,7 +20,7 @@ class SqlUnitOfWork:
         return self
 
     def __exit__(self, exc_type, *_: object) -> None:
-        # Si no se llamó a commit (o hubo excepción), no queda nada a medias.
+        # If commit wasn't called (or there was an exception), nothing is left half-done.
         self.rollback()
 
     def commit(self) -> None:

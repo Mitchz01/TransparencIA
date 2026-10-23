@@ -1,37 +1,37 @@
-# Specs: quién hace qué
+# Specs: who does what
 
-Cada uno es **dueño de un área de punta a punta** (spec → plan → tasks → código) y **revisa** las specs de otro. Una spec pasa a `Approved` cuando la aprueba su revisor. Casos de uso en [plan/use-cases.md](../plan/use-cases.md); plantilla en [spec-template.md](spec-template.md).
+Each person **owns an area end to end** (spec → plan → code) and **reviews** someone else's specs. A spec moves to `Approved` when its reviewer approves it. Use cases are in [plan/use-cases.md](../plan/use-cases.md); templates in [spec-template.md](spec-template.md) and [plan-template.md](plan-template.md).
 
-| Spec | Feature | Casos de uso | Responsable | Revisor | Ronda |
+| Spec | Feature | Use cases | Owner | Reviewer | Round |
 |---|---|---|---|---|---|
-| [001](001-project-team-setup/spec.md) | Alta de proyecto y equipo | UC-01, UC-02 | sandredev | codigotpx | 1 |
-| [002](002-agent-planning-pipeline/spec.md) | Pipeline de agentes de planificación | UC-03 | Mitchz01 | sandredev | 1 |
-| [003](003-kanban-board/spec.md) | Tablero kanban y sprints | UC-05, UC-06 | codigotpx | Mitchz01 | 1 |
-| [005](005-proposals-approval/spec.md) | Propuestas, aprobación y actividad en vivo | UC-04, UC-14 | sandredev | codigotpx | 1 |
-| [004](004-roadmap-architecture-views/spec.md) | Vistas de roadmap, metodología y arquitectura | UC-07 | sandredev | codigotpx | 2 |
-| [006](006-generated-specs-diagrams/spec.md) | Specs y diagramas generados | UC-08 | Mitchz01 | sandredev | 2 |
-| [007](007-github-integration/spec.md) | Integración con GitHub | UC-09, UC-10, UC-11 | codigotpx | Mitchz01 | 3 |
-| [008](008-github-sync-replanning/spec.md) | Sincronización desde GitHub y re-planificación | UC-12, UC-13 | Mitchz01 | sandredev | 3 |
+| [001](001-project-team-setup/spec.md) | Project and team setup | UC-01, UC-02 | sandredev | codigotpx | 1 |
+| [002](002-agent-planning-pipeline/spec.md) | Agent planning pipeline | UC-03 | Mitchz01 | sandredev | 1 |
+| [003](003-kanban-board/spec.md) | Kanban board and sprints | UC-05, UC-06 | codigotpx | Mitchz01 | 1 |
+| [005](005-proposals-approval/spec.md) | Proposals, approval and live activity | UC-04, UC-14 | sandredev | codigotpx | 1 |
+| [004](004-roadmap-architecture-views/spec.md) | Roadmap, methodology and architecture views | UC-07 | sandredev | codigotpx | 2 |
+| [006](006-generated-specs-diagrams/spec.md) | Generated specs and diagrams | UC-08 | Mitchz01 | sandredev | 2 |
+| [007](007-github-integration/spec.md) | GitHub integration | UC-09, UC-10, UC-11 | codigotpx | Mitchz01 | 3 |
+| [008](008-github-sync-replanning/spec.md) | GitHub sync and replanning | UC-12, UC-13 | Mitchz01 | sandredev | 3 |
 
-## Áreas
+## Areas
 
-- **sandredev: Configurar y decidir.** El líder arma el proyecto, aprueba o rechaza lo que proponen los agentes y ve la actividad en vivo. También las vistas de lectura del plan.
-- **Mitchz01: Agentes.** Todo lo que corre en Gemini/ADK: las etapas del plan, specs y diagramas generados, re-planificación.
-- **codigotpx: Trabajar e integrar.** El tablero donde se mueve el trabajo y la conexión con GitHub (issues, code review).
+- **sandredev: Set up and decide.** The leader sets up the project, approves or rejects what the agents propose and follows the live activity. Also the read-only plan views.
+- **Mitchz01: Agents.** Everything that runs on Gemini/ADK: the plan stages, generated specs and diagrams, replanning.
+- **codigotpx: Work and integrate.** The board where work moves and the GitHub connection (issues, code review).
 
-## Orden
+## Order
 
-- **Ronda 1** = la demo (constitución, principio 1): proyecto → plan → aprobación → tablero. Se escriben primero y en paralelo.
-- **Ronda 2** = completa la demo. **Ronda 3** = extras si sobra tiempo.
+- **Round 1** = the demo (constitution, principle 1): project → plan → approval → board. Written first and in parallel.
+- **Round 2** = completes the demo. **Round 3** = extras if there's time left.
 
-## Contratos entre specs
+## Contracts between specs
 
-Donde una spec depende de otra, los dos dueños acuerdan esto **antes** de aprobar:
+Where one spec depends on another, both owners agree on this **before** approving:
 
-| Entre | Qué acordar | Dueños |
+| Between | What to agree on | Owners |
 |---|---|---|
-| 001 → 002 | Qué datos del proyecto y del equipo reciben los agentes | sandredev, Mitchz01 |
-| 002 → 005 | Forma de una propuesta por etapa y qué pasa al rechazarla (pregunta abierta 2) | Mitchz01, sandredev |
-| 005 → 003 | Qué se crea en el tablero cuando se aprueba el plan (`PlanApplied`) | sandredev, codigotpx |
-| 007 → 008 | Qué eventos de GitHub llegan por webhook y cómo mueven las tareas | codigotpx, Mitchz01 |
-| 003, 005 | Eventos que se muestran en la actividad en vivo | codigotpx, sandredev |
+| 001 → 002 | Which project and team data the agents receive | sandredev, Mitchz01 |
+| 002 → 005 | Shape of a per-stage proposal and what happens when it's rejected | Mitchz01, sandredev |
+| 005 → 003 | What gets created on the board when the plan is approved (`PlanApplied`) | sandredev, codigotpx |
+| 007 → 008 | Which GitHub events arrive by webhook and how they move tasks | codigotpx, Mitchz01 |
+| 003, 005 | Events shown in the live activity feed | codigotpx, sandredev |
