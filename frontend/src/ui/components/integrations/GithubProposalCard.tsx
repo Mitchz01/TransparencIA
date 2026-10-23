@@ -50,7 +50,7 @@ function ReviewBody({ content }: { content: RequestReviewContent }) {
 }
 
 /** A GitHub action waiting for the leader: publish issues, or request a review with the agent's comment. */
-export function GithubProposalCard({ projectId, proposal }: { projectId: number; proposal: Proposal }) {
+export function GithubProposalCard({ projectId, proposal, decide = true }: { projectId: number; proposal: Proposal; decide?: boolean }) {
   const { approve, reject } = useProposalActions(projectId)
   const [rejecting, setRejecting] = useState(false)
   const issues = proposal.key === 'create_issues'
@@ -68,19 +68,23 @@ export function GithubProposalCard({ projectId, proposal }: { projectId: number;
           </span>
           <h2 className="text-heading">{title}</h2>
         </div>
-        <Pill hue="amber" icon={HourglassIcon}>Espera tu decisión</Pill>
+        <Pill hue="amber" icon={HourglassIcon}>{decide ? 'Espera tu decisión' : 'Espera al líder'}</Pill>
       </header>
       <div className="flex gap-3 rounded-md bg-primary-soft p-4 text-primary-soft-ink">
         <Icon icon={InformationCircleIcon} className="mt-0.5" />
         <p className="text-body">{proposal.rationale}</p>
       </div>
       {issues ? <IssuesBody content={content as CreateIssuesContent} /> : <ReviewBody content={content as RequestReviewContent} />}
-      <div className="flex flex-wrap gap-2">
-        <Button variant="primary" icon={Tick02Icon} loading={approve.isPending} onClick={() => approve.mutate(proposal.id)}>
-          {issues ? 'Publicar' : 'Pedir la revisión'}
-        </Button>
-        <Button variant="quiet" onClick={() => setRejecting(true)}>Rechazar</Button>
-      </div>
+      {decide ? (
+        <div className="flex flex-wrap gap-2">
+          <Button variant="primary" icon={Tick02Icon} loading={approve.isPending} onClick={() => approve.mutate(proposal.id)}>
+            {issues ? 'Publicar' : 'Pedir la revisión'}
+          </Button>
+          <Button variant="quiet" onClick={() => setRejecting(true)}>Rechazar</Button>
+        </div>
+      ) : (
+        <StateLabel hue="amber" icon={HourglassIcon}>Esperando la aprobación del líder</StateLabel>
+      )}
       {rejecting && <RejectDialog what={issues ? 'la publicación' : 'la revisión'} onReject={(reason) => reject(proposal.id, reason)} onClose={() => setRejecting(false)} />}
     </Card>
   )

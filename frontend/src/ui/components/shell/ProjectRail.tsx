@@ -18,8 +18,9 @@ function RailLink({ to, label, icon }: { to: string; label: string; icon: IconGl
   )
 }
 
-/** The sections as icons in a narrow column, theme and settings at the bottom (design system, "Navigation"). */
-export function ProjectRail({ projectId }: { projectId: number }) {
+/** The sections as icons in a narrow column, theme and settings at the bottom (design system, "Navigation").
+ *  Settings only for leaders: a member can't change them (spec 015). */
+export function ProjectRail({ projectId, canManage }: { projectId: number; canManage: boolean }) {
   const { theme, toggle } = useTheme()
   const themeLabel = theme === 'dark' ? 'Usar tema claro' : 'Usar tema oscuro'
   return (
@@ -39,7 +40,7 @@ export function ProjectRail({ projectId }: { projectId: number }) {
           </button>
           <Tooltip text={themeLabel} placement="right" />
         </span>
-        <RailLink to={`/projects/${projectId}/settings`} label="Ajustes" icon={Settings01Icon} />
+        {canManage && <RailLink to={`/projects/${projectId}/settings`} label="Ajustes" icon={Settings01Icon} />}
       </div>
     </aside>
   )

@@ -3,6 +3,9 @@
 // Endpoints, status codes and errors: frontend/docs/api-contract.md.
 // Every method rejects with an ApiError (application/errors.ts) on failure.
 
+import type {
+  Account, Invitation, InvitationPreview, JoinResult, MemberUpdate, ProfileUpdate, SignIn, SignUp,
+} from '../domain/account'
 import type { BoardView, CapacityResult, ChecklistItem, CloseSprintResult, NewTask, TaskPatch, TaskResult } from '../domain/board'
 import type { DocumentSummary, ProjectDocument } from '../domain/documents'
 import type { DomainEvent } from '../domain/events'
@@ -13,16 +16,17 @@ import type { Project, ProjectCreate, ProjectSummary, ProjectUpdate } from '../d
 import type { Proposal, ProposalStatus } from '../domain/proposals'
 import type { ApiErrorBody } from './errors'
 
-// ---------- spec 001 (+ getPlanViews, spec 004) ----------
+// ---------- spec 001 (+ getPlanViews, spec 004; accounts, spec 015) ----------
+// Every project call answers the resource's 404 to outsiders and 403 forbidden to a member doing a leader action.
 
 export interface ProjectGateway {
-  /** POST /api/projects → 201. Errors: 422 validation_failed. Never starts planning. */
+  /** POST /api/projects → 201, with you as its only member and leader. Errors: 422 validation_failed (`role` when your profile has none). Never starts planning. */
   create(body: ProjectCreate): Promise<Project>
-  /** GET /api/projects → newest first. */
+  /** GET /api/projects → only yours, newest first, each with your permission. */
   list(): Promise<ProjectSummary[]>
   /** GET /api/projects/{id}. Errors: 404 project_not_found. */
   get(id: number): Promise<Project>
-  /** PATCH /api/projects/{id}. Errors: 404 project_not_found, 409 methodology_locked, 422 validation_failed. */
+  /** PATCH /api/projects/{id}, leaders only, without the team. Errors: 403 forbidden, 404 project_not_found, 409 methodology_locked, 422 validation_failed. */
   update(id: number, body: ProjectUpdate): Promise<Project>
   /** GET /api/projects/{id}/plan (spec 004). Errors: 404 project_not_found. */
   getPlanViews(id: number): Promise<PlanViews>
@@ -131,8 +135,42 @@ export interface IntegrationGateway {
   setGithubUsername(memberId: number, username: string | null): Promise<GithubUsernameResult>
 }
 
+// ---------- spec 015 ----------
+
+export interface AuthGateway {
+  /** POST /api/auth/signup → 201, signed in (session cookie). Errors: 422 validation_failed (`email` "Already registered."). */
+  signUp(body: SignUp): Promise<Account>
+  /** POST /api/auth/signin. Errors: 401 invalid_credentials (same for a wrong password and an unknown email), 422. */
+  signIn(body: SignIn): Promise<Account>
+  /** POST /api/auth/signout → 204, always. */
+  signOut(): Promise<void>
+  /** GET /api/me. Errors: 401 not_authenticated, which only means signed out. */
+  me(): Promise<Account>
+  /** PATCH /api/me, partial; null clears role and github_username. A new name renames you in every project. Errors: 422. */
+  updateProfile(body: ProfileUpdate): Promise<Account>
+}
+
+export interface TeamGateway {
+  /** PATCH /api/projects/{id}/members/{member_id}, leaders only. Errors: 403, 404 member_not_found, 409 last_leader, 422. */
+  updateMember(projectId: number, memberId: number, body: MemberUpdate): Promise<Project>
+  /** DELETE /api/projects/{id}/members/{member_id} → 204. A leader removes anyone, a member only themselves (leaving). Errors: 403, 404, 409 last_leader. */
+  removeMember(projectId: number, memberId: number): Promise<void>
+  /** GET /api/projects/{id}/invitation, leaders only. Errors: 403. */
+  getInvitation(projectId: number): Promise<Invitation>
+  /** POST /api/projects/{id}/invitation: a new token, the old one stops working; turns invitations on. Errors: 403. */
+  renewInvitation(projectId: number): Promise<Invitation>
+  /** DELETE /api/projects/{id}/invitation → 204, invitations off. Errors: 403. */
+  disableInvitation(projectId: number): Promise<void>
+  /** GET /api/invitations/{token}, works signed out. Errors: 404 invitation_not_found. */
+  previewInvitation(token: string): Promise<InvitationPreview>
+  /** POST /api/invitations/{token}/join. Errors: 401 not_authenticated, 404 invitation_not_found, 422 (`role` when neither the body nor the profile has one). */
+  join(token: string, body?: { role?: string }): Promise<JoinResult>
+}
+
 /** What app/container.tsx provides to the UI (application/gateways.tsx holds the context). */
 export interface Gateways {
+  auth: AuthGateway
+  team: TeamGateway
   projects: ProjectGateway
   proposals: ProposalGateway
   activity: ActivityGateway

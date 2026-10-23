@@ -9,7 +9,9 @@ import type { Connection } from '../../domain/integrations'
 import type { Project } from '../../domain/project'
 import type { Proposal } from '../../domain/proposals'
 import { boardCreatedAt, seedDocuments } from './seedDocuments'
-import { demoBoard, demoBoardProject, demoBoardProposals, demoHistory, demoProject, demoProposals } from './demoData'
+import {
+  demoAccounts, demoBoard, demoBoardProject, demoBoardProposals, demoHistory, demoProject, demoProposals, type FakeAccount,
+} from './demoData'
 
 type Listener = (event: DomainEvent) => void
 
@@ -31,15 +33,25 @@ export class FakeStore {
   boards = new Map<number, BoardView>()
   documents = new Map<number, StoredDocument>()
   connections = new Map<number, Connection>()
+  /** Spec 015: accounts with their password, the signed-in one (this device's session) and each project's invitation token. */
+  accounts = new Map<number, FakeAccount>()
+  session: number | null = null
+  invitations = new Map<number, string | null>()
   events: DomainEvent[] = []
   private listeners = new Map<number, Set<Listener>>()
   private globalListeners = new Set<Listener>()
   private nextId = 1000
   private nextSeq = 1
 
+  /** Always starts signed in as the demo leader; `seed` adds the demo projects. */
   constructor(seed = true) {
+    for (const account of demoAccounts) this.accounts.set(account.id, structuredClone(account))
+    this.session = demoAccounts[0].id
     if (!seed) return
-    for (const project of [demoBoardProject, demoProject]) this.projects.set(project.id, structuredClone(project))
+    for (const project of [demoBoardProject, demoProject]) {
+      this.projects.set(project.id, structuredClone(project))
+      this.invitations.set(project.id, `demo-${project.id}`)
+    }
     for (const proposal of [...demoBoardProposals, ...demoProposals]) this.proposals.set(proposal.id, structuredClone(proposal))
     this.boards.set(demoBoardProject.id, demoBoard(() => this.id()))
     seedDocuments(this, demoBoardProject, boardCreatedAt)
@@ -57,6 +69,26 @@ export class FakeStore {
 
   now(): string {
     return new Date().toISOString()
+  }
+
+  /** A fresh invitation token, unguessable like the service's. */
+  token(): string {
+    return crypto.randomUUID().replaceAll('-', '').slice(0, 22)
+  }
+
+  /** The signed-in account, or 401 not_authenticated like the real API. */
+  signedIn(): FakeAccount {
+    const account = this.session === null ? undefined : this.accounts.get(this.session)
+    return account ?? fail(401, { code: 'not_authenticated', detail: 'Sign in to continue.' })
+  }
+
+  /** Demo helper: switches the session to the account whose name starts with `name` ("Leo"). */
+  signInAs(name: string): FakeAccount {
+    const wanted = name.trim().toLowerCase()
+    const account = [...this.accounts.values()].find((a) => a.name.toLowerCase().startsWith(wanted) || a.email === wanted)
+    if (!account) throw new Error(`No demo account named ${name}`)
+    this.session = account.id
+    return account
   }
 
   publish(event: NewEvent): DomainEvent {
@@ -89,6 +121,9 @@ export class FakeStore {
       boards: [...this.boards.entries()],
       documents: [...this.documents.values()],
       connections: [...this.connections.entries()],
+      accounts: [...this.accounts.values()],
+      session: this.session,
+      invitations: [...this.invitations.entries()],
       events: this.events,
       nextId: this.nextId,
       nextSeq: this.nextSeq,
@@ -110,11 +145,16 @@ export class FakeStore {
     if (!raw) return false
     try {
       const s = JSON.parse(raw)
+      // A demo saved before accounts existed (spec 015) can't be used: start from the seed.
+      if (!Array.isArray(s.accounts)) return false
       this.projects = new Map(s.projects.map((p: Project) => [p.id, p]))
       this.proposals = new Map(s.proposals.map((p: Proposal) => [p.id, p]))
       this.boards = new Map(s.boards)
       this.documents = new Map(s.documents.map((d: StoredDocument) => [d.id, d]))
       this.connections = new Map(s.connections)
+      this.accounts = new Map(s.accounts.map((a: FakeAccount) => [a.id, a]))
+      this.session = s.session ?? null
+      this.invitations = new Map(s.invitations)
       this.events = s.events
       this.nextId = s.nextId
       this.nextSeq = s.nextSeq
@@ -159,7 +199,7 @@ export function fail(status: number, body: ApiErrorBody): never {
   throw new ApiError(status, body, `fake-${crypto.randomUUID()}`)
 }
 
-type Entity = 'project' | 'proposal' | 'task' | 'sprint' | 'member' | 'document' | 'stage' | 'version'
+export type Entity = 'project' | 'proposal' | 'task' | 'sprint' | 'member' | 'document' | 'stage' | 'version'
 
 export const notFound = (entity: Entity, id: number | string): never =>
   fail(404, { code: `${entity}_not_found`, detail: `No existe (${entity} ${id}).` })

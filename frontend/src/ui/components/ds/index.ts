@@ -1,6 +1,7 @@
 // Design system components (frontend/design-system/README.md). Feature components compose these
 // and never touch tokens directly.
 
+export { AgentSpark } from './AgentSpark'
 export { Avatar, initials } from './Avatar'
 export { Button, ButtonLink, buttonClasses } from './Button'
 export { Card } from './Card'
@@ -9,11 +10,12 @@ export { cn } from './cn'
 export { ColumnLabel, laneFill, type ColumnHue } from './ColumnLabel'
 export { EmptyState } from './EmptyState'
 export { Flow, Slots, type FlowStep } from './Flow'
-export { Checkbox, FieldError, FieldShell, NumberField, Select, TextArea, TextField, type SelectOption } from './Field'
+export { Checkbox, FieldError, FieldShell, NumberField, PasswordField, Select, TextArea, TextField, type SelectOption } from './Field'
 export { Icon, type IconGlyph } from './Icon'
 export { IconButton } from './IconButton'
 export { InlineText } from './InlineText'
 export { Menu, type MenuItem } from './Menu'
+export { NotchedPanel, type NotchTone } from './NotchedPanel'
 export { Dialog, Drawer } from './Overlay'
 export { Pill, StateLabel, type Hue } from './Pill'
 export { Popover } from './Popover'

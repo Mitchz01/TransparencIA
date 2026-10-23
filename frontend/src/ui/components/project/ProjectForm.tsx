@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { REQUESTED_METHODOLOGIES, type RequestedMethodology } from '../../../domain/project'
 import { validateProject, type FieldErrors } from '../../../domain/rules'
-import { Button, Card, FieldError, NumberField, Segmented, Select, TextArea, TextField, type IconGlyph } from '../ds'
-import { MemberRows } from './MemberRows'
-import { toProjectCreate, type ProjectDraft } from './projectDraft'
+import { Button, Card, FieldError, Icon, NumberField, Segmented, Select, TextArea, TextField, type IconGlyph } from '../ds'
+import { Link01Icon } from '../ds/icons'
+import { toProjectCreate, type ProjectDraft, type RoleField } from './projectDraft'
 
 export const METHODOLOGY_LABELS: Record<RequestedMethodology, string> = {
   auto: 'Que elijan los agentes',
@@ -23,6 +23,8 @@ interface ProjectFormProps {
   secondaryAction?: ReactNode
   /** Why the methodology can't change (planning already started). */
   methodologyLocked?: string
+  /** A new project asks for your role in it (spec 015); settings leave it out. */
+  roleField?: RoleField
 }
 
 function Section({ title, description, children }: { title: string; description: string; children: ReactNode }) {
@@ -37,8 +39,8 @@ function Section({ title, description, children }: { title: string; description:
   )
 }
 
-/** The project and its team. Checks the service's rules before sending and keeps what was typed (FR-008). */
-export function ProjectForm({ initial, submitLabel, submitIcon, onSubmit, secondaryAction, methodologyLocked }: ProjectFormProps) {
+/** The project and your part in it. Checks the service's rules before sending and keeps what was typed (FR-008). */
+export function ProjectForm({ initial, submitLabel, submitIcon, onSubmit, secondaryAction, methodologyLocked, roleField }: ProjectFormProps) {
   const [draft, setDraft] = useState(initial)
   const [checked, setChecked] = useState(false)
   const [serverErrors, setServerErrors] = useState<FieldErrors>({})
@@ -46,7 +48,7 @@ export function ProjectForm({ initial, submitLabel, submitIcon, onSubmit, second
   const [attempt, setAttempt] = useState(0)
   const form = useRef<HTMLFormElement>(null)
 
-  const errors: FieldErrors = { ...(checked ? validateProject(toProjectCreate(draft)) : {}), ...serverErrors }
+  const errors: FieldErrors = { ...(checked ? validateProject(toProjectCreate(draft, roleField)) : {}), ...serverErrors }
 
   // After a failed send, take the person to the first field that needs fixing.
   useEffect(() => {
@@ -61,7 +63,7 @@ export function ProjectForm({ initial, submitLabel, submitIcon, onSubmit, second
   const submit = async (event: FormEvent) => {
     event.preventDefault()
     setChecked(true)
-    if (Object.keys(validateProject(toProjectCreate(draft))).length) {
+    if (Object.keys(validateProject(toProjectCreate(draft, roleField))).length) {
       setAttempt((n) => n + 1)
       return
     }
@@ -104,9 +106,22 @@ export function ProjectForm({ initial, submitLabel, submitIcon, onSubmit, second
         </div>
       </Section>
 
-      <Section title="Equipo" description="Quién trabaja y cuántas horas por semana. Los agentes planifican a partir de eso.">
-        <MemberRows members={draft.members} errors={errors} onChange={(members) => change({ members })} />
-      </Section>
+      {roleField && (
+        <Section title="Tu parte" description="Entras como líder del proyecto. Los agentes también te asignan trabajo.">
+          <TextField
+            label="Tu rol en este proyecto"
+            value={draft.role}
+            error={errors.role}
+            placeholder="Backend"
+            hint={roleField === 'optional' ? 'Viene de tu perfil. Cámbialo si aquí haces otra cosa.' : 'Tu perfil todavía no tiene rol: dinos qué vas a hacer aquí.'}
+            onChange={(e) => change({ role: e.target.value })}
+          />
+          <p className="flex items-start gap-3 rounded-md bg-inset p-4 text-body text-ink-muted">
+            <Icon icon={Link01Icon} className="mt-0.5 shrink-0 text-ink" />
+            Tu equipo se une con un link que compartes al crear el proyecto. Cada persona llega con su perfil.
+          </p>
+        </Section>
+      )}
 
       <Section title="Aprobación automática" description="Activada: cada propuesta se aprueba al llegar y sigue mostrando por qué. Desactivada: cada etapa espera tu decisión.">
         <div>

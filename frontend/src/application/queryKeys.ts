@@ -1,6 +1,9 @@
 // One cache key per resource. liveUpdates.ts invalidates them when an event says something changed.
 
 export const queryKeys = {
+  me: () => ['me'] as const,
+  invitation: (projectId: number) => ['invitation', projectId] as const,
+  invitationPreview: (token: string) => ['invitationPreview', token] as const,
   projects: () => ['projects'] as const,
   project: (id: number) => ['project', id] as const,
   proposals: (projectId: number) => ['proposals', projectId] as const,

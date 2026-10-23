@@ -1,5 +1,5 @@
 import type { IconGlyph } from '../ds'
-import { AiMagicIcon, Calendar03Icon, DashboardSquare01Icon, File01Icon, Plug01Icon } from '../ds/icons'
+import { AiMagicIcon, Calendar03Icon, DashboardSquare01Icon, File01Icon, Plug01Icon, UserGroupIcon } from '../ds/icons'
 
 export interface Section {
   path: string
@@ -13,5 +13,6 @@ export const SECTIONS: Section[] = [
   { path: 'board', label: 'Tablero', icon: DashboardSquare01Icon },
   { path: 'plan', label: 'Plan', icon: Calendar03Icon },
   { path: 'documents', label: 'Documentos', icon: File01Icon },
+  { path: 'team', label: 'Equipo', icon: UserGroupIcon },
   { path: 'integrations', label: 'Integraciones', icon: Plug01Icon },
 ]

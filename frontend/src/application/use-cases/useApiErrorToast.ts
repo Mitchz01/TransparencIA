@@ -3,6 +3,7 @@
 import { useQueryClient, type QueryKey } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { isApiError } from '../errors'
+import { queryKeys } from '../queryKeys'
 import { useToasts } from '../toasts'
 
 export interface ErrorReaction {
@@ -43,9 +44,13 @@ const CODE_MESSAGES: Record<string, string> = {
   publication_pending: 'Ya hay una publicación esperando tu decisión.',
   plan_not_applied: 'Primero tiene que existir el tablero.',
   sprint_already_closed: 'Ese sprint ya está cerrado.',
+  invalid_credentials: 'Email o contraseña incorrectos.',
+  forbidden: 'Solo los líderes del proyecto pueden hacer esto.',
+  invitation_not_found: 'Esta invitación ya no es válida. Pide al líder un link nuevo.',
+  last_leader: 'El proyecto necesita un líder. Primero haz líder a otra persona.',
 }
 
-const say = (code: string, detail: string) => CODE_MESSAGES[code] ?? detail
+export const say = (code: string, detail: string) => CODE_MESSAGES[code] ?? detail
 
 export function useApiErrorToast() {
   const { push } = useToasts()
@@ -64,10 +69,20 @@ export function useApiErrorToast() {
       }
       const { status, code, body, requestId } = error
 
+      if (status === 401 && code === 'not_authenticated') {
+        // The session ended: application/session.ts already sends the person to sign in.
+        return {}
+      }
       if (status === 0) {
         push({ tone: 'error', message: lead('No hay conexión con el servidor.'), action: retryAction, requestId })
       } else if (status === 502) {
         push({ tone: 'error', message: lead('GitHub no responde, prueba de nuevo en un minuto.'), action: retryAction, requestId })
+      } else if (status === 403) {
+        // A member tried a leader action (spec 015): the screen shouldn't have offered it, so show what is true now.
+        push({ tone: 'error', message: lead(say(code, body.detail)), requestId })
+        void client.invalidateQueries({ queryKey: ['project'] })
+        void client.invalidateQueries({ queryKey: queryKeys.projects() })
+        refresh()
       } else if (status === 404) {
         push({ tone: 'error', message: lead(say(code, body.detail)), requestId })
         refresh()

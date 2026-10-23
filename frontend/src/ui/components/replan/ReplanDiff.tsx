@@ -3,7 +3,7 @@ import { useProposalActions } from '../../../application/use-cases/usePlanning'
 import type { ReplanChange, ReplanContent } from '../../../domain/proposalContent'
 import type { Proposal } from '../../../domain/proposals'
 import { plural } from '../../format'
-import { Block, Button, Card, Checkbox, Icon, Pill } from '../ds'
+import { Block, Button, Card, Checkbox, Icon, Pill, StateLabel } from '../ds'
 import { AiMagicIcon, HourglassIcon, InformationCircleIcon, Settings01Icon, Tick02Icon } from '../ds/icons'
 import { STATUS_LABELS } from '../board/boardLabels'
 import { RejectDialog } from '../planning/RejectDialog'
@@ -24,8 +24,9 @@ function describe(change: ReplanChange): string {
   }
 }
 
-/** Each change with its reason and a box to keep it. Dropping some approves the rest as an adjustment. */
-export function ReplanDiff({ projectId, proposal, content }: { projectId: number; proposal: Proposal; content: ReplanContent }) {
+/** Each change with its reason and a box to keep it. Dropping some approves the rest as an adjustment.
+ *  Without `canDecide` (a member) it's the same list, read only, waiting for a leader. */
+export function ReplanDiff({ projectId, proposal, content, canDecide = true }: { projectId: number; proposal: Proposal; content: ReplanContent; canDecide?: boolean }) {
   const { approve, adjust, reject } = useProposalActions(projectId)
   const [kept, setKept] = useState(() => content.changes.map(() => true))
   const [saving, setSaving] = useState(false)
@@ -49,12 +50,12 @@ export function ReplanDiff({ projectId, proposal, content }: { projectId: number
           </span>
           <div className="grid min-w-0">
             <h2 className="text-heading">Replan con {plural(content.changes.length, 'cambio')}</h2>
-            <span className="text-caption text-ink-muted">{automatic ? 'Lo pidió el cierre del sprint' : 'Lo pediste tú'}</span>
+            <span className="text-caption text-ink-muted">{automatic ? 'Lo pidió el cierre del sprint' : canDecide ? 'Lo pediste tú' : 'Lo pidió un líder'}</span>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
           {automatic && <Pill hue="neutral" icon={Settings01Icon}>Automático</Pill>}
-          <Pill hue="amber" icon={HourglassIcon}>Espera tu decisión</Pill>
+          <Pill hue="amber" icon={HourglassIcon}>{canDecide ? 'Espera tu decisión' : 'Espera al líder'}</Pill>
         </div>
       </header>
       <div className="flex gap-3 rounded-md bg-primary-soft p-4 text-primary-soft-ink">
@@ -69,24 +70,32 @@ export function ReplanDiff({ projectId, proposal, content }: { projectId: number
             <ul className="grid gap-1.5">
               {items.map(([change, i]) => (
                 <li key={i} className="grid gap-1 rounded-md bg-inset px-4 py-3">
-                  <Checkbox
-                    label={<span className="text-label">{describe(change)}</span>}
-                    checked={kept[i]}
-                    onChange={(e) => setKept(kept.map((k, j) => (j === i ? e.target.checked : k)))}
-                  />
-                  <p className="pl-8 text-caption text-ink-muted">{change.rationale}</p>
+                  {canDecide ? (
+                    <Checkbox
+                      label={<span className="text-label">{describe(change)}</span>}
+                      checked={kept[i]}
+                      onChange={(e) => setKept(kept.map((k, j) => (j === i ? e.target.checked : k)))}
+                    />
+                  ) : (
+                    <span className="text-label">{describe(change)}</span>
+                  )}
+                  <p className={canDecide ? 'pl-8 text-caption text-ink-muted' : 'text-caption text-ink-muted'}>{change.rationale}</p>
                 </li>
               ))}
             </ul>
           </Block>
         )
       })}
+      {!canDecide ? (
+        <StateLabel hue="amber" icon={HourglassIcon}>Esperando la aprobación del líder</StateLabel>
+      ) : (
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="primary" icon={Tick02Icon} disabled={count === 0} loading={saving || approve.isPending} onClick={decide}>
           {count === content.changes.length ? 'Aprobar el replan' : `Aprobar ${plural(count, 'cambio')}`}
         </Button>
         <Button variant="quiet" onClick={() => setRejecting(true)}>Rechazar</Button>
       </div>
+      )}
       {rejecting && <RejectDialog what="el replan" onReject={(reason) => reject(proposal.id, reason)} onClose={() => setRejecting(false)} />}
     </Card>
   )

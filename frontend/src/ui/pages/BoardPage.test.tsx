@@ -85,7 +85,7 @@ describe('Add a task (spec 014, US1)', () => {
 describe('Filters behind one button (spec 014, US2)', () => {
   it('counts the filters on and clears them', async () => {
     const { backend, board, project, sprint, user } = seeded()
-    const member = project.members[0]
+    const member = project.members.find((m) => m.name === 'Marta Díaz')! // planned with tasks; Ana joined later
     const sprintTasks = board.tasks.filter((t) => t.sprint_id === sprint.id)
     renderApp(`/projects/${PROJECT}/board?sprint=${sprint.id}`, backend)
     await screen.findByRole('region', { name: 'Por hacer' })
@@ -125,15 +125,12 @@ describe('List view (spec 014, US3)', () => {
 describe('Team in the header (spec 014, US4)', () => {
   it('shows four sets of initials and how many more, with every name for screen readers', async () => {
     const { backend, project, sprint } = seeded()
-    project.members.push(
-      { id: 24, name: 'Ana Gil', role: 'QA', seniority: 'mid', hours_per_week: 20, skills: [] },
-      { id: 25, name: 'Leo Ruiz', role: 'DevOps', seniority: 'mid', hours_per_week: 20, skills: [] },
-      { id: 26, name: 'Eva Paz', role: 'UX', seniority: 'mid', hours_per_week: 20, skills: [] },
-    )
+    // The demo board has Ana (leader), Marta, Pablo, Sara and Leo; one more makes six.
+    project.members.push({ id: 26, name: 'Eva Paz', role: 'UX', seniority: 'mid', hours_per_week: 20, skills: [], account_id: null, permission: 'member' })
     renderApp(`/projects/${PROJECT}/board?sprint=${sprint.id}`, backend)
 
-    const team = await screen.findByRole('link', { name: 'Equipo: Marta Díaz, Pablo Ortiz, Sara Vidal, Ana Gil, Leo Ruiz y Eva Paz' })
+    const team = await screen.findByRole('link', { name: 'Equipo: Ana Gómez, Marta Díaz, Pablo Ortiz, Sara Vidal, Leo Ruiz y Eva Paz' })
     expect(within(team).getByText('+2')).toBeInTheDocument()
-    expect(team).toHaveAttribute('href', `/projects/${PROJECT}/settings`)
+    expect(team).toHaveAttribute('href', `/projects/${PROJECT}/team`)
   })
 })

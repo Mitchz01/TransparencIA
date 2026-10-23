@@ -1,4 +1,5 @@
-// UC-01 + UC-02: create the project, start planning, and land on the planning screen.
+// UC-01 (spec 015): create the project with you as its leader. Planning waits for the team: the
+// leader shares the link first and starts planning from the planning screen.
 
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
@@ -10,31 +11,22 @@ import { useApiErrorToast } from './useApiErrorToast'
 
 /** Resolves with the field errors to show, or navigates through `onCreated` when it worked. */
 export function useCreateProject(onCreated: (projectId: number) => void) {
-  const { projects, planning } = useGateways()
+  const { projects } = useGateways()
   const client = useQueryClient()
   const reportError = useApiErrorToast()
 
   return useCallback(
     async (body: ProjectCreate): Promise<FieldErrors> => {
-      let projectId: number
       try {
         const project = await projects.create(body)
-        projectId = project.id
         client.setQueryData(queryKeys.project(project.id), project)
         void client.invalidateQueries({ queryKey: queryKeys.projects() })
+        onCreated(project.id)
+        return {}
       } catch (error) {
         return reportError(error, { failure: 'No se creó el proyecto', form: true })
       }
-      try {
-        await planning.start(projectId)
-        void client.invalidateQueries({ queryKey: queryKeys.project(projectId) })
-      } catch (error) {
-        // The project exists: the planning screen offers "Start planning" again.
-        reportError(error, { failure: 'La planificación no empezó' })
-      }
-      onCreated(projectId)
-      return {}
     },
-    [projects, planning, client, reportError, onCreated],
+    [projects, client, reportError, onCreated],
   )
 }

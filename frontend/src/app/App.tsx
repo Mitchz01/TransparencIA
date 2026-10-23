@@ -1,11 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { RouterProvider } from 'react-router-dom'
 import { isApiError } from '../application/errors'
 import { ToastProvider } from '../application/toasts'
 import { Toaster } from '../ui/components/ds'
 import { GatewaysProvider } from './container'
-import { createRouter } from './routes'
+import { createRouter, sessionEnded } from './routes'
 import { ThemeProvider } from './theme'
 
 export function createQueryClient() {
@@ -24,9 +24,10 @@ export function createQueryClient() {
 export default function App() {
   const [queryClient] = useState(createQueryClient)
   const [router] = useState(createRouter)
+  const onSignedOut = useMemo(() => sessionEnded(router, queryClient), [router, queryClient])
   return (
     <QueryClientProvider client={queryClient}>
-      <GatewaysProvider>
+      <GatewaysProvider onSignedOut={onSignedOut}>
         <ThemeProvider>
           <ToastProvider>
             <RouterProvider router={router} />

@@ -1,6 +1,6 @@
 import type { StageStep } from '../../../domain/stepper'
 import { Button, Card, Icon, Skeleton, StateLabel } from '../ds'
-import { AiMagicIcon, Alert02Icon, PlayIcon, RefreshIcon } from '../ds/icons'
+import { AiMagicIcon, Alert02Icon, HourglassIcon, PlayIcon, RefreshIcon } from '../ds/icons'
 import { STAGE_LABELS } from './stageLabels'
 
 function AgentHeading({ title, caption }: { title: string; caption: string }) {
@@ -34,7 +34,8 @@ export function WorkingCard({ step }: { step: StageStep }) {
   )
 }
 
-export function FailedCard({ step, onRetry, retrying }: { step: StageStep; onRetry: () => void; retrying: boolean }) {
+/** Without `onRetry` (a member), it says a leader can retry it instead of offering it. */
+export function FailedCard({ step, onRetry, retrying }: { step: StageStep; onRetry?: () => void; retrying: boolean }) {
   const label = STAGE_LABELS[step.key]
   return (
     <Card as="article" padding="lg" className="grid gap-5">
@@ -43,14 +44,25 @@ export function FailedCard({ step, onRetry, retrying }: { step: StageStep; onRet
         <StateLabel hue="coral" icon={Alert02Icon}>Falló</StateLabel>
         <p className="text-body text-ink">{step.reason ?? 'El agente no pudo terminar esta etapa.'}</p>
       </div>
-      <div>
-        <Button variant="primary" icon={RefreshIcon} loading={retrying} onClick={onRetry}>Reintentar</Button>
-      </div>
+      {onRetry ? (
+        <div>
+          <Button variant="primary" icon={RefreshIcon} loading={retrying} onClick={onRetry}>Reintentar</Button>
+        </div>
+      ) : (
+        <StateLabel hue="amber" icon={HourglassIcon}>Esperando que un líder la reintente</StateLabel>
+      )}
     </Card>
   )
 }
 
-export function NotStartedCard({ step, previous, onStart, starting }: { step: StageStep; previous?: StageStep; onStart?: () => void; starting: boolean }) {
+export function NotStartedCard({ step, previous, onStart, starting, waitingForLeader = false }: {
+  step: StageStep
+  previous?: StageStep
+  onStart?: () => void
+  starting: boolean
+  /** A member on a draft: the planning starts when a leader decides. */
+  waitingForLeader?: boolean
+}) {
   const label = STAGE_LABELS[step.key]
   return (
     <Card as="article" padding="lg" className="grid gap-5">
@@ -58,13 +70,16 @@ export function NotStartedCard({ step, previous, onStart, starting }: { step: St
       <p className="text-body text-ink-muted">
         {onStart
           ? 'Los agentes todavía no empezaron. Cada etapa espera tu aprobación antes de pasar a la siguiente.'
-          : `Empieza cuando apruebes ${previous ? STAGE_LABELS[previous.key].the : 'la etapa anterior'}.`}
+          : waitingForLeader
+            ? 'Los agentes todavía no empezaron. Un líder decide cuándo empezar.'
+            : `Empieza cuando se apruebe ${previous ? STAGE_LABELS[previous.key].the : 'la etapa anterior'}.`}
       </p>
       {onStart && (
         <div>
           <Button variant="primary" icon={PlayIcon} loading={starting} onClick={onStart}>Empezar a planificar</Button>
         </div>
       )}
+      {waitingForLeader && <StateLabel hue="amber" icon={HourglassIcon}>Esperando al líder</StateLabel>}
     </Card>
   )
 }

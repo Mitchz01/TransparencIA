@@ -48,7 +48,7 @@ export function ReplanDialog({ projectId, onClose }: { projectId: number; onClos
 }
 
 /** Closes the sprint after a confirmation that says what stays unfinished and whether its end date passed. */
-export function CloseSprintButton({ projectId, sprint, tasks }: { projectId: number; sprint: Sprint; tasks: Task[] }) {
+export function CloseSprintButton({ projectId, sprint, tasks, canClose = true }: { projectId: number; sprint: Sprint; tasks: Task[]; canClose?: boolean }) {
   const { closeSprint } = useReplan(projectId)
   const [open, setOpen] = useState(false)
   const [closing, setClosing] = useState(false)
@@ -56,6 +56,7 @@ export function CloseSprintButton({ projectId, sprint, tasks }: { projectId: num
   const past = sprint.end_date !== null && sprint.end_date < new Date().toISOString().slice(0, 10)
 
   if (sprint.closed) return <StateLabel hue="teal" icon={Tick02Icon}>Sprint cerrado</StateLabel>
+  if (!canClose) return null
 
   return (
     <>

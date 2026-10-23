@@ -2,17 +2,13 @@ import { describe, expect, it } from 'vitest'
 import type { Task } from './board'
 import type { ProjectCreate } from './project'
 import {
-  MEMBER_DEFAULTS, PROJECT_DEFAULTS, activeFilterCount, checklistProgress, columnTasks, defaultSprint, fieldsFromFilters, filterTasks,
+  PROJECT_DEFAULTS, activeFilterCount, checklistProgress, columnTasks, defaultSprint, fieldsFromFilters, filterTasks,
   memberCapacity, moveTask, nextTaskKey, sprintLoad, suggestsAdvance, teamCapacity, validateProject, wipWarnings,
 } from './rules'
 
 const valid: ProjectCreate = {
   name: 'Shop',
   description: 'A small online shop.',
-  members: [
-    { name: 'Ana', role: 'Backend', seniority: 'senior', hours_per_week: 30 },
-    { name: 'Leo', role: 'Frontend' },
-  ],
 }
 
 describe('validateProject (project form)', () => {
@@ -41,30 +37,11 @@ describe('validateProject (project form)', () => {
     expect(validateProject({ ...valid, requested_methodology: 'waterfall' as never }).requested_methodology).toBe('Elige una opción de la lista.')
   })
 
-  it('needs at least one member', () => {
-    expect(validateProject({ ...valid, members: [] }).members).toBe('El equipo necesita al menos un miembro.')
-  })
-
-  it('flags a repeated name on the second row, ignoring case and spaces', () => {
-    const errors = validateProject({ ...valid, members: [{ name: 'Ana', role: 'Backend' }, { name: ' ana ', role: 'QA' }] })
-    expect(errors).toEqual({ 'members[1].name': 'Nombre repetido.' })
-  })
-
-  it('checks each member row by its path', () => {
-    const errors = validateProject({
-      ...valid,
-      members: [
-        { name: 'Ana', role: '', hours_per_week: 61 },
-        { name: 'Leo', role: 'r'.repeat(61), hours_per_week: 0, skills: ['s'.repeat(41)] },
-      ],
-    })
-    expect(errors).toEqual({
-      'members[0].role': 'Obligatorio.',
-      'members[0].hours_per_week': 'Debe estar entre 1 y 60.',
-      'members[1].role': 'Máximo 60 caracteres.',
-      'members[1].hours_per_week': 'Debe estar entre 1 y 60.',
-      'members[1].skills[0]': 'Máximo 40 caracteres.',
-    })
+  it('checks the creator’s role only when it is sent, up to 60 characters (spec 015)', () => {
+    expect(validateProject(valid)).toEqual({})
+    expect(validateProject({ ...valid, role: '  ' }).role).toBe('Obligatorio.')
+    expect(validateProject({ ...valid, role: 'r'.repeat(61) }).role).toBe('Máximo 60 caracteres.')
+    expect(validateProject({ ...valid, role: 'Backend' })).toEqual({})
   })
 
   it('validates only the fields an update sends', () => {
@@ -73,7 +50,6 @@ describe('validateProject (project form)', () => {
   })
 
   it('fills the same defaults as the service', () => {
-    expect(MEMBER_DEFAULTS).toEqual({ seniority: 'mid', hours_per_week: 20 })
     expect(PROJECT_DEFAULTS).toEqual({ duration_weeks: 8, requested_methodology: 'auto', auto_approve: false })
   })
 })

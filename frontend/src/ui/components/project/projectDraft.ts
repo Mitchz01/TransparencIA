@@ -1,18 +1,8 @@
 // What the project form holds while the leader types: numbers stay as typed text so nothing is lost,
 // and they're parsed only when the form is checked or sent.
 
-import type { MemberInput, Project, ProjectCreate, ProjectUpdate, RequestedMethodology, Seniority } from '../../../domain/project'
-import { MEMBER_DEFAULTS, PROJECT_DEFAULTS } from '../../../domain/rules'
-
-export interface MemberDraft {
-  key: string // stable row key, so removing a row keeps the others' focus and text
-  id?: number
-  name: string
-  role: string
-  seniority: Seniority
-  hours: string
-  skills: string[]
-}
+import type { Project, ProjectCreate, ProjectUpdate, RequestedMethodology } from '../../../domain/project'
+import { PROJECT_DEFAULTS } from '../../../domain/rules'
 
 export interface ProjectDraft {
   name: string
@@ -20,26 +10,20 @@ export interface ProjectDraft {
   duration: string
   methodology: RequestedMethodology
   autoApprove: boolean
-  members: MemberDraft[]
+  /** Your role in a new project (spec 015); settings don't have it. */
+  role: string
 }
 
-let rowCount = 0
-export const newMember = (): MemberDraft => ({
-  key: `member-${++rowCount}`,
-  name: '',
-  role: '',
-  seniority: MEMBER_DEFAULTS.seniority,
-  hours: String(MEMBER_DEFAULTS.hours_per_week),
-  skills: [],
-})
+/** Whether the form asks for your role: required when your profile has none, otherwise your profile's is the default. */
+export type RoleField = 'required' | 'optional'
 
-export const emptyDraft = (): ProjectDraft => ({
+export const emptyDraft = (profileRole: string | null = null): ProjectDraft => ({
   name: '',
   description: '',
   duration: String(PROJECT_DEFAULTS.duration_weeks),
   methodology: PROJECT_DEFAULTS.requested_methodology,
   autoApprove: PROJECT_DEFAULTS.auto_approve,
-  members: [newMember(), newMember()],
+  role: profileRole ?? '',
 })
 
 export const draftFrom = (project: Project): ProjectDraft => ({
@@ -48,32 +32,26 @@ export const draftFrom = (project: Project): ProjectDraft => ({
   duration: String(project.duration_weeks),
   methodology: project.requested_methodology,
   autoApprove: project.auto_approve,
-  members: project.members.map((m) => ({ ...newMember(), id: m.id, name: m.name, role: m.role, seniority: m.seniority, hours: String(m.hours_per_week), skills: m.skills })),
+  role: '',
 })
 
 /** "" or "abc" become NaN, which the rules reject with the range message. */
 const toNumber = (text: string) => (text.trim() === '' ? Number.NaN : Number(text.trim()))
 
-export const memberInputs = (members: MemberDraft[]): MemberInput[] =>
-  members.map((m) => ({
-    ...(m.id !== undefined && { id: m.id }),
-    name: m.name,
-    role: m.role,
-    seniority: m.seniority,
-    hours_per_week: toNumber(m.hours),
-    skills: m.skills,
-  }))
+export function toProjectCreate(draft: ProjectDraft, roleField?: RoleField): ProjectCreate {
+  const body: ProjectCreate = {
+    name: draft.name,
+    description: draft.description,
+    duration_weeks: toNumber(draft.duration),
+    requested_methodology: draft.methodology,
+    auto_approve: draft.autoApprove,
+  }
+  // An empty optional role is left out, so the service takes the profile's.
+  if (roleField === 'required' || (roleField === 'optional' && draft.role.trim())) body.role = draft.role
+  return body
+}
 
-export const toProjectCreate = (draft: ProjectDraft): ProjectCreate => ({
-  name: draft.name,
-  description: draft.description,
-  duration_weeks: toNumber(draft.duration),
-  requested_methodology: draft.methodology,
-  auto_approve: draft.autoApprove,
-  members: memberInputs(draft.members),
-})
-
-/** Only what changed, as PATCH asks; `members` goes whole when any member changed (contract, ProjectGateway). */
+/** Only what changed, as PATCH asks. */
 export function toProjectUpdate(project: Project, draft: ProjectDraft): ProjectUpdate {
   const next = toProjectCreate(draft)
   const update: ProjectUpdate = {}
@@ -82,7 +60,5 @@ export function toProjectUpdate(project: Project, draft: ProjectDraft): ProjectU
   if (next.duration_weeks !== project.duration_weeks) update.duration_weeks = next.duration_weeks
   if (next.requested_methodology !== project.requested_methodology) update.requested_methodology = next.requested_methodology
   if (next.auto_approve !== project.auto_approve) update.auto_approve = next.auto_approve
-  const current = project.members.map((m) => ({ id: m.id, name: m.name, role: m.role, seniority: m.seniority, hours_per_week: m.hours_per_week, skills: m.skills }))
-  if (JSON.stringify(next.members) !== JSON.stringify(current)) update.members = next.members
   return update
 }

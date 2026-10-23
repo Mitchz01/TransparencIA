@@ -2,38 +2,31 @@
 
 import type { BoardWarning, ChecklistItem, NewTask, Priority, Sprint, SprintLoad, Task, TaskStatus, WipLimit } from './board'
 import {
-  LIMITS, REQUESTED_METHODOLOGIES, SENIORITIES, validateMembers, validateProjectCreate,
-  type Member, type ProjectCreate, type ProjectUpdate, type Seniority,
+  LIMITS, REQUESTED_METHODOLOGIES, validateProjectCreate,
+  type FieldIssue, type Member, type ProjectCreate, type ProjectUpdate, type Seniority,
 } from './project'
 
-// ---------- Project form (contract section 4, ProjectGateway validation table) ----------
+// ---------- Forms (contract section 4, the validation tables of each gateway) ----------
 
-/** Field path → first message, the same paths as the API's 422 `errors[].field` ("members[1].name"). */
+/** Field path → first message, the same paths as the API's 422 `errors[].field` ("skills[1]"). */
 export type FieldErrors = Record<string, string>
 
-const firstPerField = (issues: { field: string; message: string }[]): FieldErrors =>
+export const toFieldErrors = (issues: FieldIssue[]): FieldErrors =>
   issues.reduce<FieldErrors>((errors, { field, message }) => (field in errors ? errors : { ...errors, [field]: message }), {})
 
 export function validateProject(body: ProjectCreate | ProjectUpdate): FieldErrors {
-  const issues = 'name' in body && 'description' in body && 'members' in body
+  const issues = 'name' in body && 'description' in body
     ? validateProjectCreate(body as ProjectCreate)
     : [
         ...(body.name !== undefined && !body.name.trim() ? [{ field: 'name', message: 'Obligatorio.' }] : []),
         ...(body.name && body.name.trim().length > LIMITS.name ? [{ field: 'name', message: `Máximo ${LIMITS.name} caracteres.` }] : []),
-        ...(body.members ? validateMembers(body.members) : []),
       ]
   if (body.requested_methodology !== undefined && !REQUESTED_METHODOLOGIES.includes(body.requested_methodology)) {
     issues.push({ field: 'requested_methodology', message: 'Elige una opción de la lista.' })
   }
-  body.members?.forEach((member, i) => {
-    if (member.seniority !== undefined && !SENIORITIES.includes(member.seniority)) {
-      issues.push({ field: `members[${i}].seniority`, message: 'Elige junior, semisenior o senior.' })
-    }
-  })
-  return firstPerField(issues)
+  return toFieldErrors(issues)
 }
 
-export const MEMBER_DEFAULTS = { seniority: 'mid' as Seniority, hours_per_week: 20 }
 export const PROJECT_DEFAULTS = { duration_weeks: 8, requested_methodology: 'auto' as const, auto_approve: false }
 
 // ---------- Capacity (spec 002, domain/capacity.py: the single rule, spec 003 FR-017) ----------

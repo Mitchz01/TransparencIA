@@ -1,25 +1,24 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { createFakeBackend, FakeStore } from '../../adapters/fake'
 import { renderApp } from '../../test/renderApp'
 
 describe('Settings', () => {
-  it('saves a member’s new hours and tells the team changed', async () => {
+  it('saves the project and points to the team, which has its own screen (spec 015)', async () => {
     const user = userEvent.setup()
     const backend = createFakeBackend({ store: new FakeStore(), stageDelayMs: 10 })
     renderApp('/projects/2/settings', backend)
 
-    const rows = within(await screen.findByRole('list', { name: 'Miembros del equipo' })).getAllByRole('listitem')
-    const hours = within(rows[2]).getByRole('textbox', { name: 'Horas por semana' })
-    expect(hours).toHaveValue('20')
-    await user.clear(hours)
-    await user.type(hours, '25')
+    const name = await screen.findByRole('textbox', { name: 'Nombre del proyecto' })
+    expect(screen.queryByRole('list', { name: 'Miembros del equipo' })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Ir al equipo' })).toHaveAttribute('href', '/projects/2/team')
+    await user.clear(name)
+    await user.type(name, 'Tienda de muebles')
     await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
 
-    await waitFor(() => expect(backend.store.projects.get(2)!.members[2].hours_per_week).toBe(25))
+    await waitFor(() => expect(backend.store.projects.get(2)!.name).toBe('Tienda de muebles'))
     expect(await screen.findByText('Cambios guardados.')).toBeInTheDocument()
-    expect(backend.store.events.at(-1)).toMatchObject({ type: 'team_changed', changed: [{ name: 'Sara Vidal', fields: ['hours_per_week'] }] })
   })
 
   it('locks the methodology once planning started, and says why', async () => {

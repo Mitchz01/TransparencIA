@@ -6,7 +6,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { ToastProvider } from '../application/toasts'
 import { createQueryClient } from '../app/App'
 import { GatewaysProvider } from '../app/container'
-import { routes } from '../app/routes'
+import { routes, sessionEnded } from '../app/routes'
 import { ThemeProvider } from '../app/theme'
 import { createFakeBackend, FakeStore, type FakeBackend } from '../adapters/fake'
 import { Toaster } from '../ui/components/ds'
@@ -16,7 +16,7 @@ export function renderApp(path: string, backend: FakeBackend = createFakeBackend
   const client = createQueryClient()
   const view = render(
     <QueryClientProvider client={client}>
-      <GatewaysProvider gateways={backend.gateways}>
+      <GatewaysProvider gateways={backend.gateways} onSignedOut={sessionEnded(router, client)}>
         <ThemeProvider>
           <ToastProvider>
             <RouterProvider router={router} />

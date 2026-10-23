@@ -10,7 +10,7 @@ let projectId: number
 beforeEach(async () => {
   backend = createFakeBackend({ store: new FakeStore(false), stageDelayMs: 20 })
   const project = await backend.gateways.projects.create({
-    name: 'Shop', description: 'A small online shop.', members: [{ name: 'Ana', role: 'Backend' }, { name: 'Leo', role: 'Frontend' }],
+    name: 'Shop', description: 'A small online shop.',
   })
   projectId = project.id
   await backend.gateways.planning.start(projectId)

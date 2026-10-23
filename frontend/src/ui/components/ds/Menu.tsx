@@ -21,6 +21,10 @@ interface MenuProps {
   items: MenuItem[]
   /** Extra rows after the items, like "New project". */
   footer?: MenuItem[]
+  /** Text above the items that isn't a choice (the account menu's name and email). */
+  header?: ReactNode
+  /** The chevron after the content; off when the button is only an avatar. */
+  chevron?: boolean
   variant?: ButtonVariant
   size?: ButtonSize
   align?: 'start' | 'end'
@@ -30,7 +34,9 @@ interface MenuProps {
 }
 
 /** A button with a chevron that opens a list of choices. Arrow keys move, Enter picks, Escape closes. */
-export function Menu({ children, label, items, footer = [], variant = 'secondary', size = 'md', align = 'start', icon, className, buttonClassName }: MenuProps) {
+export function Menu({
+  children, label, items, footer = [], header, chevron = true, variant = 'secondary', size = 'md', align = 'start', icon, className, buttonClassName,
+}: MenuProps) {
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(0)
   const root = useRef<HTMLDivElement>(null)
@@ -124,7 +130,7 @@ export function Menu({ children, label, items, footer = [], variant = 'secondary
       >
         {icon && <Icon icon={icon} />}
         <span className="min-w-0 truncate">{children}</span>
-        <Icon icon={ArrowDown01Icon} className="text-ink-muted" />
+        {chevron && <Icon icon={ArrowDown01Icon} className="text-ink-muted" />}
       </button>
       {open && (
         <div
@@ -136,6 +142,7 @@ export function Menu({ children, label, items, footer = [], variant = 'secondary
             align === 'start' ? 'left-0' : 'right-0',
           )}
         >
+          {header && <div className="grid gap-0.5 px-3 pt-2 pb-3">{header}</div>}
           {items.map(row)}
           {footer.length > 0 && <div className="mt-1 grid gap-0.5 rounded-md bg-inset p-1">{footer.map((item, i) => row(item, items.length + i))}</div>}
         </div>

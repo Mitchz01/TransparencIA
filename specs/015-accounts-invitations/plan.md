@@ -263,16 +263,17 @@ Body optional: `{"role": "Design"}` (defaults to the profile's role).
 
 Follow [frontend-prompt.md](frontend-prompt.md); it has the detail for each task.
 
-- [ ] T024 Domain types and rules: `Account`, `Permission`, `Invitation`, `InvitationPreview`, `JoinResult`, `ProfileUpdate`, `MemberUpdate`; `Member.account_id/permission`, `ProjectSummary.permission`; `ProjectCreate` without `members`; `canManage(project, me)`
-- [ ] T025 Ports and HTTP adapters: `AuthGateway`, `TeamGateway`; `ProjectGateway` shapes; `client.ts` handles `401 not_authenticated` (redirect to `/login?next=`)
-- [ ] T026 Fake adapters: accounts, sessions, invitations and permissions in the fake backend; starts signed in as a demo leader with a demo member
-- [ ] T027 Session: `useSession` (me, sign in, sign up, sign out), route guard for every screen except `/login`, `/signup`, `/join/:token`
-- [ ] T028 Screens: sign in (with the "Próximamente" Google and GitHub buttons), sign up, profile step, join page
-- [ ] T029 New project form without the team (role prefilled from the profile); projects list shows the permission
-- [ ] T030 Team screen (`/projects/:id/team`): members with their data and permission, edit, make Leader/Member, remove, leave; the invitation link card (copy, new link, turn off)
-- [ ] T031 Hide every leader action from members (Story 5's table) across planning, proposals, board settings, integrations, documents and settings
-- [ ] T032 Account menu (profile, sign out) in the top bar
-- [ ] T033 Tests (Vitest + Testing Library on the fake gateways), `npm run lint`, `npm run typecheck`, `npm test`
+- [x] T024 Domain types and rules: `Account`, `Permission`, `Invitation`, `InvitationPreview`, `JoinResult`, `ProfileUpdate`, `MemberUpdate`; `Member.account_id/permission`, `ProjectSummary.permission`; `ProjectCreate` without `members`; `canManage(project, me)`
+- [x] T025 Ports and HTTP adapters: `AuthGateway`, `TeamGateway`; `ProjectGateway` shapes; a `401 not_authenticated` from any call goes to `/login?next=` (handled once in `application/session.ts`; `client.ts` only turns it into an `ApiError`)
+- [x] T026 Fake adapters: accounts, sessions, invitations and permissions in the fake backend; starts signed in as a demo leader with a demo member
+- [x] T027 Session: `useSession` (me, sign in, sign up, sign out), route guard for every screen except `/login`, `/signup`, `/join/:token`
+- [x] T028 Screens: sign in (with the "Próximamente" Google, GitHub and SSO buttons), sign up, profile step, join page
+- [x] T029 New project form without the team (role prefilled from the profile); projects list shows the permission
+- [x] T030 Team screen (`/projects/:id/team`): members with their data and permission, edit, make Leader/Member, remove, leave; the invitation link card (copy, new link, turn off)
+- [x] T031 Hide every leader action from members (Story 5's table) across planning, proposals, board settings, integrations, documents and settings
+- [x] T032 Account menu (profile, sign out) in the top bar
+- [x] T033 Tests (Vitest + Testing Library on the fake gateways), `npm run lint`, `npm run typecheck`, `npm test`
+- [x] T034 `python -m app.seed` (`backend/app/seed.py`): the demo accounts Ana (leader) and Leo (member), password `agile-demo`, and a project they share, created through the API so every rule applies; idempotent
 
 ## Dependencies & Execution Order
 
