@@ -1,6 +1,6 @@
 # Contexto del producto
 
-Qué es Agile Planner, para quién es y cómo se usa. Sin detalles técnicos: para eso está [hexagonal-architecture.md](hexagonal-architecture.md).
+Qué es Agile Planner, para quién es y cómo se usa. Sin detalles técnicos: para eso están [hexagonal-architecture.md](hexagonal-architecture.md) y [use-cases.md](use-cases.md).
 
 ## Qué es
 
