@@ -4,7 +4,7 @@ Estilo Jira, pero el plan lo arman agentes: cargás el proyecto y tu equipo (rol
 
 ## Pipeline de agentes
 
-`SequentialAgent` en el que cada `LlmAgent` devuelve JSON con un esquema ([schemas.py](backend/app/agents/schemas.py)):
+Etapas en orden; cada una es un `LlmAgent` que devuelve JSON con un esquema ([domain/plan.py](backend/app/domain/plan.py)):
 
 1. **Analista**: objetivos, alcance, riesgos, gaps del equipo
 2. **Agile coach**: Scrum / Kanban / Scrumban / XP / Shape Up, con ceremonias y WIP
@@ -12,6 +12,11 @@ Estilo Jira, pero el plan lo arman agentes: cargás el proyecto y tu equipo (rol
 4. **Product manager**: fases y épicas
 5. **Product owner**: historias con puntos y criterios de aceptación
 6. **Scrum master**: sprints y asignación por rol y capacidad
+
+## Contexto y arquitectura
+
+- [plan/context.md](plan/context.md): qué es el producto y cómo se usa (sin detalles técnicos).
+- [plan/hexagonal-architecture.md](plan/hexagonal-architecture.md): arquitectura hexagonal (puertos y adaptadores), carpetas y decisiones.
 
 ## Cómo trabajamos: SDD
 
@@ -28,10 +33,11 @@ Spec → Plan → Tasks → Código. Cada feature vive en `specs/NNN-feature/` c
 
 ```bash
 cd backend
-py -m venv .venv && .venv/Scripts/activate
-pip install -r requirements.txt
+py -m venv .venv && .venv/Scripts/activate   # Linux/macOS: python3 -m venv .venv && . .venv/bin/activate
+pip install -r requirements-dev.txt
 cp .env.example .env   # poner GOOGLE_API_KEY
 fastapi dev app/main.py
+pytest                 # tests (incluye el de capas de la arquitectura)
 ```
 
 ## Correr el frontend
@@ -45,8 +51,10 @@ npm run dev                               # :5173, proxy /api → :8000
 
 ## TODO
 
-- [ ] Routers: crear proyecto, detalle, `PATCH /tasks/{id}`, `GET /projects/{id}/plan/stream` (SSE)
-- [ ] Persistir la salida del pipeline como Sprint y Task
+- [ ] Routers (`adapters/inbound/http`): crear proyecto, detalle, `PATCH /tasks/{id}`, SSE del planning
+- [ ] Propuestas y aprobación por etapa (spec 005)
+- [ ] Persistir el plan aprobado como Sprint y Task
+- [ ] Specs y diagramas generados (006), GitHub (007), sincronización y re-planificación (008)
 - [ ] Frontend: alta, progreso de agentes, kanban, roadmap
 - [ ] Extra: re-planificar ("se fue un dev, ajustá el sprint")
 - [ ] Deploy en Cloud Run
