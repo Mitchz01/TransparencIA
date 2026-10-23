@@ -11,6 +11,7 @@ from app.domain.integrations import ExternalKind, ExternalLink, OwnWrite, OwnWri
 from app.domain.project import Project
 from app.domain.proposals import Proposal, ProposalStatus
 from app.domain.sync import WebhookDelivery
+from app.domain.transparency import Alert, Budget, Expense, ExpenseStatus, StoredFile
 
 
 class ProjectRepository(Protocol):
@@ -33,6 +34,9 @@ class ProjectRepository(Protocol):
         ...
     def get_by_invite_token(self, token: str) -> Project | None:
         """The project whose current invitation link has this token (spec 015)."""
+        ...
+    def get_by_public_slug(self, slug: str) -> Project | None:
+        """The project whose portal has this slug, published or not (spec 017)."""
         ...
 
 
@@ -154,3 +158,32 @@ class SessionRepository(Protocol):
     def prune_expired(self, now: datetime) -> int:
         """Deletes sessions expired at `now`; returns how many."""
         ...
+
+
+# ---------- Spec 017 ----------
+
+
+class BudgetRepository(Protocol):
+    def get(self, project_id: int) -> Budget | None: ...
+    def save(self, budget: Budget) -> Budget:
+        """Insert or replace: a project has one budget."""
+        ...
+
+
+class ExpenseRepository(Protocol):
+    """An expense carries its alerts: saving it writes them too."""
+
+    def get(self, expense_id: int) -> Expense | None: ...
+    def list_by_project(self, project_id: int, status: ExpenseStatus | None = None) -> list[Expense]: ...
+    def add(self, expense: Expense) -> Expense: ...
+    def save(self, expense: Expense) -> Expense:
+        """Writes its alerts too, assigning ids to new ones."""
+        ...
+    def delete(self, expense_id: int) -> None: ...
+    def get_alert(self, alert_id: int) -> Alert | None: ...
+    def save_alert(self, alert: Alert) -> Alert: ...
+
+
+class StoredFileRepository(Protocol):
+    def add(self, file: StoredFile) -> StoredFile: ...
+    def get(self, file_id: int) -> StoredFile | None: ...

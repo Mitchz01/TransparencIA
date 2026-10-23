@@ -7,7 +7,7 @@ import { hasCode } from './errors'
 import type { Gateways } from './ports'
 
 /** Screens reachable without a session; a 401 there is expected, not a reason to leave. */
-export const PUBLIC_PATHS = [/^\/login$/, /^\/signup$/, /^\/join\/[^/]+$/]
+export const PUBLIC_PATHS = [/^\/login$/, /^\/signup$/, /^\/join\/[^/]+$/, /^\/p\/[^/]+$/] // /p/{slug}: spec 017's portal
 
 export const isPublicPath = (pathname: string) => PUBLIC_PATHS.some((pattern) => pattern.test(pathname))
 

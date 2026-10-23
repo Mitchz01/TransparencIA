@@ -25,6 +25,8 @@ export const routes: RouteObject[] = [
       { path: '/login', lazy: screen(() => import('../ui/pages/SignInPage'), 'SignInPage') },
       { path: '/signup', lazy: screen(() => import('../ui/pages/SignUpPage'), 'SignUpPage') },
       { path: '/join/:token', lazy: screen(() => import('../ui/pages/JoinPage'), 'JoinPage') },
+      // Spec 017: the public portal, no session and no app shell.
+      { path: '/p/:slug', lazy: screen(() => import('../ui/pages/PublicPortalPage'), 'PublicPortalPage') },
       {
         element: <RequireSession />,
         children: [
@@ -39,6 +41,7 @@ export const routes: RouteObject[] = [
               { index: true, element: <ProjectIndex /> },
               { path: 'planning', lazy: screen(() => import('../ui/pages/PlanningPage'), 'PlanningPage') },
               { path: 'board', lazy: screen(() => import('../ui/pages/BoardPage'), 'BoardPage') },
+              { path: 'transparency', lazy: screen(() => import('../ui/pages/TransparencyPage'), 'TransparencyPage') },
               { path: 'plan', lazy: screen(() => import('../ui/pages/PlanPage'), 'PlanPage') },
               { path: 'documents', lazy: screen(() => import('../ui/pages/DocumentsPage'), 'DocumentsPage') },
               { path: 'team', lazy: screen(() => import('../ui/pages/TeamPage'), 'TeamPage') },

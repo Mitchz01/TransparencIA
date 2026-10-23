@@ -8,7 +8,9 @@ import { httpIntegrationGateway } from './integrationGateway'
 import { httpPlanningGateway } from './planningGateway'
 import { httpProjectGateway } from './projectGateway'
 import { httpProposalGateway } from './proposalGateway'
+import { httpPublicPortalGateway } from './publicPortalGateway'
 import { httpTeamGateway } from './teamGateway'
+import { httpTransparencyGateway } from './transparencyGateway'
 
 /** Gateways backed by the real API. Only app/container.tsx should import this. */
 export function createHttpGateways(): Gateways {
@@ -23,5 +25,7 @@ export function createHttpGateways(): Gateways {
     board: httpBoardGateway,
     documents: httpDocumentGateway,
     integrations: httpIntegrationGateway,
+    transparency: httpTransparencyGateway,
+    publicPortal: httpPublicPortalGateway,
   }
 }
