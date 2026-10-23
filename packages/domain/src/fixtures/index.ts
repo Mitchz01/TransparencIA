@@ -1,0 +1,1 @@
+export { demoTeamPortal } from './demoTransparency'

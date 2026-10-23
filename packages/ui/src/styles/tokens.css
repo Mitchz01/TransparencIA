@@ -1,0 +1,229 @@
+/* Agile Planner design tokens. Usage rules: packages/ui/design-system/README.md.
+   Light is the default; dark applies with data-theme="dark" on <html>,
+   or with the system preference when no data-theme is set. */
+
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Neutrals (80%) */
+  --bg: #f4f5f0;
+  --surface: #ffffff;
+  --surface-strong: #e8eae2;
+  --ink: #12150d;
+  --ink-muted: #545a4c;
+  --ink-subtle: #686e60;
+
+  /* Lime (15%): fill only in light, never as text */
+  --primary: #c2ef2e;
+  --on-primary: #12150d;
+  --primary-soft: #eef8cc;
+  --primary-soft-ink: #3d5600;
+  --accent-ink: #4a6800;
+
+  /* Inverse surface: tooltips, toasts, the selected segment */
+  --inverse: #12150d;
+  --on-inverse: #f2f4ee;
+
+  /* Categories and states (5%): text, soft fill */
+  --blue: #2f5fe0;
+  --blue-soft: #e8eefd;
+  --violet: #6a47db;
+  --violet-soft: #efeafd;
+  --amber: #9a5f00;
+  --amber-soft: #fbf0da;
+  --coral: #bf3b27;
+  --coral-soft: #fce9e5;
+  --teal: #0b7660;
+  --teal-soft: #e0f4ef;
+
+  /* Chart fills: only bars, cells and areas, never text */
+  --chart-1: #c2ef2e;
+  --chart-2: #2f5fe0;
+  --chart-3: #6a47db;
+  --chart-4: #e3a21a;
+  --chart-5: #19a385;
+
+  --focus: #2f5fe0;
+  --glow: transparent;
+  --shadow-float: 0 12px 32px rgb(18 21 13 / 0.12), 0 2px 6px rgb(18 21 13 / 0.06);
+
+  /* Aliases: a block or an input inside a card; the veil behind dialogs and drawers */
+  --inset: #f4f5f0;
+  --scrim: rgb(18 21 13 / 0.32);
+
+  /* Board: columns are a panel, cards sit one step above it */
+  --lane: #edefe8;
+  --card: #ffffff;
+  --card-hover: #f4f5f0;
+  --card-inset: #e8eae2;
+  /* Tinted columns (spec 014): the hue's soft fill in light, a darker tint in dark so cards stand out */
+  --lane-blue: #e8eefd;
+  --lane-amber: #fbf0da;
+  --lane-teal: #e0f4ef;
+
+  /* Home hero mesh (spec 016): mango biche. mesh-5 is the dark top, so on-mesh text passes AA */
+  --mesh-1: #c2ef2e;
+  --mesh-2: #d9e86a;
+  --mesh-3: #f4d35e;
+  --mesh-4: #7bc043;
+  --mesh-5: #1f3a12;
+  --mesh-6: #faf7e1;
+  --on-mesh: #ffffff;
+
+  /* Type */
+  --font-sans: "Geist Variable", "Geist", "Segoe UI", system-ui, sans-serif;
+  --text-display: 600 2.25rem/1.15 var(--font-sans);
+  --text-title: 600 1.5rem/1.25 var(--font-sans);
+  --text-heading: 600 1.125rem/1.35 var(--font-sans);
+  --text-body: 400 0.9375rem/1.55 var(--font-sans);
+  --text-label: 500 0.875rem/1.4 var(--font-sans);
+  --text-caption: 400 0.8125rem/1.4 var(--font-sans);
+  --text-number: 600 2rem/1.1 var(--font-sans);
+  --text-key: 600 0.8125rem/1.4 var(--font-sans); /* with tabular-nums */
+
+  /* Shape */
+  --radius-pill: 999px;
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+
+  /* Space (4px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Controls */
+  --control-sm: 32px;
+  --control-md: 40px;
+  --control-lg: 48px;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #0a0b09;
+  --surface: #141612;
+  --surface-strong: #22261e;
+  --ink: #f2f4ee;
+  --ink-muted: #a3a99b;
+  --ink-subtle: #868c7e;
+
+  --primary: #c6f432;
+  --on-primary: #0a0b09;
+  --primary-soft: #262e12;
+  --primary-soft-ink: #d2f55e;
+  --accent-ink: #c6f432;
+
+  --inverse: #f2f4ee;
+  --on-inverse: #0a0b09;
+
+  --blue: #6b95ff;
+  --blue-soft: #18213a;
+  --violet: #ae95fb;
+  --violet-soft: #221c38;
+  --amber: #f5b83d;
+  --amber-soft: #2e2512;
+  --coral: #ff8571;
+  --coral-soft: #331b16;
+  --teal: #45d9b9;
+  --teal-soft: #112d27;
+
+  --chart-1: #c6f432;
+  --chart-2: #6b95ff;
+  --chart-3: #ae95fb;
+  --chart-4: #f5b83d;
+  --chart-5: #45d9b9;
+
+  --focus: #c6f432;
+  --glow: radial-gradient(60% 120% at 50% 0%, rgb(198 244 50 / 0.10), transparent 70%);
+  --shadow-float: 0 16px 40px rgb(0 0 0 / 0.55);
+
+  --inset: #22261e;
+  --scrim: rgb(0 0 0 / 0.6);
+
+  --lane: #141612;
+  --card: #22261e;
+  --card-hover: #2b3026;
+  --card-inset: #383d31;
+  --lane-blue: #111829;
+  --lane-amber: #1d180e;
+  --lane-teal: #0e1d19;
+
+  --mesh-1: #c6f432;
+  --mesh-2: #b9cc45;
+  --mesh-3: #e9bf3f;
+  --mesh-4: #4f8f2a;
+  --mesh-5: #0a0b09;
+  --mesh-6: #3d5a18;
+  --on-mesh: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+
+    --bg: #0a0b09;
+    --surface: #141612;
+    --surface-strong: #22261e;
+    --ink: #f2f4ee;
+    --ink-muted: #a3a99b;
+    --ink-subtle: #868c7e;
+
+    --primary: #c6f432;
+    --on-primary: #0a0b09;
+    --primary-soft: #262e12;
+    --primary-soft-ink: #d2f55e;
+    --accent-ink: #c6f432;
+
+    --inverse: #f2f4ee;
+    --on-inverse: #0a0b09;
+
+    --blue: #6b95ff;
+    --blue-soft: #18213a;
+    --violet: #ae95fb;
+    --violet-soft: #221c38;
+    --amber: #f5b83d;
+    --amber-soft: #2e2512;
+    --coral: #ff8571;
+    --coral-soft: #331b16;
+    --teal: #45d9b9;
+    --teal-soft: #112d27;
+
+    --chart-1: #c6f432;
+    --chart-2: #6b95ff;
+    --chart-3: #ae95fb;
+    --chart-4: #f5b83d;
+    --chart-5: #45d9b9;
+
+    --focus: #c6f432;
+    --glow: radial-gradient(60% 120% at 50% 0%, rgb(198 244 50 / 0.10), transparent 70%);
+    --shadow-float: 0 16px 40px rgb(0 0 0 / 0.55);
+
+    --inset: #22261e;
+    --scrim: rgb(0 0 0 / 0.6);
+
+    --lane: #141612;
+    --card: #22261e;
+    --card-hover: #2b3026;
+    --card-inset: #383d31;
+    --lane-blue: #111829;
+    --lane-amber: #1d180e;
+    --lane-teal: #0e1d19;
+
+    --mesh-1: #c6f432;
+    --mesh-2: #b9cc45;
+    --mesh-3: #e9bf3f;
+    --mesh-4: #4f8f2a;
+    --mesh-5: #0a0b09;
+    --mesh-6: #3d5a18;
+    --on-mesh: #ffffff;
+  }
+}

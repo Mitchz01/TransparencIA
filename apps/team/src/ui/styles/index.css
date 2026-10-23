@@ -1,0 +1,81 @@
+/* The team app's stylesheet: Tailwind, the shared theme (@agile/ui), and what only this app draws. */
+
+@import "tailwindcss";
+@import "@agile/ui/theme.css";
+
+/* The home hero's mesh (spec 016): the only animated gradient in the app, and it replaces the glow there.
+   Soft blobs drift with transform only; a veil of mesh-5 keeps the top dark so the greeting passes AA;
+   a static grain sits on top. Paused while the tab is hidden, still under reduced motion. */
+@layer components {
+  .mesh {
+    --hero-h: min(78svh, 760px);
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    background: linear-gradient(to bottom, var(--mesh-5) 0, var(--mesh-4) calc(var(--hero-h) * 0.9), var(--mesh-3) 100%);
+  }
+
+  .mesh-blob {
+    position: absolute;
+    aspect-ratio: 1.25;
+    background: radial-gradient(closest-side, var(--blob) 0%, color-mix(in oklab, var(--blob) 55%, transparent) 50%, transparent 100%);
+    will-change: transform;
+    animation: var(--drift) var(--duration) ease-in-out var(--delay) infinite alternate;
+  }
+
+  .mesh-blob:nth-child(1) { --blob: var(--mesh-1); --drift: mesh-drift-a; --duration: 22s; --delay: -4s; left: -18%; top: calc(var(--hero-h) * 0.32); width: 70%; }
+  .mesh-blob:nth-child(2) { --blob: var(--mesh-3); --drift: mesh-drift-b; --duration: 28s; --delay: -11s; left: 52%; top: calc(var(--hero-h) * 0.42); width: 62%; }
+  .mesh-blob:nth-child(3) { --blob: var(--mesh-2); --drift: mesh-drift-c; --duration: 18s; --delay: -3s; left: 18%; top: calc(var(--hero-h) * 0.6); width: 58%; }
+  .mesh-blob:nth-child(4) { --blob: var(--mesh-4); --drift: mesh-drift-b; --duration: 32s; --delay: -17s; left: 62%; top: calc(var(--hero-h) * 0.18); width: 48%; }
+  .mesh-blob:nth-child(5) { --blob: var(--mesh-6); --drift: mesh-drift-a; --duration: 26s; --delay: -9s; left: 30%; top: calc(var(--hero-h) * 0.78); width: 44%; }
+  .mesh-blob:nth-child(6) { --blob: var(--mesh-1); --drift: mesh-drift-c; --duration: 30s; --delay: -21s; left: -8%; top: calc(var(--hero-h) * 0.88); width: 52%; }
+
+  .mesh[data-paused] .mesh-blob {
+    animation-play-state: paused;
+  }
+
+  .mesh-veil {
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: var(--hero-h);
+    background: linear-gradient(
+      to bottom,
+      var(--mesh-5) 0%,
+      var(--mesh-5) 40%,
+      color-mix(in oklab, var(--mesh-5) 55%, transparent) 60%,
+      transparent 85%
+    );
+  }
+
+  .mesh-grain {
+    position: absolute;
+    inset: 0;
+    opacity: 0.07;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 1.4 -0.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 180px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mesh-blob {
+      animation: none;
+    }
+  }
+}
+
+@keyframes mesh-drift-a {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(18%, -10%, 0) scale(1.18); }
+}
+
+@keyframes mesh-drift-b {
+  from { transform: translate3d(0, 0, 0) scale(1.08); }
+  to { transform: translate3d(-22%, 12%, 0) scale(0.9); }
+}
+
+@keyframes mesh-drift-c {
+  0% { transform: translate3d(-10%, 6%, 0) scale(1); }
+  50% { transform: translate3d(12%, -8%, 0) scale(1.14); }
+  100% { transform: translate3d(4%, 10%, 0) scale(0.94); }
+}

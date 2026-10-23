@@ -1,0 +1,6 @@
+// Spec 017. Owner: P5. Placeholder from the skeleton: keep the props, write the body.
+import type { WeekEntry } from '@agile/domain'
+
+export function WeeklyTimeline(_props: { timeline: WeekEntry[] }) {
+  return null
+}

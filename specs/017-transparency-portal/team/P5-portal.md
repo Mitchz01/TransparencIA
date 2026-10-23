@@ -5,26 +5,25 @@ You own **what the jury sees on their phone**: the public portal at `/p/:slug`, 
 tasks: T020, T022, T025–T027.
 
 UI text in Spanish (spec 009). Phone first: design at 390 px wide, then check desktop. Follow
-[.claude/skills/](../../../.claude/skills/README.md) and reuse `ui/components/ds`.
+[.claude/skills/](../../../.claude/skills/README.md) and reuse `@agile/ui`. The portal is its own app
+(`apps/portal`, spec 018): `npm run dev:portal` on `:5174`; it never imports from `apps/team`.
 
 ## Your files (only these)
 
-- `frontend/src/ui/pages/PublicPortalPage.tsx`
-- `frontend/src/ui/components/transparency/`: `TrafficLight.tsx`, `ProgressBars.tsx`,
+- `apps/portal/` (the whole app; spec 018 left `PublicPortalPage`, its http gateway, `usePortal` and a test)
+- `packages/ui/src/transparency/`: `TrafficLight.tsx`, `ProgressBars.tsx`,
   `BudgetLines.tsx`, `WeeklyTimeline.tsx`, `EvidenceList.tsx`, `AlertList.tsx`, `CitizenChat.tsx`
-  (props fixed in the [README](README.md#frontend--read-only-components-srcuicomponentstransparency-owner-p5): don't change them without telling P4)
-- `frontend/src/adapters/http/publicPortalGateway.ts`, `adapters/fake/publicPortalGateway.ts`
-- `frontend/src/application/use-cases/usePublicPortal.ts`
-- `frontend/vite.config.ts` (tunnel host)
-- Docs: `plan/api-conventions.md`, `frontend/docs/api-contract.md`, `plan/context.md`, `README.md`
+  (props fixed in the [README](README.md#frontend--read-only-components-packagesuisrctransparency-owner-p5): don't change them without telling P4).
+  Exported as `@agile/ui/transparency`, so the team tab and the portal render the same ones.
+- Docs: `plan/api-conventions.md`, `apps/team/docs/api-contract.md`, `plan/context.md`, `README.md`
 - `specs/017-transparency-portal/demo-script.md` (new)
 
 ## Phase 1 (0:10–0:50), on the fake backend
 
-1. **Fake public gateway**: returns P4's fixture (`adapters/fake/demoTransparency.ts`, ready by 0:20),
+1. **Fake public gateway** (`apps/portal/src/adapters/fake/`): returns P4's fixture (`@agile/domain/fixtures`, ready by 0:20),
    minus `drafts` and `public`, for any slug except `no-existe` (which gives 404). `ask` waits 1 s and
    answers from the fixture's lines.
-2. **`usePublicPortal(slug)`** and `useAskCitizen(slug)` on TanStack Query.
+2. **`usePortal(slug)`** (already there) and `useAskCitizen(slug)` on TanStack Query.
 3. **Components**: read-only, all numbers come from the props, nothing computed here (SC-003).
    - `TrafficLight`: a big colored state ("En verde", "En amarillo", "En rojo") plus the reasons as a
      list. Never color alone: the word is always there.
@@ -61,16 +60,16 @@ UI text in Spanish (spec 009). Phone first: design at 390 px wide, then check de
    - `agent_unavailable` → "El asistente no está disponible; los datos de arriba están completos".
 3. **Tunnel** (T026). Start it once and keep it running all demo: its URL changes on every start.
    - `winget install --id Cloudflare.cloudflared`
-   - `cloudflared tunnel --url http://localhost:5173`
-   - In `vite.config.ts`: `server: { allowedHosts: ['.trycloudflare.com'], proxy: … }`.
-   - Give the tunnel URL to P3 for `PUBLIC_APP_URL` in `backend/.env`, and to P4 for `VITE_PUBLIC_APP_URL`.
+   - `cloudflared tunnel --url http://localhost:5174` (the portal app; the QR points there)
+   - In `apps/portal/vite.config.ts`: `server: { allowedHosts: ['.trycloudflare.com'], … }`.
+   - Give the tunnel URL to P3 for `PUBLIC_APP_URL` in `apps/api/.env`, and to P4 for `VITE_PUBLIC_APP_URL`.
    - Test the seeded QR from a phone **on mobile data**, not the venue's wifi.
 
 ## Phase 3 (1:30–2:20): docs and demo
 
 1. **Docs** (T025):
    - `plan/api-conventions.md`: the D2 and D3 exceptions and the new error codes.
-   - `frontend/docs/api-contract.md`: the new gateways and shapes.
+   - `apps/team/docs/api-contract.md`: the new gateways and shapes.
    - `plan/context.md` and `README.md`: the product is now "gestor de proyectos + portal de
      transparencia". Copy from spec.md and plan.md, keep it short.
 2. **`demo-script.md`**, 3 minutes:

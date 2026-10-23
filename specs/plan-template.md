@@ -58,14 +58,14 @@ tests/
 └── unit/
 
 # [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
+apps/api/
 ├── src/
 │   ├── models/
 │   ├── services/
 │   └── api/
 └── tests/
 
-frontend/
+apps/team/
 ├── src/
 │   ├── components/
 │   ├── pages/

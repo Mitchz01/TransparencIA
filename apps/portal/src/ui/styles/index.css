@@ -1,0 +1,4 @@
+/* The portal's stylesheet: Tailwind and the shared theme (@agile/ui). Light or dark follows the phone. */
+
+@import "tailwindcss";
+@import "@agile/ui/theme.css";
