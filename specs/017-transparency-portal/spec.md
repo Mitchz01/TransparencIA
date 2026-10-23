@@ -325,6 +325,9 @@ front door.
 - **FR-023**: The team app MUST present the product it now is: the sign in screens, the home and the new
   project form talk about executing public projects and accounting for their money, with examples of public
   works and services (no software templates, no GitHub in the demo's path).
+- **FR-024**: The portal MUST show, for each phase of the plan, its activities and whether each one is done (and
+  when), under way or pending, with only their titles; each week MUST show the evidence dated in it next to
+  the activities finished that week, with its amount, budget line, the activity it proves and its alerts.
 
 ### Key Entities
 

@@ -259,6 +259,27 @@ def test_sprint_progress_in_sprint_order():
     assert [(s.name, s.done_points, s.total_points) for s in sprint_progress(sprints, tasks)] == [("Diagnóstico", 3, 5), ("Vivero", 0, 5)]
 
 
+def test_each_phase_lists_its_tasks_done_then_in_progress_then_pending():
+    sprints = [Sprint(id=7, project_id=1, number=1, name="Siembra", goal="g")]
+    tasks = [
+        _task(1, 1, sprint_id=7),
+        _task(2, 1, dt.date(2026, 9, 20), sprint_id=7),
+        _task(3, 1, sprint_id=7).model_copy(update={"status": "review"}),
+        _task(4, 1, dt.date(2026, 9, 10), sprint_id=7),
+        _task(5, 1, sprint_id=None),  # backlog, in no phase
+    ]
+
+    [phase] = sprint_progress(sprints, tasks)
+
+    assert [(t.id, t.status, t.done_on) for t in phase.tasks] == [
+        (4, "done", dt.date(2026, 9, 10)),
+        (2, "done", dt.date(2026, 9, 20)),
+        (3, "in_progress", None),
+        (1, "pending", None),
+    ]
+    assert set(phase.tasks[0].model_dump()) == {"id", "title", "status", "done_on"}  # nothing about who does it
+
+
 # ---------- Rule alerts (FR-005) ----------
 
 

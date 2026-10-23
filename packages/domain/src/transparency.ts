@@ -95,12 +95,23 @@ export interface WeekEntry {
   physical_pct_acc: number
 }
 
+export type PhaseTaskStatus = 'done' | 'in_progress' | 'pending'
+
+/** A board task as the public sees it (spec 017, FR-024): its title and where it stands, nothing about who does it. */
+export interface PhaseTask {
+  id: number
+  title: string
+  status: PhaseTaskStatus
+  done_on: string | null
+}
+
 export interface SprintProgress {
   name: string
   goal: string
   end_date: string | null
   done_points: number
   total_points: number
+  tasks: PhaseTask[] // done first (in the order they were finished), then in progress, then pending
 }
 
 export interface PortalProject {

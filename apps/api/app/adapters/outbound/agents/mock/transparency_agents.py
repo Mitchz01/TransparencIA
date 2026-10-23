@@ -27,6 +27,13 @@ class MockTransparencyAgents:
 
     async def answer_citizen(self, portal: dict[str, Any], question: str) -> CitizenAnswer:
         await asyncio.sleep(self._delay)
+        q = question.lower()
+        if "falta" in q or "pendiente" in q or "sigue" in q:
+            return CitizenAnswer(answer=_missing_answer(portal))
+        if "hecho" in q or "hizo" in q or "avance" in q or "sembrado" in q:
+            return CitizenAnswer(answer=_done_answer(portal))
+        if "revisi" in q or "alerta" in q:
+            return CitizenAnswer(answer=_alerts_answer(portal))
         return CitizenAnswer(answer=_spending_answer(portal))
 
 
@@ -59,3 +66,34 @@ def _spending_answer(portal: dict[str, Any]) -> str:
         f"Según lo publicado, lo ejecutado hasta hoy está sobre todo en {detail}. "
         "Cada gasto tiene su documento de respaldo en la sección de evidencias."
     )
+
+
+def _phase_tasks(portal: dict[str, Any], status: str) -> list[str]:
+    return [t["title"] for s in portal.get("sprints") or [] for t in s.get("tasks") or [] if t.get("status") == status]
+
+
+def _done_answer(portal: dict[str, Any]) -> str:
+    done = _phase_tasks(portal, "done")
+    if not done:
+        return "Todavía no se ha reportado ninguna actividad terminada."
+    recent = ", ".join(done[-3:])
+    physical = (portal.get("summary") or {}).get("physical_pct")
+    progress = f" El avance de las actividades va en {str(physical).replace('.', ',')} %." if physical is not None else ""
+    return f"Se han terminado {len(done)} actividades; las más recientes son: {recent}.{progress}"
+
+
+def _missing_answer(portal: dict[str, Any]) -> str:
+    ongoing = _phase_tasks(portal, "in_progress")
+    pending = _phase_tasks(portal, "pending")
+    if not ongoing and not pending:
+        return "No queda ninguna actividad por hacer en el plan publicado."
+    now = f"Ahora está en curso: {', '.join(ongoing)}. " if ongoing else ""
+    return f"{now}Faltan {len(pending)} actividades por empezar; las próximas son: {', '.join(pending[:3])}."
+
+
+def _alerts_answer(portal: dict[str, Any]) -> str:
+    alerts = portal.get("alerts") or []
+    if not alerts:
+        return "No hay alertas abiertas: ningún gasto ha sido marcado para revisión."
+    first = alerts[0].get("reason", "")
+    return f"Hay {len(alerts)} {'alerta' if len(alerts) == 1 else 'alertas'} para revisión. La primera dice: {first}"
