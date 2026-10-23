@@ -1,12 +1,16 @@
 from __future__ import annotations
 
-from sqlalchemy import update
+from datetime import datetime, timezone
+
+from sqlalchemy import func, update
 from sqlmodel import Session, col, select
 
 from app.adapters.outbound.persistence import mappers
 from app.adapters.outbound.persistence.tables import (
     ActivityTable,
+    ExternalLinkTable,
     MemberTable,
+    OwnWriteTable,
     ProjectTable,
     ProposalTable,
     SprintTable,
@@ -15,6 +19,7 @@ from app.adapters.outbound.persistence.tables import (
 from app.domain.board import Sprint, Task
 from app.domain.errors import ProposalAlreadyResolved
 from app.domain.events import DomainEvent
+from app.domain.integrations import ExternalKind, ExternalLink, OwnWrite, OwnWriteAction
 from app.domain.project import Project
 from app.domain.proposals import Proposal, ProposalStatus
 
@@ -72,6 +77,18 @@ class SqlProjectRepository:
 
     def _to_domain(self, row: ProjectTable) -> Project:
         return mappers.project_to_domain(row, self._active_members(row.id))
+
+    def get_by_member(self, member_id: int) -> Project | None:
+        """The project of an active member (spec 007)."""
+        member = self._session.get(MemberTable, member_id)
+        return self.get(member.project_id) if member and member.active else None
+
+    def get_by_repository(self, repository: str) -> Project | None:
+        """The project connected to `owner/name`, case-insensitive like GitHub (spec 007)."""
+        row = self._session.exec(
+            select(ProjectTable).where(func.lower(ProjectTable.repository) == repository.lower()).order_by(ProjectTable.id)
+        ).first()
+        return self._to_domain(row) if row else None
 
 
 class SqlSprintRepository:
@@ -191,3 +208,81 @@ class SqlActivityRepository:
             .limit(limit)
         ).all()
         return [mappers.activity_to_domain(row) for row in rows]
+
+
+# ---------- GitHub integration (spec 007) ----------
+
+
+class SqlExternalLinkRepository:
+    def __init__(self, session: Session):
+        self._session = session
+
+    def get_issue(self, task_id: int) -> ExternalLink | None:
+        """The task's newest issue link (an older one may be broken)."""
+        row = self._session.exec(
+            select(ExternalLinkTable)
+            .where(ExternalLinkTable.task_id == task_id, ExternalLinkTable.kind == "issue")
+            .order_by(col(ExternalLinkTable.id).desc())
+        ).first()
+        return mappers.external_link_to_domain(row) if row else None
+
+    def list_by_project(self, project_id: int, kind: ExternalKind | None = None) -> list[ExternalLink]:
+        query = select(ExternalLinkTable).where(ExternalLinkTable.project_id == project_id)
+        if kind is not None:
+            query = query.where(ExternalLinkTable.kind == kind)
+        rows = self._session.exec(query.order_by(ExternalLinkTable.id)).all()
+        return [mappers.external_link_to_domain(row) for row in rows]
+
+    def find(self, repository: str, number: int, kind: ExternalKind) -> list[ExternalLink]:
+        """Links to one issue (at most one task) or PR (one per task it closes)."""
+        rows = self._session.exec(
+            select(ExternalLinkTable)
+            .where(
+                func.lower(ExternalLinkTable.repository) == repository.lower(),
+                ExternalLinkTable.number == number,
+                ExternalLinkTable.kind == kind,
+            )
+            .order_by(ExternalLinkTable.id)
+        ).all()
+        return [mappers.external_link_to_domain(row) for row in rows]
+
+    def add(self, link: ExternalLink) -> ExternalLink:
+        row = mappers.external_link_to_table(link)
+        self._session.add(row)
+        self._session.flush()
+        return mappers.external_link_to_domain(row)
+
+    def save(self, link: ExternalLink) -> ExternalLink:
+        row = self._session.merge(mappers.external_link_to_table(link))
+        self._session.flush()
+        return mappers.external_link_to_domain(row)
+
+
+class SqlOwnWriteRepository:
+    def __init__(self, session: Session):
+        self._session = session
+
+    def add(self, write: OwnWrite) -> OwnWrite:
+        row = mappers.own_write_to_table(write)
+        self._session.add(row)
+        self._session.flush()
+        return mappers.own_write_to_domain(row)
+
+    def consume_matching(self, repository: str, number: int, action: OwnWriteAction) -> bool:
+        """Marks the oldest unconsumed matching write as consumed; False if there's none."""
+        row = self._session.exec(
+            select(OwnWriteTable)
+            .where(
+                func.lower(OwnWriteTable.repository) == repository.lower(),
+                OwnWriteTable.number == number,
+                OwnWriteTable.action == action,
+                col(OwnWriteTable.consumed_at).is_(None),
+            )
+            .order_by(OwnWriteTable.id)
+        ).first()
+        if row is None:
+            return False
+        row.consumed_at = datetime.now(timezone.utc)
+        self._session.add(row)
+        self._session.flush()
+        return True

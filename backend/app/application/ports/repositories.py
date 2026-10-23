@@ -5,6 +5,7 @@ from typing import Protocol
 from app.domain.board import Sprint, Task
 from app.domain.documents import Document
 from app.domain.events import DomainEvent
+from app.domain.integrations import ExternalKind, ExternalLink, OwnWrite, OwnWriteAction
 from app.domain.project import Project
 from app.domain.proposals import Proposal, ProposalStatus
 
@@ -17,6 +18,12 @@ class ProjectRepository(Protocol):
         ...
     def save(self, project: Project) -> Project:
         """Saves the project and syncs its team (members missing from the list are deactivated)."""
+        ...
+    def get_by_member(self, member_id: int) -> Project | None:
+        """The project of an active member (spec 007)."""
+        ...
+    def get_by_repository(self, repository: str) -> Project | None:
+        """The project connected to `owner/name`, case-insensitive (spec 007)."""
         ...
 
 
@@ -60,3 +67,25 @@ class DocumentRepository(Protocol):
     def list_by_project(self, project_id: int) -> list[Document]: ...
     def add(self, document: Document) -> Document: ...
     def save(self, document: Document) -> Document: ...
+
+
+# ---------- GitHub integration (spec 007) ----------
+
+
+class ExternalLinkRepository(Protocol):
+    def get_issue(self, task_id: int) -> ExternalLink | None:
+        """The task's newest issue link (an older one may be broken)."""
+        ...
+    def list_by_project(self, project_id: int, kind: ExternalKind | None = None) -> list[ExternalLink]: ...
+    def find(self, repository: str, number: int, kind: ExternalKind) -> list[ExternalLink]:
+        """Links to one issue (at most one task) or one PR (one per task it closes)."""
+        ...
+    def add(self, link: ExternalLink) -> ExternalLink: ...
+    def save(self, link: ExternalLink) -> ExternalLink: ...
+
+
+class OwnWriteRepository(Protocol):
+    def add(self, write: OwnWrite) -> OwnWrite: ...
+    def consume_matching(self, repository: str, number: int, action: OwnWriteAction) -> bool:
+        """Spec 008: marks the oldest unconsumed matching write as consumed; False if there's none."""
+        ...

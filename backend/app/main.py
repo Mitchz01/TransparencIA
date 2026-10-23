@@ -14,8 +14,8 @@ from app.adapters.outbound.events.persistent_bus import PersistentEventBus
 from app.application.use_cases.proposals.apply_proposal import ApplierRegistry
 from app.adapters.outbound.persistence.db import create_db
 from app.application.ports.agents import PlanningAgents
-from app.application.ports.code_host import CodeHost
-from app.config import CORS_ORIGINS, GEMINI_MODEL, MOCK_AGENTS, MOCK_GITHUB, logger
+from app.application.ports.code_host import CodeHost, CodeHostFactory
+from app.config import CORS_ORIGINS, GEMINI_MODEL, GITHUB_TOKEN, MOCK_AGENTS, MOCK_GITHUB_FORCED
 
 
 def build_agents() -> PlanningAgents:
@@ -29,18 +29,27 @@ def build_agents() -> PlanningAgents:
     return AdkPlanningAgents(model=GEMINI_MODEL)
 
 
-def build_code_host() -> CodeHost:
-    if not MOCK_GITHUB:
-        # TODO(spec 007): return GitHubCodeHost(token=GITHUB_TOKEN)
-        logger.warning("GitHubCodeHost doesn't exist yet (spec 007): using FakeCodeHost")
-    return FakeCodeHost()
+def build_code_host_factory(fake: CodeHost) -> CodeHostFactory:
+    """Per project (spec 007, FR-004/FR-005): its own token, else the installation's
+    GITHUB_TOKEN, else `fake` (test mode). One shared fake keeps the demo's records together."""
+
+    def for_token(project_token: str | None) -> CodeHost:
+        token = project_token or GITHUB_TOKEN
+        if MOCK_GITHUB_FORCED or not token:
+            return fake
+        from app.adapters.outbound.code_host.github.code_host import GitHubCodeHost
+
+        return GitHubCodeHost(token)
+
+    return for_token
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db()
     app.state.agents = build_agents()
-    app.state.code_host = build_code_host()
+    app.state.code_host_factory = build_code_host_factory(FakeCodeHost())  # spec 007: per project token
+    app.state.code_host = app.state.code_host_factory(None)  # the installation's
     app.state.uow_factory = open_uow
     # Every event is saved as activity (seq, history, SSE replay) before it's fanned out (spec 005).
     app.state.event_bus = PersistentEventBus(InMemoryEventBus(), open_uow)

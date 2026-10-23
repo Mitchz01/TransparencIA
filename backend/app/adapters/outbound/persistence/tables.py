@@ -24,6 +24,9 @@ class ProjectTable(SQLModel, table=True):
     repository: str | None = None
     plan: dict[str, Any] | None = Field(default=None, sa_column=Column(JSON))
     created_at: datetime = Field(default_factory=_now)
+    # Spec 007. Encrypted with SECRET_KEY when it's set (see token_cipher.py), plain text otherwise.
+    github_token: str | None = None
+    webhook_id: int | None = None
 
 
 class MemberTable(SQLModel, table=True):
@@ -38,6 +41,7 @@ class MemberTable(SQLModel, table=True):
     skills: list[str] = Field(default_factory=list, sa_column=Column(JSON))
     # Removed members are deactivated, never deleted, so done tasks keep their assignee (spec 001).
     active: bool = True
+    github_username: str | None = None  # spec 007
 
 
 class SprintTable(SQLModel, table=True):
@@ -90,6 +94,7 @@ class ProposalTable(SQLModel, table=True):
     apply_error: str | None = None
     created_at: datetime = Field(default_factory=_now)
     resolved_at: datetime | None = None
+    result: dict[str, Any] | None = Field(default=None, sa_column=Column(JSON))
 
 
 class ActivityTable(SQLModel, table=True):
@@ -102,3 +107,32 @@ class ActivityTable(SQLModel, table=True):
     type: str
     occurred_at: datetime = Field(default_factory=_now)
     payload: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+
+
+class ExternalLinkTable(SQLModel, table=True):
+    """Task ↔ issue/PR (spec 007). A task has at most one live issue link."""
+
+    __tablename__ = "external_link"
+
+    id: int | None = Field(default=None, primary_key=True)
+    project_id: int = Field(foreign_key="project.id", index=True)
+    task_id: int = Field(foreign_key="task.id", index=True)
+    kind: str
+    repository: str = Field(index=True)
+    number: int
+    url: str
+    state: str = "open"
+    broken: bool = False
+
+
+class OwnWriteTable(SQLModel, table=True):
+    """A write the system made on GitHub; spec 008 consumes it to ignore the echo (spec 007, FR-023)."""
+
+    __tablename__ = "own_write"
+
+    id: int | None = Field(default=None, primary_key=True)
+    repository: str = Field(index=True)
+    number: int
+    action: str
+    created_at: datetime = Field(default_factory=_now)
+    consumed_at: datetime | None = None

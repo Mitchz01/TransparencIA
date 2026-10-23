@@ -96,3 +96,65 @@ class NoApplierForProposal(DomainError):
 
     def __init__(self, kind: str, key: str):
         super().__init__(f"Nothing applies {kind} proposals ('{key}') yet.")
+
+
+# ---------- GitHub integration (spec 007) ----------
+
+
+class MemberNotFound(NotFound):
+    def __init__(self, id: int | None):
+        super().__init__("Member", id)
+
+
+class RepositoryNotAccessible(DomainError):
+    """The repo doesn't exist, the token can't see it, or it lacks permissions. Nothing is saved."""
+
+    code = "repository_not_accessible"
+    _DETAILS = {
+        "not_found": "The repository {repo} doesn't exist or the token can't see it.",
+        "forbidden": "The token has no access to {repo}.",
+        "missing_permissions": "The token can't create issues, comment or manage webhooks in {repo}.",
+    }
+
+    def __init__(self, repository: str, reason: str):
+        super().__init__(self._DETAILS.get(reason, "The repository {repo} isn't accessible.").format(repo=repository))
+        self.repository = repository
+        self.reason = reason  # "not_found" | "forbidden" | "missing_permissions"
+
+    def extra(self) -> dict[str, Any]:
+        return {"reason": self.reason}
+
+
+class RepositoryNotConnected(DomainError):
+    code = "repository_not_connected"
+
+    def __init__(self, project_id: int | None):
+        super().__init__(f"Project {project_id} has no connected repository.")
+        self.project_id = project_id
+
+
+class NothingToPublish(DomainError):
+    code = "nothing_to_publish"
+
+    def __init__(self) -> None:
+        super().__init__("Every task already has an issue.")
+
+
+class PublicationPending(DomainError):
+    code = "publication_pending"
+
+    def __init__(self, proposal_id: int | None):
+        super().__init__(f"Proposal {proposal_id} to publish issues is still pending.")
+        self.proposal_id = proposal_id
+
+    def extra(self) -> dict[str, Any]:
+        return {"proposal_id": self.proposal_id}
+
+
+class CodeHostUnavailable(DomainError):
+    """GitHub failed or timed out (5xx, timeout, rate limit), after the client's retries."""
+
+    code = "code_host_unavailable"
+
+    def __init__(self, detail: str = "GitHub didn't answer. Try again in a moment."):
+        super().__init__(detail)

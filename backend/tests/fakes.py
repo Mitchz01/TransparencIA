@@ -2,12 +2,14 @@
 They copy entities in and out, like a database would, so tests can't rely on aliasing."""
 
 from collections.abc import AsyncIterator, Callable
+from datetime import datetime, timezone
 from itertools import count
 from typing import Any, Self
 
 from app.domain.board import Sprint, Task
 from app.domain.errors import ProposalAlreadyResolved
 from app.domain.events import DomainEvent
+from app.domain.integrations import ExternalKind, ExternalLink, OwnWrite, OwnWriteAction
 from app.domain.project import Member, Project
 from app.domain.proposals import Proposal, ProposalStatus
 
@@ -63,6 +65,12 @@ class FakeProjectRepository(_Repo):
     def list(self) -> list[Project]:
         return [p.model_copy(deep=True) for _, p in sorted(self.rows.items())]
 
+    def get_by_member(self, member_id: int) -> Project | None:
+        return next((p for p in self.list() if any(m.id == member_id for m in p.members)), None)
+
+    def get_by_repository(self, repository: str) -> Project | None:
+        return next((p for p in self.list() if (p.repository or "").lower() == repository.lower()), None)
+
 
 class FakeSprintRepository(_Repo):
     def __init__(self, uow: "InMemoryUnitOfWork"):
@@ -116,6 +124,42 @@ class FakeActivityRepository(_Repo):
         return rows[:limit]
 
 
+class FakeExternalLinkRepository(_Repo):
+    def __init__(self, uow: "InMemoryUnitOfWork"):
+        super().__init__(uow, "links")
+
+    def _all(self) -> list[ExternalLink]:
+        return [link.model_copy(deep=True) for _, link in sorted(self.rows.items())]
+
+    def get_issue(self, task_id: int) -> ExternalLink | None:
+        issues = [link for link in self._all() if link.task_id == task_id and link.kind == "issue"]
+        return issues[-1] if issues else None
+
+    def list_by_project(self, project_id: int, kind: ExternalKind | None = None) -> list[ExternalLink]:
+        return [link for link in self._all() if link.project_id == project_id and kind in (None, link.kind)]
+
+    def find(self, repository: str, number: int, kind: ExternalKind) -> list[ExternalLink]:
+        return [
+            link for link in self._all() if link.repository.lower() == repository.lower() and link.number == number and link.kind == kind
+        ]
+
+
+class FakeOwnWriteRepository(_Repo):
+    def __init__(self, uow: "InMemoryUnitOfWork"):
+        super().__init__(uow, "own_writes")
+
+    def all(self) -> list[OwnWrite]:
+        """Test helper: every recorded write, oldest first."""
+        return [write.model_copy(deep=True) for _, write in sorted(self.rows.items())]
+
+    def consume_matching(self, repository: str, number: int, action: OwnWriteAction) -> bool:
+        for write in self.all():
+            if (write.repository.lower(), write.number, write.action, write.consumed_at) == (repository.lower(), number, action, None):
+                self._put(write.model_copy(update={"consumed_at": datetime.now(timezone.utc)}))
+                return True
+        return False
+
+
 class InMemoryUnitOfWork:
     """Implements the UnitOfWork port. Several instances can share one store, like
     sessions sharing a database: what one commits, the next one sees."""
@@ -130,6 +174,8 @@ class InMemoryUnitOfWork:
         self.tasks = FakeTaskRepository(self)
         self.proposals = FakeProposalRepository(self)
         self.activity = FakeActivityRepository(self)
+        self.links = FakeExternalLinkRepository(self)
+        self.own_writes = FakeOwnWriteRepository(self)
 
     def _reset(self) -> None:
         self.working = {name: {k: v.model_copy(deep=True) for k, v in rows.items()} for name, rows in self.store.committed.items()}

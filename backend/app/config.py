@@ -24,3 +24,10 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
 GITHUB_WEBHOOK_SECRET = os.getenv("GITHUB_WEBHOOK_SECRET", "")
 # Without a token we use FakeCodeHost: it records actions in memory instead of calling GitHub.
 MOCK_GITHUB = os.getenv("MOCK_GITHUB", "").lower() in ("1", "true") or not GITHUB_TOKEN
+# MOCK_GITHUB=1 also ignores the projects' own tokens: every project gets FakeCodeHost (spec 007).
+MOCK_GITHUB_FORCED = os.getenv("MOCK_GITHUB", "").lower() in ("1", "true")
+# Public URL GitHub can reach; webhooks are registered at {PUBLIC_BASE_URL}/webhooks/github (spec 007).
+# Empty = repos are connected without a webhook (local dev without a tunnel).
+PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "").rstrip("/")
+# Optional key to encrypt the projects' GitHub tokens at rest (Fernet); empty = stored in plain text.
+SECRET_KEY = os.getenv("SECRET_KEY", "")

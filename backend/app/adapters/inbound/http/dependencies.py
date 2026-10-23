@@ -9,7 +9,7 @@ from sqlmodel import Session
 from app.adapters.outbound.persistence.db import engine, get_session
 from app.adapters.outbound.persistence.unit_of_work import SqlUnitOfWork
 from app.application.ports.agents import PlanningAgents
-from app.application.ports.code_host import CodeHost
+from app.application.ports.code_host import CodeHost, CodeHostFactory
 from app.application.ports.event_bus import EventBus
 from app.application.ports.unit_of_work import UnitOfWork, UnitOfWorkFactory
 from app.application.use_cases.planning.run_planning import RunPlanning
@@ -50,6 +50,11 @@ def get_agents(request: Request) -> PlanningAgents:
 
 def get_code_host(request: Request) -> CodeHost:
     return request.app.state.code_host
+
+
+def get_code_host_factory(request: Request) -> CodeHostFactory:
+    """Spec 007: the code host for a project's token (main.build_code_host_factory)."""
+    return request.app.state.code_host_factory
 
 
 def get_event_bus(request: Request) -> EventBus:

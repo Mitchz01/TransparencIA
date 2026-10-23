@@ -2,7 +2,7 @@
 
 **Date**: 2026-10-23  
 **Spec**: [spec.md](spec.md)  
-**Status**: Draft
+**Status**: Approved
 
 ## Summary
 
@@ -186,8 +186,8 @@ Not part of our API, but they define our error mapping (`client.py`, T011):
 
 **Purpose**: dependencies and configuration
 
-- [ ] T001 Move `httpx` from `backend/requirements-dev.txt` to `backend/requirements.txt`
-- [ ] T002 Add `PUBLIC_BASE_URL` to `backend/app/config.py` and `backend/.env.example` (used to build the webhook URL `{PUBLIC_BASE_URL}/webhooks/github`)
+- [x] T001 Move `httpx` from `backend/requirements-dev.txt` to `backend/requirements.txt`
+- [x] T002 Add `PUBLIC_BASE_URL` to `backend/app/config.py` and `backend/.env.example` (used to build the webhook URL `{PUBLIC_BASE_URL}/webhooks/github`)
 
 ---
 
@@ -197,12 +197,12 @@ Not part of our API, but they define our error mapping (`client.py`, T011):
 
 **⚠️ CRITICAL**: no user story work can begin until this phase is complete
 
-- [ ] T003 Extend `CodeHost` in `backend/app/application/ports/code_host.py`: `check_access(repo) -> RepoAccess`, `register_webhook(repo, url, secret) -> int`, `delete_webhook(repo, hook_id)`, `create_issue(..., assignees)`, `update_issue(repo, number, title, body, labels, assignees)`, `close_issue(repo, number, reason, comment)`, `user_has_access(repo, username)`, `get_pull_request_diff(repo, number)`, `request_review(repo, number, reviewers)`, `comment_on_pull_request(repo, number, body)`; remove `open_pull_request` (out of scope)
-- [ ] T004 Update `FakeCodeHost` in `backend/app/adapters/outbound/code_host/fake.py` to implement the full port and record every call
-- [ ] T005 Add `Member.github_username`, `Project.github_token` (excluded from every API response) and `Project.webhook_id` to `backend/app/domain/project.py`; add `OwnWrite(repository, number, action, created_at)` and `RepoAccess` to `backend/app/domain/integrations.py`
-- [ ] T006 Add `ExternalLinkTable`, `OwnWriteTable` and the new columns to `backend/app/adapters/outbound/persistence/tables.py`, with mappers, `SqlExternalLinkRepository` (by task, by issue number, add, save), `SqlOwnWriteRepository` (add, consume_matching) and `links` / `own_writes` on the `UnitOfWork` port, `SqlUnitOfWork` and `backend/tests/fakes.py`
-- [ ] T007 Add `RepositoryNotAccessible` (422) and `RepositoryNotConnected` (409) to `backend/app/domain/errors.py` and the HTTP error mapping
-- [ ] T008 Pick the code host per project in `dependencies.py`: `GitHubCodeHost(project.github_token or GITHUB_TOKEN)` when there's a token, `FakeCodeHost` otherwise (FR-004, FR-005)
+- [x] T003 Extend `CodeHost` in `backend/app/application/ports/code_host.py`: `check_access(repo) -> RepoAccess`, `register_webhook(repo, url, secret) -> int`, `delete_webhook(repo, hook_id)`, `create_issue(..., assignees)`, `update_issue(repo, number, title, body, labels, assignees)`, `close_issue(repo, number, reason, comment)`, `user_has_access(repo, username)`, `get_pull_request_diff(repo, number)`, `request_review(repo, number, reviewers)`, `comment_on_pull_request(repo, number, body)`; remove `open_pull_request` (out of scope)
+- [x] T004 Update `FakeCodeHost` in `backend/app/adapters/outbound/code_host/fake.py` to implement the full port and record every call
+- [x] T005 Add `Member.github_username`, `Project.github_token` (excluded from every API response) and `Project.webhook_id` to `backend/app/domain/project.py`; add `OwnWrite(repository, number, action, created_at)` and `RepoAccess` to `backend/app/domain/integrations.py`
+- [x] T006 Add `ExternalLinkTable`, `OwnWriteTable` and the new columns to `backend/app/adapters/outbound/persistence/tables.py`, with mappers, `SqlExternalLinkRepository` (by task, by issue number, add, save), `SqlOwnWriteRepository` (add, consume_matching) and `links` / `own_writes` on the `UnitOfWork` port, `SqlUnitOfWork` and `backend/tests/fakes.py`
+- [x] T007 Add `RepositoryNotAccessible` (422) and `RepositoryNotConnected` (409) to `backend/app/domain/errors.py` and the HTTP error mapping
+- [x] T008 Pick the code host per project in `dependencies.py`: `GitHubCodeHost(project.github_token or GITHUB_TOKEN)` when there's a token, `FakeCodeHost` otherwise (FR-004, FR-005)
 
 **Checkpoint**: the port, persistence and code host selection are ready
 
