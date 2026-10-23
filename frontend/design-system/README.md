@@ -44,6 +44,10 @@ Status: **Approved** (2026-10-23): palette, type and components.
 | `glow` | none | lime radial at 10% | One soft light behind the page header in dark mode. Never more than one per screen |
 | `inset` | `#F4F5F0` | `#22261E` | Alias: a block or an input inside a card (`bg` in light, `surface-strong` in dark) |
 | `scrim` | ink at 32% | black at 60% | The veil behind dialogs and drawers |
+| `lane` | `#EDEFE8` | `#141612` | A board column: a step apart from `bg` (darker in light, lighter in dark) so the cards stand out on it (spec 013) |
+| `card` | `#FFFFFF` | `#22261E` | A task card on a `lane`. Text on it is `ink` or `ink-muted`, never `ink-subtle` (4.45:1 in dark) |
+| `card-hover` | `#F4F5F0` | `#2B3026` | A task card under the pointer |
+| `card-inset` | `#E8EAE2` | `#383D31` | Something inside a task card: initials, the progress track |
 
 Lime on the light background is **1.2:1**, so in light mode lime is always a fill with dark text on it, never text, an icon or a thin line on `bg`. Use `accent-ink` for accent text in both themes.
 
@@ -71,6 +75,7 @@ Each hue has a text color and a soft fill; text on its soft fill passes 4.5:1 in
 - **Active navigation**: `primary` fill + `on-primary` in the top bar; everything else `ink-muted`.
 - **Selected segment** (List / Board / Timeline): `inverse` fill + `on-inverse`.
 - **Card**: `surface` on `bg`. A block inside a card: `surface-strong` on `surface`, or `bg` on `surface` in light mode.
+- **Board**: `card` on `lane` on `bg`. The card is always the lightest of the three, so the board reads the same in light and dark.
 - **Agent rationale**: `primary-soft` block with `primary-soft-ink` text and the agent's icon.
 
 ## Typography
@@ -142,6 +147,8 @@ Added for the first round of screens; all of them are in [preview.html](preview.
 | Timeline | A grid with a sticky name column and one column per week; week names in `text-caption`. Bars are progress tracks: phases 12px, epics 6px | The current week is a `primary-soft` column behind every row, never a line. Milestones are a flag icon at the end of the bar plus a row list (spec 012) |
 | Flow | Steps on `inset` with `radius-md`, joined by an arrow icon in `ink-muted` (down on narrow screens) | Ends with a step that says how it repeats |
 | Slots | One 12px square per allowed item, `ink-subtle` at 45%, with "Máximo 3 a la vez" next to it | For WIP limits. "Sin límite" when there's none |
+| Board column | A `lane` panel with `radius-lg` and 8px of padding: the name and count in `text-label` on top, cards 8px apart below. It stretches to the tallest column; the drop target turns `primary-soft` | The empty one says "Suelta una tarea aquí" in `ink-muted` (spec 013) |
+| Task card | `card` with `radius-md` and `space-4` padding: the title in `text-label` semibold (two lines at most), the checklist track when partly done, and one data row with the key, checklist, points, issue, priority as icon plus word, and the initials (or the missing role) on the right | No description; it lives in the task panel. The name behind the initials is a tooltip and screen reader text |
 | Disclosure row | A row-list row whose title opens its detail, with a chevron that turns | Built on `<details>`, so it opens with Enter and Space |
 
 ## Interaction and accessibility

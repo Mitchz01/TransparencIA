@@ -16,5 +16,3 @@ export const PRIORITY_LOOK: Record<Priority, { label: string; hue: Hue }> = {
 }
 
 export const TYPE_LABELS: Record<TaskType, string> = { feature: 'Funcionalidad', bug: 'Error', chore: 'Tarea técnica', spike: 'Investigación' }
-
-export const firstName = (name: string) => name.split(/\s+/)[0]

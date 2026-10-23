@@ -110,6 +110,7 @@ export function BoardPage() {
         </TopBarViews>
       )}
       <PageHeader
+        compact
         title={sprint?.name ?? 'Tablero'}
         description={sprint ? `${sprint.goal}. Fase ${sprint.phase}${sprint.end_date ? `, termina el ${formatDate(sprint.end_date)}` : ''}.` : 'Kanban: todas las tareas en un flujo continuo.'}
         actions={
@@ -125,7 +126,7 @@ export function BoardPage() {
           <ReplanDiff key={pendingReplan.proposal.id} projectId={project.id} proposal={pendingReplan.proposal} content={pendingReplan.content} />
         </div>
       )}
-      <div className="mb-5">
+      <div className="mb-4">
         <BoardFilters filters={filters} members={project.members} epics={epics} onChange={setFilters} />
       </div>
       <KanbanBoard

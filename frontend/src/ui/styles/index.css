@@ -25,6 +25,10 @@
   --color-on-inverse: var(--on-inverse);
   --color-focus: var(--focus);
   --color-inset: var(--inset);
+  --color-lane: var(--lane);
+  --color-card: var(--card);
+  --color-card-hover: var(--card-hover);
+  --color-card-inset: var(--card-inset);
   --color-scrim: var(--scrim);
   --color-blue: var(--blue);
   --color-blue-soft: var(--blue-soft);
