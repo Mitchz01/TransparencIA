@@ -16,6 +16,7 @@ from app.application.ports.event_bus import EventBus
 from app.application.ports.unit_of_work import UnitOfWork, UnitOfWorkFactory
 from app.application.use_cases.board.close_sprint import CloseSprint
 from app.application.use_cases.board.common import TaskChangedHandler
+from app.application.use_cases.board.create_task import CreateTask
 from app.application.use_cases.board.get_board import GetBoard
 from app.application.use_cases.board.move_task import MoveTask
 from app.application.use_cases.board.set_capacity import SetCapacity
@@ -301,6 +302,14 @@ def get_update_task(
     handlers: list[TaskChangedHandler] = Depends(get_after_task_changed),
 ) -> UpdateTask:
     return UpdateTask(uow, bus, move_task, handlers)
+
+
+def get_create_task(
+    uow: UnitOfWork = Depends(get_uow),
+    bus: EventBus = Depends(get_event_bus),
+    handlers: list[TaskChangedHandler] = Depends(get_after_task_changed),
+) -> CreateTask:
+    return CreateTask(uow, bus, handlers)
 
 
 def get_update_checklist(

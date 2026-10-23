@@ -321,6 +321,28 @@ def task_change_errors(values: dict[str, Any], sprint_ids: set[int], member_ids:
     return errors
 
 
+EPIC_KEY_MAX = 20
+NEW_TASK_PREFIX = "US-"
+
+
+def new_task_errors(values: dict[str, Any], sprint_ids: set[int], member_ids: set[int]) -> list[FieldError]:
+    """Every rule a POST /projects/{id}/tasks breaks (spec 014): the edit rules, with the title
+    required."""
+    errors = [] if "title" in values else [FieldError("title", "Required.")]
+    if values:
+        errors += task_change_errors(values, sprint_ids, member_ids)
+    if len(values.get("epic_key") or "") > EPIC_KEY_MAX:
+        errors.append(FieldError("epic_key", f"Max {EPIC_KEY_MAX} characters."))
+    return errors
+
+
+def next_task_key(tasks: Iterable[Task]) -> str:
+    """The prefix "US-" plus one more than the highest "US-N" of the project; other key shapes
+    (a replan's "BUG-3") are ignored."""
+    numbers = [int(t.key[len(NEW_TASK_PREFIX) :]) for t in tasks if t.key.startswith(NEW_TASK_PREFIX) and t.key[len(NEW_TASK_PREFIX) :].isdigit()]
+    return f"{NEW_TASK_PREFIX}{max(numbers, default=0) + 1}"
+
+
 def edit_task(task: Task, values: dict[str, Any]) -> Task:
     """Applies already validated edit fields; assigning someone clears the missing role."""
     update = dict(values)

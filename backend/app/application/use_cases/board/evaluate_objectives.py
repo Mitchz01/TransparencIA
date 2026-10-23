@@ -37,6 +37,7 @@ class EvaluateObjectives:
         return saved
 
     async def on_task_changed(self, task: Task, event: DomainEvent) -> None:
-        """`after_task_changed` handler: only status changes can meet or reopen an objective."""
-        if event.type == "task_status_changed":
+        """`after_task_changed` handler: only status changes can meet or reopen an objective, and a
+        new task (spec 014) can reopen one, since its sprint has work again."""
+        if event.type in ("task_status_changed", "task_created"):
             await self.execute(task.project_id)

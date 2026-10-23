@@ -34,6 +34,7 @@ export type DomainEvent = BaseEvent &
     | { type: 'plan_applied'; skipped_story_keys: string[] }
     | { type: 'task_status_changed'; task_id: number; status: TaskStatus }
     | { type: 'task_updated'; task_id: number }
+    | { type: 'task_created'; task_id: number; key: string; status: TaskStatus; sprint_id: number | null } // spec 014
     // spec 006: documents
     | { type: 'documents_generated'; missing: string[] }
     // spec 007: GitHub
@@ -50,6 +51,6 @@ export type DomainEventType = DomainEvent['type']
 export const EVENT_TYPES: readonly DomainEventType[] = [
   'agent_started', 'agent_finished', 'proposal_created', 'proposal_resolved', 'proposal_apply_failed', 'resync',
   'stage_needs_leader', 'plan_failed', 'plan_completed', 'team_changed', 'plan_applied', 'task_status_changed',
-  'task_updated', 'documents_generated', 'issues_published', 'objective_closed', 'sprint_closed', 'replan_applied',
+  'task_updated', 'task_created', 'documents_generated', 'issues_published', 'objective_closed', 'sprint_closed', 'replan_applied',
   'github_event_ignored',
 ]
