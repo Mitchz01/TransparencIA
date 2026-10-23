@@ -11,4 +11,7 @@ class AskCitizen:
         self._agents = agents
 
     async def execute(self, slug: str, question: str) -> CitizenAnswer:
-        raise NotImplementedError
+        """Raises ProjectNotFound for an unknown or unpublished slug, AgentUnavailable if the model fails."""
+        portal = self._get_portal.for_public(slug)
+        # `Portal` (not `TeamPortal`): no drafts and no team-only data ever reach the model.
+        return await self._agents.answer_citizen(portal.model_dump(mode="json"), question)
