@@ -12,7 +12,8 @@ import type { PublicPortalGateway } from '../../application/ports'
 
 const portal = samplePortal()
 
-function renderAt(path: string, gateway: PublicPortalGateway) {
+function renderAt(path: string, overrides: Partial<PublicPortalGateway>) {
+  const gateway: PublicPortalGateway = { searchProjects: () => Promise.resolve([]), getPortal: notFound, ask: notFound, ...overrides }
   const router = createMemoryRouter(routes, { initialEntries: [path] })
   render(
     <QueryClientProvider client={createQueryClient()}>
@@ -23,7 +24,9 @@ function renderAt(path: string, gateway: PublicPortalGateway) {
   )
 }
 
-const notFound = () => Promise.reject(new ApiError(404, { code: 'project_not_found', detail: 'Not found.' }))
+function notFound(): Promise<never> {
+  return Promise.reject(new ApiError(404, { code: 'project_not_found', detail: 'Not found.' }))
+}
 const unavailable = () => Promise.reject(new ApiError(502, { code: 'agent_unavailable', detail: 'Agent failed.' }))
 
 describe('PublicPortalPage', () => {
@@ -56,7 +59,7 @@ describe('PublicPortalPage', () => {
   })
 
   it('never asks to sign in: any other path is not a portal', async () => {
-    renderAt('/', { getPortal: notFound, ask: notFound })
+    renderAt('/otra/ruta', {})
     expect(await screen.findByText('Este proyecto no existe o no es público')).toBeVisible()
   })
 })
