@@ -5,9 +5,11 @@ from fastapi import APIRouter, Depends, Response, status
 from app.adapters.inbound.http import dependencies as deps
 from app.application.dto import ProjectCreate, ProjectSummary, ProjectUpdate
 from app.application.use_cases.projects.create_project import CreateProject
+from app.application.use_cases.projects.get_plan_views import GetPlanViews
 from app.application.use_cases.projects.get_project import GetProject
 from app.application.use_cases.projects.list_projects import ListProjects
 from app.application.use_cases.projects.update_project import UpdateProject
+from app.domain.plan_views import PlanViews
 from app.domain.project import Project
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
@@ -37,3 +39,9 @@ async def update_project(
     project_id: int, body: ProjectUpdate, use_case: UpdateProject = Depends(deps.get_update_project)
 ) -> Project:
     return await use_case.execute(project_id, body)
+
+
+@router.get("/{project_id}/plan", response_model=PlanViews)
+def get_plan_views(project_id: int, use_case: GetPlanViews = Depends(deps.get_plan_views)) -> PlanViews:
+    """Spec 004: the three plan views in one request; never writes anything."""
+    return use_case.execute(project_id)

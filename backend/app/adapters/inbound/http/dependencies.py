@@ -1,6 +1,7 @@
 """Builds the use cases per request with the adapters main.py picked (in app.state)."""
 
 from collections.abc import Iterator
+from datetime import date, datetime, timezone
 
 from fastapi import Depends, Request
 from sqlmodel import Session
@@ -13,6 +14,7 @@ from app.application.ports.event_bus import EventBus
 from app.application.ports.unit_of_work import UnitOfWork, UnitOfWorkFactory
 from app.application.use_cases.planning.run_planning import RunPlanning
 from app.application.use_cases.projects.create_project import CreateProject
+from app.application.use_cases.projects.get_plan_views import GetPlanViews
 from app.application.use_cases.projects.get_project import GetProject
 from app.application.use_cases.projects.list_projects import ListProjects
 from app.application.use_cases.projects.update_project import UpdateProject
@@ -141,3 +143,14 @@ def get_follow_activity(
     uow_factory: UnitOfWorkFactory = Depends(get_uow_factory), bus: EventBus = Depends(get_event_bus)
 ) -> FollowActivity:
     return FollowActivity(uow_factory, bus)
+
+
+# ---------- Plan views (spec 004) ----------
+
+
+def today_utc() -> date:
+    return datetime.now(timezone.utc).date()
+
+
+def get_plan_views(uow: UnitOfWork = Depends(get_uow)) -> GetPlanViews:
+    return GetPlanViews(uow, today_utc)
