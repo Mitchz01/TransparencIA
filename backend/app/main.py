@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.adapters.inbound.http import activity, health, projects, proposals
+from app.adapters.inbound.http import activity, board, health, projects, proposals
 from app.adapters.inbound.http.dependencies import open_uow
 from app.adapters.inbound.http.errors import register_error_handlers
 from app.adapters.outbound.code_host.fake import FakeCodeHost
@@ -61,4 +61,5 @@ app.include_router(health.router)
 app.include_router(projects.router)
 app.include_router(proposals.router)
 app.include_router(activity.router)
+app.include_router(board.router)
 # TODO: projects, planning, proposals, board, documents (adapters/inbound/http) and webhooks/github

@@ -218,8 +218,8 @@ Request headers: `Content-Type: application/json`
 
 - [x] T003 Add `missing_role` to `TaskTable`, `sprint_capacity_override` to `ProjectTable` and a new `ObjectiveTable` in `backend/app/adapters/outbound/persistence/tables.py`, with mappers
 - [x] T004 Add `get`/`save` to `SprintRepository`, a new `ObjectiveRepository` (list_by_project, add, save) and `objectives` on the `UnitOfWork` port, `SqlUnitOfWork` and `backend/tests/fakes.py`
-- [ ] T005 Add `BoardView` (sprints with `SprintLoad` = points vs capacity, tasks, objectives, WIP limits from `project.plan["methodology"]`, `continuous` when the methodology is Kanban) to `backend/app/application/dto.py`
-- [ ] T006 Implement `GetBoard` in `backend/app/application/use_cases/board/get_board.py` and `GET /api/projects/{id}/board` in `backend/app/adapters/inbound/http/board.py`; include the router in `main.py`
+- [x] T005 Add `BoardView` (sprints with `SprintLoad` = points vs capacity, tasks, objectives, WIP limits from `project.plan["methodology"]`, `continuous` when the methodology is Kanban) to `backend/app/application/dto.py`
+- [x] T006 Implement `GetBoard` in `backend/app/application/use_cases/board/get_board.py` and `GET /api/projects/{id}/board` in `backend/app/adapters/inbound/http/board.py`; include the router in `main.py`
 - [ ] T007 [P] Add `BoardGateway.getBoard()` to `frontend/src/application/ports.ts`, with http and fake implementations, and mirror `Objective`, `BoardView` and `missing_role` in `frontend/src/domain/board.ts` — handed off to spec 009 (frontend)
 
 **Checkpoint**: the board read model is served (empty until a plan is applied)

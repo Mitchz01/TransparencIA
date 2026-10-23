@@ -5,7 +5,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from app.domain.board import Sprint, Task, TaskStatus
+from app.domain.board import Objective, Sprint, SprintLoad, Task, TaskStatus
+from app.domain.plan import WipLimit
 from app.domain.project import (
     MemberPatch,
     Project,
@@ -94,6 +95,20 @@ class ProjectDetail(BaseModel):
 
 
 # ---------- Board (spec 003) ----------
+
+
+class SprintView(Sprint):
+    load: SprintLoad | None  # None on a continuous (Kanban) board
+
+
+class BoardView(BaseModel):
+    project_id: int
+    continuous: bool
+    wip_limits: list[WipLimit]
+    capacity_override: int | None
+    sprints: list[SprintView]
+    objectives: list[Objective]
+    tasks: list[Task]
 
 
 class TaskUpdate(BaseModel):

@@ -12,6 +12,7 @@ from app.application.ports.agents import PlanningAgents
 from app.application.ports.code_host import CodeHost
 from app.application.ports.event_bus import EventBus
 from app.application.ports.unit_of_work import UnitOfWork, UnitOfWorkFactory
+from app.application.use_cases.board.get_board import GetBoard
 from app.application.use_cases.planning.run_planning import RunPlanning
 from app.application.use_cases.projects.create_project import CreateProject
 from app.application.use_cases.projects.get_plan_views import GetPlanViews
@@ -154,3 +155,10 @@ def today_utc() -> date:
 
 def get_plan_views(uow: UnitOfWork = Depends(get_uow)) -> GetPlanViews:
     return GetPlanViews(uow, today_utc)
+
+
+# ---------- Board (spec 003) ----------
+
+
+def get_get_board(uow: UnitOfWork = Depends(get_uow)) -> GetBoard:
+    return GetBoard(uow)
