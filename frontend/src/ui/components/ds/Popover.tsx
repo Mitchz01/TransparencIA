@@ -14,12 +14,14 @@ interface PopoverProps {
   variant?: ButtonVariant
   size?: ButtonSize
   align?: 'start' | 'end'
+  /** The chevron after the trigger; off when the trigger ends in its own arrow. */
+  chevron?: boolean
   buttonClassName?: string
 }
 
 /** A button that opens a panel next to it, for content richer than a menu (the board filters).
  *  Not modal: Tab moves through it, Escape or a click outside closes it and the focus goes back to the button. */
-export function Popover({ trigger, label, children, icon, variant = 'secondary', size = 'md', align = 'start', buttonClassName }: PopoverProps) {
+export function Popover({ trigger, label, children, icon, variant = 'secondary', size = 'md', align = 'start', chevron = true, buttonClassName }: PopoverProps) {
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
   const button = useRef<HTMLButtonElement>(null)
@@ -49,7 +51,7 @@ export function Popover({ trigger, label, children, icon, variant = 'secondary',
       >
         {icon && <Icon icon={icon} />}
         {trigger}
-        <Icon icon={ArrowDown01Icon} className="text-ink-muted" />
+        {chevron && <Icon icon={ArrowDown01Icon} className="text-ink-muted" />}
       </button>
       {open && (
         <div

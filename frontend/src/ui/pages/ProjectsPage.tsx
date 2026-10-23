@@ -1,60 +1,69 @@
-import { Link } from 'react-router-dom'
+import { useCallback, useEffect, useRef } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useProjects } from '../../application/use-cases/useProjects'
-import type { ProjectSummary } from '../../domain/project'
-import { ButtonLink, EmptyState, Icon, Pill, SkeletonCard } from '../components/ds'
-import { Add01Icon, Calendar03Icon, Clock01Icon, CrownIcon, Folder01Icon, UserGroupIcon, UserIcon } from '../components/ds/icons'
-import { PROJECT_STATUS } from '../components/project/projectStatus'
-import { AppLayout } from '../components/shell/AppLayout'
-import { PageHeader } from '../components/shell/PageHeader'
-import { HomeTopBar } from '../components/shell/TopBar'
-import { formatDate, plural } from '../format'
+import { useMe } from '../../application/use-cases/useSession'
+import { firstName, recentProjects } from '../../domain/launchpad'
+import { AgentsPill } from '../components/home/AgentsPill'
+import { MeshHero } from '../components/home/MeshHero'
+import { ProjectComposer, type ComposerHandle } from '../components/home/ProjectComposer'
+import { ProjectsPanel } from '../components/home/ProjectsPanel'
+import { HomeShell, type HomeIntent } from '../components/shell/HomeShell'
 
-function ProjectCard({ project }: { project: ProjectSummary }) {
-  const status = PROJECT_STATUS[project.status]
-  return (
-    <Link
-      to={`/projects/${project.id}`}
-      className="grid content-between gap-6 rounded-lg bg-surface p-5 transition-[background-color] duration-150 hover:bg-surface-strong sm:p-6"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <h2 className="line-clamp-2 min-w-0 text-heading break-words" title={project.name}>{project.name}</h2>
-        <Pill hue={status.hue} icon={status.icon}>{status.label}</Pill>
-      </div>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-caption text-ink-muted tabular-nums">
-        {project.permission === 'leader'
-          ? <span className="inline-flex items-center gap-1.5 text-ink"><Icon icon={CrownIcon} size={16} />Líder</span>
-          : <span className="inline-flex items-center gap-1.5 text-ink"><Icon icon={UserIcon} size={16} />Miembro</span>}
-        <span className="inline-flex items-center gap-1.5"><Icon icon={Clock01Icon} size={16} />{plural(project.duration_weeks, 'semana')}</span>
-        <span className="inline-flex items-center gap-1.5"><Icon icon={UserGroupIcon} size={16} />{plural(project.member_count, 'miembro')}</span>
-        <span className="inline-flex items-center gap-1.5"><Icon icon={Calendar03Icon} size={16} />{formatDate(project.created_at)}</span>
-      </div>
-    </Link>
-  )
-}
+const PANEL_ID = 'proyectos'
 
+const scrollBehavior = (): ScrollBehavior => (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth')
+
+/** The home (spec 016): a living hero where you describe a project, and your projects in a panel over its bottom. */
 export function ProjectsPage() {
   const { data: projects, isPending } = useProjects()
-  const newProject = <ButtonLink to="/projects/new" variant="primary" icon={Add01Icon}>Nuevo proyecto</ButtonLink>
+  const { data: me } = useMe()
+  const location = useLocation()
+  const composer = useRef<ComposerHandle>(null)
+  const search = useRef<HTMLInputElement>(null)
+  const name = firstName(me?.name)
+  const latest = recentProjects(projects ?? [], 1)[0]
+
+  const onIntent = useCallback((intent: HomeIntent) => {
+    if (intent === 'composer') {
+      composer.current?.focus()
+      window.scrollTo({ top: 0, behavior: scrollBehavior() })
+      return
+    }
+    document.getElementById(PANEL_ID)?.scrollIntoView({ behavior: scrollBehavior(), block: 'start' })
+    if (intent === 'search') search.current?.focus({ preventScroll: true })
+  }, [])
+
+  const fill = useCallback((description: string) => {
+    composer.current?.fill(description)
+    window.scrollTo({ top: 0, behavior: scrollBehavior() })
+  }, [])
+
+  // Arriving from another screen's sidebar with something to do here.
+  const focus = (location.state as { focus?: HomeIntent } | null)?.focus
+  useEffect(() => {
+    if (focus) onIntent(focus)
+  }, [focus, onIntent])
+
   return (
-    <AppLayout topBar={<HomeTopBar />}>
-      <PageHeader title="Proyectos" description="Describe lo que quieres construir. Los agentes lo planifican, tú decides." actions={projects?.length ? newProject : undefined} />
-      {isPending ? (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          <SkeletonCard /><SkeletonCard /><SkeletonCard />
+    <HomeShell active="projects" onIntent={onIntent}>
+      <div className="relative isolate overflow-hidden rounded-xl">
+        <MeshHero />
+        <section
+          aria-labelledby="home-greeting"
+          className="pointer-events-none relative z-10 flex min-h-[min(78svh,760px)] flex-col items-center justify-center gap-6 px-4 pt-12 pb-[168px] text-center sm:gap-8 sm:px-8 [&>*]:pointer-events-auto"
+        >
+          <AgentsPill latestProjectId={latest?.id ?? null} onStart={() => composer.current?.focus()} />
+          <h1 id="home-greeting" className="max-w-3xl text-display text-balance text-on-mesh md:text-[3rem]">
+            {name ? `¿Qué proyecto levantamos hoy, ${name}?` : '¿Qué proyecto levantamos hoy?'}
+          </h1>
+          <ProjectComposer ref={composer} />
+        </section>
+        <div className="relative -mt-[120px] px-3 pb-3 sm:px-6 sm:pb-6">
+          <div className="mx-auto max-w-[1200px]">
+            <ProjectsPanel id={PANEL_ID} projects={projects} isPending={isPending} onTemplate={fill} searchRef={search} />
+          </div>
         </div>
-      ) : projects?.length ? (
-        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {projects.map((project) => (
-            <li key={project.id} className="grid">
-              <ProjectCard project={project} />
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <EmptyState icon={Folder01Icon} title="Todavía no hay proyectos" action={newProject}>
-          Crea uno y suma a tu equipo con un link, o pide a tu líder el link de su proyecto.
-        </EmptyState>
-      )}
-    </AppLayout>
+      </div>
+    </HomeShell>
   )
 }
