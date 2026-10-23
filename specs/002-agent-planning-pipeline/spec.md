@@ -97,7 +97,12 @@ Si el líder rechaza una propuesta y da un motivo ("es demasiado ambicioso para 
 1. **Scenario**: Rechazo con motivo
    - **Given** una propuesta de roadmap pendiente
    - **When** el líder la rechaza con el motivo "son 4 semanas, no 8"
-   - **Then** se genera una nueva propuesta de roadmap que entra en 4 semanas, y la anterior queda registrada como rechazada con su motivo
+   - **Then** sin otra acción del líder se genera una nueva propuesta de roadmap que entra en 4 semanas, y la anterior queda registrada como rechazada con su motivo
+
+2. **Scenario**: Tope de rechazos
+   - **Given** la etapa de roadmap ya fue rechazada 3 veces seguidas
+   - **When** el líder ve la etapa
+   - **Then** el agente no la rehace solo; el líder puede reintentarla o ajustar la última propuesta y aprobarla
 
 ---
 
@@ -142,7 +147,7 @@ Si un agente falla (el servicio no responde o devuelve algo inválido), el líde
 - **FR-008**: Si el líder eligió una metodología, la etapa de metodología DEBE respetarla. Si no, DEBE recomendar una y justificar al menos dos alternativas descartadas.
 - **FR-009**: Cada historia del backlog DEBE pertenecer a una épica del roadmap aprobado y estar en exactamente una iteración.
 - **FR-010**: Las asignaciones DEBEN referirse a miembros reales del equipo; el trabajo de cada iteración NO DEBE superar la capacidad estimada del equipo según sus horas y seniority.
-- **FR-011**: Al rechazar una propuesta con motivo, el sistema DEBE rehacer esa etapa usando el motivo como contexto. [NEEDS CLARIFICATION: ¿se rehace automáticamente al rechazar, o el líder decide cuándo? Pregunta abierta 2 de use-cases.md, a acordar con la spec 005. Recomendación: automático, porque es más fluido para la demo.]
+- **FR-011**: Al rechazar una propuesta con motivo, el sistema DEBE rehacer esa etapa automáticamente, sin que el líder lo pida, usando como contexto el motivo y la propuesta rechazada. Después de 3 rechazos seguidos de la misma etapa, deja de rehacerla sola y espera a que el líder la reintente o escriba la versión que quiere ajustando la última propuesta.
 - **FR-012**: Si una etapa falla, el proyecto DEBE quedar en error indicando la etapa, y el líder DEBE poder reintentarla sin rehacer las etapas aprobadas.
 - **FR-013**: Solo PUEDE haber una planificación activa por proyecto.
 - **FR-014**: Los resultados DEBEN estar en el idioma de la descripción del proyecto.

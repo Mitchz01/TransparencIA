@@ -257,7 +257,7 @@ sequenceDiagram
 - **Disparador**: el líder abre una propuesta pendiente (ve qué decidió el agente y por qué) y elige.
 - **Resultado**:
   - **Aprobar o ajustar**: se aplica `final_content` según el tipo de propuesta (ver tabla) y sigue la etapa siguiente.
-  - **Rechazar**: se guarda el motivo y el agente rehace la etapa con ese motivo como contexto.
+  - **Rechazar**: se guarda el motivo y el agente rehace la etapa automáticamente con ese motivo como contexto. Tras 3 rechazos seguidos de la misma etapa, espera al líder.
 - **Casos de uso**: `proposals/approve_proposal.py`, `adjust_proposal.py`, `reject_proposal.py`
 
 | Tipo de propuesta | Qué hace aprobarla |
@@ -620,5 +620,5 @@ Lo que estos casos de uso agregan a lo que ya está en `main`:
 ## Preguntas abiertas
 
 1. **UC-11**: ¿el sistema solo pide reviews y comenta, o también debería **abrir PRs** (por ejemplo, una rama con un PR borrador por tarea para que el dev arranque)? Hoy lo dejé solo como reviews.
-2. **UC-04 rechazar**: ¿el agente rehace la etapa automáticamente con el motivo, o el líder decide cuándo?
-3. **UC-12**: ¿la detección de desvío (sprint cerrado con pendientes) propone re-planificar sola, o solo avisa?
+2. ~~**UC-04 rechazar**: ¿el agente rehace la etapa automáticamente con el motivo, o el líder decide cuándo?~~ **Resuelta**: la rehace automáticamente con el motivo; tras 3 rechazos seguidos de la misma etapa espera al líder ([spec 002](../specs/002-agent-planning-pipeline/spec.md), FR-011).
+3. ~~**UC-12**: ¿la detección de desvío (sprint cerrado con pendientes) propone re-planificar sola, o solo avisa?~~ **Resuelta**: propone la re-planificación sola, también ante cambios de equipo, y pasa por la aprobación del proyecto como cualquier propuesta ([spec 008](../specs/008-github-sync-replanning/spec.md), FR-010).

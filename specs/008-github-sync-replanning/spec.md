@@ -91,18 +91,23 @@ Cada fase o sprint tiene objetivos. Cuando todas las tareas de un objetivo está
 
 ### User Story 4 - Detectar desvíos (Priority: P3)
 
-El sistema detecta cuándo el plan se desvió de la realidad (un sprint terminó con tareas pendientes, o cambió el equipo con un plan ya aplicado) y lo señala para re-planificar.
+El sistema detecta cuándo el plan se desvió de la realidad (un sprint terminó con tareas pendientes, o cambió el equipo con un plan ya aplicado) y propone solo una re-planificación, que el líder aprueba, ajusta o rechaza.
 
 **Why this priority**: es automatización sobre la User Story 2, que ya cubre el caso a pedido.
 
-**Independent Test**: cerrar un sprint con 3 tareas sin terminar y verificar que el sistema reacciona como define FR-010.
+**Independent Test**: cerrar un sprint con 3 tareas sin terminar y verificar que aparece sola una propuesta de re-planificación que menciona esas 3 tareas.
 
 **Acceptance Scenarios**:
 
 1. **Scenario**: Sprint con pendientes
    - **Given** un sprint que llegó a su fecha de fin con 3 tareas sin terminar
    - **When** se cierra el sprint
-   - **Then** el sistema reacciona según FR-010, indicando las 3 tareas pendientes como motivo
+   - **Then** aparece una propuesta de re-planificación cuyo motivo lista las 3 tareas pendientes
+
+2. **Scenario**: Cambio de equipo
+   - **Given** un plan aplicado
+   - **When** el líder agrega o quita un miembro del equipo
+   - **Then** aparece una propuesta de re-planificación cuyo motivo indica quién entró o salió
 
 ---
 
@@ -111,7 +116,7 @@ El sistema detecta cuándo el plan se desvió de la realidad (un sprint terminó
 - ¿Qué pasa si GitHub manda el mismo aviso dos veces? El efecto se aplica una sola vez.
 - ¿Qué pasa si llega un aviso de un repo que no está conectado a ningún proyecto, o de una issue sin tarea vinculada? Se ignora sin error.
 - ¿Qué pasa si una tarea ya está "hecha" (movida a mano) y llega un aviso de PR abierto? No retrocede: los avisos de GitHub nunca sacan una tarea de "hecha", salvo que se reabra la issue.
-- ¿Qué pasa si se pide re-planificar con otra re-planificación pendiente? La nueva reemplaza a la anterior, que queda descartada en el historial.
+- ¿Qué pasa si se pide (o se detecta) una re-planificación con otra pendiente? Se genera una nueva que suma los motivos de las dos y reemplaza a la anterior, que queda descartada en el historial.
 - ¿Qué pasa si el tablero cambió entre que se generó la propuesta y se aprobó? Los cambios que se refieren a tareas que ya no están en el estado esperado se descartan, y el resto se aplica; el líder ve cuáles se descartaron.
 - ¿Qué pasa si la re-planificación agrega tareas y el proyecto tiene repo conectado? Las tareas nuevas siguen el flujo de publicación de issues de la spec 007.
 
@@ -128,7 +133,7 @@ El sistema detecta cuándo el plan se desvió de la realidad (un sprint terminó
 - **FR-007**: Un objetivo DEBE marcarse como cumplido cuando todas sus tareas están hechas, sin importar si llegaron a "hecha" desde GitHub o a mano.
 - **FR-008**: El líder DEBE poder pedir re-planificar con un motivo en texto libre.
 - **FR-009**: La re-planificación DEBE llegar como una propuesta con una lista de cambios (mover de sprint, reasignar, agregar, descartar), cada uno con su justificación, basada en el plan aprobado, el equipo actual, el tablero y el avance real.
-- **FR-010**: Cuando un sprint termina con pendientes o cambia el equipo con un plan aplicado, el sistema DEBE señalar el desvío. [NEEDS CLARIFICATION: ¿propone la re-planificación solo o solo avisa y el líder decide? Pregunta abierta 3 de use-cases.md. Recomendación: proponerla sola, porque igual pasa por la aprobación del líder (constitución, principio 8).]
+- **FR-010**: Cuando un sprint termina con pendientes o cambia el equipo con un plan aplicado, el sistema DEBE proponer automáticamente una re-planificación cuyo motivo describe el desvío (qué tareas quedaron pendientes, o quién entró o salió del equipo). La propuesta sigue la regla de aprobación del proyecto, como cualquier otra (constitución, principio 8).
 - **FR-011**: Ninguna re-planificación DEBE modificar tareas hechas.
 - **FR-012**: Al aprobar una re-planificación, sus cambios DEBEN aplicarse todos juntos o ninguno, salvo los descartados por el caso borde del tablero cambiado, que se informan.
 - **FR-013**: El líder DEBE poder quitar cambios individuales de la propuesta antes de aprobarla.
