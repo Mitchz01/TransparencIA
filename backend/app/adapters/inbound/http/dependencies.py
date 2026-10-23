@@ -14,6 +14,7 @@ from app.application.ports.agents import PlanningAgents
 from app.application.ports.code_host import CodeHost, CodeHostFactory
 from app.application.ports.event_bus import EventBus
 from app.application.ports.unit_of_work import UnitOfWork, UnitOfWorkFactory
+from app.application.use_cases.board.close_sprint import CloseSprint
 from app.application.use_cases.board.common import TaskChangedHandler
 from app.application.use_cases.board.get_board import GetBoard
 from app.application.use_cases.board.move_task import MoveTask
@@ -403,3 +404,10 @@ def wire_replanning(
 
 def get_replan(request: Request) -> Replan:
     return request.app.state.replan
+
+
+def get_close_sprint(
+    request: Request, uow: UnitOfWork = Depends(get_uow), bus: EventBus = Depends(get_event_bus)
+) -> CloseSprint:
+    # ProposeReplanOnDrift.on_sprint_closed is registered in main.py (runs in the background).
+    return CloseSprint(uow, bus, getattr(request.app.state, "on_sprint_closed", ()))

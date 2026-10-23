@@ -16,12 +16,13 @@ from app.adapters.outbound.events.persistent_bus import PersistentEventBus
 from app.application.use_cases.board.evaluate_objectives import EvaluateObjectives
 from app.application.use_cases.integrations.apply_review import ApplyReview
 from app.application.use_cases.planning.apply_replan import ReplanOutcome
+from app.application.use_cases.planning.propose_replan_on_drift import ProposeReplanOnDrift
 from app.application.use_cases.integrations.publish_issues import PublishIssues
 from app.application.use_cases.integrations.sync_task_issue import SyncTaskIssue
 from app.application.use_cases.proposals.apply_proposal import ApplierRegistry
 from app.adapters.outbound.persistence.db import create_db
 from app.domain.board import Task
-from app.domain.events import DomainEvent
+from app.domain.events import DomainEvent, SprintClosed, TeamChanged
 from app.application.ports.agents import PlanningAgents
 from app.application.ports.code_host import CodeHost, CodeHostFactory
 from app.config import (
@@ -97,7 +98,18 @@ async def lifespan(app: FastAPI):
         app.state.code_host_factory,
         app.state.on_replan_applied,
     )
-    app.state.on_team_changed = []  # spec 008 registers its drift-replan handler here
+    # Spec 008 (US4): a team change (spec 001) or a sprint closed with pending work proposes an
+    # automatic replan. The agent is slow, so it runs in the background.
+    drift = ProposeReplanOnDrift(open_uow, app.state.replan)
+
+    async def replan_on_team_change(event: TeamChanged) -> None:
+        spawn(drift.on_team_changed(event))
+
+    async def replan_on_sprint_closed(event: SprintClosed) -> None:
+        spawn(drift.on_sprint_closed(event))
+
+    app.state.on_team_changed = [replan_on_team_change]
+    app.state.on_sprint_closed = [replan_on_sprint_closed]
     app.state.after_task_changed = []  # spec 007 registers issue sync, spec 008 objective evaluation
     # Spec 007 (FR-021): editing a published task updates its issue, without a proposal.
     # It talks to GitHub, so it runs in the background and never slows down the board edit.

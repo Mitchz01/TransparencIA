@@ -1,4 +1,4 @@
-"""/api/projects/{id}/board and /api/tasks/{id} (spec 003, UC-06)."""
+"""/api/projects/{id}/board and /api/tasks/{id} (spec 003, UC-06); /api/sprints/{id}/close (spec 008)."""
 
 from fastapi import APIRouter, Depends
 
@@ -8,10 +8,12 @@ from app.application.dto import (
     CapacityResult,
     CapacityUpdate,
     ChecklistUpdate,
+    SprintCloseResult,
     TaskMove,
     TaskResult,
     TaskUpdate,
 )
+from app.application.use_cases.board.close_sprint import CloseSprint
 from app.application.use_cases.board.get_board import GetBoard
 from app.application.use_cases.board.move_task import MoveTask
 from app.application.use_cases.board.set_capacity import SetCapacity
@@ -45,6 +47,12 @@ async def update_task(
     if edit is not None:
         return await edit_task.execute(task_id, edit, move)
     return await move_task.execute(task_id, move or TaskMove())  # an empty body is a 422
+
+
+@router.post("/sprints/{sprint_id}/close", response_model=SprintCloseResult)
+async def close_sprint(sprint_id: int, use_case: CloseSprint = Depends(deps.get_close_sprint)) -> SprintCloseResult:
+    """Spec 008 (US4): with unfinished tasks, a replan is proposed in the background (never auto-approved)."""
+    return await use_case.execute(sprint_id)
 
 
 @router.put("/tasks/{task_id}/checklist", response_model=TaskResult)

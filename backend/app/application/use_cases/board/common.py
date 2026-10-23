@@ -17,7 +17,7 @@ from app.domain.board import (
     wip_limits,
     wip_warnings,
 )
-from app.domain.errors import ProjectNotFound, TaskNotFound, ValidationFailed
+from app.domain.errors import ProjectNotFound, SprintClosed, TaskNotFound, ValidationFailed
 from app.domain.events import DomainEvent
 from app.domain.project import Project
 
@@ -49,6 +49,17 @@ def check_task_change(uow: UnitOfWork, project: Project, values: dict[str, Any])
     errors = task_change_errors(values, sprint_ids, member_ids)
     if errors:
         raise ValidationFailed(errors, "The task has invalid fields.")
+
+
+def check_target_sprint(uow: UnitOfWork, task: Task, values: dict[str, Any]) -> None:
+    """Raises SprintClosed when the change moves the task into a closed sprint (spec 008 closes
+    sprints). Work already in a closed sprint can still change status."""
+    target = values.get("sprint_id")
+    if target is None or target == task.sprint_id:
+        return
+    sprint = uow.sprints.get(target)
+    if sprint is not None and sprint.closed:
+        raise SprintClosed(target)
 
 
 def board_warnings(project: Project, tasks: list[Task], task: Task) -> list[BoardWarning]:

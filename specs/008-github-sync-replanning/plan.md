@@ -261,12 +261,12 @@ Request headers: `Content-Type: application/json`
 
 ### Tests for User Story 4
 
-- [ ] T024 [P] [US4] `CloseSprint` and `ProposeReplanOnDrift` tests (pending tasks → `Replan(origin="automatic")` with them in the reason; no pending → nothing; `TeamChanged` with joins, leaves, role, seniority or hours → replan; only renames or skills → nothing; never auto-approved) in `backend/tests/unit/application/test_propose_replan_on_drift.py`
+- [x] T024 [P] [US4] `CloseSprint` and `ProposeReplanOnDrift` tests (pending tasks → `Replan(origin="automatic")` with them in the reason; no pending → nothing; `TeamChanged` with joins, leaves, role, seniority or hours → replan; only renames or skills → nothing; never auto-approved) in `backend/tests/unit/application/test_propose_replan_on_drift.py`
 
 ### Implementation for User Story 4
 
-- [ ] T025 [US4] Implement `CloseSprint(sprint_id)` in `backend/app/application/use_cases/board/close_sprint.py` and `POST /api/sprints/{id}/close`; publish `SprintClosed(pending_task_keys)`
-- [ ] T026 [US4] Implement `ProposeReplanOnDrift` in `backend/app/application/use_cases/planning/propose_replan_on_drift.py` with two entry points: `on_sprint_closed` and `on_team_changed`; register the latter as an `on_team_changed` handler of spec 001's `UpdateProject`
+- [x] T025 [US4] Implement `CloseSprint(sprint_id)` in `backend/app/application/use_cases/board/close_sprint.py` and `POST /api/sprints/{id}/close`; publish `SprintClosed(pending_task_keys)`
+- [x] T026 [US4] Implement `ProposeReplanOnDrift` in `backend/app/application/use_cases/planning/propose_replan_on_drift.py` with two entry points: `on_sprint_closed` and `on_team_changed`; register the latter as an `on_team_changed` handler of spec 001's `UpdateProject`
 - [ ] T027 [US4] Add `CloseSprintButton` to the sprint selector (shows the end date and a warning when it's past) — handed off to spec 009 (frontend)
 
 **Checkpoint**: all user stories work independently

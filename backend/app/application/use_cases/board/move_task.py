@@ -6,7 +6,14 @@ from collections.abc import Sequence
 from app.application.dto import TaskMove, TaskResult
 from app.application.ports.event_bus import EventBus
 from app.application.ports.unit_of_work import UnitOfWork
-from app.application.use_cases.board.common import TaskChangedHandler, board_warnings, check_task_change, load_task, task_view
+from app.application.use_cases.board.common import (
+    TaskChangedHandler,
+    board_warnings,
+    check_target_sprint,
+    check_task_change,
+    load_task,
+    task_view,
+)
 from app.domain.board import Task, is_continuous, reorder
 from app.domain.events import EventRef, TaskStatusChanged
 from app.domain.project import Project
@@ -21,6 +28,7 @@ class MoveTask:
     async def execute(self, task_id: int, move: TaskMove) -> TaskResult:
         task, project = load_task(self._uow, task_id)
         check_task_change(self._uow, project, move.sent())
+        check_target_sprint(self._uow, task, move.sent())
         moved = self.apply(project, task, move)
         self._uow.commit()
         await self.notify(moved)
