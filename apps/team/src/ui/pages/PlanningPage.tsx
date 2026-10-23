@@ -24,8 +24,8 @@ function isApplying(steps: StageStep[], index: number, status: string): boolean 
 
 const DESCRIPTIONS = {
   draft: 'Seis agentes planifican el proyecto etapa por etapa. Nada avanza hasta que lo apruebes.',
-  planning: 'Los agentes proponen, tú decides. Nada llega al tablero sin tu aprobación.',
-  ready: 'El plan está completo y el tablero, listo.',
+  planning: 'Los agentes proponen, tú decides. Nada llega al plan de trabajo sin tu aprobación.',
+  ready: 'El plan de trabajo está completo y las actividades, listas.',
   error: 'Una etapa falló. Reinténtala y la planificación sigue desde ahí.',
 } as const
 
@@ -33,7 +33,7 @@ const DESCRIPTIONS = {
 const MEMBER_DESCRIPTIONS = {
   draft: 'Seis agentes planifican el proyecto etapa por etapa. Empieza cuando un líder lo decida.',
   planning: 'Los agentes proponen y los líderes deciden. Aquí ves cada etapa en vivo.',
-  ready: 'El plan está completo y el tablero, listo.',
+  ready: 'El plan de trabajo está completo y las actividades, listas.',
   error: 'Una etapa falló. Un líder puede reintentarla.',
 } as const
 
@@ -69,7 +69,7 @@ export function PlanningPage() {
 
   return (
     <>
-      <PageHeader title="Planificación" description={(manage ? DESCRIPTIONS : MEMBER_DESCRIPTIONS)[project.status]} actions={actions} />
+      <PageHeader title="Planeación con IA" description={(manage ? DESCRIPTIONS : MEMBER_DESCRIPTIONS)[project.status]} actions={actions} />
       {project.status === 'ready' && pendingDocuments.length > 0 && (
         <Card className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <span className="flex items-center gap-3 text-body">

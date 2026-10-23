@@ -1,5 +1,5 @@
 """UC-06 · Add a task to the board, in a column of a sprint, the backlog or a continuous board
-(spec 014). It goes to the end of its column with the next "US-N" key."""
+(spec 014). It goes to the end of its column with the next "A-N" key."""
 
 from collections.abc import Sequence
 

@@ -64,7 +64,7 @@ specs/                 SDD: constitution, templates, features
 # backend
 cd apps/api && .venv/Scripts/activate && fastapi dev app/main.py  # :8000 (Linux/macOS: .venv/bin/activate)
 cd apps/api && pip install -r requirements-dev.txt && pytest      # tests
-cd apps/api && python -m app.seed                                  # demo accounts ana@team.dev / leo@team.dev, password agile-demo
+cd apps/api && python -m app.seed                                  # demo accounts ana@manglaresvivos.org / leo@manglaresvivos.org, password agile-demo
 # frontends (from the root; one npm install for every workspace)
 npm install
 npm run dev:team                                                   # team app :5173, /api → :8000

@@ -70,7 +70,7 @@ describe('fake planning engine', () => {
     const board = await settle(api.board.getBoard(id))
     expect(project.status).toBe('ready')
     expect(board.tasks).toHaveLength(11)
-    expect(board.sprints.map((s) => s.name)).toEqual(['Sprint 1', 'Sprint 2', 'Sprint 3'])
+    expect(board.sprints.map((s) => s.name)).toEqual(['Etapa 1: Diagnóstico', 'Etapa 2: Vivero y siembra', 'Etapa 3: Seguimiento'])
     expect(backend.store.events.map((e) => e.type)).toEqual(expect.arrayContaining(['plan_completed', 'plan_applied']))
     expect([...backend.store.proposals.values()].some((p) => p.kind === 'document' && p.status === 'pending')).toBe(true)
   })

@@ -51,7 +51,7 @@ export function BoardFilters({ filters, members, epics, onChange }: BoardFilters
           <Chip inset pressed={filters.assignee === 'none'} onClick={() => toggle('assignee', 'none')}>Sin asignar</Chip>
         </Group>
         {epics.length > 0 && (
-          <Group title="Épica">
+          <Group title="Componente">
             {epics.map((e) => (
               <Chip key={e} inset pressed={filters.epic === e} onClick={() => toggle('epic', e)}>{e}</Chip>
             ))}

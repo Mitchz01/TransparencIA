@@ -5,7 +5,7 @@ import { moveTask, nextTaskKey, sprintLoad, suggestsAdvance, teamCapacity, wipWa
 import { type FakeStore, fail, invalid, notFound, online, reply } from './store'
 
 const STATUS_NAMES: Record<Task['status'], string> = {
-  backlog: 'Backlog', todo: 'Por hacer', in_progress: 'En curso', review: 'En revisión', done: 'Hecho',
+  backlog: 'Por programar', todo: 'Por hacer', in_progress: 'En ejecución', review: 'En verificación', done: 'Terminada',
 }
 
 const emptyBoard = (projectId: number): BoardView => ({
@@ -177,7 +177,7 @@ export function fakeBoardGateway(store: FakeStore, onSprintClosed: (projectId: n
       await online()
       const board = [...store.boards.values()].find((b) => b.sprints.some((s) => s.id === sprintId))
       const sprint = board?.sprints.find((s) => s.id === sprintId) ?? notFound('sprint', sprintId)
-      if (sprint.closed) fail(409, { code: 'sprint_already_closed', detail: `${sprint.name} ya está cerrado.` })
+      if (sprint.closed) fail(409, { code: 'sprint_already_closed', detail: `${sprint.name} ya está cerrada.` })
       sprint.closed = true
       const pending = board!.tasks.filter((t) => t.sprint_id === sprintId && t.status !== 'done').map((t) => t.key)
       store.publish({

@@ -32,6 +32,24 @@ SESSION_DAYS = 30
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 AVATAR_URL_MAX = 500
 
+# ---------- Who registers projects (spec 020): a natural or a legal person, as Colombian rules ask ----------
+
+PersonType = Literal["natural", "juridica"]
+# CC cédula de ciudadanía, CE cédula de extranjería, PPT permiso por protección temporal, PA pasaporte.
+PersonDocument = Literal["CC", "CE", "PPT", "PA"]
+DocumentType = Literal["CC", "CE", "PPT", "PA", "NIT"]
+# Pública, privada, or entidad sin ánimo de lucro (ESAL).
+EntityNature = Literal["publica", "privada", "esal"]
+
+TEXT_MAX = 120
+PLACE_MAX = 80
+PHONE_DIGITS = (7, 15)
+# DIAN's weights for the NIT check digit, from the rightmost digit.
+_NIT_WEIGHTS = (3, 7, 13, 17, 19, 23, 29, 37, 41, 43, 47, 53, 59, 67, 71)
+_LEGAL_PERSON_FIELDS = (
+    "verification_digit", "entity_nature", "legal_rep_name", "legal_rep_document_type", "legal_rep_document_number",
+)
+
 _ALLOWED: dict[Permission, frozenset[ProjectAction]] = {
     "leader": frozenset({"view", "work", "manage"}),
     "member": frozenset({"view", "work"}),
@@ -55,6 +73,21 @@ class Account(BaseModel):
     github_username: str | None = None
     # A link to the photo. There is no upload: only the demo accounts have one (FR-005).
     avatar_url: str | None = None
+    # Spec 020: the identification of a natural or legal person. All optional: an account without a
+    # person type has an incomplete profile. `name` is the full name or the legal name (razón social).
+    person_type: PersonType | None = None
+    document_type: DocumentType | None = None
+    document_number: str | None = None
+    verification_digit: str | None = None  # NIT only
+    entity_nature: EntityNature | None = None  # legal person only
+    legal_rep_name: str | None = None
+    legal_rep_document_type: PersonDocument | None = None
+    legal_rep_document_number: str | None = None
+    phone: str | None = None
+    address: str | None = None
+    municipality: str | None = None
+    department: str | None = None
+    data_consent_at: datetime | None = None  # Ley 1581 de 2012: when the person authorized it
     created_at: datetime = Field(default_factory=_now)
     # Never serialized, so it can't leak through the API or events (FR-003).
     password_hash: str = Field(default="", exclude=True)
@@ -110,17 +143,112 @@ def signup_errors(name: str, email: str, password: str) -> list[FieldError]:
     return errors
 
 
+def _text(value: str | None) -> str | None:
+    clean = normalize_name(value) if value is not None else ""
+    return clean or None
+
+
+def _digits(value: str | None) -> str | None:
+    clean = re.sub(r"\D", "", value or "")
+    return clean or None
+
+
+def _document(value: str | None) -> str | None:
+    """Letters and digits only, upper case: '1.020.304.050' -> '1020304050', 'ab 12' -> 'AB12'."""
+    clean = re.sub(r"[^0-9A-Za-z]", "", value or "").upper()
+    return clean or None
+
+
+def nit_check_digit(nit: str) -> str:
+    """DIAN's check digit (dígito de verificación) of a NIT: 900123456 -> '8', 800197268 -> '4'."""
+    total = sum(int(d) * _NIT_WEIGHTS[i] for i, d in enumerate(reversed(nit)))
+    rest = total % 11
+    return str(rest if rest < 2 else 11 - rest)
+
+
 def normalize_profile(account: Account) -> Account:
     role = normalize_name(account.role) if account.role is not None else None
     avatar_url = account.avatar_url.strip() if account.avatar_url is not None else None
-    return account.model_copy(
-        update={
-            "name": normalize_name(account.name),
-            "role": role or None,
-            "skills": normalize_skills(account.skills),
-            "avatar_url": avatar_url or None,
-        }
-    )
+    update: dict[str, object] = {
+        "name": normalize_name(account.name),
+        "role": role or None,
+        "skills": normalize_skills(account.skills),
+        "avatar_url": avatar_url or None,
+        "legal_rep_name": _text(account.legal_rep_name),
+        "address": _text(account.address),
+        "municipality": _text(account.municipality),
+        "department": _text(account.department),
+        "phone": _digits(account.phone),
+        "legal_rep_document_number": _document(account.legal_rep_document_number),
+        "verification_digit": _digits(account.verification_digit),
+    }
+    if account.person_type == "juridica":
+        # A NIT typed as "900.123.456-8" carries its check digit after the dash.
+        raw = account.document_number or ""
+        if "-" in raw and not account.verification_digit:
+            raw, _, digit = raw.rpartition("-")
+            update["verification_digit"] = _digits(digit)
+        update["document_number"] = _digits(raw)
+        update["document_type"] = "NIT"
+    else:
+        update["document_number"] = _document(account.document_number)
+    if account.person_type == "natural":
+        update.update({field: None for field in _LEGAL_PERSON_FIELDS})
+    return account.model_copy(update=update)
+
+
+def _check_document(errors: list[FieldError], field: str, kind: str | None, number: str | None) -> None:
+    if kind is None:
+        errors.append(FieldError(field.replace("number", "type"), "Required."))
+    if number is None:
+        errors.append(FieldError(field, "Required."))
+    elif kind == "CC" and not (number.isdigit() and 3 <= len(number) <= 10):
+        errors.append(FieldError(field, "A cédula de ciudadanía has 3 to 10 digits."))
+    elif not 3 <= len(number) <= 15:
+        errors.append(FieldError(field, "Between 3 and 15 letters or digits."))
+
+
+def _identification_errors(account: Account) -> list[FieldError]:
+    """What a natural or legal person must give (spec 020, FR-002, FR-003, FR-005); nothing without a type."""
+    errors: list[FieldError] = []
+    if account.person_type is None:
+        return errors
+    if account.person_type == "natural":
+        if account.document_type == "NIT":
+            errors.append(FieldError("document_type", "A natural person uses CC, CE, PPT or PA."))
+        else:
+            _check_document(errors, "document_number", account.document_type, account.document_number)
+    else:
+        nit = account.document_number
+        if nit is None:
+            errors.append(FieldError("document_number", "Required."))
+        elif not 8 <= len(nit) <= 10:
+            errors.append(FieldError("document_number", "A NIT has 8 to 10 digits, without the check digit."))
+        elif account.verification_digit is None:
+            errors.append(FieldError("verification_digit", "Required."))
+        elif account.verification_digit != nit_check_digit(nit):
+            errors.append(FieldError("verification_digit", "The check digit doesn't match the NIT."))
+        if account.entity_nature is None:
+            errors.append(FieldError("entity_nature", "Required."))
+        if account.legal_rep_name is None:
+            errors.append(FieldError("legal_rep_name", "Required."))
+        elif len(account.legal_rep_name) > NAME_MAX:
+            errors.append(FieldError("legal_rep_name", f"Max {NAME_MAX} characters."))
+        _check_document(errors, "legal_rep_document_number", account.legal_rep_document_type, account.legal_rep_document_number)
+    low, high = PHONE_DIGITS
+    if account.phone is None:
+        errors.append(FieldError("phone", "Required."))
+    elif not low <= len(account.phone) <= high:
+        errors.append(FieldError("phone", f"Between {low} and {high} digits."))
+    for field, limit in (("address", TEXT_MAX), ("municipality", PLACE_MAX), ("department", PLACE_MAX)):
+        value = getattr(account, field)
+        if value is None:
+            errors.append(FieldError(field, "Required."))
+        elif len(value) > limit:
+            errors.append(FieldError(field, f"Max {limit} characters."))
+    if account.data_consent_at is None:
+        errors.append(FieldError("data_consent", "The personal data authorization is required (Ley 1581 de 2012)."))
+    return errors
 
 
 def _valid_avatar_url(url: str) -> bool:
@@ -148,6 +276,7 @@ def validate_profile(account: Account) -> Account:
         account = account.model_copy(update={"github_username": validate_github_username(account.github_username)})
     except ValidationFailed as error:
         errors.extend(error.errors)
+    errors.extend(_identification_errors(account))
     if errors:
         raise ValidationFailed(errors, "The profile has invalid fields.")
     return account

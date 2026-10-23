@@ -29,30 +29,30 @@ describe('Planning', () => {
     renderApp(`/projects/${projectId}/planning`, backend)
 
     // Approve the analysis: the methodology starts next.
-    const analysis = await proposalCard('Análisis')
+    const analysis = await proposalCard('Diagnóstico')
     expect(within(analysis).getByText('Espera tu decisión')).toBeInTheDocument()
     await user.click(within(analysis).getByRole('button', { name: 'Aprobar' }))
-    await waitFor(() => expect(stageRow(/Análisis/)).toHaveTextContent('Aprobada'))
+    await waitFor(() => expect(stageRow(/Diagnóstico/)).toHaveTextContent('Aprobada'))
 
     // Adjust the iteration length from 2 to 1 week and approve it.
-    const methodology = await proposalCard('Metodología')
-    expect(within(methodology).getByRole('heading', { name: 'Scrumban, iteraciones de 2 semanas' })).toBeInTheDocument()
+    const methodology = await proposalCard('Forma de trabajo')
+    expect(within(methodology).getByRole('heading', { name: 'Por etapas de 2 semanas' })).toBeInTheDocument()
     await user.click(within(methodology).getByRole('button', { name: 'Ajustar' }))
     const length = within(methodology).getByRole('textbox', { name: 'Duración de la iteración' })
     await user.clear(length)
     await user.type(length, '1')
     await user.click(within(methodology).getByRole('button', { name: 'Aprobar con cambios' }))
-    await waitFor(() => expect(stageRow(/Metodología/)).toHaveTextContent('Aprobada'))
+    await waitFor(() => expect(stageRow(/Forma de trabajo/)).toHaveTextContent('Aprobada'))
     const adjusted = [...backend.store.proposals.values()].find((p) => p.key === 'methodology')!
     expect(adjusted.status).toBe('adjusted')
     expect(adjusted.adjusted_content).toMatchObject({ sprint_length_weeks: 1 })
 
-    await user.click(within(await proposalCard('Arquitectura')).getByRole('button', { name: 'Aprobar' }))
+    await user.click(within(await proposalCard('Componentes y recursos')).getByRole('button', { name: 'Aprobar' }))
 
     // Reject the roadmap: nothing is sent without a reason.
-    const roadmap = await proposalCard('Roadmap')
+    const roadmap = await proposalCard('Cronograma')
     await user.click(within(roadmap).getByRole('button', { name: 'Rechazar' }))
-    const dialog = screen.getByRole('dialog', { name: 'Rechazar el roadmap' })
+    const dialog = screen.getByRole('dialog', { name: 'Rechazar el cronograma' })
     await user.click(within(dialog).getByRole('button', { name: 'Rechazar' }))
     expect(within(dialog).getByRole('textbox', { name: 'Motivo' })).toHaveAccessibleDescription('Escribe un motivo para que el agente lo haga mejor.')
     expect(pending('roadmap')).toHaveLength(1)
@@ -72,7 +72,7 @@ describe('Planning', () => {
 
     for (let i = 1; i <= 3; i++) {
       await waitFor(() => expect(pending('analysis')).toHaveLength(1), { timeout: 3000 })
-      const card = await proposalCard('Análisis')
+      const card = await proposalCard('Diagnóstico')
       await waitFor(() => expect(within(card).getByRole('button', { name: 'Rechazar' })).toBeEnabled())
       await user.click(within(card).getByRole('button', { name: 'Rechazar' }))
       await user.type(screen.getByRole('textbox', { name: 'Motivo' }), `Try ${i}`)
@@ -80,12 +80,12 @@ describe('Planning', () => {
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     }
 
-    await waitFor(() => expect(stageRow(/Análisis/)).toHaveTextContent('Te necesita'), { timeout: 3000 })
-    const card = await proposalCard('Análisis')
-    expect(within(card).getByRole('button', { name: 'Reintentar el análisis' })).toBeInTheDocument()
+    await waitFor(() => expect(stageRow(/Diagnóstico/)).toHaveTextContent('Te necesita'), { timeout: 3000 })
+    const card = await proposalCard('Diagnóstico')
+    expect(within(card).getByRole('button', { name: 'Reintentar el diagnóstico' })).toBeInTheDocument()
     expect(within(card).getByRole('button', { name: 'Ajustarla tú mismo' })).toBeInTheDocument()
 
-    await user.click(within(card).getByRole('button', { name: 'Reintentar el análisis' }))
+    await user.click(within(card).getByRole('button', { name: 'Reintentar el diagnóstico' }))
     await waitFor(() => expect(pending('analysis')).toHaveLength(1), { timeout: 3000 })
   })
 })

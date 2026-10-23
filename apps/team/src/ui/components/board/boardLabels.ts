@@ -2,11 +2,11 @@ import type { Priority, TaskStatus, TaskType } from '../../../domain/board'
 import type { ColumnHue, Hue } from '@agile/ui'
 
 export const STATUS_LABELS: Record<TaskStatus, string> = {
-  backlog: 'Backlog',
+  backlog: 'Por programar',
   todo: 'Por hacer',
-  in_progress: 'En curso',
-  review: 'En revisión',
-  done: 'Hecho',
+  in_progress: 'En ejecución',
+  review: 'En verificación',
+  done: 'Terminada',
 }
 
 /** Each column's hue (spec 014): neutral until work starts, then blue, amber for review, teal when done. */

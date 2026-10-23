@@ -73,10 +73,10 @@ export function KanbanBoard({ columns, tasks, visible, sprintId, members, wipLim
     }),
   )
 
-  const name = (id: string | number) => tasks.find((t) => t.id === id)?.key ?? 'La tarea'
+  const name = (id: string | number) => tasks.find((t) => t.id === id)?.key ?? 'La actividad'
   const place = (overId: string | number | undefined, data?: { status?: TaskStatus }) => {
     const status = shown.find((t) => t.id === overId)?.status ?? data?.status
-    return status ? STATUS_LABELS[status] : 'fuera del tablero'
+    return status ? STATUS_LABELS[status] : 'fuera de la lista'
   }
   const announcements: Announcements = {
     onDragStart: ({ active }) => `Tomaste ${name(active.id)}.`,
@@ -128,7 +128,7 @@ export function KanbanBoard({ columns, tasks, visible, sprintId, members, wipLim
       accessibility={{
         announcements,
         screenReaderInstructions: {
-          draggable: 'Para mover una tarea, presiona espacio. Muévela con las flechas y suéltala con espacio o enter. Escape cancela. Enter abre la tarea.',
+          draggable: 'Para mover una actividad, presiona espacio. Muévela con las flechas y suéltala con espacio o enter. Escape cancela. Enter abre la actividad.',
         },
       }}
     >

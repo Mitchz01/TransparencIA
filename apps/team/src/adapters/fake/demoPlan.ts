@@ -1,110 +1,103 @@
 // What the fake agents propose, stage by stage. Same shapes as apps/api/app/adapters/outbound/agents/mock/data.py;
 // the demo projects are described in Spanish, so the agents answer in Spanish (spec 002, FR-014).
+// Spec 019: a public project planned by stages (etapas), with activities, components and weights; nothing of
+// software development. The schema keeps its names inside (sprints, stories, epics, points).
 
-import type { Methodology, StageKey, StageOutputs, Story } from '../../domain/plan'
+import type { StageKey, StageOutputs, Story } from '../../domain/plan'
 import type { RequestedMethodology } from '../../domain/project'
 
-const story = (
-  key: string, epic: string, title: string, points: number, role: string,
-  priority: Story['priority'] = 'medium', type: Story['type'] = 'feature',
-): Story => ({
-  key, epic_key: epic, title, points, role, priority, type,
-  description: `Como usuario quiero ${title[0].toLowerCase()}${title.slice(1)} para avanzar con el producto.`,
-  acceptance_criteria: ['Funciona en escritorio y en el celular', 'Tiene pruebas básicas'],
+const activity = (key: string, component: string, title: string, weight: number, role: string, priority: Story['priority'] = 'medium'): Story => ({
+  key, epic_key: component, title, points: weight, role, priority, type: 'feature',
+  description: `${title}, como lo pide el contrato con Corpamag.`,
+  acceptance_criteria: ['Registro fotográfico de la actividad', 'Acta o informe firmado por el responsable'],
 })
 
 export const DEMO_STAGES: StageOutputs = {
   analysis: {
-    summary: 'Plataforma web para gestionar proyectos con planificación asistida por IA.',
-    goals: ['Tener un MVP para la demo', 'Validarlo con 3 equipos reales'],
-    in_scope: ['Proyecto y equipo', 'Tablero kanban', 'Roadmap por fases'],
-    out_of_scope: ['Facturación', 'App móvil nativa'],
+    summary: 'Piloto de restauración de una hectárea de manglar en la Ciénaga Grande de Santa Marta, con la comunidad de Tasajera.',
+    goals: ['Sembrar 4.000 plántulas de mangle rojo', 'Lograr una supervivencia del 80 % a los tres meses'],
+    in_scope: ['Diagnóstico del sitio', 'Vivero comunitario', 'Siembra y monitoreo'],
+    out_of_scope: ['Obras de dragado', 'Compra de predios'],
     risks: [
-      { description: 'Respuestas inconsistentes del modelo', impact: 'high', mitigation: 'Usar salidas estructuradas con un esquema' },
-      { description: 'Poco tiempo para el frontend', impact: 'medium', mitigation: 'Usar componentes ya hechos' },
+      { description: 'Crecientes que arrastren las plántulas recién sembradas', impact: 'high', mitigation: 'Sembrar después de la temporada de lluvias y usar tutores' },
+      { description: 'Baja participación de la comunidad', impact: 'medium', mitigation: 'Talleres y pago de jornales a familias de la zona' },
     ],
     complexity: 'medium',
-    team_gaps: ['Diseño UX'],
+    team_gaps: ['Profesional social con experiencia en pesca artesanal'],
   },
   methodology: {
-    methodology: 'scrumban',
-    rationale: 'Equipo chico con mucha incertidumbre: iteraciones cortas con flujo continuo y límites WIP.',
+    methodology: 'scrum',
+    rationale: 'Un contrato público se sigue por etapas con entregables y fechas: cada etapa cierra con un informe de avance para la entidad.',
     sprint_length_weeks: 2,
     ceremonies: [
-      { name: 'Daily', frequency: 'Diaria, 15 min', purpose: 'Sincronizar y destrabar' },
-      { name: 'Planning', frequency: 'Cada 2 semanas', purpose: 'Elegir el trabajo de la iteración' },
-      { name: 'Retro', frequency: 'Cada 2 semanas', purpose: 'Mejorar el proceso' },
+      { name: 'Comité de seguimiento', frequency: 'Cada 2 semanas', purpose: 'Revisar el avance con la entidad contratante' },
+      { name: 'Visita de campo', frequency: 'Semanal', purpose: 'Verificar las actividades en el sitio' },
+      { name: 'Informe de avance', frequency: 'Al cerrar cada etapa', purpose: 'Rendir cuentas con evidencias' },
     ],
-    wip_limits: [
-      { column: 'in_progress', limit: 3 },
-      { column: 'review', limit: 2 },
-    ],
-    alternatives: [
-      { methodology: 'scrum', why_not: 'Demasiadas ceremonias para un equipo de 3 o 4 personas.' },
-      { methodology: 'kanban', why_not: 'El equipo necesita cortes de iteración para las demos.' },
-    ],
+    wip_limits: [],
+    alternatives: [],
   },
   architecture: {
-    style: 'Monolito modular',
-    summary: 'Una SPA en React que consume una API en FastAPI; los agentes corren en el backend.',
+    style: 'Ejecución directa con la comunidad',
+    summary: 'La fundación ejecuta con un equipo técnico y mano de obra local; el vivero abastece la siembra y el monitoreo mide la supervivencia.',
     components: [
-      { name: 'App web', responsibility: 'Interfaz, tablero y roadmap', technology: 'React + Vite' },
-      { name: 'API', responsibility: 'Proyectos, tareas y eventos de los agentes', technology: 'FastAPI' },
-      { name: 'Agentes', responsibility: 'Generar el plan', technology: 'Gemini' },
-      { name: 'Base de datos', responsibility: 'Persistencia', technology: 'SQLite' },
+      { name: 'Vivero comunitario', responsibility: 'Producir las plántulas', technology: 'Plántulas de mangle rojo' },
+      { name: 'Siembra', responsibility: 'Plantar por lotes', technology: 'Mano de obra local' },
+      { name: 'Monitoreo', responsibility: 'Medir supervivencia y crecimiento', technology: 'Parcelas de monitoreo' },
+      { name: 'Talleres', responsibility: 'Formar y vincular a la comunidad', technology: 'Promotoras comunitarias' },
     ],
     stack: [
-      { layer: 'Frontend', technology: 'React + Tailwind', reason: 'Rápido para iterar' },
-      { layer: 'Backend', technology: 'FastAPI', reason: 'Asíncrono y tipado' },
-      { layer: 'IA', technology: 'Gemini', reason: 'Salidas estructuradas nativas' },
+      { layer: 'Material vegetal', technology: 'Plántulas de mangle rojo', reason: 'Especie nativa con mejor supervivencia en la zona' },
+      { layer: 'Personal', technology: 'Mano de obra local y promotoras comunitarias', reason: 'Deja capacidad instalada en Tasajera' },
+      { layer: 'Seguimiento', technology: 'Parcelas de monitoreo', reason: 'Método aceptado por la autoridad ambiental' },
     ],
-    decisions: [{ title: 'Salidas estructuradas', decision: 'Cada agente devuelve JSON con un esquema', rationale: 'Se guarda directo como tarjetas' }],
+    decisions: [{ title: 'Siembra por lotes', decision: 'Sembrar en dos lotes de media hectárea', rationale: 'Si un lote falla, el segundo aprende de él' }],
   },
   roadmap: {
     phases: [
       {
-        name: 'Bases', goal: 'Base técnica y configuración del proyecto', start_week: 1, end_week: 2,
-        deliverables: ['Repo y CI', 'Proyecto y equipo'],
+        name: 'Diagnóstico', goal: 'Conocer el sitio y a la comunidad', start_week: 1, end_week: 2,
+        deliverables: ['Informe de diagnóstico', 'Acta de socialización'],
         epics: [
-          { key: 'EP-1', title: 'Puesta en marcha', description: 'Infraestructura del proyecto' },
-          { key: 'EP-2', title: 'Proyectos y equipo', description: 'Gestión de proyectos y miembros' },
+          { key: 'C-1', title: 'Diagnóstico del sitio', description: 'Suelos, salinidad e hidrología' },
+          { key: 'C-2', title: 'Comunidad', description: 'Socialización y vinculación de familias' },
         ],
       },
       {
-        name: 'MVP', goal: 'Generación del plan y tablero', start_week: 3, end_week: 4,
-        deliverables: ['Pipeline de agentes', 'Tablero kanban'],
+        name: 'Vivero y siembra', goal: 'Producir y sembrar las plántulas', start_week: 3, end_week: 4,
+        deliverables: ['Vivero en operación', 'Lote 1 sembrado'],
         epics: [
-          { key: 'EP-3', title: 'Agentes', description: 'Pipeline que genera el plan' },
-          { key: 'EP-4', title: 'Tablero', description: 'Kanban con arrastrar y soltar' },
+          { key: 'C-3', title: 'Vivero', description: 'Producción de 4.000 plántulas' },
+          { key: 'C-4', title: 'Siembra', description: 'Siembra por lotes con tutores' },
         ],
       },
       {
-        name: 'Beta', goal: 'Pulido y feedback', start_week: 5, end_week: 6,
-        deliverables: ['Replanificación', 'Métricas'],
-        epics: [{ key: 'EP-5', title: 'Métricas', description: 'Velocidad y replanificación' }],
+        name: 'Seguimiento', goal: 'Medir y entregar', start_week: 5, end_week: 6,
+        deliverables: ['Informe de supervivencia', 'Informe final'],
+        epics: [{ key: 'C-5', title: 'Monitoreo', description: 'Supervivencia y crecimiento' }],
       },
     ],
   },
   backlog: {
     stories: [
-      story('US-1', 'EP-1', 'Configurar el repo y la CI', 2, 'DevOps', 'high', 'chore'),
-      story('US-2', 'EP-1', 'Definir el modelo de datos', 3, 'Backend', 'high'),
-      story('US-3', 'EP-2', 'Crear un proyecto con su descripción', 3, 'Frontend', 'high'),
-      story('US-4', 'EP-2', 'Cargar miembros y roles', 3, 'Frontend', 'high'),
-      story('US-5', 'EP-3', 'Investigar el framework de agentes', 2, 'Backend', 'high', 'spike'),
-      story('US-6', 'EP-3', 'Encadenar los agentes del plan', 8, 'Backend', 'high'),
-      story('US-7', 'EP-3', 'Mostrar el avance de los agentes', 5, 'Frontend'),
-      story('US-8', 'EP-4', 'Ver el tablero por columnas', 5, 'Frontend', 'high'),
-      story('US-9', 'EP-4', 'Mover tarjetas arrastrando', 3, 'Frontend'),
-      story('US-10', 'EP-5', 'Replanificar un sprint', 8, 'Backend', 'low'),
-      story('US-11', 'EP-5', 'Gráfico de velocidad', 5, 'Frontend', 'low'),
+      activity('A-1', 'C-1', 'Levantar la línea base del sitio', 2, 'Bióloga', 'high'),
+      activity('A-2', 'C-1', 'Medir salinidad y nivel del agua', 3, 'Técnico de vivero', 'high'),
+      activity('A-3', 'C-2', 'Socializar el proyecto con la comunidad', 3, 'Promotora comunitaria', 'high'),
+      activity('A-4', 'C-2', 'Vincular a las familias que harán la siembra', 3, 'Promotora comunitaria', 'high'),
+      activity('A-5', 'C-3', 'Cotizar y comprar las semillas', 2, 'Técnico de vivero', 'high'),
+      activity('A-6', 'C-3', 'Adecuar el vivero comunitario', 8, 'Técnico de vivero', 'high'),
+      activity('A-7', 'C-3', 'Llevar el registro de germinación', 5, 'Bióloga'),
+      activity('A-8', 'C-4', 'Sembrar el lote 1 (media hectárea)', 5, 'Técnico de vivero', 'high'),
+      activity('A-9', 'C-4', 'Instalar tutores y señalización', 3, 'Promotora comunitaria'),
+      activity('A-10', 'C-5', 'Medir la supervivencia del lote 1', 8, 'Bióloga', 'low'),
+      activity('A-11', 'C-5', 'Elaborar el informe final para Corpamag', 5, 'Bióloga', 'low'),
     ],
   },
   sprints: {
     sprints: [
-      { number: 1, name: 'Sprint 1', goal: 'Base lista', phase: 'Bases', story_keys: ['US-1', 'US-2', 'US-3', 'US-4'] },
-      { number: 2, name: 'Sprint 2', goal: 'Plan generado por agentes', phase: 'MVP', story_keys: ['US-5', 'US-6', 'US-7', 'US-8', 'US-9'] },
-      { number: 3, name: 'Sprint 3', goal: 'Beta', phase: 'Beta', story_keys: ['US-10', 'US-11'] },
+      { number: 1, name: 'Etapa 1: Diagnóstico', goal: 'Sitio y comunidad listos', phase: 'Diagnóstico', story_keys: ['A-1', 'A-2', 'A-3', 'A-4'] },
+      { number: 2, name: 'Etapa 2: Vivero y siembra', goal: 'Plántulas producidas y lote 1 sembrado', phase: 'Vivero y siembra', story_keys: ['A-5', 'A-6', 'A-7', 'A-8', 'A-9'] },
+      { number: 3, name: 'Etapa 3: Seguimiento', goal: 'Supervivencia medida e informe entregado', phase: 'Seguimiento', story_keys: ['A-10', 'A-11'] },
     ],
     assignments: [],
   },
@@ -112,25 +105,15 @@ export const DEMO_STAGES: StageOutputs = {
 
 /** Why each stage looks like it does, as the agent would say it. */
 export const DEMO_RATIONALES: Record<StageKey, string> = {
-  analysis: 'La descripción pide un MVP que equipos reales puedan probar, así que el alcance se queda en la planificación y el tablero.',
-  methodology: 'Equipo chico con mucha incertidumbre: iteraciones cortas para las demos, flujo continuo y límites WIP para el resto.',
-  architecture: 'Un solo despliegue mantiene simple la demo; los puertos y adaptadores permiten cambiar los agentes o GitHub sin reescribir.',
-  roadmap: 'Primero las bases para que los agentes tengan dónde escribir; después el tablero, y las métricas esperan al uso real.',
-  backlog: 'Historias chicas, de una persona cada una, agrupadas por épica y con el trabajo riesgoso de los agentes en prioridad alta.',
-  sprints: 'Cada sprint cierra el objetivo de una fase; el trabajo pesado de los agentes va en el sprint 2, cuando la base ya está.',
+  analysis: 'El contrato es un piloto: el alcance se queda en una hectárea para medir la supervivencia antes de ampliar.',
+  methodology: 'Por etapas de dos semanas, cada una con su informe de avance: así se rinde cuentas a la entidad con evidencias.',
+  architecture: 'Ejecutar con la comunidad baja los costos y deja capacidad instalada; el vivero propio asegura plántulas sanas.',
+  roadmap: 'Primero el diagnóstico, porque la siembra depende de la salinidad y el nivel del agua; el monitoreo cierra el contrato.',
+  backlog: 'Actividades de una persona cada una, agrupadas por componente, con lo que condiciona la siembra en prioridad alta.',
+  sprints: 'Cada etapa cierra una fase del cronograma; el trabajo pesado del vivero va en la etapa 2, cuando el sitio está diagnosticado.',
 }
 
-const NAMES: Record<Methodology, string> = { scrum: 'Scrum', kanban: 'Kanban', scrumban: 'Scrumban', xp: 'XP', shape_up: 'Shape Up' }
-
-/** The agents respect the methodology the leader asked for (spec 002); "auto" keeps their choice. */
-export function demoStage<K extends StageKey>(key: K, requested: RequestedMethodology): StageOutputs[K] {
-  const output = structuredClone(DEMO_STAGES[key])
-  if (key === 'methodology' && requested !== 'auto' && requested !== 'scrumban') {
-    const decision = output as StageOutputs['methodology']
-    decision.methodology = requested
-    decision.rationale = `Pediste ${NAMES[requested]}; los agentes lo ajustaron a este equipo.`
-    decision.alternatives = [{ methodology: 'scrumban', why_not: 'Elegiste otra metodología.' }]
-    if (requested === 'kanban') decision.ceremonies = decision.ceremonies.filter((c) => c.name !== 'Planning')
-  }
-  return output
+/** Spec 019: every project runs by stages, so the agents keep their plan whatever was requested. */
+export function demoStage<K extends StageKey>(key: K, _requested: RequestedMethodology): StageOutputs[K] {
+  return structuredClone(DEMO_STAGES[key])
 }

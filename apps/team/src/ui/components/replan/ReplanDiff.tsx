@@ -17,9 +17,9 @@ const GROUPS: { kind: ReplanChange['kind']; title: string }[] = [
 
 function describe(change: ReplanChange): string {
   switch (change.kind) {
-    case 'move': return `${change.task_key} pasa al sprint ${change.to_sprint}`
+    case 'move': return `${change.task_key} pasa a la etapa ${change.to_sprint}`
     case 'reassign': return `${change.task_key} pasa a ${change.to_member}`
-    case 'add': return `${change.new_story.key} ${change.new_story.title}, en el sprint ${change.to_sprint}`
+    case 'add': return `${change.new_story.key} ${change.new_story.title}, en la etapa ${change.to_sprint}`
     case 'discard': return `${change.task_key} sale del plan (hoy en ${STATUS_LABELS[change.expected_status]})`
   }
 }
@@ -50,7 +50,7 @@ export function ReplanDiff({ projectId, proposal, content, canDecide = true }: {
           </span>
           <div className="grid min-w-0">
             <h2 className="text-heading">Replan con {plural(content.changes.length, 'cambio')}</h2>
-            <span className="text-caption text-ink-muted">{automatic ? 'Lo pidió el cierre del sprint' : canDecide ? 'Lo pediste tú' : 'Lo pidió un líder'}</span>
+            <span className="text-caption text-ink-muted">{automatic ? 'Lo pidió el cierre de una etapa o un cambio del equipo' : canDecide ? 'Lo pediste tú' : 'Lo pidió un líder'}</span>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">

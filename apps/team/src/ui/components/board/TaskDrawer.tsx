@@ -5,10 +5,9 @@ import type { Member } from '../../../domain/project'
 import { suggestsAdvance, type FieldErrors } from '../../../domain/rules'
 import { Avatar, Button, Drawer, InlineText, Menu, Pill, Property, PropertyRows, StateLabel } from '@agile/ui'
 import {
-  ArrowRight01Icon, CheckListIcon, Flag02Icon, GithubIcon, Loading03Icon, Target02Icon, Tick02Icon, UserIcon, UserWarning01Icon,
+  ArrowRight01Icon, CheckListIcon, Flag02Icon, Loading03Icon, Target02Icon, Tick02Icon, UserIcon, UserWarning01Icon,
 } from '@agile/ui/icons'
-import { IssueBadge } from '../integrations/IssueBadge'
-import { PRIORITY_LOOK, STATUS_LABELS, TYPE_LABELS } from './boardLabels'
+import { PRIORITY_LOOK, STATUS_LABELS } from './boardLabels'
 import { Checklist } from './Checklist'
 
 interface TaskDrawerProps {
@@ -74,8 +73,7 @@ export function TaskDrawer({ projectId, task, members, columns, onClose }: TaskD
   const header = (
     <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
       <span className="text-key text-ink-muted">{task.key}</span>
-      <Pill hue="neutral">{task.epic_key}</Pill>
-      <Pill hue="neutral">{TYPE_LABELS[task.type]}</Pill>
+      <Pill hue="neutral">Componente {task.epic_key}</Pill>
       <span className="ml-auto">
         <SaveState pending={pending} saved={saved} />
       </span>
@@ -89,8 +87,8 @@ export function TaskDrawer({ projectId, task, members, columns, onClose }: TaskD
 
         {suggest && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-primary-soft p-4 text-primary-soft-ink">
-            <span className="flex items-center gap-2 text-label">El checklist está completo. ¿La pasas a revisión?</span>
-            <Button size="sm" variant="primary" icon={ArrowRight01Icon} onClick={() => void save({ status: 'review' })}>Mover a revisión</Button>
+            <span className="flex items-center gap-2 text-label">Todos los pasos están hechos. ¿La pasas a verificación?</span>
+            <Button size="sm" variant="primary" icon={ArrowRight01Icon} onClick={() => void save({ status: 'review' })}>Pasar a verificación</Button>
           </div>
         )}
 
@@ -156,17 +154,10 @@ export function TaskDrawer({ projectId, task, members, columns, onClose }: TaskD
             </Menu>
           </Property>
 
-          <Property label="Puntos" icon={Target02Icon}>
-            <InlineText label="Puntos" value={String(task.points)} error={errors.points} onCommit={commitPoints} unit="pts" inputMode="numeric" className="-ml-3" />
+          <Property label="Peso" icon={Target02Icon}>
+            <InlineText label="Peso" value={String(task.points)} error={errors.points} onCommit={commitPoints} inputMode="numeric" className="-ml-3" />
           </Property>
 
-          {task.issue && (
-            <Property label="Issue" icon={GithubIcon}>
-              <span className="text-label">
-                <IssueBadge issue={task.issue} />
-              </span>
-            </Property>
-          )}
         </PropertyRows>
 
         <section className="grid gap-1">
@@ -186,7 +177,7 @@ export function TaskDrawer({ projectId, task, members, columns, onClose }: TaskD
 
         {task.acceptance_criteria.length > 0 && (
           <section className="grid gap-2">
-            <h3 className="text-label">Criterios de aceptación</h3>
+            <h3 className="text-label">Criterios de cumplimiento</h3>
             <ul className="grid gap-1.5">
               {task.acceptance_criteria.map((c) => (
                 <li key={c} className="rounded-md bg-inset px-4 py-3 text-body">{c}</li>

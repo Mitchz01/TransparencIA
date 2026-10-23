@@ -54,7 +54,7 @@ export function AddTask({ column, onCreate }: AddTaskProps) {
   if (!open) {
     return (
       <Button variant="quiet" size="sm" icon={Add01Icon} className="w-full justify-start" onClick={() => setOpen(true)}>
-        Agregar tarea
+        Agregar actividad
       </Button>
     )
   }
@@ -65,7 +65,7 @@ export function AddTask({ column, onCreate }: AddTaskProps) {
         autoFocus
         value={title}
         readOnly={saving}
-        aria-label={`Nueva tarea en ${column}`}
+        aria-label={`Nueva actividad en ${column}`}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
         placeholder="¿Qué hay que hacer?"

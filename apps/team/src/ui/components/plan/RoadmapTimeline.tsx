@@ -13,12 +13,12 @@ function phaseState(phase: PhaseView, week: number | null, overdue: boolean): Ph
   if (week > phase.end_week || (overdue && week === phase.end_week)) {
     return finished ? { label: 'Terminada', hue: 'teal', icon: Tick02Icon } : { label: 'Atrasada', hue: 'coral', icon: Alert02Icon }
   }
-  if (week >= phase.start_week) return { label: 'En curso', hue: 'blue', icon: Loading03Icon }
+  if (week >= phase.start_week) return { label: 'En ejecución', hue: 'blue', icon: Loading03Icon }
   return { label: 'Por venir', hue: 'neutral', icon: Calendar03Icon }
 }
 
 const weeksText = (p: PhaseView) => (p.start_week === p.end_week ? `Semana ${p.start_week}` : `Semanas ${p.start_week} a ${p.end_week}`)
-const progressText = (p: Progress) => (p.points === 0 ? 'Sin tareas' : `${p.points_done} de ${points(p.points)}`)
+const progressText = (p: Progress) => (p.points === 0 ? 'Sin actividades' : `${p.points_done} de ${points(p.points)}`)
 
 /** A cell placed by hand: the current-week column spans every row, so nothing can be auto-placed around it. */
 function Cell({ row, column, className, children }: { row: number; column: string | number; className?: string; children?: ReactNode }) {
@@ -115,13 +115,13 @@ export function RoadmapTimeline({ roadmap }: { roadmap: RoadmapView }) {
                         <span className="shrink-0 text-key text-ink-muted">{epic.key}</span>
                         <span className="truncate">{epic.title}</span>
                       </span>
-                      <span className="text-caption text-ink-muted tabular-nums">{epic.has_tasks ? progressText(epic.progress) : 'Sin tareas'}</span>
+                      <span className="text-caption text-ink-muted tabular-nums">{epic.has_tasks ? progressText(epic.progress) : 'Sin actividades'}</span>
                     </Cell>,
                     <Cell key={`${epic.key}-bar`} row={epicRow} column={span} className="flex items-center px-1">
                       <ProgressTrack
                         value={epic.progress.points_done}
                         max={epic.progress.points}
-                        label={`${epic.key} ${epic.title}: ${epic.has_tasks ? progressText(epic.progress) : 'sin tareas'}`}
+                        label={`${epic.key} ${epic.title}: ${epic.has_tasks ? progressText(epic.progress) : 'sin actividades'}`}
                         className="flex-1"
                       />
                     </Cell>,

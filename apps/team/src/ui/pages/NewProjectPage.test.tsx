@@ -19,13 +19,13 @@ describe('New project (spec 015, US3)', () => {
 
     await fillProject(user)
     expect(screen.queryByRole('list', { name: 'Miembros del equipo' })).not.toBeInTheDocument()
-    expect(screen.getByRole('textbox', { name: 'Tu rol en este proyecto' })).toHaveValue('Backend')
-    await user.click(screen.getByRole('button', { name: 'Crear proyecto' }))
+    expect(screen.getByRole('textbox', { name: 'Tu cargo en este proyecto' })).toHaveValue('Representante legal')
+    await user.click(screen.getByRole('button', { name: 'Registrar proyecto' }))
 
     await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/projects\/\d+\/team$/))
     const project = [...backend.store.projects.values()].at(-1)!
     expect(project).toMatchObject({ name: 'Online store', status: 'draft' })
-    expect(project.members).toEqual([expect.objectContaining({ name: 'Ana Gómez', role: 'Backend', seniority: 'senior', permission: 'leader', account_id: 1 })])
+    expect(project.members).toEqual([expect.objectContaining({ name: 'Fundación Manglares Vivos', role: 'Representante legal', seniority: 'senior', permission: 'leader', account_id: 1 })])
     const link = await screen.findByRole('textbox', { name: 'Link de invitación' })
     expect((link as HTMLInputElement).value).toMatch(/\/join\/\w+$/)
   })
@@ -38,9 +38,9 @@ describe('New project (spec 015, US3)', () => {
     renderApp('/projects/new', local)
 
     await fillProject(user)
-    const role = screen.getByRole('textbox', { name: 'Tu rol en este proyecto' })
+    const role = screen.getByRole('textbox', { name: 'Tu cargo en este proyecto' })
     expect(role).toHaveValue('')
-    await user.click(screen.getByRole('button', { name: 'Crear proyecto' }))
+    await user.click(screen.getByRole('button', { name: 'Registrar proyecto' }))
 
     expect(role).toHaveAccessibleDescription('Obligatorio.')
     expect(role).toHaveFocus()

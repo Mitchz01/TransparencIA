@@ -1,103 +1,106 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
-import type { Account, ProfileUpdate } from '../../../domain/account'
-import { SENIORITIES, type Seniority } from '../../../domain/project'
-import type { FieldErrors } from '../../../domain/rules'
-import { Button, Card, Chip, FieldError, NumberField, Segmented, TextField, type IconGlyph } from '@agile/ui'
-import { SkillsField } from '../project/SkillsField'
-import { COMMON_ROLES, SENIORITY_LABELS } from './profileLabels'
-
-const OTHER = 'Otro'
+import {
+  ENTITY_NATURES, nitCheckDigit, onlyDigits, PERSON_DOCUMENTS, validateIdentification, validateProfile,
+  type Account, type DocumentType, type EntityNature, type IdentificationField, type PersonDocument, type PersonType, type ProfileUpdate,
+} from '../../../domain/account'
+import { toFieldErrors, type FieldErrors } from '../../../domain/rules'
+import { Button, Card, Checkbox, FieldError, Segmented, Select, TextField, type IconGlyph } from '@agile/ui'
+import { CONSENT_TEXT, DOCUMENT_LABELS, NATURE_LABELS, PERSON_TYPE_LABELS } from './profileLabels'
 
 interface ProfileDraft {
+  personType: PersonType
   name: string
-  choice: string | null // one of COMMON_ROLES, OTHER, or none
-  other: string
-  seniority: Seniority
-  hours: string
-  skills: string[]
-  github: string
+  documentType: PersonDocument
+  documentNumber: string
+  verificationDigit: string
+  entityNature: EntityNature | ''
+  repName: string
+  repDocumentType: PersonDocument
+  repDocumentNumber: string
+  phone: string
+  address: string
+  municipality: string
+  department: string
+  consent: boolean
 }
 
 /** What the profile looks like with the edits so far: the profile page shows it while you type. */
-export type ProfilePreview = Pick<Account, 'name' | 'role' | 'seniority' | 'hours_per_week' | 'skills' | 'github_username' | 'avatar_url'>
+export type ProfilePreview = Pick<Account, 'name' | 'avatar_url' | IdentificationField | 'data_consent_at'>
 
-const draftFrom = (account: Account): ProfileDraft => {
-  const common = COMMON_ROLES.find((r) => r.toLowerCase() === account.role?.toLowerCase())
+const draftFrom = (account: Account): ProfileDraft => ({
+  personType: account.person_type ?? 'natural',
+  name: account.name,
+  documentType: account.document_type && account.document_type !== 'NIT' ? account.document_type : 'CC',
+  documentNumber: account.document_number ?? '',
+  verificationDigit: account.verification_digit ?? '',
+  entityNature: account.entity_nature ?? '',
+  repName: account.legal_rep_name ?? '',
+  repDocumentType: account.legal_rep_document_type ?? 'CC',
+  repDocumentNumber: account.legal_rep_document_number ?? '',
+  phone: account.phone ?? '',
+  address: account.address ?? '',
+  municipality: account.municipality ?? '',
+  department: account.department ?? '',
+  consent: account.data_consent_at !== null,
+})
+
+const orNull = (value: string) => value.trim() || null
+
+/** The whole identification, as PATCH takes it: a natural person sends nothing of a legal person. */
+function identificationOf(draft: ProfileDraft): Pick<ProfileUpdate, IdentificationField> {
+  const legal = draft.personType === 'juridica'
   return {
-    name: account.name,
-    choice: common ?? (account.role ? OTHER : null),
-    other: common ? '' : account.role ?? '',
-    seniority: account.seniority,
-    hours: String(account.hours_per_week),
-    skills: account.skills,
-    github: account.github_username ?? '',
+    person_type: draft.personType,
+    document_type: (legal ? 'NIT' : draft.documentType) as DocumentType,
+    document_number: orNull(draft.documentNumber),
+    verification_digit: legal ? orNull(draft.verificationDigit) : null,
+    entity_nature: legal && draft.entityNature ? draft.entityNature : null,
+    legal_rep_name: legal ? orNull(draft.repName) : null,
+    legal_rep_document_type: legal ? draft.repDocumentType : null,
+    legal_rep_document_number: legal ? orNull(draft.repDocumentNumber) : null,
+    phone: orNull(draft.phone),
+    address: orNull(draft.address),
+    municipality: orNull(draft.municipality),
+    department: orNull(draft.department),
   }
 }
 
-const roleOf = (draft: ProfileDraft) => (draft.choice === OTHER ? draft.other.trim() || null : draft.choice)
-
-/** "" or "abc" hours become NaN, which the rules reject. */
-const hoursOf = (draft: ProfileDraft) => (draft.hours.trim() === '' ? Number.NaN : Number(draft.hours.trim()))
-
-/** While typing, a half-written field keeps the saved value instead of showing nonsense. */
 function previewOf(account: Account, draft: ProfileDraft): ProfilePreview {
-  const hours = hoursOf(draft)
   return {
+    ...identificationOf(draft),
+    document_type: draft.personType === 'juridica' ? 'NIT' : draft.documentType,
     name: draft.name.trim() || account.name,
-    role: roleOf(draft),
-    seniority: draft.seniority,
-    hours_per_week: Number.isInteger(hours) && hours > 0 ? hours : account.hours_per_week,
-    skills: draft.skills,
-    github_username: draft.github.trim().replace(/^@/, '') || null,
     avatar_url: account.avatar_url,
-  }
-}
-
-/** Only what changed, as PATCH asks. */
-function toUpdate(account: Account, draft: ProfileDraft, withName: boolean): ProfileUpdate {
-  const role = roleOf(draft)
-  const hours = hoursOf(draft)
-  const github = draft.github.trim() || null
-  const update: ProfileUpdate = {}
-  if (withName && draft.name.trim() !== account.name) update.name = draft.name
-  if (role !== account.role) update.role = role
-  if (draft.seniority !== account.seniority) update.seniority = draft.seniority
-  if (hours !== account.hours_per_week) update.hours_per_week = hours
-  if (JSON.stringify(draft.skills) !== JSON.stringify(account.skills)) update.skills = draft.skills
-  if (github !== account.github_username) update.github_username = github
-  return update
+    data_consent_at: draft.consent ? account.data_consent_at ?? new Date().toISOString() : null,
+  } as ProfilePreview
 }
 
 interface ProfileFormProps {
   account: Account
-  /** The full profile edits the name too; the step after sign up already has it. */
-  withName?: boolean
   /** `plain`: one column of fields (the step after sign up). `sections`: the fields grouped in cards (the profile page). */
   layout?: 'plain' | 'sections'
   submitLabel: string
   submitIcon?: IconGlyph
-  /** Resolves with the field errors to show; an empty update isn't sent. */
+  /** Resolves with the field errors to show. */
   onSubmit: (update: ProfileUpdate) => Promise<FieldErrors>
-  /** Called after saving (or when there was nothing to save). */
+  /** Called after saving. */
   onDone: () => void
   /** Called on every edit with the profile as it would look saved. */
   onPreview?: (preview: ProfilePreview) => void
   secondaryAction?: ReactNode
 }
 
-interface SectionProps {
-  /** Off in the plain layout: the fields go straight into the form. */
-  card: boolean
-  title: string
-  description?: string
-  children: ReactNode
-}
-
-/** A group of fields on a card, with a heading and, when it needs one, a sentence that says what it's for. */
-function Section({ card, title, description, children }: SectionProps) {
-  if (!card) return children
+function Section({ card, title, description, children }: { card: boolean; title: string; description?: string; children: ReactNode }) {
+  if (!card) {
+    return (
+      <fieldset className="grid gap-4">
+        <legend className="mb-3 text-heading">{title}</legend>
+        {children}
+      </fieldset>
+    )
+  }
   return (
-    <Card padding="lg" className="grid gap-6">
+    <Card padding="lg" className="grid gap-5">
       <div className="grid gap-1">
         <h2 className="text-heading">{title}</h2>
         {description && <p className="text-body text-ink-muted">{description}</p>}
@@ -107,16 +110,16 @@ function Section({ card, title, description, children }: SectionProps) {
   )
 }
 
-/** What you bring to every project you join (spec 015, FR-005). Every field has a default. */
-export function ProfileForm({
-  account, withName = false, layout = 'plain', submitLabel, submitIcon, onSubmit, onDone, onPreview, secondaryAction,
-}: ProfileFormProps) {
+/** Who registers public projects (spec 020): a natural or a legal person, with what Colombian rules ask
+ *  of whoever contracts with the State, and the data authorization of Ley 1581 de 2012. */
+export function ProfileForm({ account, layout = 'plain', submitLabel, submitIcon, onSubmit, onDone, onPreview, secondaryAction }: ProfileFormProps) {
   const [draft, setDraft] = useState(() => draftFrom(account))
   const [errors, setErrors] = useState<FieldErrors>({})
   const [sending, setSending] = useState(false)
   const sections = layout === 'sections'
   // Inside a card the fields sit on `inset`; on the page they sit on `surface`.
   const fill = sections ? 'inset' : 'surface'
+  const legal = draft.personType === 'juridica'
 
   const change = (patch: Partial<ProfileDraft>) => {
     const next = { ...draft, ...patch }
@@ -127,8 +130,11 @@ export function ProfileForm({
 
   const submit = async (event: FormEvent) => {
     event.preventDefault()
-    const update = toUpdate(account, draft, withName)
-    if (Object.keys(update).length === 0) return onDone()
+    const update: ProfileUpdate = { ...identificationOf(draft) }
+    if (draft.name.trim() !== account.name) update.name = draft.name
+    if (draft.consent !== (account.data_consent_at !== null)) update.data_consent = draft.consent
+    const local = toFieldErrors([...validateProfile({ name: draft.name }), ...validateIdentification(update, draft.consent)])
+    if (Object.keys(local).length) return setErrors(local)
     setSending(true)
     const result = await onSubmit(update)
     setSending(false)
@@ -136,70 +142,93 @@ export function ProfileForm({
     if (Object.keys(result).length === 0) onDone()
   }
 
-  const skillErrors = Object.fromEntries(
-    Object.entries(errors).flatMap(([field, message]) => {
-      const match = /^skills\[(\d+)\]$/.exec(field)
-      return match ? [[Number(match[1]), message]] : []
-    }),
+  const text = (label: string, field: keyof ProfileDraft & string, error: string | undefined, extra: Record<string, unknown> = {}) => (
+    <TextField label={label} fill={fill} value={draft[field] as string} error={error} onChange={(e) => change({ [field]: e.target.value } as Partial<ProfileDraft>)} {...extra} />
   )
 
-  const nameField = withName && (
-    <TextField label="Nombre" fill={fill} autoComplete="name" value={draft.name} error={errors.name} hint="Cambiarlo te renombra en todos tus proyectos." onChange={(e) => change({ name: e.target.value })} />
-  )
-
-  const githubField = (
-    <TextField
-      label="Usuario de GitHub"
-      fill={fill}
-      hint="Opcional. Sirve para asignarte issues."
-      placeholder="usuario"
-      autoComplete="off"
-      value={draft.github}
-      error={errors.github_username}
-      onChange={(e) => change({ github: e.target.value })}
-    />
-  )
+  const nitDigits = onlyDigits(draft.documentNumber)
+  const digitHint = nitDigits.length >= 8 && !draft.verificationDigit ? `Para ese NIT debería ser ${nitCheckDigit(nitDigits)}.` : 'El número después del guion en el RUT.'
 
   return (
-    <form noValidate onSubmit={submit} className={sections ? 'grid gap-3' : 'grid gap-6'}>
+    <form noValidate onSubmit={submit} aria-label="Datos de quien registra los proyectos" className={sections ? 'grid gap-3' : 'grid gap-8'}>
       {errors[''] && <FieldError>{errors['']}</FieldError>}
-      <Section card={sections} title="Mi información">
-        {nameField}
-        <fieldset className="grid gap-3">
-          <legend className="mb-2 text-label">{sections ? 'Rol' : 'Qué haces'}</legend>
-          <div role="group" aria-label="Rol" className="flex flex-wrap gap-2">
-            {[...COMMON_ROLES, OTHER].map((role) => (
-              <Chip key={role} inset={sections} pressed={draft.choice === role} onClick={() => change({ choice: draft.choice === role ? null : role })}>
-                {role}
-              </Chip>
-            ))}
-          </div>
-          {draft.choice === OTHER && (
-            <TextField label="Tu rol" hideLabel fill={fill} placeholder="Data, mobile, QA manual" autoFocus value={draft.other} error={errors.role} onChange={(e) => change({ other: e.target.value })} />
-          )}
-          {draft.choice !== OTHER && errors.role && <FieldError>{errors.role}</FieldError>}
-        </fieldset>
 
-        <div className="grid gap-6 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start">
-          <div className="grid gap-2">
-            <span className="text-label">Seniority</span>
-            <Segmented
-              label="Seniority"
-              inset={sections}
-              value={draft.seniority}
-              options={SENIORITIES.map((s) => ({ value: s, label: SENIORITY_LABELS[s] }))}
-              onChange={(seniority) => change({ seniority })}
-            />
-          </div>
-          <NumberField label="Horas por semana" fill={fill} unit="h" value={draft.hours} error={errors.hours_per_week} hint="Entre 1 y 60." onChange={(e) => change({ hours: e.target.value })} />
+      <Section card={sections} title="Quién registra los proyectos" description="Una persona que contrata a su nombre, o una organización con su NIT.">
+        <div>
+          <Segmented<PersonType>
+            label="Tipo de persona"
+            inset={sections}
+            value={draft.personType}
+            options={(['natural', 'juridica'] as const).map((value) => ({ value, label: PERSON_TYPE_LABELS[value] }))}
+            onChange={(personType) => change({ personType })}
+          />
         </div>
-
-        <SkillsField label="Habilidades" fill={fill} skills={draft.skills} errors={skillErrors} onChange={(skills) => change({ skills })} />
+        {legal ? (
+          <>
+            {text('Razón social', 'name', errors.name, { autoComplete: 'organization', placeholder: 'Fundación Manglares Vivos' })}
+            <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_9rem]">
+              {text('NIT', 'documentNumber', errors.document_number, { inputMode: 'numeric', placeholder: '900123456', hint: 'Sin el dígito de verificación.' })}
+              {text('Dígito de verificación', 'verificationDigit', errors.verification_digit, { inputMode: 'numeric', maxLength: 1, hint: digitHint })}
+            </div>
+            <Select
+              label="Naturaleza"
+              fill={fill}
+              value={draft.entityNature}
+              error={errors.entity_nature}
+              options={[{ value: '', label: 'Elige una' }, ...ENTITY_NATURES.map((n) => ({ value: n, label: NATURE_LABELS[n] }))]}
+              onChange={(e) => change({ entityNature: e.target.value as EntityNature | '' })}
+            />
+          </>
+        ) : (
+          <>
+            {text('Nombres y apellidos', 'name', errors.name, { autoComplete: 'name', placeholder: 'Leo Ruiz Pérez' })}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Select
+                label="Tipo de documento"
+                fill={fill}
+                value={draft.documentType}
+                error={errors.document_type}
+                options={PERSON_DOCUMENTS.map((d) => ({ value: d, label: DOCUMENT_LABELS[d] }))}
+                onChange={(e) => change({ documentType: e.target.value as PersonDocument })}
+              />
+              {text('Número de documento', 'documentNumber', errors.document_number, { inputMode: draft.documentType === 'CC' ? 'numeric' : 'text', placeholder: '1082345678' })}
+            </div>
+          </>
+        )}
       </Section>
 
-      {/* Apart: later each person connects their own GitHub account here instead of typing it. */}
-      <Section card={sections} title="GitHub" description="Por ahora escribe tu usuario. Más adelante podrás conectar tu cuenta.">
-        {githubField}
+      {legal && (
+        <Section card={sections} title="Representante legal" description="Quien firma los contratos en nombre de la organización.">
+          {text('Nombre del representante legal', 'repName', errors.legal_rep_name, { autoComplete: 'name', placeholder: 'Ana Gómez' })}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Select
+              label="Tipo de documento del representante"
+              fill={fill}
+              value={draft.repDocumentType}
+              error={errors.legal_rep_document_type}
+              options={PERSON_DOCUMENTS.map((d) => ({ value: d, label: DOCUMENT_LABELS[d] }))}
+              onChange={(e) => change({ repDocumentType: e.target.value as PersonDocument })}
+            />
+            {text('Número de documento del representante', 'repDocumentNumber', errors.legal_rep_document_number, { inputMode: 'numeric', placeholder: '52123456' })}
+          </div>
+        </Section>
+      )}
+
+      <Section card={sections} title="Contacto y ubicación" description="El correo de la cuenta es tu dirección de notificaciones.">
+        <TextField label="Correo de notificaciones" fill={fill} value={account.email} disabled hint="Es el correo con el que entras; no se cambia aquí." />
+        {text(legal ? 'Teléfono' : 'Celular', 'phone', errors.phone, { inputMode: 'tel', autoComplete: 'tel', placeholder: '3001234567' })}
+        {text('Dirección', 'address', errors.address, { autoComplete: 'street-address', placeholder: 'Calle 22 # 3-45' })}
+        <div className="grid gap-4 sm:grid-cols-2">
+          {text('Municipio', 'municipality', errors.municipality, { autoComplete: 'address-level2', placeholder: 'Santa Marta' })}
+          {text('Departamento', 'department', errors.department, { autoComplete: 'address-level1', placeholder: 'Magdalena' })}
+        </div>
+      </Section>
+
+      <Section card={sections} title="Tratamiento de datos personales">
+        <div className="grid gap-2">
+          <Checkbox label={CONSENT_TEXT} checked={draft.consent} onChange={(e) => change({ consent: e.target.checked })} />
+          {errors.data_consent && <FieldError>{errors.data_consent}</FieldError>}
+        </div>
       </Section>
 
       <div className="flex flex-wrap items-center justify-end gap-2 pt-2">

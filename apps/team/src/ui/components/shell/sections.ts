@@ -1,5 +1,5 @@
 import type { IconGlyph } from '@agile/ui'
-import { AiMagicIcon, Calendar03Icon, Coins01Icon, DashboardSquare01Icon, UserGroupIcon } from '@agile/ui/icons'
+import { AiMagicIcon, Calendar03Icon, CheckListIcon, Invoice01Icon, UserGroupIcon } from '@agile/ui/icons'
 
 export interface Section {
   path: string
@@ -7,12 +7,13 @@ export interface Section {
   icon: IconGlyph
 }
 
-/** The project sections, in rail order (spec 009, screen map). Settings sits at the bottom of the rail.
- *  Spec 017 (D13): Documentos and Integraciones leave the navigation; their routes stay. */
+/** The project sections, in menu order. Settings sits at the bottom of the menu.
+ *  Spec 017 (D13): Documentos and Integraciones leave the navigation; their routes stay.
+ *  Spec 019: the names of public projects, not of software development. */
 export const SECTIONS: Section[] = [
-  { path: 'planning', label: 'Planificación', icon: AiMagicIcon },
-  { path: 'board', label: 'Tablero', icon: DashboardSquare01Icon },
-  { path: 'transparency', label: 'Transparencia', icon: Coins01Icon }, // spec 017
-  { path: 'plan', label: 'Plan', icon: Calendar03Icon },
+  { path: 'planning', label: 'Planeación con IA', icon: AiMagicIcon },
+  { path: 'plan', label: 'Plan de trabajo', icon: Calendar03Icon },
+  { path: 'board', label: 'Actividades', icon: CheckListIcon },
+  { path: 'transparency', label: 'Evidencias y gastos', icon: Invoice01Icon }, // spec 017
   { path: 'team', label: 'Equipo', icon: UserGroupIcon },
 ]

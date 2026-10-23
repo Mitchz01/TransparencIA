@@ -1,7 +1,7 @@
 // Spec 017 (owner: P4): the project's budget, expenses with evidence, publication and alert answers.
 // Every change refetches the team portal: its numbers come from the backend's rules, never from here.
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import type { BudgetInput, Expense, ExpenseConfirmation } from '@agile/domain'
 import { hasCode, isApiError } from '../errors'
@@ -52,6 +52,19 @@ export function useTeamPortal(projectId: number, enabled = true) {
     queryKey: queryKeys.teamPortal(projectId),
     queryFn: () => transparency.getTeamPortal(projectId),
     enabled,
+  })
+}
+
+/** The team portal of several projects at once, for the home's follow-up panel (spec 019). A project without
+ *  a budget answers 409 budget_missing: the query errors and the panel says so; no toast. Same cache as the tab. */
+export function useTeamPortals(projectIds: number[]) {
+  const { transparency } = useGateways()
+  return useQueries({
+    queries: projectIds.map((id) => ({
+      queryKey: queryKeys.teamPortal(id),
+      queryFn: () => transparency.getTeamPortal(id),
+      retry: false,
+    })),
   })
 }
 

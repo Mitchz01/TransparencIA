@@ -36,7 +36,7 @@ export function proposeReplan(project: Project, board: BoardView, reason: string
   if (optional) {
     changes.push({ kind: 'discard', task_key: optional.key, expected_status: optional.status, rationale: 'Prioridad baja y sin avance: libera capacidad para lo urgente.' })
   }
-  return { changes, rationale: `Con tu motivo ("${reason}"), se alivia el sprint actual y se ordena lo que queda.` }
+  return { changes, rationale: `Con tu motivo ("${reason}"), se alivia la etapa actual y se ordena lo que queda.` }
 }
 
 /** Applies what still makes sense; returns the keys applied and the ones skipped with their reason. */

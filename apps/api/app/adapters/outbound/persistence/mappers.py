@@ -174,7 +174,7 @@ def delivery_to_table(delivery: WebhookDelivery) -> WebhookDeliveryTable:
 
 
 def account_to_domain(row: AccountTable) -> Account:
-    return Account.model_validate(_with_utc(row.model_dump(), "created_at"))
+    return Account.model_validate(_with_utc(row.model_dump(), "created_at", "data_consent_at"))
 
 
 def account_to_table(account: Account) -> AccountTable:

@@ -21,19 +21,19 @@ export function Checklist({ items, onChange, errors = {} }: ChecklistProps) {
     const clean = text.trim()
     if (!clean) return setError('Escribe el ítem.')
     if (clean.length > TASK_LIMITS.checklistText) return setError(`Máximo ${TASK_LIMITS.checklistText} caracteres.`)
-    if (items.length >= TASK_LIMITS.checklistItems) return setError(`Máximo ${TASK_LIMITS.checklistItems} ítems.`)
+    if (items.length >= TASK_LIMITS.checklistItems) return setError(`Máximo ${TASK_LIMITS.checklistItems} pasos.`)
     onChange([...items, { text: clean, done: false }])
     setText('')
     setError(undefined)
   }
 
   return (
-    <section className="grid gap-3" aria-label="Checklist">
+    <section className="grid gap-3" aria-label="Pasos">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-label">Checklist</h3>
+        <h3 className="text-label">Pasos</h3>
         <span className="text-caption text-ink-muted tabular-nums">{progress.done} de {progress.total}</span>
       </div>
-      {progress.total > 0 && <ProgressTrack value={progress.done} max={progress.total} label={`Checklist ${progress.done} de ${progress.total}`} />}
+      {progress.total > 0 && <ProgressTrack value={progress.done} max={progress.total} label={`Pasos ${progress.done} de ${progress.total}`} />}
       <ul className="grid gap-1">
         {items.map((item, i) => (
           <li key={`${i}-${item.text}`} className="flex items-start justify-between gap-2 rounded-md px-1 py-1.5">

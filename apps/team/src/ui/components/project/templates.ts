@@ -6,7 +6,9 @@ export interface ProjectTemplate {
   name: string
   summary: string
   icon: IconGlyph
-  /** What fills the home's box: enough for the agents to plan from. */
+  /** The contract's length in weeks. */
+  weeks: number
+  /** What fills the project form: enough for the agents to plan from. */
   description: string
 }
 
@@ -14,6 +16,7 @@ export interface ProjectTemplate {
 export const TEMPLATES: ProjectTemplate[] = [
   {
     key: 'mangrove',
+    weeks: 26,
     name: 'Restauración de manglar',
     summary: 'Vivero, siembra y monitoreo con la comunidad.',
     icon: Plant01Icon,
@@ -22,6 +25,7 @@ export const TEMPLATES: ProjectTemplate[] = [
   },
   {
     key: 'road',
+    weeks: 17,
     name: 'Mejoramiento de vía terciaria',
     summary: 'Placa huella, cunetas y obras de drenaje.',
     icon: Route01Icon,
@@ -30,6 +34,7 @@ export const TEMPLATES: ProjectTemplate[] = [
   },
   {
     key: 'water',
+    weeks: 35,
     name: 'Acueducto veredal',
     summary: 'Captación, tanque y redes para una vereda.',
     icon: DropletIcon,
@@ -38,6 +43,7 @@ export const TEMPLATES: ProjectTemplate[] = [
   },
   {
     key: 'community-hall',
+    weeks: 22,
     name: 'Salón comunal',
     summary: 'Obra, dotación y entrega a la comunidad.',
     icon: Building03Icon,

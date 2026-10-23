@@ -15,7 +15,8 @@ export interface StageSummary {
   body: ReactNode
 }
 
-export const METHODOLOGY_NAMES: Record<Methodology, string> = { scrum: 'Scrum', kanban: 'Kanban', scrumban: 'Scrumban', xp: 'XP', shape_up: 'Shape Up' }
+// Spec 019: every project runs by stages; a continuous flow only shows for plans made before it.
+export const METHODOLOGY_NAMES: Record<Methodology, string> = { scrum: 'Por etapas', kanban: 'Flujo continuo', scrumban: 'Por etapas', xp: 'Por etapas', shape_up: 'Por etapas' }
 export const LEVELS: Record<Level, string> = { low: 'Baja', medium: 'Media', high: 'Alta' }
 const PRIORITY_HUE = { high: 'coral', medium: 'amber', low: 'teal' } as const
 
@@ -82,21 +83,21 @@ function methodology(c: StageOutputs['methodology']): StageSummary {
   const wip = c.wip_limits.find((w) => w.column === 'in_progress')
   const continuous = c.methodology === 'kanban'
   return {
-    title: continuous ? 'Kanban, flujo continuo' : `${METHODOLOGY_NAMES[c.methodology]}, iteraciones de ${plural(c.sprint_length_weeks, 'semana')}`,
+    title: continuous ? 'Flujo continuo, sin etapas' : `Por etapas de ${plural(c.sprint_length_weeks, 'semana')}`,
     facts: [
-      { value: continuous ? 'Continua' : plural(c.sprint_length_weeks, 'semana'), name: 'Iteración' },
-      { value: plural(c.ceremonies.length, 'ceremonia'), name: listText(c.ceremonies.map((x) => x.name)) },
-      ...(wip ? [{ value: `${wip.limit} en curso`, name: 'Límite WIP' }] : []),
+      { value: continuous ? 'Continua' : plural(c.sprint_length_weeks, 'semana'), name: 'Cada etapa' },
+      { value: plural(c.ceremonies.length, 'reunión', 'reuniones'), name: listText(c.ceremonies.map((x) => x.name)) },
+      ...(wip ? [{ value: `${wip.limit} en ejecución`, name: 'Máximo a la vez' }] : []),
     ],
     body: (
       <>
-        <Block title="Ceremonias">
+        <Block title="Seguimiento">
           <Rows>
             {c.ceremonies.map((x) => <Row key={x.name} title={x.name} detail={sentences(x.frequency, x.purpose)} />)}
           </Rows>
         </Block>
         {c.alternatives.length > 0 && (
-          <Block title="Descartadas">
+          <Block title="Otras formas de trabajo">
             <Rows>
               {c.alternatives.map((a) => <Row key={a.methodology} title={METHODOLOGY_NAMES[a.methodology as Methodology] ?? a.methodology} detail={a.why_not} />)}
             </Rows>
@@ -112,7 +113,7 @@ function architecture(c: StageOutputs['architecture']): StageSummary {
     title: c.style,
     facts: [
       { value: plural(c.components.length, 'componente'), name: listText(c.components.map((x) => x.name)) },
-      { value: plural(c.stack.length, 'capa'), name: listText(c.stack.map((x) => x.technology)) },
+      { value: plural(c.stack.length, 'recurso'), name: listText(c.stack.map((x) => x.technology)) },
       { value: plural(c.decisions.length, 'decisión', 'decisiones'), name: listText(c.decisions.map((x) => x.title)) },
     ],
     body: (
@@ -141,7 +142,7 @@ function roadmap(c: StageOutputs['roadmap']): StageSummary {
     facts: [
       { value: plural(c.phases.length, 'fase'), name: listText(c.phases.map((p) => p.name)) },
       { value: plural(weeks, 'semana'), name: 'De principio a fin' },
-      { value: plural(epics.length, 'épica'), name: listText(epics.map((e) => e.title)) },
+      { value: plural(epics.length, 'componente'), name: listText(epics.map((e) => e.title)) },
     ],
     body: (
       <Block title="Fases">
@@ -164,14 +165,14 @@ function backlog(c: StageOutputs['backlog']): StageSummary {
   const epics = [...new Set(c.stories.map((s) => s.epic_key))]
   const total = c.stories.reduce((sum, s) => sum + s.points, 0)
   return {
-    title: `${plural(c.stories.length, 'historia')} en ${plural(epics.length, 'épica')}`,
+    title: `${plural(c.stories.length, 'actividad', 'actividades')} en ${plural(epics.length, 'componente')}`,
     facts: [
-      { value: plural(c.stories.length, 'historia'), name: `${c.stories.filter((s) => s.priority === 'high').length} de prioridad alta` },
-      { value: points(total), name: 'Estimados' },
-      { value: plural(epics.length, 'épica'), name: listText(epics) },
+      { value: plural(c.stories.length, 'actividad', 'actividades'), name: `${c.stories.filter((s) => s.priority === 'high').length} de prioridad alta` },
+      { value: points(total), name: 'Peso total' },
+      { value: plural(epics.length, 'componente'), name: listText(epics) },
     ],
     body: (
-      <Block title="Historias">
+      <Block title="Actividades">
         <ShortList
           items={c.stories}
           noun="historias"
@@ -197,14 +198,14 @@ function backlog(c: StageOutputs['backlog']): StageSummary {
 function sprints(c: StageOutputs['sprints']): StageSummary {
   const sizes = c.sprints.map((s) => s.story_keys.length)
   return {
-    title: plural(c.sprints.length, 'sprint'),
+    title: plural(c.sprints.length, 'etapa'),
     facts: [
-      { value: plural(c.sprints.length, 'sprint'), name: listText(c.sprints.map((s) => s.phase)) },
-      { value: plural(Math.max(0, ...sizes), 'historia'), name: 'En el sprint más cargado' },
-      { value: plural(sizes.reduce((a, b) => a + b, 0), 'historia'), name: 'En todos los sprints' },
+      { value: plural(c.sprints.length, 'etapa'), name: listText(c.sprints.map((s) => s.phase)) },
+      { value: plural(Math.max(0, ...sizes), 'actividad', 'actividades'), name: 'En la etapa más cargada' },
+      { value: plural(sizes.reduce((a, b) => a + b, 0), 'actividad', 'actividades'), name: 'En todas las etapas' },
     ],
     body: (
-      <Block title="Sprints">
+      <Block title="Etapas">
         <Rows>
           {c.sprints.map((s) => <Row key={s.number} title={s.name} detail={sentences(s.goal, s.story_keys.join(', '))} aside={<span className="text-caption text-ink-muted">{s.phase}</span>} />)}
         </Rows>

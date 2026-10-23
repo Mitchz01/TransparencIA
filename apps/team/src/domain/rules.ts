@@ -27,7 +27,9 @@ export function validateProject(body: ProjectCreate | ProjectUpdate): FieldError
   return toFieldErrors(issues)
 }
 
-export const PROJECT_DEFAULTS = { duration_weeks: 8, requested_methodology: 'auto' as const, auto_approve: false }
+// Spec 019 (D3): public projects run by stages, so the app always asks for Scrum (its sprints are the stages)
+// and never shows a methodology choice. Six months is a typical public contract.
+export const PROJECT_DEFAULTS = { duration_weeks: 26, requested_methodology: 'scrum' as const, auto_approve: false }
 
 // ---------- Capacity (spec 002, domain/capacity.py: the single rule, spec 003 FR-017) ----------
 
@@ -86,9 +88,10 @@ export function wipWarnings(tasks: Task[], limits: WipLimit[], sprintId: number 
 export const wipLimitOf = (limits: WipLimit[], status: TaskStatus) => limits.find((l) => l.column === status)?.limit ?? null
 
 /** "US-" plus one more than the highest "US-N" key; other key shapes are ignored (spec 014, as the service does). */
+/** "A-" plus one more than the highest "A-N" (spec 019: activities); other key shapes are ignored. */
 export function nextTaskKey(tasks: Pick<Task, 'key'>[]): string {
-  const numbers = tasks.map((t) => /^US-(\d+)$/.exec(t.key)?.[1]).filter((n): n is string => n !== undefined).map(Number)
-  return `US-${Math.max(0, ...numbers) + 1}`
+  const numbers = tasks.map((t) => /^A-(\d+)$/.exec(t.key)?.[1]).filter((n): n is string => n !== undefined).map(Number)
+  return `A-${Math.max(0, ...numbers) + 1}`
 }
 
 // ---------- Checklist (spec 003) ----------
