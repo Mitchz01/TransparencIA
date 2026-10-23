@@ -9,7 +9,7 @@ from sqlmodel import Session
 from app.adapters.inbound.http.background import spawn
 from app.adapters.outbound.persistence.db import engine, get_session
 from app.adapters.outbound.persistence.unit_of_work import SqlUnitOfWork
-from app.config import GITHUB_WEBHOOK_SECRET, PUBLIC_BASE_URL
+from app.config import GITHUB_WEBHOOK_SECRET, GITHUB_WEBHOOK_URL, PUBLIC_BASE_URL
 from app.application.ports.agents import PlanningAgents
 from app.application.ports.code_host import CodeHost, CodeHostFactory
 from app.application.ports.event_bus import EventBus
@@ -175,6 +175,8 @@ def get_plan_views(uow: UnitOfWork = Depends(get_uow)) -> GetPlanViews:
 
 def webhook_url() -> str | None:
     """Where GitHub sends the repo's events (spec 008's endpoint); None without a public URL."""
+    if GITHUB_WEBHOOK_URL:
+        return GITHUB_WEBHOOK_URL
     return f"{PUBLIC_BASE_URL}/webhooks/github" if PUBLIC_BASE_URL else None
 
 

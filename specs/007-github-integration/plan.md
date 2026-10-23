@@ -88,6 +88,8 @@ New domain errors (with T007): `RepositoryNotAccessible`, `RepositoryNotConnecte
 - `Project` (001) adds `has_token: bool`. `github_token` is **never** returned.
 - `Member` (001) adds `github_username: string | null`.
 - `Task` (003) adds `issue`: `{"number": 12, "url": "https://github.com/acme/app/issues/12", "state": "open", "broken": false}` or `null`. `state`: `open` | `closed` | `merged`; `broken: true` when the issue was deleted on GitHub.
+- `Proposal` (005) adds `result: object | null`: what applying produced. `create_issues` → `{"created": [{"task_id", "number"}], "failed": [{"task_id", "error"}]}`; `request_review` → `{"review_requested": true, "commented": true}` (the steps done, so a retry doesn't post twice). If some issues fail, the application fails too (`apply_failed`), so spec 005's `POST /api/proposals/{id}/apply` retries only the missing ones.
+- Activity events (005) add `repository_connected`, `repository_disconnected`, `issues_published`, `issue_updated` (`broken` when deleted on GitHub), `issue_closed` and `review_requested` (FR-020).
 
 **Connection**
 
@@ -299,9 +301,9 @@ Not part of our API, but they define our error mapping (`client.py`, T011):
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T034 [P] Retry with backoff on 5xx and secondary rate limits in the client; show "delayed" on the proposal while retrying
-- [ ] T035 [P] Encrypt `github_token` at rest with a `SECRET_KEY` env var (Fernet) if time allows; otherwise document that it's stored in plain text in SQLite
-- [ ] T036 Document the local webhook setup (smee.io tunnel + `PUBLIC_BASE_URL`) in `README.md`
+- [ ] T034 [P] Retry with backoff on 5xx and secondary rate limits in the client; show "delayed" on the proposal while retrying — retry with backoff is done in `client.py` (5xx, 429, secondary rate limits, timeouts; tested); the "delayed" indicator on the proposal is left (no proposal state for it yet, and its UI belongs to spec 009)
+- [x] T035 [P] Encrypt `github_token` at rest with a `SECRET_KEY` env var (Fernet) if time allows; otherwise document that it's stored in plain text in SQLite — done: `persistence/token_cipher.py` encrypts with Fernet when `SECRET_KEY` is set; without it tokens are stored in plain text (documented in `README.md`)
+- [x] T036 Document the local webhook setup (smee.io tunnel + `PUBLIC_BASE_URL`) in `README.md` — done; adds an optional `GITHUB_WEBHOOK_URL` override because smee.io only forwards the channel URL itself, not `{PUBLIC_BASE_URL}/webhooks/github`
 
 ---
 

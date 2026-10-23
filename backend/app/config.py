@@ -29,5 +29,7 @@ MOCK_GITHUB_FORCED = os.getenv("MOCK_GITHUB", "").lower() in ("1", "true")
 # Public URL GitHub can reach; webhooks are registered at {PUBLIC_BASE_URL}/webhooks/github (spec 007).
 # Empty = repos are connected without a webhook (local dev without a tunnel).
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "").rstrip("/")
+# Full webhook URL when it isn't {PUBLIC_BASE_URL}/webhooks/github, e.g. a smee.io channel in dev.
+GITHUB_WEBHOOK_URL = os.getenv("GITHUB_WEBHOOK_URL", "")
 # Optional key to encrypt the projects' GitHub tokens at rest (Fernet); empty = stored in plain text.
 SECRET_KEY = os.getenv("SECRET_KEY", "")
