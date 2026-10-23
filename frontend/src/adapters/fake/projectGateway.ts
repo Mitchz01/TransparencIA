@@ -23,7 +23,7 @@ export function fakeProjectGateway(store: FakeStore): ProjectGateway {
   return {
     async create(body) {
       const issues = validateProjectCreate(body)
-      if (issues.length) invalid(issues, 'The project has invalid fields.')
+      if (issues.length) invalid(issues, 'El proyecto tiene campos con errores.')
       const project: Project = {
         id: store.id(),
         name: tidy(body.name),
@@ -60,7 +60,7 @@ export function fakeProjectGateway(store: FakeStore): ProjectGateway {
         const unknown = body.members.findIndex((m) => m.id !== undefined && !project.members.some((x) => x.id === m.id))
         if (unknown >= 0) invalid([{ field: `members[${unknown}].id`, message: 'Unknown member.' }])
         const issues = validateMembers(body.members.map((m) => toMember(store, m, project.members.find((x) => x.id === m.id))))
-        if (issues.length) invalid(issues, 'The project has invalid fields.')
+        if (issues.length) invalid(issues, 'El proyecto tiene campos con errores.')
         members = body.members.map((m) => toMember(store, m, project.members.find((x) => x.id === m.id)))
       }
       if (body.requested_methodology && body.requested_methodology !== project.requested_methodology && !canChangeMethodology(project)) {

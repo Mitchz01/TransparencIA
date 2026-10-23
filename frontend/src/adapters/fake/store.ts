@@ -162,7 +162,7 @@ export function fail(status: number, body: ApiErrorBody): never {
 type Entity = 'project' | 'proposal' | 'task' | 'sprint' | 'member' | 'document' | 'stage' | 'version'
 
 export const notFound = (entity: Entity, id: number | string): never =>
-  fail(404, { code: `${entity}_not_found`, detail: `${entity[0].toUpperCase()}${entity.slice(1)} ${id} does not exist.` })
+  fail(404, { code: `${entity}_not_found`, detail: `No existe (${entity} ${id}).` })
 
-export const invalid = (errors: FieldError[], detail = 'The request has invalid fields.'): never =>
+export const invalid = (errors: FieldError[], detail = 'La solicitud tiene campos con errores.'): never =>
   fail(422, { code: 'validation_failed', detail, errors })

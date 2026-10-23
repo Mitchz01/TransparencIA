@@ -29,7 +29,7 @@ export function TaskCard({ task, assignee, overlay = false, onOpen }: TaskCardPr
       )}
       onClick={onOpen}
     >
-      <h3 className="text-[0.9375rem] leading-snug font-semibold break-words">{task.title}</h3>
+      <h3 className="line-clamp-3 text-[0.9375rem] leading-snug font-semibold break-words" title={task.title}>{task.title}</h3>
       {task.description && <p className="line-clamp-2 text-caption text-ink-muted">{task.description}</p>}
       {progress.total > 0 && progress.done > 0 && !progress.complete && (
         <ProgressTrack value={progress.done} max={progress.total} label={`Checklist ${progress.done} de ${progress.total}`} />
