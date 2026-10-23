@@ -13,7 +13,9 @@ from app.adapters.inbound.webhooks import github as github_webhooks
 from app.adapters.outbound.code_host.fake import FakeCodeHost
 from app.adapters.outbound.events.in_memory_bus import InMemoryEventBus
 from app.adapters.outbound.events.persistent_bus import PersistentEventBus
+from app.application.use_cases.board.evaluate_objectives import EvaluateObjectives
 from app.application.use_cases.integrations.apply_review import ApplyReview
+from app.application.use_cases.planning.apply_replan import ReplanOutcome
 from app.application.use_cases.integrations.publish_issues import PublishIssues
 from app.application.use_cases.integrations.sync_task_issue import SyncTaskIssue
 from app.application.use_cases.proposals.apply_proposal import ApplierRegistry
@@ -105,6 +107,15 @@ async def lifespan(app: FastAPI):
         spawn(sync_task_issue.on_task_changed(task, event))
 
     app.state.after_task_changed.append(sync_issue_in_background)
+    # Spec 008 (US3): objectives close (or reopen) after a move, from the board or from GitHub,
+    # and after a replan changes the board.
+    evaluate_objectives = EvaluateObjectives(open_uow, app.state.event_bus)
+    app.state.after_task_changed.append(evaluate_objectives.on_task_changed)
+
+    async def evaluate_after_replan(outcome: ReplanOutcome) -> None:
+        await evaluate_objectives.execute(outcome.project_id)
+
+    app.state.on_replan_applied.append(evaluate_after_replan)
     yield
 
 

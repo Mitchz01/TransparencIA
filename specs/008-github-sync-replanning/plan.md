@@ -241,12 +241,12 @@ Request headers: `Content-Type: application/json`
 
 ### Tests for User Story 3
 
-- [ ] T020 [P] [US3] `objectives_to_close` and `EvaluateObjectives` tests (closes when all done; reopens if a task leaves done; `ObjectiveClosed` published) in `backend/tests/unit/application/test_evaluate_objectives.py`
+- [x] T020 [P] [US3] `objectives_to_close` and `EvaluateObjectives` tests (closes when all done; reopens if a task leaves done; `ObjectiveClosed` published) in `backend/tests/unit/application/test_evaluate_objectives.py`
 
 ### Implementation for User Story 3
 
-- [ ] T021 [US3] Implement `objectives_to_close(objectives, tasks)` in `backend/app/domain/board.py` and `EvaluateObjectives(project_id, task_ids)` in `backend/app/application/use_cases/board/evaluate_objectives.py`
-- [ ] T022 [US3] Call `EvaluateObjectives` from `HandleGithubEvent` and register it as an `after_task_changed` handler of spec 003's `MoveTask`
+- [x] T021 [US3] Implement `objectives_to_close(objectives, tasks)` in `backend/app/domain/board.py` and `EvaluateObjectives(project_id, task_ids)` in `backend/app/application/use_cases/board/evaluate_objectives.py`
+- [x] T022 [US3] Call `EvaluateObjectives` from `HandleGithubEvent` and register it as an `after_task_changed` handler of spec 003's `MoveTask`
 - [ ] T023 [US3] Show `ObjectiveBadge` (met / in progress) next to each sprint in the board — handed off to spec 009 (frontend)
 
 **Checkpoint**: User Stories 1–3 work independently

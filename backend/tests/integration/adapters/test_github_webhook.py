@@ -186,3 +186,29 @@ def test_missing_or_wrong_signature_is_rejected_and_changes_nothing(client):
     assert _task(client, pid, task["id"])["status"] == "todo"
     # Rejected deliveries aren't recorded: the real one is still processed
     assert post(client, body, delivery="s-1").json()["status"] == "accepted"
+
+
+# ---------- Objectives (US3) ----------
+
+
+def test_objective_closes_when_the_last_task_is_done_by_hand_or_from_github(client):
+    pid, linked = _board(client)
+    board = client.get(f"/api/projects/{pid}/board").json()
+    sprint_1 = board["sprints"][0]["id"]
+    others = [t for t in board["tasks"] if t["sprint_id"] == sprint_1 and t["id"] != linked["id"]]
+    for task in others:  # by hand
+        assert client.patch(f"/api/tasks/{task['id']}", json={"status": "done"}).status_code == 200
+
+    def objective() -> dict:
+        return next(o for o in client.get(f"/api/projects/{pid}/board").json()["objectives"] if o["sprint_id"] == sprint_1)
+
+    assert objective()["done"] is False
+
+    post(client, fixture("pull_request_merged"), delivery="obj-1")  # the last one, from GitHub
+    _wait_for(lambda: objective()["done"])
+    closed = [e for e in client.get(f"/api/projects/{pid}/activity").json() if e["type"] == "objective_closed"]
+    assert [e["sprint_id"] for e in closed] == [sprint_1]
+
+    # Moving a task out of done by hand reopens it
+    assert client.patch(f"/api/tasks/{others[0]['id']}", json={"status": "review"}).status_code == 200
+    assert objective()["done"] is False
