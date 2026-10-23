@@ -1,7 +1,7 @@
 # Feature Specification: 009 · Frontend
 
 **Created**: 2026-10-23  
-**Status**: Draft  
+**Status**: Approved  
 **Owner**: Mitchz01  
 **Reviewer**: codigotpx  
 **Use cases**: the screens of UC-01 to UC-14 ([plan/use-cases.md](../../plan/use-cases.md))  
