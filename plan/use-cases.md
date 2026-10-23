@@ -257,7 +257,7 @@ sequenceDiagram
 - **Disparador**: el líder abre una propuesta pendiente (ve qué decidió el agente y por qué) y elige.
 - **Resultado**:
   - **Aprobar o ajustar**: se aplica `final_content` según el tipo de propuesta (ver tabla) y sigue la etapa siguiente.
-  - **Rechazar**: se guarda el motivo y el agente rehace la etapa con ese motivo como contexto.
+  - **Rechazar**: se guarda el motivo y el agente rehace la etapa automáticamente con ese motivo como contexto. Tras 3 rechazos seguidos de la misma etapa, espera al líder.
 - **Casos de uso**: `proposals/approve_proposal.py`, `adjust_proposal.py`, `reject_proposal.py`
 
 | Tipo de propuesta | Qué hace aprobarla |
@@ -383,8 +383,8 @@ sequenceDiagram
 ### UC-08 · Generar specs y diagramas
 
 - **Disparador**: termina de aprobarse el plan (después de `sprints`), o el líder pide regenerar un documento.
-- **Resultado**: propuestas de tipo `document`: spec general, una spec por caso de uso o épica, y diagramas de flujo en Mermaid. Al aprobarse se convierten en `Document` versionados.
-- **Etapas nuevas** en `PLANNING_STAGES`: `general_spec`, `use_case_specs`, `flow_diagrams`, cada una con su esquema de salida.
+- **Resultado**: propuestas de tipo `document`: spec general, una spec por épica del roadmap, y diagramas de flujo en Mermaid. Al aprobarse se convierten en `Document` versionados.
+- **Etapas nuevas** en `PLANNING_STAGES`: `general_spec`, `epic_specs`, `flow_diagrams`, cada una con su esquema de salida.
 - **Caso de uso**: `planning/generate_documents.py`, que reutiliza `RunPlanningStep`.
 
 ```mermaid
@@ -396,7 +396,7 @@ sequenceDiagram
     participant Bus as EventBus
 
     AP->>UC: plan completo aprobado
-    loop general_spec, use_case_specs, flow_diagrams
+    loop general_spec, epic_specs, flow_diagrams
         UC->>Bus: publish(AgentStarted)
         UC->>AG: run_stage(stage, plan aprobado)
         AG-->>UC: documentos (Markdown o Mermaid)
@@ -608,7 +608,7 @@ Lo que estos casos de uso agregan a lo que ya está en `main`:
 
 | Dónde | Qué falta |
 |---|---|
-| `domain/plan.py` | Etapas `general_spec`, `use_case_specs`, `flow_diagrams`, `code_review`, `replan`, con sus esquemas |
+| `domain/plan.py` | Etapas `general_spec`, `epic_specs`, `flow_diagrams`, `code_review`, `replan`, con sus esquemas |
 | `domain/proposals.py` | `rejection_reason` en `Proposal` |
 | `domain/project.py` | `Member.github_username`; `Objective` vinculado a fase y tareas |
 | `domain/events.py` | `TeamChanged`, `PlanApplied`, `IssuesPublished`, `ObjectiveClosed` |
@@ -620,5 +620,5 @@ Lo que estos casos de uso agregan a lo que ya está en `main`:
 ## Preguntas abiertas
 
 1. ~~**UC-11**: ¿el sistema también abre PRs?~~ **Resuelta en la spec 007**: no, solo pide reviews y comenta. Los PRs los abre el equipo.
-2. **UC-04 rechazar**: ¿el agente rehace la etapa automáticamente con el motivo, o el líder decide cuándo?
-3. **UC-12**: ¿la detección de desvío (sprint cerrado con pendientes) propone re-planificar sola, o solo avisa?
+2. ~~**UC-04 rechazar**: ¿el agente rehace la etapa automáticamente con el motivo, o el líder decide cuándo?~~ **Resuelta**: la rehace automáticamente con el motivo; tras 3 rechazos seguidos de la misma etapa espera al líder ([spec 002](../specs/002-agent-planning-pipeline/spec.md), FR-011).
+3. ~~**UC-12**: ¿la detección de desvío (sprint cerrado con pendientes) propone re-planificar sola, o solo avisa?~~ **Resuelta**: propone la re-planificación sola, también ante cambios de equipo, y siempre espera la decisión del líder, aunque el proyecto tenga auto-aprobar ([spec 008](../specs/008-github-sync-replanning/spec.md), FR-010 y FR-016).

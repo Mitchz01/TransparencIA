@@ -1,7 +1,7 @@
 # Feature Specification: 007 · Integración con GitHub
 
 **Created**: 2026-10-23  
-**Status**: Draft  
+**Status**: Approved  
 **Owner**: codigotpx  
 **Reviewer**: Mitchz01  
 **Use cases**: UC-09, UC-10, UC-11 ([plan/use-cases.md](../../plan/use-cases.md))  
