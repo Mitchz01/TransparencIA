@@ -15,6 +15,8 @@ const screen = <T,>(load: () => Promise<T>, name: keyof T) => async () => ({
 export const routes: RouteObject[] = [
   {
     errorElement: <ErrorPage />,
+    // While the first screen's code arrives: the page background, no flash.
+    hydrateFallbackElement: <div className="min-h-svh bg-bg" />,
     children: [
       { path: '/', element: <ProjectsPage /> },
       { path: '/projects/new', lazy: screen(() => import('../ui/pages/NewProjectPage'), 'NewProjectPage') },

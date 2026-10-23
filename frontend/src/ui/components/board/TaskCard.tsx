@@ -78,7 +78,11 @@ export function SortableTaskCard({ task, assignee, onOpen }: Omit<TaskCardProps,
       aria-label={`${task.key} ${task.title}`}
       onKeyDown={(event) => {
         listeners?.onKeyDown?.(event)
-        if (event.key === 'Enter' && !event.defaultPrevented && onOpen) onOpen()
+        if (event.key === 'Enter' && !isDragging && onOpen) {
+          // Keep the same key press from reaching the drawer's first button once it opens.
+          event.preventDefault()
+          onOpen()
+        }
       }}
     >
       <TaskCard task={task} assignee={assignee} onOpen={onOpen} />
