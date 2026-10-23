@@ -128,16 +128,21 @@ Added for the first round of screens; all of them are in [preview.html](preview.
 | Stage stepper | One row per stage: stage name, agent name below in `ink-muted`, the state on the right as icon + word in its hue. The current stage sits on `inset`, so every state color keeps 4.5:1 | No numbers in circles and no lines between steps |
 | Menu | `surface` panel, `radius-lg`, `shadow-float`, pill rows that turn `surface-strong` on hover; the chosen row has a tick | Opened from a secondary button with a chevron (project switcher, sprint selector, sections on mobile) |
 | Dialog | Centered `surface` panel, `radius-xl`, `shadow-float`, on `scrim` | Title in `text-heading`, actions bottom right, Escape closes |
-| Drawer | Right panel with a `space-3` margin, `radius-xl`, `shadow-float`, on `scrim` | Task details and activity |
+| Drawer | Right panel with a `space-3` margin, `radius-xl`, `shadow-float`, on `scrim` | Task details and activity. An optional header replaces the title (the task panel puts its key, epic and type there) |
 | Toast | `inverse` panel, `radius-lg`, `shadow-float`, icon + message, optional "Retry" (`primary`) and the request id in `text-caption` | Bottom of the screen; errors never use red fills |
 | Empty state | Icon on a 48px `surface-strong` square with `radius-md`, heading, one sentence, one action | Says what's missing and links to where it's made |
 | Skeleton | `surface-strong` blocks with `radius-md`, a slow opacity pulse | No pulse under reduced motion |
 | Capacity bar | Track with a `primary` fill (`coral` when overloaded) and "18 of 21 pts" next to it | Overload adds "Overloaded" with the alert icon |
 | Row list | Rows on `inset` with `radius-md`, a title, an optional detail in `ink-muted` and something on the right; a group title in `text-label` above | Rows are separated by 6px of space, never by lines. Progress tracks inside a row use the `surface` track |
-| Week strip | One 12px cell per week of the project: the phase's weeks in `ink-subtle` at 45%, the others `inset`, the current week `primary` (`primary-soft` outside the phase) | Read by screen readers as a sentence ("Weeks 3 to 4 of 6, this is week 3") |
 | Document text | Markdown in the app's type scale: `text-title`, `text-heading`, `text-body`; lists marked with a short hyphen; code on `inset` in Geist | No horizontal rules and no images; diagrams render with the theme's tokens |
 | Issue badge | GitHub icon and `#12` in `blue`; closed or merged adds the word in `teal`; a broken link says so in `coral` | Inside cards, next to the key and the points |
 | Replan change | A checkbox row on `inset`: the change in `text-label`, its reason below in `ink-muted` | Changes are grouped by kind (move, reassign, add, discard) under row-list group titles |
+| Property rows | One row per property: a `text-label` name in `ink-muted` with its icon on the left (fixed width), the value on the right as a quiet menu button or an inline field | Spaced by 4px, no lines. The value reads as text until hovered or focused (spec 011) |
+| Inline text | Text that becomes a field: no fill at rest, `inset` on hover and focus, `radius-md` | Saves on Enter or when leaving the field; Escape puts the saved value back. Errors as in any field |
+| Timeline | A grid with a sticky name column and one column per week; week names in `text-caption`. Bars are progress tracks: phases 12px, epics 6px | The current week is a `primary-soft` column behind every row, never a line. Milestones are a flag icon at the end of the bar plus a row list (spec 012) |
+| Flow | Steps on `inset` with `radius-md`, joined by an arrow icon in `ink-muted` (down on narrow screens) | Ends with a step that says how it repeats |
+| Slots | One 12px square per allowed item, `ink-subtle` at 45%, with "Máximo 3 a la vez" next to it | For WIP limits. "Sin límite" when there's none |
+| Disclosure row | A row-list row whose title opens its detail, with a chevron that turns | Built on `<details>`, so it opens with Enter and Space |
 
 ## Interaction and accessibility
 
