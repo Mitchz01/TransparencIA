@@ -13,7 +13,7 @@ Reglas:
 - No escribir código de una feature sin `spec.md` y `plan.md` aprobados (`Estado: Aprobado`).
 - Si la implementación contradice la spec, se actualiza la spec primero.
 - Respetar [specs/constitution.md](specs/constitution.md).
-- Plantillas en [specs/_templates/](specs/_templates/).
+- Plantillas: spec en [specs/spec-template.md](specs/spec-template.md); plan y tasks en [specs/_templates/](specs/_templates/).
 - Para trabajo de frontend, seguir las skills de [.claude/skills/](.claude/skills/README.md) (diseño visual, composición y rendimiento en React, auditoría de UI).
 
 ## Stack

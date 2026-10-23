@@ -21,7 +21,7 @@ Etapas en orden; cada una es un `LlmAgent` que devuelve JSON con un esquema ([do
 
 ## Cómo trabajamos: SDD
 
-Spec → Plan → Tasks → Código. Cada feature vive en `specs/NNN-feature/` con `spec.md`, `plan.md` y `tasks.md` (plantillas en [specs/_templates](specs/_templates/), principios en [specs/constitution.md](specs/constitution.md)). Las reglas para los asistentes de IA, la estructura y los comandos están en [AGENTS.md](AGENTS.md), que también leen [CLAUDE.md](CLAUDE.md) y [GEMINI.md](GEMINI.md).
+Spec → Plan → Tasks → Código. Cada feature vive en `specs/NNN-feature/` con `spec.md`, `plan.md` y `tasks.md` (plantillas: [spec-template.md](specs/spec-template.md) para la spec y [specs/_templates](specs/_templates/) para plan y tasks; principios en [specs/constitution.md](specs/constitution.md)). Las reglas para los asistentes de IA, la estructura y los comandos están en [AGENTS.md](AGENTS.md), que también leen [CLAUDE.md](CLAUDE.md) y [GEMINI.md](GEMINI.md).
 
 | Feature | Carpeta |
 |---|---|
