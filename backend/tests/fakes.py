@@ -89,7 +89,9 @@ class FakeProposalRepository(_Repo):
         return sorted(rows, key=lambda p: (p.created_at, p.id or 0), reverse=True)
 
     def save_if_status(self, proposal: Proposal, expected: ProposalStatus) -> Proposal:
-        current = self.rows.get(proposal.id)  # type: ignore[arg-type]
+        # Like UPDATE ... WHERE status = :expected: what another unit already committed counts.
+        committed = self._uow.store.table("proposals").get(proposal.id)  # type: ignore[arg-type]
+        current = committed if committed is not None else self.rows.get(proposal.id)  # type: ignore[arg-type]
         if current is None or current.status != expected:
             raise ProposalAlreadyResolved(proposal.id, current.status if current else "missing")
         return self._put(proposal)

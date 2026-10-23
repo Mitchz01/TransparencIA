@@ -392,8 +392,8 @@ data: {"type":"resync","project_id":12}
 
 **Purpose**: reuse what spec 002 sets up
 
-- [ ] T001 Check that `spawn()` (`backend/app/adapters/inbound/http/background.py`) and `get_uow_factory()` exist (spec 002, T001–T002); if not, create them as 002's plan describes
-- [ ] T002 Check that `backend/tests/fakes.py` exists (spec 001, T009) and add `activity` to `InMemoryUnitOfWork`
+- [x] T001 Check that `spawn()` (`backend/app/adapters/inbound/http/background.py`) and `get_uow_factory()` exist (spec 002, T001–T002); if not, create them as 002's plan describes
+- [x] T002 Check that `backend/tests/fakes.py` exists (spec 001, T009) and add `activity` to `InMemoryUnitOfWork`
 
 ---
 
@@ -403,11 +403,11 @@ data: {"type":"resync","project_id":12}
 
 **⚠️ CRITICAL**: no user story work can begin until this phase is complete
 
-- [ ] T003 Make sure `Proposal` has `rejection_reason`/`reject(reason)` (002, T003) and `origin`/`discarded` (008, T002); add whatever is missing, plus `discard()`, `apply_failed`, `apply_error`, `mark_applied()` and `mark_apply_failed()` in `backend/app/domain/proposals.py`
-- [ ] T004 [P] Create `backend/app/domain/proposal_schemas.py` with `content_schema` for `plan_stage`; tests in `backend/tests/unit/domain/test_proposal_schemas.py`
-- [ ] T005 [P] Add the common fields to `DomainEvent`, the new `ProposalCreated`/`ProposalResolved` fields and `ProposalApplyFailed` in `backend/app/domain/events.py`; add `NoApplierForProposal` and `ProposalNotRetryable` in `errors.py` and map them in `adapters/inbound/http/errors.py`
-- [ ] T006 Make sure `ProposalTable` exists (002, T004); add `apply_failed`, `apply_error`, `origin` and `rejection_reason` columns if missing, and `save_if_status` to the port and `SqlProposalRepository`
-- [ ] T007 [P] Persistence tests: proposal round trip with all fields, `save_if_status` failing when the status changed, in `backend/tests/integration/adapters/test_persistence.py`
+- [x] T003 Make sure `Proposal` has `rejection_reason`/`reject(reason)` (002, T003) and `origin`/`discarded` (008, T002); add whatever is missing, plus `discard()`, `apply_failed`, `apply_error`, `mark_applied()` and `mark_apply_failed()` in `backend/app/domain/proposals.py`
+- [x] T004 [P] Create `backend/app/domain/proposal_schemas.py` with `content_schema` for `plan_stage`; tests in `backend/tests/unit/domain/test_proposal_schemas.py`
+- [x] T005 [P] Add the common fields to `DomainEvent`, the new `ProposalCreated`/`ProposalResolved` fields and `ProposalApplyFailed` in `backend/app/domain/events.py`; add `NoApplierForProposal` and `ProposalNotRetryable` in `errors.py` and map them in `adapters/inbound/http/errors.py`
+- [x] T006 Make sure `ProposalTable` exists (002, T004); add `apply_failed`, `apply_error`, `origin` and `rejection_reason` columns if missing, and `save_if_status` to the port and `SqlProposalRepository`
+- [x] T007 [P] Persistence tests: proposal round trip with all fields, `save_if_status` failing when the status changed, in `backend/tests/integration/adapters/test_persistence.py`
 
 **Checkpoint**: proposals persist with every field this spec needs
 
@@ -421,12 +421,12 @@ data: {"type":"resync","project_id":12}
 
 ### Tests for User Story 1
 
-- [ ] T008 [P] [US1] API tests for both GETs (all, filtered, one, 404) in `backend/tests/integration/adapters/test_proposals_api.py`
+- [x] T008 [P] [US1] API tests for both GETs (all, filtered, one, 404) in `backend/tests/integration/adapters/test_proposals_api.py`
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] Implement `ListProposals` and `GetProposal` in `backend/app/application/use_cases/proposals/list_proposals.py`
-- [ ] T010 [US1] Create `backend/app/adapters/inbound/http/proposals.py` with both GETs; add providers to `dependencies.py` and include the router in `backend/app/main.py`
+- [x] T009 [US1] Implement `ListProposals` and `GetProposal` in `backend/app/application/use_cases/proposals/list_proposals.py`
+- [x] T010 [US1] Create `backend/app/adapters/inbound/http/proposals.py` with both GETs; add providers to `dependencies.py` and include the router in `backend/app/main.py`
 
 **Checkpoint**: proposals can be read with agent, content and rationale
 
@@ -440,16 +440,16 @@ data: {"type":"resync","project_id":12}
 
 ### Tests for User Story 2
 
-- [ ] T011 [P] [US2] `ApproveProposal`/`AdjustProposal` tests (approve, valid adjust, invalid adjust keeps it pending, already resolved, `ProposalResolved` published after commit) in `backend/tests/unit/application/test_resolve_proposal.py`
-- [ ] T012 [P] [US2] `ApplyProposal` tests with fake appliers (right applier per kind and key, success marks applied, exception marks `apply_failed` and publishes `ProposalApplyFailed`, missing applier, retry only when failed) in `backend/tests/unit/application/test_apply_proposal.py`
-- [ ] T013 [P] [US2] API tests for approve, adjust and apply (200, 202, 409, 422) in `backend/tests/integration/adapters/test_proposals_api.py`
+- [x] T011 [P] [US2] `ApproveProposal`/`AdjustProposal` tests (approve, valid adjust, invalid adjust keeps it pending, already resolved, `ProposalResolved` published after commit) in `backend/tests/unit/application/test_resolve_proposal.py`
+- [x] T012 [P] [US2] `ApplyProposal` tests with fake appliers (right applier per kind and key, success marks applied, exception marks `apply_failed` and publishes `ProposalApplyFailed`, missing applier, retry only when failed) in `backend/tests/unit/application/test_apply_proposal.py`
+- [x] T013 [P] [US2] API tests for approve, adjust and apply (200, 202, 409, 422) in `backend/tests/integration/adapters/test_proposals_api.py`
 
 ### Implementation for User Story 2
 
-- [ ] T014 [US2] Implement the shared flow plus `ApproveProposal` and `AdjustProposal` in `backend/app/application/use_cases/proposals/resolve_proposal.py`
-- [ ] T015 [US2] Implement `ApplyProposal` and the `ProposalAppliers` protocol in `backend/app/application/use_cases/proposals/apply_proposal.py`
-- [ ] T016 [US2] Build the appliers registry in `backend/app/adapters/inbound/http/dependencies.py` with the entries that exist so far (`AdvancePlanning` from 002); the rest are added by their owner specs
-- [ ] T017 [US2] Add `POST /approve`, `/adjust` and `/apply` to `proposals.py`; `approve` and `adjust` `spawn` `ApplyProposal` after answering
+- [x] T014 [US2] Implement the shared flow plus `ApproveProposal` and `AdjustProposal` in `backend/app/application/use_cases/proposals/resolve_proposal.py`
+- [x] T015 [US2] Implement `ApplyProposal` and the `ProposalAppliers` protocol in `backend/app/application/use_cases/proposals/apply_proposal.py`
+- [x] T016 [US2] Build the appliers registry in `backend/app/adapters/inbound/http/dependencies.py` with the entries that exist so far (`AdvancePlanning` from 002); the rest are added by their owner specs
+- [x] T017 [US2] Add `POST /approve`, `/adjust` and `/apply` to `proposals.py`; `approve` and `adjust` `spawn` `ApplyProposal` after answering
 
 **Checkpoint**: approving stage by stage moves the plan forward (with spec 002's `AdvancePlanning`)
 
@@ -463,15 +463,15 @@ data: {"type":"resync","project_id":12}
 
 ### Tests for User Story 3
 
-- [ ] T018 [P] [US3] `PersistentEventBus` tests (every event saved, increasing `seq`, only the right project's subscribers get it) in `backend/tests/integration/adapters/test_persistent_bus.py`
-- [ ] T019 [P] [US3] Replay generator tests (no `Last-Event-ID`, missed notices, more than 200 → `resync`, no duplicates between replay and live)
-- [ ] T020 [P] [US3] Short SSE API test (replays what was missed, then closes) in `backend/tests/integration/adapters/test_activity_api.py`
+- [x] T018 [P] [US3] `PersistentEventBus` tests (every event saved, increasing `seq`, only the right project's subscribers get it) in `backend/tests/integration/adapters/test_persistent_bus.py`
+- [x] T019 [P] [US3] Replay generator tests (no `Last-Event-ID`, missed notices, more than 200 → `resync`, no duplicates between replay and live)
+- [x] T020 [P] [US3] Short SSE API test (replays what was missed, then closes) in `backend/tests/integration/adapters/test_activity_api.py`
 
 ### Implementation for User Story 3
 
-- [ ] T021 [US3] Add `ActivityTable`, its mapper and `SqlActivityRepository` in `backend/app/adapters/outbound/persistence/`, and `ActivityRepository` + `activity` on the `UnitOfWork` port
-- [ ] T022 [US3] Implement `PersistentEventBus` in `backend/app/adapters/outbound/events/persistent_bus.py` and use it in `backend/app/main.py`
-- [ ] T023 [US3] Create `backend/app/adapters/inbound/http/activity.py` with `GET /api/projects/{id}/events` and the replay generator; if spec 002's T009 already created the endpoint in `planning.py`, move it here
+- [x] T021 [US3] Add `ActivityTable`, its mapper and `SqlActivityRepository` in `backend/app/adapters/outbound/persistence/`, and `ActivityRepository` + `activity` on the `UnitOfWork` port
+- [x] T022 [US3] Implement `PersistentEventBus` in `backend/app/adapters/outbound/events/persistent_bus.py` and use it in `backend/app/main.py`
+- [x] T023 [US3] Create `backend/app/adapters/inbound/http/activity.py` with `GET /api/projects/{id}/events` and the replay generator; if spec 002's T009 already created the endpoint in `planning.py`, move it here
 
 **Checkpoint**: P1 done; the manual-approval demo can be followed live
 
@@ -485,13 +485,13 @@ data: {"type":"resync","project_id":12}
 
 ### Tests for User Story 4
 
-- [ ] T024 [P] [US4] Domain tests for `consecutive_rejections` (resets on approval, `discarded` neither counts nor stops it) and `adjust_after_limit` in `backend/tests/unit/domain/test_proposals.py`
-- [ ] T025 [P] [US4] `RejectProposal` tests (empty reason → 422, reason saved, applier called for `plan_stage`, nothing for `replan`) and adjusting a capped rejected proposal, in `backend/tests/unit/application/test_resolve_proposal.py`
+- [x] T024 [P] [US4] Domain tests for `consecutive_rejections` (resets on approval, `discarded` neither counts nor stops it) and `adjust_after_limit` in `backend/tests/unit/domain/test_proposals.py`
+- [x] T025 [P] [US4] `RejectProposal` tests (empty reason → 422, reason saved, applier called for `plan_stage`, nothing for `replan`) and adjusting a capped rejected proposal, in `backend/tests/unit/application/test_resolve_proposal.py`
 
 ### Implementation for User Story 4
 
-- [ ] T026 [US4] Add `consecutive_rejections`, `MAX_CONSECUTIVE_REJECTIONS` and `adjust_after_limit` to `backend/app/domain/proposals.py`; tell Mitchz01 so `AdvancePlanning` (002, T032) uses them
-- [ ] T027 [US4] Implement `RejectProposal` in `resolve_proposal.py`, allow the capped case in `AdjustProposal`, and add `POST /api/proposals/{id}/reject` to `proposals.py`
+- [x] T026 [US4] Add `consecutive_rejections`, `MAX_CONSECUTIVE_REJECTIONS` and `adjust_after_limit` to `backend/app/domain/proposals.py`; tell Mitchz01 so `AdvancePlanning` (002, T032) uses them
+- [x] T027 [US4] Implement `RejectProposal` in `resolve_proposal.py`, allow the capped case in `AdjustProposal`, and add `POST /api/proposals/{id}/reject` to `proposals.py`
 
 ---
 
@@ -503,11 +503,11 @@ data: {"type":"resync","project_id":12}
 
 ### Tests for User Story 5
 
-- [ ] T028 [P] [US5] Tests for `should_auto_approve` and `AutoApprove.after_created` (approves and applies; respects `origin = "automatic"`; does nothing when the flag is off) in `backend/tests/unit/application/test_auto_approve.py`
+- [x] T028 [P] [US5] Tests for `should_auto_approve` and `AutoApprove.after_created` (approves and applies; respects `origin = "automatic"`; does nothing when the flag is off) in `backend/tests/unit/application/test_auto_approve.py`
 
 ### Implementation for User Story 5
 
-- [ ] T029 [US5] Add `should_auto_approve` to `backend/app/domain/proposals.py` and implement `AutoApprove` in `backend/app/application/use_cases/proposals/auto_approve.py`; agree with Mitchz01 that `RunPlanningStep` (002, T015) calls it
+- [x] T029 [US5] Add `should_auto_approve` to `backend/app/domain/proposals.py` and implement `AutoApprove` in `backend/app/application/use_cases/proposals/auto_approve.py`; agree with Mitchz01 that `RunPlanningStep` (002, T015) calls it
 
 **Checkpoint**: with auto-approve and mock agents, the six stages reach `PlanCompleted` with no action (SC-006, once 002 and 003 land)
 
@@ -521,11 +521,11 @@ data: {"type":"resync","project_id":12}
 
 ### Tests for User Story 6
 
-- [ ] T030 [P] [US6] API tests for the history (order, `limit`, `before`) in `backend/tests/integration/adapters/test_activity_api.py`
+- [x] T030 [P] [US6] API tests for the history (order, `limit`, `before`) in `backend/tests/integration/adapters/test_activity_api.py`
 
 ### Implementation for User Story 6
 
-- [ ] T031 [US6] Implement `ListActivity` in `backend/app/application/use_cases/activity/list_activity.py` and `GET /api/projects/{id}/activity` in `activity.py`
+- [x] T031 [US6] Implement `ListActivity` in `backend/app/application/use_cases/activity/list_activity.py` and `GET /api/projects/{id}/activity` in `activity.py`
 
 ---
 
@@ -537,17 +537,17 @@ data: {"type":"resync","project_id":12}
 
 ### Tests for User Story 7
 
-- [ ] T032 [P] [US7] `ApproveProposals` tests (result per id, one already resolved, one from another project)
+- [x] T032 [P] [US7] `ApproveProposals` tests (result per id, one already resolved, one from another project)
 
 ### Implementation for User Story 7
 
-- [ ] T033 [US7] Implement `ApproveProposals` in `backend/app/application/use_cases/proposals/approve_many.py` (one transaction and one `ApplyProposal` spawn per proposal) and `POST /api/projects/{id}/proposals/approve`
+- [x] T033 [US7] Implement `ApproveProposals` in `backend/app/application/use_cases/proposals/approve_many.py` (one transaction and one `ApplyProposal` spawn per proposal) and `POST /api/projects/{id}/proposals/approve`
 
 ---
 
 ## Phase 10: Polish & Cross-Cutting Concerns
 
-- [ ] T034 Run the full `pytest`, including `test_layers.py`
+- [x] T034 Run the full `pytest`, including `test_layers.py`
 - [ ] T035 [P] Update the proposal state diagram and UC-04/UC-14 in [plan/use-cases.md](../../plan/use-cases.md): `discarded`, decide-then-apply with retry, SSE in `activity.py`, `200` on approve
 - [ ] T036 Check the scenarios by hand with `fastapi dev`, `curl -N` on `/events` and mock mode
 

@@ -86,3 +86,13 @@ class ProposalNotRetryable(DomainError):
     def __init__(self, id: int | None):
         super().__init__(f"Proposal {id} has no failed application to retry.")
         self.id = id
+
+
+class NoApplierForProposal(DomainError):
+    """No spec registered a step to apply this kind of proposal (yet). The decision stays
+    saved and the application is reported as failed, so it can be retried later."""
+
+    code = "no_applier_for_proposal"
+
+    def __init__(self, kind: str, key: str):
+        super().__init__(f"Nothing applies {kind} proposals ('{key}') yet.")

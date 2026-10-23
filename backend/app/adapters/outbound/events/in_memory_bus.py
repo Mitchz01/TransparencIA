@@ -1,8 +1,27 @@
 import asyncio
 from collections import defaultdict
-from collections.abc import AsyncIterator
 
 from app.domain.events import DomainEvent
+
+
+class Subscription:
+    """Registered as soon as it's created, so nothing published after subscribe() is lost
+    (the SSE endpoint subscribes before replaying the history, spec 005)."""
+
+    def __init__(self, bus: "InMemoryEventBus", project_id: int):
+        self._bus = bus
+        self._project_id = project_id
+        self._queue: asyncio.Queue[DomainEvent] = asyncio.Queue()
+        bus._queues[project_id].add(self._queue)
+
+    def __aiter__(self) -> "Subscription":
+        return self
+
+    async def __anext__(self) -> DomainEvent:
+        return await self._queue.get()
+
+    async def aclose(self) -> None:
+        self._bus._queues[self._project_id].discard(self._queue)
 
 
 class InMemoryEventBus:
@@ -14,14 +33,8 @@ class InMemoryEventBus:
     async def publish(self, event: DomainEvent) -> None:
         if event.project_id is None:
             return
-        for queue in self._queues[event.project_id]:
+        for queue in list(self._queues[event.project_id]):
             queue.put_nowait(event)
 
-    async def subscribe(self, project_id: int) -> AsyncIterator[DomainEvent]:
-        queue: asyncio.Queue[DomainEvent] = asyncio.Queue()
-        self._queues[project_id].add(queue)
-        try:
-            while True:
-                yield await queue.get()
-        finally:
-            self._queues[project_id].discard(queue)
+    def subscribe(self, project_id: int) -> Subscription:
+        return Subscription(self, project_id)

@@ -86,6 +86,13 @@ class ProposalApplyFailed(DomainEvent):
     error: str
 
 
+class Resync(DomainEvent):
+    """Sent on reconnect when more events were missed than the stream replays (spec 005, FR-015):
+    the client refetches its state with the regular GET endpoints."""
+
+    type: Literal["resync"] = "resync"
+
+
 # ---------- Team (spec 001) ----------
 
 
