@@ -1,15 +1,15 @@
 import { useState } from 'react'
 import { AgentSpark, Avatar, Icon, IconButton, NotchedPanel } from '@agile/ui'
 import { ArrowLeft02Icon, ArrowRight02Icon, QuoteDownIcon } from '@agile/ui/icons'
-import { STAGE_LABELS } from '../planning/stageLabels'
 import { ThemeToggle } from '../shell/TopBar'
 
 // What each agent says it does, in its own voice: the sign in screens show the product, not a form alone.
+// From planning the contract to accounting for its money (spec 017, FR-023).
 const VOICES = [
-  { stage: 'analysis', quote: 'Leo la descripción del proyecto, separo lo esencial y te digo qué riesgos conviene atender antes de empezar.' },
-  { stage: 'methodology', quote: 'Organizo el proyecto por etapas y propongo las reuniones de seguimiento con la entidad contratante.' },
-  { stage: 'architecture', quote: 'Identifico los componentes del proyecto y los recursos que necesita. Nada queda decidido hasta que lo apruebes.' },
-  { stage: 'backlog', quote: 'Armo las actividades con sus criterios de cumplimiento y las reparto según el tiempo de cada persona.' },
+  { agent: 'Analista del proyecto', role: 'Agente de análisis', quote: 'Leo el objeto del contrato y separo lo esencial, con los riesgos que conviene resolver antes de empezar.' },
+  { agent: 'Planificador', role: 'Agente de backlog', quote: 'Convierto las obligaciones en fases y actividades, y reparto el trabajo según las horas de cada persona.' },
+  { agent: 'Auditor de evidencias', role: 'Agente de gastos', quote: 'Leo cada factura y cada foto, la asigno a su rubro y marco lo que no cuadra. No acuso: una persona lo revisa.' },
+  { agent: 'Vocero ciudadano', role: 'Agente del portal', quote: 'Le explico a cualquier ciudadano, en palabras sencillas, en qué va el proyecto y en qué se gastó la plata.' },
 ] as const
 
 // The demo people, with their Pexels portraits from public/avatars/.
@@ -23,7 +23,6 @@ const TEAM = [
 export function AuthShowcase() {
   const [index, setIndex] = useState(0)
   const voice = VOICES[index]
-  const label = STAGE_LABELS[voice.stage]
   const step = (delta: number) => setIndex((i) => (i + delta + VOICES.length) % VOICES.length)
 
   return (
@@ -38,7 +37,7 @@ export function AuthShowcase() {
     >
       <AgentSpark variant="line" size={340} className="pointer-events-none absolute top-40 -right-16 opacity-25" />
 
-      <h2 className="relative max-w-[19ch] pr-24 text-display text-ink">Describe el proyecto. Los agentes arman el plan de trabajo.</h2>
+      <h2 className="relative max-w-[19ch] pr-24 text-display text-ink">Ejecuta el contrato. La ciudad ve cada peso.</h2>
 
       <figure className="relative mt-10 grid max-w-lg gap-6">
         <Icon icon={QuoteDownIcon} size={24} />
@@ -46,8 +45,8 @@ export function AuthShowcase() {
           {voice.quote}
         </blockquote>
         <figcaption className="grid gap-0.5">
-          <span className="text-heading">{label.agent}</span>
-          <span className="text-label font-normal">Agente de {label.name.toLowerCase()}</span>
+          <span className="text-heading">{voice.agent}</span>
+          <span className="text-label font-normal">{voice.role}</span>
         </figcaption>
       </figure>
 
@@ -70,7 +69,7 @@ export function AuthShowcase() {
       >
         {/* Text keeps clear of the cut on the right; the team row sits under it, on the left. */}
         <h3 className="pr-24 text-heading">Tu equipo entra con un link</h3>
-        <p className="max-w-sm pr-16 text-body text-ink-muted">Cada persona llega con su perfil y los agentes reparten las actividades según quién está.</p>
+        <p className="max-w-sm pr-16 text-body text-ink-muted">Cada persona llega con su perfil, sube sus evidencias y el portal público se actualiza solo.</p>
         <div className="mt-2 flex items-center gap-3">
           <span role="img" className="flex -space-x-1" aria-label="Ana Gómez, Leo Ruiz, Marta Díaz y 2 más">
             {TEAM.map(({ name, photo }) => <Avatar key={name} name={name} src={photo} className="ring-2 ring-surface" />)}
@@ -78,7 +77,7 @@ export function AuthShowcase() {
               +2
             </span>
           </span>
-          <span className="text-caption text-ink-muted">ya están en Tienda online</span>
+          <span className="text-caption text-ink-muted">ya están en Restauración de manglar</span>
         </div>
       </NotchedPanel>
     </NotchedPanel>

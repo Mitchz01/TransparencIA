@@ -322,6 +322,9 @@ front door.
 - **FR-022**: The portal's home MUST list the published projects, searchable by name, description,
   contracting entity and contractor (ignoring case and accents), with each one's traffic light, money used,
   work done and open alerts, computed by the same rules as its portal.
+- **FR-023**: The team app MUST present the product it now is: the sign in screens, the home and the new
+  project form talk about executing public projects and accounting for their money, with examples of public
+  works and services (no software templates, no GitHub in the demo's path).
 
 ### Key Entities
 

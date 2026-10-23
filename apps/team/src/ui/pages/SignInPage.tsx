@@ -54,7 +54,7 @@ export function SignInPage() {
   return (
     <AuthLayout
       title="Hola de nuevo"
-      description="Entra con tu cuenta para seguir con tus proyectos."
+      description="Entra para seguir ejecutando tus proyectos y rendir cuentas de su avance."
       footer={<>¿No tienes cuenta? <Link to={withNext('/signup', next)} className="text-label text-accent-ink underline underline-offset-4">Crear cuenta</Link></>}
     >
       <form noValidate onSubmit={submit} className="grid gap-5">

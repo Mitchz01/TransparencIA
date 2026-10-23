@@ -71,14 +71,14 @@ export function ProjectForm({ initial, submitLabel, submitIcon, onSubmit, second
   return (
     <form ref={form} noValidate onSubmit={submit} className="grid min-w-0 gap-3 [&>*]:min-w-0">
       {errors[''] && <FieldError>{errors['']}</FieldError>}
-      <Section title="Proyecto" description="Qué se va a ejecutar, dónde, para quién y todo lo que los agentes deban saber: la entidad, el valor, las metas.">
-        <TextField label="Nombre del proyecto" value={draft.name} error={errors.name} placeholder="Restauración de manglar en la Ciénaga Grande" onChange={(e) => change({ name: e.target.value })} />
+      <Section title="Proyecto" description="El objeto del contrato, dónde se ejecuta, para quién y todo lo que los agentes deban saber.">
+        <TextField label="Nombre del proyecto" value={draft.name} error={errors.name} placeholder="Restauración de manglar" onChange={(e) => change({ name: e.target.value })} />
         <TextArea
           label="Descripción"
           rows={5}
           value={draft.description}
           error={errors.description}
-          placeholder="Restaurar 5 hectáreas de manglar con la comunidad: vivero, siembra, mantenimiento y monitoreo. Contrato con Corpamag por $180.000.000."
+          placeholder="Restauración de 5 ha de manglar en la Ciénaga Grande: vivero, siembra, mantenimiento y talleres con la comunidad."
           onChange={(e) => change({ description: e.target.value })}
         />
         <div className="grid gap-5 sm:grid-cols-2">

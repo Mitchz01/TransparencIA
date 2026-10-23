@@ -34,7 +34,7 @@ export function ProjectsPage() {
     <HomeShell active="projects" onIntent={onIntent}>
       <div className="mx-auto max-w-[1200px] px-1 sm:px-4">
         <PageHeader
-          title={name ? `Hola, ${name}` : 'Mis proyectos'}
+          title={name ? `¿Qué proyecto ejecutamos hoy, ${name}?` : '¿Qué proyecto ejecutamos hoy?'}
           description="Los proyectos que ejecuta tu entidad: cuánto han avanzado, cuánto dinero se ha ejecutado y cuáles necesitan atención."
           actions={
             <>

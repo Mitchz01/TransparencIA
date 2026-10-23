@@ -10,7 +10,7 @@ describe('Home: follow-up panel (spec 016, spec 019)', () => {
     const backend = createFakeBackend({ store: new FakeStore(), stageDelayMs: 10 })
     renderApp('/', backend)
 
-    expect(await screen.findByRole('heading', { name: 'Hola, Ana' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '¿Qué proyecto ejecutamos hoy, Ana?' })).toBeInTheDocument()
     expect(screen.queryByText(/GitHub|SaaS|Scrum/)).not.toBeInTheDocument()
     const panel = await screen.findByRole('region', { name: 'Tus proyectos' })
     // Project 2 has the demo budget (spec 017's fixture): its numbers and its light.

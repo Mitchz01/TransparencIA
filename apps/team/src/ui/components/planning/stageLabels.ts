@@ -11,7 +11,7 @@ export const STAGE_LABELS: Record<StageKey, StageLabel> = {
   // Spec 019: the words of public projects, not of software development.
   analysis: { name: 'Diagnóstico', agent: 'Analista del proyecto', the: 'el diagnóstico' },
   methodology: { name: 'Forma de trabajo', agent: 'Asesor de planeación', the: 'la forma de trabajo' },
-  architecture: { name: 'Componentes y recursos', agent: 'Coordinador técnico', the: 'los componentes y recursos' },
+  architecture: { name: 'Componentes y recursos', agent: 'Arquitecto de la solución', the: 'los componentes y recursos' },
   roadmap: { name: 'Cronograma', agent: 'Coordinador del proyecto', the: 'el cronograma' },
   backlog: { name: 'Actividades', agent: 'Planificador de actividades', the: 'las actividades' },
   sprints: { name: 'Etapas', agent: 'Planificador de etapas', the: 'las etapas' },
