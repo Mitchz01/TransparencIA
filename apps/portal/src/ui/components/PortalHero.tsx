@@ -1,9 +1,10 @@
 // The first screen of the portal (spec 017, SC-002): who does what for whom, the verdict, and why.
 import type { Light, Portal } from '@agile/domain'
 import { Button, cn, Icon } from '@agile/ui'
-import { Alert02Icon, Calendar03Icon, Link01Icon, Tick02Icon } from '@agile/ui/icons'
+import { Alert02Icon, ArrowLeft01Icon, Calendar03Icon, Link01Icon, Tick02Icon } from '@agile/ui/icons'
 import { Comparison, copShort, day } from '@agile/ui/transparency'
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 
 const LIGHTS: Record<Light, { word: string; text: string; fill: string; icon: typeof Tick02Icon }> = {
   green: { word: 'En verde', text: 'text-teal', fill: 'bg-teal-soft', icon: Tick02Icon },
@@ -17,6 +18,10 @@ export function PortalHero({ portal }: { portal: Portal }) {
   return (
     <header className="grid gap-5">
       <div className="grid gap-3">
+        <Link to="/" className="inline-flex items-center gap-1.5 justify-self-start text-label text-ink-muted hover:text-ink">
+          <Icon icon={ArrowLeft01Icon} size={16} />
+          Todos los proyectos
+        </Link>
         <div className="flex items-start justify-between gap-3">
           <h1 className="text-title">{project.name}</h1>
           <ShareButton title={project.name} />

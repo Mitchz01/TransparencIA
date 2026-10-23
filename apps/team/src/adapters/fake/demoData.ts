@@ -52,7 +52,7 @@ export const demoPlan: NonNullable<Project['plan']> = {
 
 export const demoProject: Project = {
   id: 1,
-  name: 'Agile Planner (demo)',
+  name: 'TransparencIA (demo)',
   description: 'Herramienta tipo Jira donde agentes de IA planifican el trabajo.',
   duration_weeks: 6,
   requested_methodology: 'auto',

@@ -1,6 +1,6 @@
 // The public endpoints of spec 017. No session: the portal is open to anyone with the link.
 
-import type { CitizenAnswer, Portal } from '@agile/domain'
+import type { CitizenAnswer, Portal, PublicProjectCard } from '@agile/domain'
 import { ApiError, type ApiErrorBody } from '../../application/errors'
 import type { PublicPortalGateway } from '../../application/ports'
 
@@ -29,6 +29,8 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 const slugPath = (slug: string) => `/public/projects/${encodeURIComponent(slug)}`
 
 export const httpPublicPortalGateway: PublicPortalGateway = {
+  searchProjects: (query) =>
+    request<PublicProjectCard[]>('GET', `/public/projects${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ''}`),
   getPortal: (slug) => request<Portal>('GET', slugPath(slug)),
   ask: (slug, question) => request<CitizenAnswer>('POST', `${slugPath(slug)}/ask`, { question }),
 }

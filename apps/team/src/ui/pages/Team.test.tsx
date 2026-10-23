@@ -21,7 +21,7 @@ describe('Join with the link (spec 015, US4)', () => {
     backend.store.session = null
     const { router } = renderApp('/join/demo-1', backend)
 
-    expect(await screen.findByText('Te invitaron a Agile Planner (demo)')).toBeInTheDocument()
+    expect(await screen.findByText('Te invitaron a TransparencIA (demo)')).toBeInTheDocument()
     expect(screen.getByText('Líder: Ana Gómez')).toBeInTheDocument()
     await user.click(screen.getByRole('link', { name: 'Crear cuenta' }))
 
@@ -66,7 +66,7 @@ describe('Team screen (spec 015, US4 and US6)', () => {
     await waitFor(() => expect(link).not.toHaveValue(`${window.location.origin}/join/demo-1`))
     await expect(backend.gateways.team.previewInvitation('demo-1')).rejects.toSatisfy((e) => hasCode(e, 'invitation_not_found'))
     const token = (link as HTMLInputElement).value.split('/join/')[1]
-    await expect(backend.gateways.team.previewInvitation(token)).resolves.toMatchObject({ project_name: 'Agile Planner (demo)' })
+    await expect(backend.gateways.team.previewInvitation(token)).resolves.toMatchObject({ project_name: 'TransparencIA (demo)' })
   })
 
   it('says next to the leader that the project needs one when the last leader steps down', async () => {
@@ -109,7 +109,7 @@ describe('Team screen (spec 015, US4 and US6)', () => {
     expect(screen.queryByRole('textbox', { name: 'Link de invitación' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^Opciones de/ })).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Salir del proyecto' }))
-    await user.click(within(screen.getByRole('dialog', { name: 'Salir de Agile Planner (demo)' })).getByRole('button', { name: 'Salir del proyecto' }))
+    await user.click(within(screen.getByRole('dialog', { name: 'Salir de TransparencIA (demo)' })).getByRole('button', { name: 'Salir del proyecto' }))
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/'))
     expect(backend.store.projects.get(1)!.members.some((m) => m.account_id === 2)).toBe(false)

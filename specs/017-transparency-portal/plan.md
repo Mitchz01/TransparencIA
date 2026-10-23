@@ -231,6 +231,14 @@ with the file's own `Content-Type` · `404 file_not_found`.
 
 `200` → `Portal` · `404 project_not_found` (unknown slug or unpublished).
 
+### `GET /api/public/projects?q=` — search the published projects (US8)
+
+`q` optional (0–100 chars), matched against name, description, contracting entity and contractor, ignoring
+case and accents. Only published projects, by name.
+
+`200` → `[PublicProjectCard]`:
+`{ "slug": "Xk3…", "name": "…", "description": "…", "contracting_entity": "Corpamag", "contractor": "…", "contract_value": 180000000, "start_date": "…", "end_date": "…", "light": "yellow", "spent_pct": 18.0, "physical_pct": 22.2, "time_pct": 44.5, "open_alerts": 1 }`
+
 ### `POST /api/public/projects/{slug}/ask` — citizen chat (US4)
 
 Body `{ "question": "…" }` (1–300 chars). `200` → `{ "answer": "…" }` · `404 project_not_found` ·
@@ -393,6 +401,16 @@ Sync points:
 - [ ] T032 [US7] `apps/api/demo/contrato-manglar.pdf`: 2 pages, the numbers of the team README
 - [ ] T033 [US7] The milestones line in the planning prompts (D17, with P2); plan the demo contract's
   project with the real key and check every milestone lands before its date
+
+## Phase 8c: US8 — Find a public project (P5)
+
+- [x] T028 [US8] Use case `search_public_projects` (reuses `GetPortal.for_public`) + `GET /api/public/projects` + test
+- [x] T029 [US8] Portal home `/`: search, light filter, result cards opening `/p/:slug`
+- [x] T030 [US8] Portal frame like the team app: top bar (brand, Proyectos, Cómo funciona, theme, "Soy ejecutor" to the
+  team app's sign in via `VITE_TEAM_APP_URL`), footer with the legal frame, and a `/como-funciona` page
+- [x] T031 [US8] Home like the team app's (spec 016): the living gradient hero with search, suggestions and a live
+  preview of a published project, the projects panel over it, then what you see, how it works, who it's for,
+  questions and a call to executing entities
 
 ## Phase 9: Polish & demo (~20 min)
 

@@ -18,7 +18,7 @@ describe('Home: follow-up panel (spec 016, spec 019)', () => {
     expect(await within(planned).findByText('En amarillo')).toBeInTheDocument()
     expect(within(planned).getByText('Avance de actividades')).toBeInTheDocument()
     // Project 1 has no budget yet.
-    const draft = within(panel).getByRole('link', { name: 'Agile Planner (demo)' }).closest('li')!
+    const draft = within(panel).getByRole('link', { name: 'TransparencIA (demo)' }).closest('li')!
     expect(await within(draft).findByText(/Sin presupuesto cargado/)).toBeInTheDocument()
     backend.planning.dispose()
   }, 30000)

@@ -10,7 +10,14 @@ from app.adapters.inbound.http.background import spawn
 from app.adapters.inbound.http.session_cookie import read_token
 from app.adapters.outbound.persistence.db import engine, get_session
 from app.adapters.outbound.persistence.unit_of_work import SqlUnitOfWork
-from app.config import DOCUMENTS_CONCURRENCY, GITHUB_WEBHOOK_SECRET, GITHUB_WEBHOOK_URL, PUBLIC_APP_URL, PUBLIC_BASE_URL
+from app.config import (
+    DOCUMENTS_CONCURRENCY,
+    GITHUB_WEBHOOK_SECRET,
+    GITHUB_WEBHOOK_URL,
+    PROPOSE_ISSUES,
+    PUBLIC_APP_URL,
+    PUBLIC_BASE_URL,
+)
 from app.application.ports.agents import PlanningAgents
 from app.application.ports.code_host import CodeHost, CodeHostFactory
 from app.application.ports.event_bus import EventBus
@@ -476,7 +483,8 @@ def wire_planning(
     # ApplyPlan already runs in the background, so auto-approve applies in that same job.
     # Spec 006 appends GenerateDocuments to the same list, after ApplyPlan (wire_documents).
     propose_issues = ProposePendingIssues(uow_factory, bus, auto_approve.after_created)
-    on_plan_completed.append(ApplyPlan(uow_factory, bus, [propose_issues]).execute)
+    follow_ups = [propose_issues] if PROPOSE_ISSUES else []  # spec 017 (D13): off while GitHub is in test mode
+    on_plan_completed.append(ApplyPlan(uow_factory, bus, follow_ups).execute)
     return run_step
 
 
@@ -548,7 +556,7 @@ def wire_replanning(
     propose_issues = ProposePendingIssues(uow_factory, bus, auto_approve.after_created)
 
     async def propose_added_tasks(outcome: ReplanOutcome) -> None:
-        if outcome.added_task_ids:
+        if PROPOSE_ISSUES and outcome.added_task_ids:  # spec 017 (D13)
             await propose_issues(outcome.project_id)
 
     # ... and the issues of discarded tasks are closed as "not planned" (FR-022).
