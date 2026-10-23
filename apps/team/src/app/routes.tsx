@@ -39,6 +39,7 @@ export const routes: RouteObject[] = [
               { index: true, element: <ProjectIndex /> },
               { path: 'planning', lazy: screen(() => import('../ui/pages/PlanningPage'), 'PlanningPage') },
               { path: 'board', lazy: screen(() => import('../ui/pages/BoardPage'), 'BoardPage') },
+              { path: 'transparency', lazy: screen(() => import('../ui/pages/TransparencyPage'), 'TransparencyPage') },
               { path: 'plan', lazy: screen(() => import('../ui/pages/PlanPage'), 'PlanPage') },
               { path: 'documents', lazy: screen(() => import('../ui/pages/DocumentsPage'), 'DocumentsPage') },
               { path: 'team', lazy: screen(() => import('../ui/pages/TeamPage'), 'TeamPage') },

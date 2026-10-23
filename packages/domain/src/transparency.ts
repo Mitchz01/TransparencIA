@@ -1,5 +1,6 @@
 // Mirrors apps/api/app/domain/transparency.py and the API contract of spec 017
-// (specs/017-transparency-portal/plan.md, "API Contract"). Shared by the team app and the public portal.
+// (specs/017-transparency-portal/plan.md, "API Contract"). Every number here is computed by the
+// backend's rules; the frontend only shows them.
 
 export type ExpenseKind = 'invoice' | 'field_photo' | 'report'
 export type ExpenseStatus = 'draft' | 'confirmed'
@@ -8,9 +9,9 @@ export type AlertSource = 'ai' | 'rule'
 export type Light = 'green' | 'yellow' | 'red'
 
 export interface BudgetLine {
-  id: string // R1, R2… chosen by the client, kept by the server
+  id: string // "R1", "R2"…
   name: string
-  amount: number
+  amount: number // COP, no cents
 }
 
 export interface Budget {
@@ -26,7 +27,7 @@ export type BudgetInput = Omit<Budget, 'end_date'>
 
 export interface Alert {
   id: number
-  expense_id: number
+  expense_id?: number // in the portal's `alerts`
   level: AlertLevel
   reason: string
   source: AlertSource
@@ -68,13 +69,13 @@ export interface LineStatus {
   name: string
   amount: number
   spent: number
-  available: number // negative when the line is overspent
+  available: number // negative when overspent
 }
 
 export interface Summary {
   spent: number
   spent_pct: number
-  physical_pct: number | null // null when the project has no tasks
+  physical_pct: number | null // null when the project has no task points
   time_pct: number
   unallocated: number
   light: Light
@@ -118,9 +119,9 @@ export interface Portal {
   lines: LineStatus[]
   timeline: WeekEntry[]
   sprints: SprintProgress[]
-  expenses: Expense[] // newest first; only confirmed ones in the public portal
+  expenses: Expense[] // confirmed only, newest first
   alerts: Alert[]
-  public_url: string | null
+  public_url: string | null // relative ("/p/…") when the backend has no PUBLIC_APP_URL
 }
 
 export interface TeamPortal extends Portal {
@@ -136,3 +137,12 @@ export interface Publication {
 export interface CitizenAnswer {
   answer: string
 }
+
+export const TRANSPARENCY_LIMITS = {
+  uploadBytes: 10 * 1024 * 1024,
+  uploadTypes: ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'],
+  lineName: 120,
+  citizenSummary: 200,
+  answer: 500,
+  question: 300,
+} as const

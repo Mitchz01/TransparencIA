@@ -4,6 +4,8 @@ from typing import Protocol, Self
 from app.application.ports.repositories import (
     AccountRepository,
     ActivityRepository,
+    BudgetRepository,
+    ExpenseRepository,
     ExternalLinkRepository,
     DocumentRepository,
     ObjectiveRepository,
@@ -12,6 +14,7 @@ from app.application.ports.repositories import (
     ProposalRepository,
     SessionRepository,
     SprintRepository,
+    StoredFileRepository,
     TaskRepository,
     WebhookDeliveryRepository,
 )
@@ -33,6 +36,9 @@ class UnitOfWork(Protocol):
     documents: DocumentRepository
     accounts: AccountRepository  # spec 015
     sessions: SessionRepository  # spec 015
+    budgets: BudgetRepository  # spec 017
+    expenses: ExpenseRepository  # spec 017
+    files: StoredFileRepository  # spec 017
 
     def __enter__(self) -> Self: ...
     def __exit__(self, *exc: object) -> None: ...

@@ -19,6 +19,7 @@ export {
   CheckListIcon,
   Clock01Icon,
   CloudIcon,
+  Coins01Icon,
   Copy01Icon,
   CrownIcon,
   CubeIcon,

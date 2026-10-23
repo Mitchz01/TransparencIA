@@ -39,6 +39,7 @@ export interface Task {
   position: number
   missing_role: string | null // spec 003
   issue: IssueRef | null // spec 007
+  done_at?: string | null // spec 017: when it entered "done"
 }
 
 export interface SprintLoad {

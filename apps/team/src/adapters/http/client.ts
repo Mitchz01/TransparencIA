@@ -19,14 +19,16 @@ function url(path: string, query?: Query): string {
 export async function request<T>(method: string, path: string, options: { body?: unknown; query?: Query } = {}): Promise<T> {
   const requestId = crypto.randomUUID()
   const headers: Record<string, string> = { 'X-Request-Id': requestId, Accept: 'application/json' }
-  if (options.body !== undefined) headers['Content-Type'] = 'application/json'
+  // FormData (spec 017's uploads) sets its own multipart Content-Type with the boundary.
+  const isForm = options.body instanceof FormData
+  if (options.body !== undefined && !isForm) headers['Content-Type'] = 'application/json'
 
   let response: Response
   try {
     response = await fetch(url(path, options.query), {
       method,
       headers,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      body: options.body === undefined ? undefined : isForm ? (options.body as FormData) : JSON.stringify(options.body),
     })
   } catch {
     throw new ApiError(0, { code: 'network_error', detail: 'Can’t reach the server.' }, requestId)
@@ -52,6 +54,12 @@ export const http = {
   patch: <T>(path: string, body: unknown) => request<T>('PATCH', path, { body }),
   put: <T>(path: string, body: unknown) => request<T>('PUT', path, { body }),
   delete: <T>(path: string) => request<T>('DELETE', path),
+  /** multipart/form-data with the file in field `file` (spec 017, D3). */
+  upload: <T>(path: string, file: File) => {
+    const form = new FormData()
+    form.append('file', file)
+    return request<T>('POST', path, { body: form })
+  },
 }
 
 export const apiUrl = url

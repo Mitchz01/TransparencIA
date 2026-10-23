@@ -260,17 +260,17 @@ Sync points:
 
 ## Phase 1: Setup (~10 min)
 
-- [ ] T000 Skeleton commit: every shared file and every new file with the team README's signatures (team/README.md)
+- [x] T000 Skeleton commit: every shared file and every new file with the team README's signatures (team/README.md)
 - [ ] T001 `qrcode` on the frontend; `PUBLIC_APP_URL` (backend) and `VITE_PUBLIC_APP_URL` (frontend)
 - [ ] T002 Demo files in `apps/api/demo/`: a seedlings invoice, a restaurant invoice, a field photo of planting
 
 ## Phase 2: Foundational (~40 min)
 
-- [ ] T003 `domain/transparency.py`: Budget, BudgetLine, Expense, Alert, agent output schemas
+- [x] T003 `domain/transparency.py`: Budget, BudgetLine, Expense, Alert, agent output schemas
   (EvidenceReading, CitizenAnswer), errors
-- [ ] T004 `Task.done_at`, set and cleared in `move_task` and `update_task` (D5)
-- [ ] T005 Rules: `budget_summary`, `traffic_light` with reasons, `weekly_timeline`, `rule_alerts`
-- [ ] T006 Unit tests: the spec's 40%/25% case, each red and yellow trigger, no tasks, overspend, line
+- [x] T004 `Task.done_at`, set and cleared in `move_task` and `update_task` (D5)
+- [x] T005 Rules: `budget_summary`, `traffic_light` with reasons, `weekly_timeline`, `rule_alerts`
+- [x] T006 Unit tests: the spec's 40%/25% case, each red and yellow trigger, no tasks, overspend, line
   overspend, date outside the period, a week with tasks and no spending, answered alerts still counting
 - [ ] T007 Port `TransparencyAgents`
 - [ ] T008 Repository ports, UoW members, persistence (budget lines as a JSON column, expense, alert,
@@ -293,7 +293,7 @@ Sync points:
 ## Phase 5: US2 — Expenses with evidence (~35 min)
 
 - [ ] T012 [US2] Use cases `draft_expense`, `discard_expense`; file storage and `GET /api/files/{id}`
-- [ ] T014 [US2] Use case `confirm_expense` (rule alerts)
+- [x] T014 [US2] Use case `confirm_expense` (rule alerts)
 - [ ] T013 [US2] Endpoints + API tests for every status row
 - [ ] T017 [US2] Upload with spinner → draft review form (task picker from the board) → confirm or discard;
   alerts with their source (IA / regla)

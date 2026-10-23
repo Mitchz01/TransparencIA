@@ -1,6 +1,6 @@
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Literal
 
 from pydantic import BaseModel
@@ -50,6 +50,8 @@ class Task(BaseModel):
     position: int = 0
     # Set when no member covers the story's role; cleared when someone is assigned (spec 003, FR-006).
     missing_role: str | None = None
+    # When it entered "done"; cleared when it leaves. The portal's weekly timeline (spec 017, D5).
+    done_at: datetime | None = None
 
 
 class Objective(BaseModel):
@@ -268,10 +270,12 @@ def reorder(
     sprint_id: int | None,
     *,
     continuous: bool = False,
+    now: datetime | None = None,
 ) -> list[Task]:
     """Moves a task to `position` (the end when None) of the `status` column of `sprint_id`
     and compacts the positions of the source and target columns. A column is a status within
     one sprint, or across the whole project on a continuous board.
+    Entering "done" stamps `done_at` with `now` (UTC now by default); leaving it clears it (spec 017).
     Returns copies of the tasks that changed."""
 
     def column(task: Task) -> tuple[int | None, str]:
@@ -279,7 +283,8 @@ def reorder(
 
     originals = {t.id: t for t in tasks}
     moving = originals[task_id]
-    moved = moving.model_copy(update={"status": status, "sprint_id": sprint_id})
+    done_at = None if status != "done" else moving.done_at if moving.status == "done" else now or datetime.now(timezone.utc)
+    moved = moving.model_copy(update={"status": status, "sprint_id": sprint_id, "done_at": done_at})
     source, target = column(moving), column(moved)
 
     def ordered(key: tuple[int | None, str]) -> list[Task]:

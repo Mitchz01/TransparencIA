@@ -13,4 +13,6 @@ export const queryKeys = {
   board: (projectId: number) => ['board', projectId] as const,
   documents: (projectId: number) => ['documents', projectId] as const,
   document: (id: number, version?: number) => ['document', id, version ?? 'latest'] as const,
+  budget: (projectId: number) => ['budget', projectId] as const, // spec 017
+  teamPortal: (projectId: number) => ['teamPortal', projectId] as const, // spec 017
 }

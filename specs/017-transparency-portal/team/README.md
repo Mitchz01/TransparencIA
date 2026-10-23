@@ -43,7 +43,7 @@ P2's mock agents, P3's seed and P4's fake gateway all use these values, so every
   Ciénaga Grande de Santa Marta: vivero, siembra, mantenimiento, monitoreo y talleres con la comunidad.
   Contrato con Corpamag por $180.000.000, 6 meses." `duration_weeks: 26`.
 - **Budget**: contracting entity "Corpamag", contractor "Fundación Manglares Vivos", contract value
-  `180000000`, start date `2026-08-03` (a Monday; end `2027-02-01`). Today (2026-10-23) is week 12 of 26.
+  `180000000`, start date `2026-08-03` (a Monday; end `2027-01-31`, inclusive). Today (2026-10-23) is week 12 of 26.
 
 | id | name | amount |
 |---|---|---|
@@ -79,7 +79,7 @@ class BudgetLine(BaseModel):  id: str; name: str; amount: int
 class Budget(BaseModel):
     project_id: int; contracting_entity: str; contractor: str; contract_value: int
     start_date: date; lines: list[BudgetLine]
-def end_date(budget: Budget, duration_weeks: int) -> date          # start + duration_weeks weeks
+def end_date(budget: Budget, duration_weeks: int) -> date          # the last day, inclusive: start + duration_weeks weeks - 1 day
 
 class Alert(BaseModel):
     id: int | None = None; expense_id: int | None = None
@@ -181,7 +181,7 @@ class StoredFileRepository(Protocol):
 | `GetBudget(uow)` | P3 | `(project_id) → Budget \| None` |
 | `SetBudget(uow)` | P3 | `(project_id, budget) → Budget` |
 | `DraftExpense(uow, agents)` | P3 | `(project_id, filename, mime, data) → Expense` |
-| `ConfirmExpense(uow, today)` | **P1** | `(project_id, expense_id, ExpenseConfirmation) → Expense` |
+| `ConfirmExpense(uow)` | **P1** | `(project_id, expense_id, ExpenseConfirmation) → Expense` |
 | `DiscardExpense(uow)` | P3 | `(project_id, expense_id) → None` |
 | `SetPublication(uow, public_app_url)` | P3 | `(project_id, public: bool) → (public, public_url)` |
 | `GetPortal(uow, public_app_url, today)` | P3 | `.for_team(project_id) → TeamPortal`, `.for_public(slug) → Portal` |

@@ -16,7 +16,9 @@ from app.adapters.inbound.http import (
     planning,
     projects,
     proposals,
+    public,
     team,
+    transparency,
 )
 from app.adapters.inbound.http.background import spawn
 from app.adapters.inbound.http.dependencies import open_uow, wire_documents, wire_planning, wire_replanning
@@ -39,6 +41,7 @@ from app.adapters.outbound.persistence.db import create_db
 from app.domain.board import Task
 from app.domain.events import DomainEvent, SprintClosed, TeamChanged
 from app.application.ports.agents import PlanningAgents
+from app.application.ports.transparency_agents import TransparencyAgents
 from app.application.ports.code_host import CodeHost, CodeHostFactory, OnRetry
 from app.config import (
     CORS_ORIGINS,
@@ -63,6 +66,17 @@ def build_agents() -> PlanningAgents:
     return AdkPlanningAgents(model=GEMINI_MODEL)
 
 
+def build_transparency_agents() -> TransparencyAgents:
+    """Spec 017: same switch as the planning agents."""
+    if MOCK_AGENTS:
+        from app.adapters.outbound.agents.mock.transparency_agents import MockTransparencyAgents
+
+        return MockTransparencyAgents(delay_seconds=MOCK_AGENTS_DELAY)
+    from app.adapters.outbound.agents.adk.transparency_agents import AdkTransparencyAgents
+
+    return AdkTransparencyAgents(model=GEMINI_MODEL)
+
+
 def build_code_host_factory(fake: CodeHost) -> CodeHostFactory:
     """Per project (spec 007, FR-004/FR-005): its own token, else the installation's
     GITHUB_TOKEN, else `fake` (test mode). One shared fake keeps the demo's records together."""
@@ -85,6 +99,7 @@ async def lifespan(app: FastAPI):
     PruneSessions(open_uow).execute()  # spec 015: expired sessions
     app.state.password_hasher = ScryptPasswordHasher()  # spec 015
     app.state.agents = build_agents()
+    app.state.transparency_agents = build_transparency_agents()  # spec 017
     app.state.code_host_factory = build_code_host_factory(FakeCodeHost())  # spec 007: per project token
     app.state.code_host = app.state.code_host_factory(None)  # the installation's
     app.state.uow_factory = open_uow
@@ -172,6 +187,8 @@ app.include_router(activity.router)
 app.include_router(integrations.router)  # spec 007
 app.include_router(board.router)
 app.include_router(documents.router)  # spec 006
+app.include_router(transparency.router)  # spec 017
+app.include_router(public.router)  # spec 017
 app.include_router(github_webhooks.router)  # spec 008
 if ENV == "dev":
     app.include_router(dev.router)  # spec 008 (T029): replay GitHub events without a tunnel
