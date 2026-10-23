@@ -10,12 +10,13 @@ from typing import Any
 from app.adapters.outbound.persistence.tables import (
     ActivityTable,
     MemberTable,
+    ObjectiveTable,
     ProjectTable,
     ProposalTable,
     SprintTable,
     TaskTable,
 )
-from app.domain.board import Sprint, Task
+from app.domain.board import Objective, Sprint, Task
 from app.domain.events import DomainEvent
 from app.domain.project import Member, Project
 from app.domain.proposals import Proposal
@@ -64,6 +65,14 @@ def task_to_domain(row: TaskTable) -> Task:
 
 def task_to_table(task: Task) -> TaskTable:
     return TaskTable.model_validate(task.model_dump())
+
+
+def objective_to_domain(row: ObjectiveTable) -> Objective:
+    return Objective.model_validate(row.model_dump())
+
+
+def objective_to_table(objective: Objective) -> ObjectiveTable:
+    return ObjectiveTable.model_validate(objective.model_dump())
 
 
 def proposal_to_domain(row: ProposalTable) -> Proposal:

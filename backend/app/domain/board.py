@@ -37,3 +37,15 @@ class Task(BaseModel):
     priority: Priority = "medium"
     status: TaskStatus = "backlog"
     position: int = 0
+    # Set when no member covers the story's role; cleared when someone is assigned (spec 003, FR-006).
+    missing_role: str | None = None
+
+
+class Objective(BaseModel):
+    """A sprint's goal together with its tasks; met when all of them are done (spec 008 closes it)."""
+
+    id: int | None = None
+    project_id: int
+    sprint_id: int
+    title: str
+    done: bool = False

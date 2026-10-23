@@ -3,7 +3,7 @@ from sqlmodel import Session, SQLModel, create_engine
 
 from app.adapters.outbound.persistence import tables  # noqa: F401
 from app.adapters.outbound.persistence.unit_of_work import SqlUnitOfWork
-from app.domain.board import ChecklistItem, Task
+from app.domain.board import ChecklistItem, Objective, Sprint, Task
 from app.domain.project import Member, Project
 
 
@@ -51,6 +51,24 @@ def test_task_checklist_is_persisted(session):
 
     assert loaded.status == "done"
     assert loaded.checklist == [ChecklistItem(text="Form", done=True)]
+
+
+def test_board_entities_roundtrip(session):
+    with SqlUnitOfWork(session) as uow:
+        project = uow.projects.add(Project(name="Demo", description="Something", sprint_capacity_override=20))
+        sprint = uow.sprints.add(Sprint(project_id=project.id, number=1, name="Sprint 1", goal="Base"))
+        objective = uow.objectives.add(Objective(project_id=project.id, sprint_id=sprint.id, title="Base"))
+        task = uow.tasks.add(Task(project_id=project.id, sprint_id=sprint.id, key="US-1", title="Login", missing_role="UX"))
+        uow.sprints.save(sprint.model_copy(update={"goal": "Base ready"}))
+        uow.objectives.save(objective.model_copy(update={"done": True}))
+        uow.commit()
+
+    with SqlUnitOfWork(session) as uow:
+        assert uow.projects.get(project.id).sprint_capacity_override == 20
+        assert uow.sprints.get(sprint.id).goal == "Base ready"
+        assert uow.sprints.get(999) is None
+        assert uow.objectives.list_by_project(project.id) == [objective.model_copy(update={"done": True})]
+        assert uow.tasks.get(task.id).missing_role == "UX"
 
 
 def test_without_commit_nothing_is_saved(session):

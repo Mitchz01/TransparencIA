@@ -35,13 +35,6 @@ class Member(BaseModel):
     skills: list[str] = []
 
 
-class Objective(BaseModel):
-    id: int | None = None
-    title: str
-    phase: str = ""
-    done: bool = False
-
-
 class Project(BaseModel):
     id: int | None = None
     name: str
@@ -55,6 +48,8 @@ class Project(BaseModel):
     repository: str | None = None
     # approved stage outputs keyed by stage (spec 002)
     plan: dict[str, Any] | None = None
+    # Fixed points per sprint set by the leader; None = estimated from the team (spec 003, FR-017).
+    sprint_capacity_override: int | None = None
     members: list[Member] = []
     created_at: datetime = Field(default_factory=_now)
 

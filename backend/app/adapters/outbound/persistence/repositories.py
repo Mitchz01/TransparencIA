@@ -7,12 +7,13 @@ from app.adapters.outbound.persistence import mappers
 from app.adapters.outbound.persistence.tables import (
     ActivityTable,
     MemberTable,
+    ObjectiveTable,
     ProjectTable,
     ProposalTable,
     SprintTable,
     TaskTable,
 )
-from app.domain.board import Sprint, Task
+from app.domain.board import Objective, Sprint, Task
 from app.domain.errors import ProposalAlreadyResolved
 from app.domain.events import DomainEvent
 from app.domain.project import Project
@@ -78,6 +79,10 @@ class SqlSprintRepository:
     def __init__(self, session: Session):
         self._session = session
 
+    def get(self, sprint_id: int) -> Sprint | None:
+        row = self._session.get(SprintTable, sprint_id)
+        return mappers.sprint_to_domain(row) if row else None
+
     def list_by_project(self, project_id: int) -> list[Sprint]:
         rows = self._session.exec(
             select(SprintTable).where(SprintTable.project_id == project_id).order_by(SprintTable.number)
@@ -89,6 +94,33 @@ class SqlSprintRepository:
         self._session.add(row)
         self._session.flush()
         return mappers.sprint_to_domain(row)
+
+    def save(self, sprint: Sprint) -> Sprint:
+        row = self._session.merge(mappers.sprint_to_table(sprint))
+        self._session.flush()
+        return mappers.sprint_to_domain(row)
+
+
+class SqlObjectiveRepository:
+    def __init__(self, session: Session):
+        self._session = session
+
+    def list_by_project(self, project_id: int) -> list[Objective]:
+        rows = self._session.exec(
+            select(ObjectiveTable).where(ObjectiveTable.project_id == project_id).order_by(ObjectiveTable.id)
+        ).all()
+        return [mappers.objective_to_domain(row) for row in rows]
+
+    def add(self, objective: Objective) -> Objective:
+        row = mappers.objective_to_table(objective)
+        self._session.add(row)
+        self._session.flush()
+        return mappers.objective_to_domain(row)
+
+    def save(self, objective: Objective) -> Objective:
+        row = self._session.merge(mappers.objective_to_table(objective))
+        self._session.flush()
+        return mappers.objective_to_domain(row)
 
 
 class SqlTaskRepository:
