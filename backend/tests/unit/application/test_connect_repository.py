@@ -4,7 +4,15 @@ import pytest
 
 from app.application.use_cases.integrations.connect_repository import ConnectRepository
 from app.application.use_cases.integrations.disconnect_repository import DisconnectRepository
-from app.domain.errors import CodeHostUnavailable, ProjectNotFound, RepositoryNotAccessible, RepositoryNotConnected, ValidationFailed
+from app.application.use_cases.integrations.set_github_username import SetGithubUsername
+from app.domain.errors import (
+    CodeHostUnavailable,
+    MemberNotFound,
+    ProjectNotFound,
+    RepositoryNotAccessible,
+    RepositoryNotConnected,
+    ValidationFailed,
+)
 from app.domain.integrations import ExternalLink, RepoAccess
 from tests.fakes import CodeHosts, InMemoryUnitOfWork, RecordingEventBus, project
 
@@ -177,3 +185,62 @@ def test_disconnect_errors():
         run(DisconnectRepository(uow, bus, hosts).execute(pid))
     with pytest.raises(ProjectNotFound):
         run(DisconnectRepository(uow, bus, hosts).execute(99))
+
+
+# ---------- SetGithubUsername (US3) ----------
+
+
+def _member_id(uow, pid) -> int:
+    return uow.projects.get(pid).members[0].id
+
+
+def test_set_username_saves_it_and_checks_repo_access():
+    uow, pid, _, hosts = _setup(repository="acme/app", github_token="ghp")
+    result = run(SetGithubUsername(uow, hosts).execute(_member_id(uow, pid), " anagomez "))
+    assert result.member.github_username == "anagomez" and result.has_access is True
+    assert uow.projects.get(pid).members[0].github_username == "anagomez"
+    assert hosts.host.called("user_has_access") == [{"repository": "acme/app", "username": "anagomez"}]
+    assert hosts.tokens == ["ghp"]
+
+
+def test_user_without_repo_access_is_saved_with_a_warning():
+    uow, pid, _, hosts = _setup(repository="acme/app")
+    hosts.host.users_without_access.add("stranger")
+    result = run(SetGithubUsername(uow, hosts).execute(_member_id(uow, pid), "stranger"))
+    assert result.has_access is False and uow.projects.get(pid).members[0].github_username == "stranger"
+
+
+def test_access_is_unknown_without_a_repo_or_when_github_is_down():
+    uow, pid, _, hosts = _setup()
+    assert run(SetGithubUsername(uow, hosts).execute(_member_id(uow, pid), "anagomez")).has_access is None
+    assert hosts.host.calls == []
+
+    uow, pid, _, hosts = _setup(repository="acme/app")
+
+    async def down(repository: str, username: str) -> bool:
+        raise CodeHostUnavailable()
+
+    hosts.host.user_has_access = down  # type: ignore[method-assign]
+    result = run(SetGithubUsername(uow, hosts).execute(_member_id(uow, pid), "anagomez"))
+    assert result.has_access is None and result.member.github_username == "anagomez"
+
+
+def test_null_removes_the_username():
+    uow, pid, _, hosts = _setup(repository="acme/app")
+    member_id = _member_id(uow, pid)
+    run(SetGithubUsername(uow, hosts).execute(member_id, "anagomez"))
+    result = run(SetGithubUsername(uow, hosts).execute(member_id, None))
+    assert result.member.github_username is None and result.has_access is None
+    assert uow.projects.get(pid).members[0].github_username is None
+
+
+def test_invalid_username_and_unknown_member():
+    uow, pid, _, hosts = _setup()
+    member_id = _member_id(uow, pid)
+    for bad in ("", "-ana", "ana-", "an--a", "ana gomez", "a" * 40, "ana_gomez"):
+        with pytest.raises(ValidationFailed) as info:
+            run(SetGithubUsername(uow, hosts).execute(member_id, bad))
+        assert info.value.errors[0].field == "github_username", bad
+    assert uow.projects.get(pid).members[0].github_username is None
+    with pytest.raises(MemberNotFound):
+        run(SetGithubUsername(uow, hosts).execute(999, "ana"))

@@ -25,6 +25,7 @@ from app.application.use_cases.integrations.close_discarded_issue import CloseDi
 from app.application.use_cases.integrations.connect_repository import ConnectRepository
 from app.application.use_cases.integrations.disconnect_repository import DisconnectRepository
 from app.application.use_cases.integrations.propose_issues import AfterCreated, ProposeIssues
+from app.application.use_cases.integrations.set_github_username import SetGithubUsername
 from app.application.use_cases.integrations.sync_task_issue import SyncTaskIssue
 from app.application.use_cases.proposals.apply_proposal import ApplyProposal, ProposalAppliers, RetryApply
 from app.application.use_cases.proposals.approve_many import ApproveProposals
@@ -211,6 +212,12 @@ def get_disconnect_repository(
     code_hosts: CodeHostFactory = Depends(get_code_host_factory),
 ) -> DisconnectRepository:
     return DisconnectRepository(uow, bus, code_hosts)
+
+
+def get_set_github_username(
+    uow: UnitOfWork = Depends(get_uow), code_hosts: CodeHostFactory = Depends(get_code_host_factory)
+) -> SetGithubUsername:
+    return SetGithubUsername(uow, code_hosts)
 
 
 def get_sync_task_issue(

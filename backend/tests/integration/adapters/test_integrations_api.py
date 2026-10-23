@@ -232,3 +232,66 @@ def test_propose_409_publication_pending(client, github):
     response = client.post(f"/api/projects/{pid}/issues/propose")
     assert response.status_code == 409
     assert response.json()["code"] == "publication_pending" and response.json()["proposal_id"] == pending["id"]
+
+
+# ---------- PUT /api/members/{id}/github-username ----------
+
+
+def _username(client, member_id: int, value):
+    return client.put(f"/api/members/{member_id}/github-username", json={"github_username": value})
+
+
+def test_set_username_200_with_access_check(client, github):
+    project = _project(client)
+    pid, ana = project["id"], project["members"][0]
+
+    no_repo = _username(client, ana["id"], "anagomez")
+    assert no_repo.status_code == 200
+    assert no_repo.json() == {"member": {**ana, "github_username": "anagomez"}, "has_access": None}
+
+    _connect(client, pid)
+    assert _username(client, ana["id"], "anagomez").json()["has_access"] is True
+    github.users_without_access.add("stranger")
+    warned = _username(client, ana["id"], "stranger")
+    assert warned.status_code == 200 and warned.json()["has_access"] is False
+    assert warned.json()["member"]["github_username"] == "stranger"  # saved anyway, with a warning
+
+    # Editing the team (spec 001) keeps the username; null removes it.
+    client.patch(f"/api/projects/{pid}", json={"members": [{"id": ana["id"], "hours_per_week": 10}]})
+    assert client.get(f"/api/projects/{pid}").json()["members"][0]["github_username"] == "stranger"
+    removed = _username(client, ana["id"], None)
+    assert removed.status_code == 200 and removed.json() == {"member": {**ana, "hours_per_week": 10}, "has_access": None}
+
+
+def test_set_username_200_when_github_is_down(client, github):
+    project = _project(client)
+    _connect(client, project["id"])
+
+    async def down(repository: str, username: str) -> bool:
+        raise CodeHostUnavailable()
+
+    github.user_has_access = down  # type: ignore[method-assign]
+    response = _username(client, project["members"][0]["id"], "anagomez")
+    assert response.status_code == 200 and response.json()["has_access"] is None
+
+
+def test_set_username_400_when_the_body_isnt_json(client, github):
+    member_id = _project(client)["members"][0]["id"]
+    response = client.put(f"/api/members/{member_id}/github-username", content="{", headers={"Content-Type": "application/json"})
+    assert response.status_code == 400 and response.json()["code"] == "malformed_request"
+
+
+def test_set_username_404_unknown_member(client, github):
+    response = _username(client, 999, "anagomez")
+    assert response.status_code == 404 and response.json()["code"] == "member_not_found"
+
+
+def test_set_username_422_invalid(client, github):
+    member_id = _project(client)["members"][0]["id"]
+    for bad in ("-ana", "ana--gomez", "a" * 40, "ana gomez"):
+        response = _username(client, member_id, bad)
+        assert response.status_code == 422, bad
+        assert response.json()["code"] == "validation_failed"
+        assert response.json()["errors"][0]["field"] == "github_username"
+    missing = client.put(f"/api/members/{member_id}/github-username", json={})
+    assert missing.status_code == 422 and missing.json()["errors"] == [{"field": "github_username", "message": "Required."}]

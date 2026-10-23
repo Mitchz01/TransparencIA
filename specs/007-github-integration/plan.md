@@ -263,12 +263,12 @@ Not part of our API, but they define our error mapping (`client.py`, T011):
 
 ### Tests for User Story 3
 
-- [ ] T024 [P] [US3] `SetGithubUsername` tests (saved; warning when the user has no repo access) in `backend/tests/unit/application/test_connect_repository.py`
+- [x] T024 [P] [US3] `SetGithubUsername` tests (saved; warning when the user has no repo access) in `backend/tests/unit/application/test_connect_repository.py`
 
 ### Implementation for User Story 3
 
-- [ ] T025 [US3] Implement `SetGithubUsername` and `PUT /api/members/{id}/github-username` (returns `{member, has_access}`)
-- [ ] T026 [US3] Create `MemberGithubUsers` in `IntegrationsPage` with the access warning
+- [x] T025 [US3] Implement `SetGithubUsername` and `PUT /api/members/{id}/github-username` (returns `{member, has_access}`)
+- [ ] T026 [US3] Create `MemberGithubUsers` in `IntegrationsPage` with the access warning — handed off to spec 009 (frontend)
 
 **Checkpoint**: User Stories 1–3 work independently
 

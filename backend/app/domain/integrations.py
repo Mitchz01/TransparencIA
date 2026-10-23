@@ -104,6 +104,24 @@ def validate_repository(value: str) -> str:
     return clean
 
 
+# ---------- GitHub usernames (US3) ----------
+
+# 1-39 chars: letters, digits and single hyphens, not at the start or the end (GitHub's rule).
+GITHUB_USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$")
+
+
+def validate_github_username(value: str | None) -> str | None:
+    """Trimmed username, or None to remove it; raises ValidationFailed on `github_username`."""
+    if value is None:
+        return None
+    clean = value.strip().lstrip("@")
+    if not GITHUB_USERNAME_PATTERN.match(clean):
+        raise ValidationFailed.single(
+            "github_username", "Must be a GitHub username: up to 39 letters, digits or single hyphens, not at the start or end."
+        )
+    return clean
+
+
 # ---------- Publishing issues (US2) ----------
 
 ISSUE_FOOTER = "_Managed by Agile Planner (task {key}): edit the task on the board, changes made here are overwritten._"

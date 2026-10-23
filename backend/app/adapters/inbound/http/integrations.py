@@ -4,10 +4,11 @@ The github_action proposals they create are decided through spec 005's proposal 
 from fastapi import APIRouter, Depends, Response, status
 
 from app.adapters.inbound.http import dependencies as deps
-from app.application.dto import Connection, IssuesProposed, RepositoryConnect
+from app.application.dto import Connection, GithubUsernameSet, IssuesProposed, MemberGithubAccess, RepositoryConnect
 from app.application.use_cases.integrations.connect_repository import ConnectRepository
 from app.application.use_cases.integrations.disconnect_repository import DisconnectRepository
 from app.application.use_cases.integrations.propose_issues import ProposeIssues
+from app.application.use_cases.integrations.set_github_username import SetGithubUsername
 
 router = APIRouter(prefix="/api", tags=["integrations"])
 
@@ -35,3 +36,10 @@ async def propose_issues(
     proposal = await use_case.execute(project_id)
     response.headers["Location"] = f"/api/proposals/{proposal.id}"
     return IssuesProposed(proposal_id=proposal.id or 0, task_count=len(proposal.content["tasks"]))
+
+
+@router.put("/members/{member_id}/github-username", response_model=MemberGithubAccess)
+async def set_github_username(
+    member_id: int, body: GithubUsernameSet, use_case: SetGithubUsername = Depends(deps.get_set_github_username)
+) -> MemberGithubAccess:
+    return await use_case.execute(member_id, body.github_username)
