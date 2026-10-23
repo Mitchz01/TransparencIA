@@ -1,15 +1,19 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useBoard, useMoveTask } from '../../application/use-cases/useBoard'
+import { useBoard, useCreateTask, useMoveTask } from '../../application/use-cases/useBoard'
 import { usePendingReplan } from '../../application/use-cases/useReplan'
 import type { Priority } from '../../domain/board'
-import { BOARD_COLUMNS, CONTINUOUS_COLUMNS, defaultSprint, filterTasks, sprintLoad, type TaskFilters } from '../../domain/rules'
+import { BOARD_COLUMNS, CONTINUOUS_COLUMNS, defaultSprint, fieldsFromFilters, filterTasks, sprintLoad, type TaskFilters } from '../../domain/rules'
+import { AddTask } from '../components/board/AddTask'
 import { BoardFilters } from '../components/board/BoardFilters'
+import { STATUS_LABELS } from '../components/board/boardLabels'
 import { CapacityBar } from '../components/board/CapacityBar'
 import { KanbanBoard } from '../components/board/KanbanBoard'
 import { TaskDrawer } from '../components/board/TaskDrawer'
+import { TaskList } from '../components/board/TaskList'
+import { TeamAvatars } from '../components/board/TeamAvatars'
 import { Button, ButtonLink, EmptyState, Segmented, Skeleton, SkeletonCard } from '../components/ds'
-import { AiMagicIcon, DashboardSquare01Icon } from '../components/ds/icons'
+import { AiMagicIcon, DashboardSquare01Icon, ListViewIcon } from '../components/ds/icons'
 import { CloseSprintButton, ReplanDialog } from '../components/replan/BoardActions'
 import { ReplanDiff } from '../components/replan/ReplanDiff'
 import { PageHeader } from '../components/shell/PageHeader'
@@ -19,7 +23,9 @@ import { useCurrentProject } from './ProjectLayout'
 
 const PRIORITY_VALUES = new Set<string>(['high', 'medium', 'low'])
 
-/** Filters and the chosen sprint live in the address (?sprint=&assignee=&priority=&epic=). */
+type BoardViewKind = 'board' | 'list'
+
+/** Filters, the chosen sprint and the view live in the address (?sprint=&assignee=&priority=&epic=&view=list). */
 function useBoardParams() {
   const [params, setParams] = useSearchParams()
   const assignee = params.get('assignee')
@@ -40,6 +46,8 @@ function useBoardParams() {
     }, { replace: true })
   return {
     sprintParam: Number(params.get('sprint')),
+    view: (params.get('view') === 'list' ? 'list' : 'board') as BoardViewKind,
+    setView: (view: BoardViewKind) => update({ view: view === 'list' ? 'list' : undefined }),
     taskParam: Number(params.get('task')) || null,
     clearTask: () => update({ task: undefined }),
     filters,
@@ -52,7 +60,8 @@ export function BoardPage() {
   const project = useCurrentProject()
   const { data: board, isPending } = useBoard(project.id)
   const move = useMoveTask(project.id)
-  const { sprintParam, taskParam, clearTask, filters, setSprint, setFilters } = useBoardParams()
+  const createTask = useCreateTask(project.id)
+  const { sprintParam, view, setView, taskParam, clearTask, filters, setSprint, setFilters } = useBoardParams()
   const [openId, setOpenId] = useState<number | null>(null)
   const [replanning, setReplanning] = useState(false)
   const pendingReplan = usePendingReplan(project.id)
@@ -92,10 +101,12 @@ export function BoardPage() {
   const sprintId = sprint?.id ?? null
   const scope = board.tasks.filter((t) => t.sprint_id === sprintId)
   const visible = filterTasks(scope, filters)
-  const epics = [...new Set(scope.map((t) => t.epic_key))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+  const epics = [...new Set(scope.map((t) => t.epic_key).filter(Boolean))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
   const load = sprint?.load ? sprintLoad(board.tasks, sprint.id, sprint.load.capacity) : null
   const open = board.tasks.find((t) => t.id === (openId ?? taskParam))
   const columns = continuous ? CONTINUOUS_COLUMNS : BOARD_COLUMNS
+  // Tasks are added to open sprints, or anywhere on a continuous board (spec 014).
+  const canAdd = continuous || (sprint !== null && !sprint.closed)
 
   return (
     <>
@@ -110,10 +121,12 @@ export function BoardPage() {
         </TopBarViews>
       )}
       <PageHeader
+        compact
         title={sprint?.name ?? 'Tablero'}
         description={sprint ? `${sprint.goal}. Fase ${sprint.phase}${sprint.end_date ? `, termina el ${formatDate(sprint.end_date)}` : ''}.` : 'Kanban: todas las tareas en un flujo continuo.'}
         actions={
           <>
+            <TeamAvatars projectId={project.id} members={project.members} />
             {load && sprint && <CapacityBar projectId={project.id} load={load} override={board.capacity_override} />}
             <Button icon={AiMagicIcon} disabled={Boolean(pendingReplan)} onClick={() => setReplanning(true)}>Replanificar</Button>
             {sprint && <CloseSprintButton projectId={project.id} sprint={sprint} tasks={board.tasks} />}
@@ -125,19 +138,40 @@ export function BoardPage() {
           <ReplanDiff key={pendingReplan.proposal.id} projectId={project.id} proposal={pendingReplan.proposal} content={pendingReplan.content} />
         </div>
       )}
-      <div className="mb-5">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <Segmented
+          label="Vista"
+          size="sm"
+          value={view}
+          options={[{ value: 'board', label: 'Tablero', icon: DashboardSquare01Icon }, { value: 'list', label: 'Lista', icon: ListViewIcon }]}
+          onChange={setView}
+        />
         <BoardFilters filters={filters} members={project.members} epics={epics} onChange={setFilters} />
       </div>
-      <KanbanBoard
-        columns={columns}
-        tasks={scope}
-        visible={visible}
-        sprintId={sprintId}
-        members={project.members}
-        wipLimits={board.wip_limits}
-        onMove={(taskId, status, position) => move.mutate({ taskId, status, position })}
-        onOpen={(task) => setOpenId(task.id)}
-      />
+      {view === 'list' ? (
+        <TaskList columns={columns} tasks={visible} sprintId={sprintId} members={project.members} onOpen={(task) => setOpenId(task.id)} />
+      ) : (
+        <KanbanBoard
+          columns={columns}
+          tasks={scope}
+          visible={visible}
+          sprintId={sprintId}
+          members={project.members}
+          wipLimits={board.wip_limits}
+          onMove={(taskId, status, position) => move.mutate({ taskId, status, position })}
+          onOpen={(task) => setOpenId(task.id)}
+          columnFooter={
+            canAdd
+              ? (status) => (
+                  <AddTask
+                    column={STATUS_LABELS[status]}
+                    onCreate={(title) => createTask({ title, status, sprint_id: sprintId, ...fieldsFromFilters(filters) })}
+                  />
+                )
+              : undefined
+          }
+        />
+      )}
       {replanning && <ReplanDialog projectId={project.id} onClose={() => setReplanning(false)} />}
       {open && <TaskDrawer key={open.id} projectId={project.id} task={open} members={project.members} columns={columns} onClose={() => { setOpenId(null); clearTask() }} />}
     </>

@@ -4,6 +4,7 @@ import { http } from './client'
 
 export const httpBoardGateway: BoardGateway = {
   getBoard: (projectId) => http.get<BoardView>(`/projects/${projectId}/board`),
+  createTask: (projectId, task) => http.post<TaskResult>(`/projects/${projectId}/tasks`, task),
   updateTask: (taskId, patch) => http.patch<TaskResult>(`/tasks/${taskId}`, patch),
   setChecklist: (taskId, items) => http.put<TaskResult>(`/tasks/${taskId}/checklist`, { items }),
   setCapacity: (projectId, points) => http.put<CapacityResult>(`/projects/${projectId}/capacity`, { points_per_sprint: points }),

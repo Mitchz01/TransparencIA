@@ -52,6 +52,16 @@
   --inset: #f4f5f0;
   --scrim: rgb(18 21 13 / 0.32);
 
+  /* Board: columns are a panel, cards sit one step above it */
+  --lane: #edefe8;
+  --card: #ffffff;
+  --card-hover: #f4f5f0;
+  --card-inset: #e8eae2;
+  /* Tinted columns (spec 014): the hue's soft fill in light, a darker tint in dark so cards stand out */
+  --lane-blue: #e8eefd;
+  --lane-amber: #fbf0da;
+  --lane-teal: #e0f4ef;
+
   /* Type */
   --font-sans: "Geist Variable", "Geist", "Segoe UI", system-ui, sans-serif;
   --text-display: 600 2.25rem/1.15 var(--font-sans);
@@ -129,6 +139,14 @@
 
   --inset: #22261e;
   --scrim: rgb(0 0 0 / 0.6);
+
+  --lane: #141612;
+  --card: #22261e;
+  --card-hover: #2b3026;
+  --card-inset: #383d31;
+  --lane-blue: #111829;
+  --lane-amber: #1d180e;
+  --lane-teal: #0e1d19;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -174,5 +192,13 @@
 
     --inset: #22261e;
     --scrim: rgb(0 0 0 / 0.6);
+
+    --lane: #141612;
+    --card: #22261e;
+    --card-hover: #2b3026;
+    --card-inset: #383d31;
+    --lane-blue: #111829;
+    --lane-amber: #1d180e;
+    --lane-teal: #0e1d19;
   }
 }

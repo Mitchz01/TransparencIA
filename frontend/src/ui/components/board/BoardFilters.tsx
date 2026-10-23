@@ -1,8 +1,9 @@
+import type { ReactNode } from 'react'
 import { PRIORITIES, type Priority } from '../../../domain/board'
 import type { Member } from '../../../domain/project'
-import type { TaskFilters } from '../../../domain/rules'
-import { Button, Chip, Menu } from '../ds'
-import { FilterHorizontalIcon, UserIcon } from '../ds/icons'
+import { activeFilterCount, type TaskFilters } from '../../../domain/rules'
+import { Button, Chip, Popover } from '../ds'
+import { FilterHorizontalIcon } from '../ds/icons'
 import { PRIORITY_LOOK } from './boardLabels'
 
 interface BoardFiltersProps {
@@ -12,47 +13,57 @@ interface BoardFiltersProps {
   onChange: (filters: TaskFilters) => void
 }
 
-/** Who, how urgent, which epic. They live in the address, so a filtered board can be shared. */
+function Group({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div role="group" aria-label={title} className="grid gap-2">
+      <span className="text-label text-ink-muted">{title}</span>
+      <div className="flex max-w-80 flex-wrap gap-2">{children}</div>
+    </div>
+  )
+}
+
+/** Who, how urgent, which epic, behind one "Filtrar" button that says how many are on (spec 014).
+ *  They live in the address, so a filtered board can be shared. */
 export function BoardFilters({ filters, members, epics, onChange }: BoardFiltersProps) {
-  const assignee = filters.assignee === undefined ? 'Todos los responsables' : filters.assignee === 'none' ? 'Sin asignar' : members.find((m) => m.id === filters.assignee)?.name ?? 'Todos'
-  const active = filters.assignee !== undefined || filters.priority !== undefined || filters.epic !== undefined
+  const count = activeFilterCount(filters)
+  const toggle = <K extends keyof TaskFilters>(key: K, value: TaskFilters[K]) =>
+    onChange({ ...filters, [key]: filters[key] === value ? undefined : value })
+
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Menu
-        label={`Responsable: ${assignee}`}
-        icon={UserIcon}
-        size="sm"
-        variant="secondary"
-        buttonClassName="bg-surface!"
-        items={[
-          { key: 'all', label: 'Todos los responsables', selected: filters.assignee === undefined, onSelect: () => onChange({ ...filters, assignee: undefined }) },
-          ...members.map((m) => ({ key: String(m.id), label: m.name, caption: m.role, selected: filters.assignee === m.id, onSelect: () => onChange({ ...filters, assignee: m.id }) })),
-          { key: 'none', label: 'Sin asignar', selected: filters.assignee === 'none', onSelect: () => onChange({ ...filters, assignee: 'none' }) },
-        ]}
-      >
-        {assignee}
-      </Menu>
-      <Menu
-        label={`Épica: ${filters.epic ?? 'Todas'}`}
+      <Popover
+        label={count ? `Filtrar, ${count} ${count === 1 ? 'activo' : 'activos'}` : 'Filtrar'}
         icon={FilterHorizontalIcon}
         size="sm"
-        variant="secondary"
+        align="end"
         buttonClassName="bg-surface!"
-        items={[
-          { key: 'all', label: 'Todas las épicas', selected: filters.epic === undefined, onSelect: () => onChange({ ...filters, epic: undefined }) },
-          ...epics.map((e) => ({ key: e, label: e, selected: filters.epic === e, onSelect: () => onChange({ ...filters, epic: e }) })),
-        ]}
+        trigger={
+          <>
+            Filtrar
+            {count > 0 && <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-pill bg-inverse px-1.5 text-caption text-on-inverse tabular-nums">{count}</span>}
+          </>
+        }
       >
-        {filters.epic ?? 'Todas las épicas'}
-      </Menu>
-      <div role="group" aria-label="Prioridad" className="flex gap-2">
-        {PRIORITIES.map((p: Priority) => (
-          <Chip key={p} pressed={filters.priority === p} onClick={() => onChange({ ...filters, priority: filters.priority === p ? undefined : p })}>
-            {PRIORITY_LOOK[p].label}
-          </Chip>
-        ))}
-      </div>
-      {active && <Button size="sm" variant="quiet" onClick={() => onChange({})}>Quitar filtros</Button>}
+        <Group title="Responsable">
+          {members.map((m) => (
+            <Chip key={m.id} inset pressed={filters.assignee === m.id} onClick={() => toggle('assignee', m.id)}>{m.name}</Chip>
+          ))}
+          <Chip inset pressed={filters.assignee === 'none'} onClick={() => toggle('assignee', 'none')}>Sin asignar</Chip>
+        </Group>
+        {epics.length > 0 && (
+          <Group title="Épica">
+            {epics.map((e) => (
+              <Chip key={e} inset pressed={filters.epic === e} onClick={() => toggle('epic', e)}>{e}</Chip>
+            ))}
+          </Group>
+        )}
+        <Group title="Prioridad">
+          {PRIORITIES.map((p: Priority) => (
+            <Chip key={p} inset pressed={filters.priority === p} onClick={() => toggle('priority', p)}>{PRIORITY_LOOK[p].label}</Chip>
+          ))}
+        </Group>
+      </Popover>
+      {count > 0 && <Button size="sm" variant="quiet" onClick={() => onChange({})}>Quitar filtros</Button>}
     </div>
   )
 }

@@ -6,7 +6,7 @@ Status: **Approved** (2026-10-23): palette, type and components.
 
 ## Rules that never break
 
-1. **No status dots or circles.** A state is an icon plus a word ("Done", "Waiting for you"). No colored dots before column names, on avatars or on icons, and no circled steps in a stepper.
+1. **No status dots or circles.** A state is an icon plus a word ("Done", "Waiting for you"). No colored dots on avatars or on icons, and no circled steps in a stepper. **One exception** (spec 014): a board column label carries a dot of the column's hue next to its name, so the board reads by color from afar. It lives only in `ColumnLabel`, and `check-design-rules.mjs` allows it nowhere else.
 2. **No separator lines.** Blocks are separated by space and by a change of background (`bg` → `surface` → `surface-strong`). Never `border-bottom`, `<hr>` or lines between rows.
 3. **No short lines above or below text.** No accent bars under titles, no rules over headings, no small labels on top of a title or a number ("WORKFLOW BOARD", "TOTAL BALANCE"). A value and its name share a row, or the name goes below.
 4. **No em dashes.** Use a comma, a period or two sentences.
@@ -44,6 +44,11 @@ Status: **Approved** (2026-10-23): palette, type and components.
 | `glow` | none | lime radial at 10% | One soft light behind the page header in dark mode. Never more than one per screen |
 | `inset` | `#F4F5F0` | `#22261E` | Alias: a block or an input inside a card (`bg` in light, `surface-strong` in dark) |
 | `scrim` | ink at 32% | black at 60% | The veil behind dialogs and drawers |
+| `lane` | `#EDEFE8` | `#141612` | A board column: a step apart from `bg` (darker in light, lighter in dark) so the cards stand out on it (spec 013) |
+| `card` | `#FFFFFF` | `#22261E` | A task card on a `lane`. Text on it is `ink` or `ink-muted`, never `ink-subtle` (4.45:1 in dark) |
+| `card-hover` | `#F4F5F0` | `#2B3026` | A task card under the pointer |
+| `card-inset` | `#E8EAE2` | `#383D31` | Something inside a task card: initials, the progress track |
+| `lane-blue`, `lane-amber`, `lane-teal` | `#E8EEFD`, `#FBF0DA`, `#E0F4EF` | `#111829`, `#1D180E`, `#0E1D19` | Tinted board columns: in progress, in review, done (spec 014). In light the hue's soft fill; in dark a darker tint, because the soft fills are as light as a `card` there |
 
 Lime on the light background is **1.2:1**, so in light mode lime is always a fill with dark text on it, never text, an icon or a thin line on `bg`. Use `accent-ink` for accent text in both themes.
 
@@ -71,6 +76,7 @@ Each hue has a text color and a soft fill; text on its soft fill passes 4.5:1 in
 - **Active navigation**: `primary` fill + `on-primary` in the top bar; everything else `ink-muted`.
 - **Selected segment** (List / Board / Timeline): `inverse` fill + `on-inverse`.
 - **Card**: `surface` on `bg`. A block inside a card: `surface-strong` on `surface`, or `bg` on `surface` in light mode.
+- **Board**: `card` on `lane` on `bg`. The card is always the lightest of the three, so the board reads the same in light and dark.
 - **Agent rationale**: `primary-soft` block with `primary-soft-ink` text and the agent's icon.
 
 ## Typography
@@ -128,16 +134,28 @@ Added for the first round of screens; all of them are in [preview.html](preview.
 | Stage stepper | One row per stage: stage name, agent name below in `ink-muted`, the state on the right as icon + word in its hue. The current stage sits on `inset`, so every state color keeps 4.5:1 | No numbers in circles and no lines between steps |
 | Menu | `surface` panel, `radius-lg`, `shadow-float`, pill rows that turn `surface-strong` on hover; the chosen row has a tick | Opened from a secondary button with a chevron (project switcher, sprint selector, sections on mobile) |
 | Dialog | Centered `surface` panel, `radius-xl`, `shadow-float`, on `scrim` | Title in `text-heading`, actions bottom right, Escape closes |
-| Drawer | Right panel with a `space-3` margin, `radius-xl`, `shadow-float`, on `scrim` | Task details and activity |
+| Drawer | Right panel with a `space-3` margin, `radius-xl`, `shadow-float`, on `scrim` | Task details and activity. An optional header replaces the title (the task panel puts its key, epic and type there) |
 | Toast | `inverse` panel, `radius-lg`, `shadow-float`, icon + message, optional "Retry" (`primary`) and the request id in `text-caption` | Bottom of the screen; errors never use red fills |
 | Empty state | Icon on a 48px `surface-strong` square with `radius-md`, heading, one sentence, one action | Says what's missing and links to where it's made |
 | Skeleton | `surface-strong` blocks with `radius-md`, a slow opacity pulse | No pulse under reduced motion |
 | Capacity bar | Track with a `primary` fill (`coral` when overloaded) and "18 of 21 pts" next to it | Overload adds "Overloaded" with the alert icon |
 | Row list | Rows on `inset` with `radius-md`, a title, an optional detail in `ink-muted` and something on the right; a group title in `text-label` above | Rows are separated by 6px of space, never by lines. Progress tracks inside a row use the `surface` track |
-| Week strip | One 12px cell per week of the project: the phase's weeks in `ink-subtle` at 45%, the others `inset`, the current week `primary` (`primary-soft` outside the phase) | Read by screen readers as a sentence ("Weeks 3 to 4 of 6, this is week 3") |
 | Document text | Markdown in the app's type scale: `text-title`, `text-heading`, `text-body`; lists marked with a short hyphen; code on `inset` in Geist | No horizontal rules and no images; diagrams render with the theme's tokens |
 | Issue badge | GitHub icon and `#12` in `blue`; closed or merged adds the word in `teal`; a broken link says so in `coral` | Inside cards, next to the key and the points |
 | Replan change | A checkbox row on `inset`: the change in `text-label`, its reason below in `ink-muted` | Changes are grouped by kind (move, reassign, add, discard) under row-list group titles |
+| Property rows | One row per property: a `text-label` name in `ink-muted` with its icon on the left (fixed width), the value on the right as a quiet menu button or an inline field | Spaced by 4px, no lines. The value reads as text until hovered or focused (spec 011) |
+| Inline text | Text that becomes a field: no fill at rest, `inset` on hover and focus, `radius-md` | Saves on Enter or when leaving the field; Escape puts the saved value back. Errors as in any field |
+| Timeline | A grid with a sticky name column and one column per week; week names in `text-caption`. Bars are progress tracks: phases 12px, epics 6px | The current week is a `primary-soft` column behind every row, never a line. Milestones are a flag icon at the end of the bar plus a row list (spec 012) |
+| Flow | Steps on `inset` with `radius-md`, joined by an arrow icon in `ink-muted` (down on narrow screens) | Ends with a step that says how it repeats |
+| Slots | One 12px square per allowed item, `ink-subtle` at 45%, with "Máximo 3 a la vez" next to it | For WIP limits. "Sin límite" when there's none |
+| Board column | A panel with `radius-lg` and 8px of padding, filled with its hue's lane (`lane` for backlog and to do, `lane-blue`, `lane-amber`, `lane-teal`): the column label and count on top, cards 8px apart, "Agregar tarea" at the end. It stretches to the tallest column. While a card is dragged over it, it opens a `primary-soft` gap of the card's size where the card will land | The empty one says "Suelta una tarea aquí" in `ink-muted` (specs 013 and 014) |
+| Column label | A `card` pill (28px) with a 8px dot and the name in the column's hue text (`ink` when neutral) | The only dot in the system (rule 1). Also heads the groups of the task list |
+| Add task | A quiet "Agregar tarea" button that becomes a title field on `card` with `radius-md`; Enter creates and leaves it open, Escape closes | Errors under the field, keeping the text |
+| Task list | Groups per column on their lane under the column label; one `card` row per task with key, title, assignee, priority, points and checklist in fixed columns. Under 640px only key, title and priority | Rows are buttons that open the task panel |
+| Popover | A secondary button with a chevron that opens a `surface` panel with `radius-lg`, `shadow-float` and 16px padding; not modal | Escape and a click outside close it, the focus goes back to the button. The board filters use it with groups of `inset` chips |
+| Avatar stack | Up to four sets of initials overlapping by 4px with a 2px `bg` ring, then "+N" | A link to the team; its accessible name lists every member |
+| Task card | `card` with `radius-md` and `space-4` padding: the title in `text-label` semibold (two lines at most), the checklist track when partly done, and one data row with the key, checklist, points, issue, priority as icon plus word, and the initials (or the missing role) on the right | No description; it lives in the task panel. The name behind the initials is a tooltip and screen reader text |
+| Disclosure row | A row-list row whose title opens its detail, with a chevron that turns | Built on `<details>`, so it opens with Enter and Space |
 
 ## Interaction and accessibility
 

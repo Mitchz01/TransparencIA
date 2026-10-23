@@ -22,7 +22,8 @@ const rules = [
   { name: 'uppercase label (sentence case only)', test: (line) => /\buppercase\b/.test(line) },
   { name: 'monospace font (Geist with tabular figures only)', test: (line) => /\bfont-mono\b|\bmonospace\b|Geist Mono/.test(line) },
   { name: 'round shape (status dots and circles are not allowed)', test: (line) => /\brounded-full\b/.test(line) },
-  { name: 'small round status dot', test: (line) => /\brounded-pill\b/.test(line) && SMALL_SIZE.test(line) },
+  // The one allowed dot: a board column label, always next to its name (spec 014, design system rule 1).
+  { name: 'small round status dot', test: (line, file) => /\brounded-pill\b/.test(line) && SMALL_SIZE.test(line) && !file.endsWith('ColumnLabel.tsx') },
 ]
 
 function files(path) {
@@ -38,7 +39,7 @@ for (const file of targets.flatMap(files)) {
     .split(/\r?\n/)
     .forEach((line, i) => {
       for (const rule of rules) {
-        if (rule.test(line)) findings.push(`${relative(root, file)}:${i + 1}  ${rule.name}\n    ${line.trim()}`)
+        if (rule.test(line, file)) findings.push(`${relative(root, file)}:${i + 1}  ${rule.name}\n    ${line.trim()}`)
       }
     })
 }

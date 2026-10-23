@@ -92,7 +92,13 @@ export function Dialog({ title, onClose, children, actions, initialFocus, descri
   )
 }
 
-export function Drawer({ title, onClose, children, actions, initialFocus, wide = false }: OverlayProps & { wide?: boolean }) {
+interface DrawerProps extends OverlayProps {
+  wide?: boolean
+  /** Replaces the visible title; the panel is then named by `title` for screen readers. */
+  header?: ReactNode
+}
+
+export function Drawer({ title, onClose, children, actions, initialFocus, wide = false, header }: DrawerProps) {
   const panel = useRef<HTMLDivElement>(null)
   const titleId = useId()
   useModal(panel, onClose, initialFocus)
@@ -102,7 +108,8 @@ export function Drawer({ title, onClose, children, actions, initialFocus, wide =
         ref={panel}
         role="dialog"
         aria-modal="true"
-        aria-labelledby={titleId}
+        aria-labelledby={header ? undefined : titleId}
+        aria-label={header ? title : undefined}
         tabIndex={-1}
         className={cn(
           'fixed inset-y-3 right-3 flex w-[calc(100vw-24px)] flex-col rounded-xl bg-surface shadow-float outline-none',
@@ -110,9 +117,11 @@ export function Drawer({ title, onClose, children, actions, initialFocus, wide =
         )}
       >
         <div className="flex items-center justify-between gap-3 px-6 pt-5 pb-3">
-          <h2 id={titleId} className="text-heading">
-            {title}
-          </h2>
+          {header ?? (
+            <h2 id={titleId} className="text-heading">
+              {title}
+            </h2>
+          )}
           <IconButton icon={Cancel01Icon} label="Cerrar" variant="quiet" tooltip="none" onClick={onClose} />
         </div>
         <div className="flex-1 overflow-y-auto px-6 pb-6">{children}</div>
