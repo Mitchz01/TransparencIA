@@ -3,6 +3,7 @@ from typing import Protocol, Self
 
 from app.application.ports.repositories import (
     ActivityRepository,
+    DocumentRepository,
     ObjectiveRepository,
     ProjectRepository,
     ProposalRepository,
@@ -21,6 +22,7 @@ class UnitOfWork(Protocol):
     tasks: TaskRepository
     proposals: ProposalRepository
     activity: ActivityRepository
+    documents: DocumentRepository
 
     def __enter__(self) -> Self: ...
     def __exit__(self, *exc: object) -> None: ...

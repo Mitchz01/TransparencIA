@@ -6,6 +6,8 @@ from sqlmodel import Session, col, select
 from app.adapters.outbound.persistence import mappers
 from app.adapters.outbound.persistence.tables import (
     ActivityTable,
+    DocumentTable,
+    DocumentVersionTable,
     MemberTable,
     ObjectiveTable,
     ProjectTable,
@@ -14,6 +16,7 @@ from app.adapters.outbound.persistence.tables import (
     TaskTable,
 )
 from app.domain.board import Objective, Sprint, Task
+from app.domain.documents import Document, DocumentVersion
 from app.domain.errors import ProposalAlreadyResolved
 from app.domain.events import DomainEvent
 from app.domain.project import Project
@@ -223,3 +226,49 @@ class SqlActivityRepository:
             .limit(limit)
         ).all()
         return [mappers.activity_to_domain(row) for row in rows]
+
+
+class SqlDocumentRepository:
+    def __init__(self, session: Session):
+        self._session = session
+
+    def get(self, document_id: int) -> Document | None:
+        row = self._session.get(DocumentTable, document_id)
+        return mappers.document_to_domain(row) if row else None
+
+    def find(self, project_id: int, key: str) -> Document | None:
+        row = self._session.exec(
+            select(DocumentTable).where(DocumentTable.project_id == project_id, DocumentTable.key == key)
+        ).first()
+        return mappers.document_to_domain(row) if row else None
+
+    def list_by_project(self, project_id: int) -> list[Document]:
+        rows = self._session.exec(
+            select(DocumentTable).where(DocumentTable.project_id == project_id).order_by(DocumentTable.id)
+        ).all()
+        return [mappers.document_to_domain(row) for row in rows]
+
+    def add(self, document: Document) -> Document:
+        row = mappers.document_to_table(document)
+        self._session.add(row)
+        self._session.flush()
+        return mappers.document_to_domain(row)
+
+    def save(self, document: Document) -> Document:
+        row = self._session.merge(mappers.document_to_table(document))
+        self._session.flush()
+        return mappers.document_to_domain(row)
+
+    def add_version(self, version: DocumentVersion) -> DocumentVersion:
+        row = mappers.document_version_to_table(version)
+        self._session.add(row)
+        self._session.flush()
+        return mappers.document_version_to_domain(row)
+
+    def versions(self, document_id: int) -> list[DocumentVersion]:
+        rows = self._session.exec(
+            select(DocumentVersionTable)
+            .where(DocumentVersionTable.document_id == document_id)
+            .order_by(DocumentVersionTable.version)
+        ).all()
+        return [mappers.document_version_to_domain(row) for row in rows]

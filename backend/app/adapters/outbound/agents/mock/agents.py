@@ -4,7 +4,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from app.adapters.outbound.agents.mock.data import MOCK_PLAN
+from app.adapters.outbound.agents.mock import data
+from app.adapters.outbound.agents.mock.data import MOCK_DOCUMENTS, MOCK_PLAN
 from app.domain.plan import PlanningStage
 
 
@@ -21,7 +22,7 @@ class MockPlanningAgents:
 
     async def run_stage(self, stage: PlanningStage, context: dict[str, Any]) -> BaseModel:
         await asyncio.sleep(self._delay)
-        output = copy.deepcopy(MOCK_PLAN[stage.key])
+        output = copy.deepcopy({**MOCK_PLAN, **MOCK_DOCUMENTS}[stage.key])
         fit = _FITTERS.get(stage.key)
         if fit is not None:
             output = fit(output, context)
@@ -92,4 +93,46 @@ def _fit_sprints(output: dict[str, Any], context: dict[str, Any]) -> dict[str, A
     return output
 
 
-_FITTERS = {"methodology": _fit_methodology, "backlog": _fit_backlog, "sprints": _fit_sprints}
+# ---------- Writer (spec 006): the documents describe this project's approved plan ----------
+
+
+def _with_feedback(output: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
+    """A regeneration or a redo shows the leader's instructions were taken in."""
+    reason = (context.get("feedback") or {}).get("reason")
+    if reason:
+        output["markdown"] += f"\n\n## Leader's notes\n\n- {reason}"
+        output["rationale"] = f"Rewritten following the leader's instructions: {reason}"
+    return output
+
+
+def _fit_general_spec(output: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
+    if context.get("project") and context.get("roadmap"):
+        output = data.general_spec_output(
+            context["project"], context.get("analysis") or {}, context["roadmap"], context.get("backlog") or {}
+        )
+    return _with_feedback(output, context)
+
+
+def _fit_epic_spec(output: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
+    if context.get("epic"):
+        output = data.epic_spec_output(context["epic"], context.get("stories") or [])
+    return _with_feedback(output, context)
+
+
+def _fit_flow_diagrams(output: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
+    if context.get("architecture") or context.get("roadmap"):
+        output = data.flow_diagrams_output(context.get("architecture") or {}, context.get("roadmap") or {})
+    reason = (context.get("feedback") or {}).get("reason")
+    if reason:
+        output["rationale"] = f"Redrawn following the leader's instructions: {reason}"
+    return output
+
+
+_FITTERS = {
+    "methodology": _fit_methodology,
+    "backlog": _fit_backlog,
+    "sprints": _fit_sprints,
+    "general_spec": _fit_general_spec,
+    "epic_spec": _fit_epic_spec,
+    "flow_diagrams": _fit_flow_diagrams,
+}

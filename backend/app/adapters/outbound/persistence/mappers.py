@@ -9,6 +9,8 @@ from typing import Any
 
 from app.adapters.outbound.persistence.tables import (
     ActivityTable,
+    DocumentTable,
+    DocumentVersionTable,
     MemberTable,
     ObjectiveTable,
     ProjectTable,
@@ -17,6 +19,7 @@ from app.adapters.outbound.persistence.tables import (
     TaskTable,
 )
 from app.domain.board import Objective, Sprint, Task
+from app.domain.documents import Document, DocumentVersion
 from app.domain.events import DomainEvent
 from app.domain.project import Member, Project
 from app.domain.proposals import Proposal
@@ -81,6 +84,22 @@ def proposal_to_domain(row: ProposalTable) -> Proposal:
 
 def proposal_to_table(proposal: Proposal) -> ProposalTable:
     return ProposalTable.model_validate(proposal.model_dump())
+
+
+def document_to_domain(row: DocumentTable) -> Document:
+    return Document.model_validate(_with_utc(row.model_dump(), "updated_at"))
+
+
+def document_to_table(document: Document) -> DocumentTable:
+    return DocumentTable.model_validate(document.model_dump())
+
+
+def document_version_to_domain(row: DocumentVersionTable) -> DocumentVersion:
+    return DocumentVersion.model_validate(_with_utc(row.model_dump(), "created_at"))
+
+
+def document_version_to_table(version: DocumentVersion) -> DocumentVersionTable:
+    return DocumentVersionTable.model_validate(version.model_dump())
 
 
 def activity_to_table(event: DomainEvent) -> ActivityTable:

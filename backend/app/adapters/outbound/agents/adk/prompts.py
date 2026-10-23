@@ -7,7 +7,19 @@ COMMON = (
     "or it broke a rule: fix it following `feedback.reason` and keep what wasn't questioned."
 )
 
-# Key: PlanningStage.key
+# The structure of this repo's specs (specs/spec-template.md), for the writer's documents (spec 006, FR-004).
+SPEC_STRUCTURE = (
+    "Write Markdown with these sections, in this order: "
+    "'# Feature Specification: <title>'; "
+    "'## User Scenarios & Testing': user stories, each as '### User Story N - <title> (Priority: P1|P2|P3)' "
+    "with a plain-language description, '**Why this priority**', '**Independent Test**' and "
+    "'**Acceptance Scenarios**' written as numbered Given / When / Then; then '### Edge Cases' as a list; "
+    "'## Requirements': '### Functional Requirements' as '- **FR-001**: The system MUST ...' and "
+    "'### Key Entities'; '## Success Criteria': '### Measurable Outcomes' as '- **SC-001**: ...' "
+    "with measurable, technology-agnostic outcomes. No implementation details (frameworks, endpoints)."
+)
+
+# Key: PlanningStage.key (PLANNING_STAGES and spec 006's DOCUMENT_STAGES)
 PROMPTS: dict[str, str] = {
     "analysis": (
         "Analyze the project: goals, scope (what's in and what's out), risks with "
@@ -44,5 +56,25 @@ PROMPTS: dict[str, str] = {
         "`capacity.members` has each member's share). Every backlog story must be in exactly one "
         "iteration. Assign each story to a member whose role fits, using their exact `name` from "
         "`project.members`; leave a story unassigned if nobody has a fitting role."
+    ),
+    "general_spec": (
+        "Write the general product spec from the approved plan: the problem, the users, the goals, "
+        "what's in and out of scope, the main user stories (one or two per roadmap epic, prioritized) "
+        "and the success criteria. Use only what's in the context; don't invent features. "
+        f"{SPEC_STRUCTURE}"
+    ),
+    "epic_spec": (
+        "Write the spec of one roadmap epic (`epic`) for whoever picks up its tasks. Each story in "
+        "`stories` becomes a user story with its key in the title, and its acceptance criteria become "
+        "Given / When / Then scenarios; add the edge cases and requirements they imply. "
+        "`epic_key` MUST be `epic.key`. "
+        f"{SPEC_STRUCTURE}"
+    ),
+    "flow_diagrams": (
+        "Draw the product in Mermaid: one diagram of kind 'architecture' with the approved components "
+        "and how they talk, and one diagram of kind 'flow' per main user journey (sign-up, the core "
+        "task, etc.). Each `mermaid` starts with its type: flowchart, graph, sequenceDiagram, "
+        "stateDiagram-v2 or erDiagram. Put node labels in double quotes (A[\"Sign up\"]), keep every "
+        "bracket and quote balanced, and never use HTML tags (no <br>): it must render on GitHub."
     ),
 }

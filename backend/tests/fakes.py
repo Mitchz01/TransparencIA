@@ -6,6 +6,7 @@ from itertools import count
 from typing import Any, Self
 
 from app.domain.board import Objective, Sprint, Task
+from app.domain.documents import Document, DocumentVersion
 from app.domain.errors import ProposalAlreadyResolved
 from app.domain.events import DomainEvent
 from app.domain.project import Member, Project
@@ -124,6 +125,30 @@ class FakeActivityRepository(_Repo):
         return rows[:limit]
 
 
+class FakeDocumentRepository(_Repo):
+    def __init__(self, uow: "InMemoryUnitOfWork"):
+        super().__init__(uow, "documents")
+
+    @property
+    def _versions(self) -> dict[int, Any]:
+        return self._uow.working.setdefault("document_versions", {})
+
+    def find(self, project_id: int, key: str) -> Document | None:
+        return next((d.model_copy(deep=True) for d in self.rows.values() if d.project_id == project_id and d.key == key), None)
+
+    def list_by_project(self, project_id: int) -> list[Document]:
+        return [d.model_copy(deep=True) for _, d in sorted(self.rows.items()) if d.project_id == project_id]
+
+    def add_version(self, version: DocumentVersion) -> DocumentVersion:
+        saved = version.model_copy(update={"id": next(self._uow.store.ids)})
+        self._versions[saved.id] = saved  # type: ignore[index]
+        return saved.model_copy(deep=True)
+
+    def versions(self, document_id: int) -> list[DocumentVersion]:
+        rows = (v.model_copy(deep=True) for v in self._versions.values() if v.document_id == document_id)
+        return sorted(rows, key=lambda v: v.version)
+
+
 class InMemoryUnitOfWork:
     """Implements the UnitOfWork port. Several instances can share one store, like
     sessions sharing a database: what one commits, the next one sees."""
@@ -139,6 +164,7 @@ class InMemoryUnitOfWork:
         self.tasks = FakeTaskRepository(self)
         self.proposals = FakeProposalRepository(self)
         self.activity = FakeActivityRepository(self)
+        self.documents = FakeDocumentRepository(self)
 
     def _reset(self) -> None:
         self.working = {name: {k: v.model_copy(deep=True) for k, v in rows.items()} for name, rows in self.store.committed.items()}

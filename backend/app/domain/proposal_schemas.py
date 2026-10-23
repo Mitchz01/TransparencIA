@@ -8,11 +8,15 @@ from pydantic import BaseModel
 from pydantic import ValidationError as PydanticValidationError
 
 from app.domain.errors import FieldError, ValidationFailed
-from app.domain.plan import PLANNING_STAGES
+from app.domain.plan import PLANNING_STAGES, DiagramProposal, EpicSpec, GeneralSpec
 
 # (kind, key) -> schema. Specs 006, 007 and 008 add their subjects with register_schema();
 # a key prefix ending in ":" matches every key that starts with it ("epic_spec:" → "epic_spec:EP-2").
 _SCHEMAS: dict[tuple[str, str], type[BaseModel]] = {("plan_stage", stage.key): stage.schema for stage in PLANNING_STAGES}
+# Spec 006's documents: each diagram is its own proposal, so it's one diagram, not FlowDiagrams.
+_SCHEMAS[("document", "general_spec")] = GeneralSpec
+_SCHEMAS[("document", "epic_spec:")] = EpicSpec
+_SCHEMAS[("document", "flow_diagram:")] = DiagramProposal
 
 
 def register_schema(kind: str, key: str, schema: type[BaseModel]) -> None:

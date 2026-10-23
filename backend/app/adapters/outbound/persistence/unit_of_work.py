@@ -4,6 +4,7 @@ from sqlmodel import Session
 
 from app.adapters.outbound.persistence.repositories import (
     SqlActivityRepository,
+    SqlDocumentRepository,
     SqlObjectiveRepository,
     SqlProjectRepository,
     SqlProposalRepository,
@@ -22,6 +23,7 @@ class SqlUnitOfWork:
         self.tasks = SqlTaskRepository(session)
         self.proposals = SqlProposalRepository(session)
         self.activity = SqlActivityRepository(session)
+        self.documents = SqlDocumentRepository(session)
 
     def __enter__(self) -> Self:
         return self

@@ -171,7 +171,7 @@ Request headers: `Content-Type: application/json`. A leader edit isn't an agent 
 
 **Purpose**: frontend dependencies
 
-- [ ] T001 Install `mermaid` and `react-markdown` in `frontend/`
+- [ ] T001 Install `mermaid` and `react-markdown` in `frontend/` — handed off to spec 009 (frontend)
 
 ---
 
@@ -181,12 +181,13 @@ Request headers: `Content-Type: application/json`. A leader edit isn't an agent 
 
 **⚠️ CRITICAL**: no user story work can begin until this phase is complete
 
-- [ ] T002 In `backend/app/domain/documents.py`, rename the kind `use_case_spec` to `epic_spec`, add `epic_key: str | None`, `outdated: bool`, and the `DocumentVersion(document_id, version, content, proposal_id, created_at)` entity; mirror it in `frontend/src/domain/documents.ts`
-- [ ] T003 Add `DocumentTable` and `DocumentVersionTable` with mappers, extend `DocumentRepository` (get, find(project_id, kind, epic_key), add, save, add_version, versions) and add `documents` to the `UnitOfWork` port, `SqlUnitOfWork` and `backend/tests/fakes.py`
-- [ ] T004 Add the output schemas to `backend/app/domain/plan.py`: `GeneralSpec(title, markdown, rationale)`, `EpicSpec(epic_key, title, markdown, rationale)`, `FlowDiagrams(diagrams: list[Diagram(title, kind: "flow" | "architecture", mermaid)], rationale)`
-- [ ] T005 Declare `DOCUMENT_STAGES` in `backend/app/domain/plan.py`: `general_spec` (inputs: project, analysis, architecture, roadmap, backlog), `epic_spec` (inputs: project, epic, stories — derived per epic), `flow_diagrams` (inputs: project, analysis, architecture, roadmap)
-- [ ] T006 [P] Add the prompts to `backend/app/adapters/outbound/agents/adk/prompts.py`, with a `SPEC_STRUCTURE` constant summarizing `specs/spec-template.md` (prioritized stories, Given/When/Then, edge cases, requirements, success criteria) for FR-004
-- [ ] T007 [P] Add sample outputs for the three stages to `backend/app/adapters/outbound/agents/mock/data.py`
+- [x] T002 In `backend/app/domain/documents.py`, rename the kind `use_case_spec` to `epic_spec`, add `epic_key: str | None`, `outdated: bool`, and the `DocumentVersion(document_id, version, content, proposal_id, created_at)` entity
+- [ ] T002b Mirror it in `frontend/src/domain/documents.ts` — handed off to spec 009 (frontend)
+- [x] T003 Add `DocumentTable` and `DocumentVersionTable` with mappers, extend `DocumentRepository` (get, find(project_id, kind, epic_key), add, save, add_version, versions) and add `documents` to the `UnitOfWork` port, `SqlUnitOfWork` and `backend/tests/fakes.py`
+- [x] T004 Add the output schemas to `backend/app/domain/plan.py`: `GeneralSpec(title, markdown, rationale)`, `EpicSpec(epic_key, title, markdown, rationale)`, `FlowDiagrams(diagrams: list[Diagram(title, kind: "flow" | "architecture", mermaid)], rationale)`
+- [x] T005 Declare `DOCUMENT_STAGES` in `backend/app/domain/plan.py`: `general_spec` (inputs: project, analysis, architecture, roadmap, backlog), `epic_spec` (inputs: project, epic, stories — derived per epic), `flow_diagrams` (inputs: project, analysis, architecture, roadmap)
+- [x] T006 [P] Add the prompts to `backend/app/adapters/outbound/agents/adk/prompts.py`, with a `SPEC_STRUCTURE` constant summarizing `specs/spec-template.md` (prioritized stories, Given/When/Then, edge cases, requirements, success criteria) for FR-004
+- [x] T007 [P] Add sample outputs for the three stages to `backend/app/adapters/outbound/agents/mock/data.py`
 
 **Checkpoint**: document stages are callable through `PlanningAgents` in mock and real mode
 
