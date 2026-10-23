@@ -18,3 +18,6 @@ if (!window.matchMedia) {
       dispatchEvent: () => false,
     }) as MediaQueryList
 }
+
+// jsdom doesn't scroll.
+Element.prototype.scrollIntoView ??= () => {}

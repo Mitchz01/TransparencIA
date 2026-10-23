@@ -16,10 +16,22 @@ const CARDS = [card({}), card({ slug: 'via', name: 'Vía terciaria en Aracataca'
 const renderHome = (searchProjects: PublicPortalGateway['searchProjects'], path = '/') => renderPortal(path, { searchProjects })
 
 describe('SearchPage', () => {
+  it('previews the published project with the most open alerts in the hero', async () => {
+    renderHome(() => Promise.resolve(CARDS))
+    expect(await screen.findByRole('link', { name: 'Ver el proyecto Restauración de manglar en la Ciénaga Grande' })).toHaveAttribute('href', '/p/demo')
+  })
+
+  it('searches a suggested word', async () => {
+    const search = vi.fn((query: string) => Promise.resolve(query ? [CARDS[1]] : CARDS))
+    renderHome(search)
+    await userEvent.click(await screen.findByRole('button', { name: 'acueducto' }))
+    expect(search).toHaveBeenLastCalledWith('acueducto')
+  })
+
   it('lists the published projects with their state, money and work', async () => {
     renderHome(() => Promise.resolve(CARDS))
-    const link = await screen.findByRole('link', { name: /Restauración de manglar/ })
-    expect(screen.getByText(/2 proyectos publicados por \$ 360 millones en contratos, con 1 alerta en revisión/)).toBeVisible()
+    const link = await screen.findByRole('link', { name: /^En amarillo.*Restauración de manglar/ })
+    expect(await screen.findByText(/2 proyectos por \$ 360 millones en contratos, con 1 alerta en revisión/)).toBeVisible()
     expect(link).toHaveAttribute('href', '/p/demo')
     expect(link).toHaveTextContent('En amarillo')
     expect(link).toHaveTextContent('1 alerta en revisión')
@@ -39,8 +51,8 @@ describe('SearchPage', () => {
   it('filters by traffic light', async () => {
     renderHome(() => Promise.resolve(CARDS))
     await userEvent.click(await screen.findByRole('button', { name: 'En rojo (1)' }))
-    expect(screen.getByRole('link', { name: /Vía terciaria/ })).toBeVisible()
-    expect(screen.queryByRole('link', { name: /Restauración de manglar/ })).toBeNull()
+    expect(screen.getByRole('link', { name: /^En rojo.*Vía terciaria/ })).toBeVisible()
+    expect(screen.queryByRole('link', { name: /^En amarillo.*Restauración de manglar/ })).toBeNull()
   })
 
   it('says when nothing matches and lets you see them all again', async () => {

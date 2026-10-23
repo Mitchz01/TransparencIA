@@ -1,29 +1,7 @@
 // How the portal works and why its numbers can be trusted (spec 017, credibility rules).
 import { ButtonLink, Card, Icon } from '@agile/ui'
-import { AiMagicIcon, File01Icon, Search01Icon, Settings01Icon, UserGroupIcon, ViewIcon } from '@agile/ui/icons'
-
-const STEPS = [
-  {
-    icon: File01Icon,
-    title: 'El ejecutor reporta con evidencia',
-    body: 'Quien ejecuta el contrato sube cada factura y cada foto de campo, ligada al rubro del presupuesto y a la actividad que pagó.',
-  },
-  {
-    icon: AiMagicIcon,
-    title: 'La IA lee y señala, una persona confirma',
-    body: 'La IA lee el documento y propone el monto, la fecha y el rubro, y marca lo que no cuadra. Nada se publica hasta que alguien del equipo lo confirma.',
-  },
-  {
-    icon: Settings01Icon,
-    title: 'Reglas fijas calculan los números',
-    body: 'El dinero usado, el trabajo hecho, el tiempo corrido y el semáforo salen de reglas fijas sobre los gastos confirmados y el tablero de trabajo. La IA no calcula ningún número.',
-  },
-  {
-    icon: ViewIcon,
-    title: 'Cualquiera lo revisa',
-    body: 'Ciudadanos, veedurías y la entidad que contrata ven el proyecto desde un enlace o un código QR, sin cuenta, y pueden hacerle preguntas.',
-  },
-]
+import { Search01Icon, UserGroupIcon } from '@agile/ui/icons'
+import { STEPS } from '../components/home/content'
 
 const LIGHTS = [
   { word: 'En rojo', text: 'text-coral', body: 'Hay una alerta de prioridad alta, el gasto supera el contrato, o se ha gastado más de 25 puntos por encima del avance.' },

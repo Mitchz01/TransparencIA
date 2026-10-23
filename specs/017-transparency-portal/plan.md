@@ -408,6 +408,9 @@ Sync points:
 - [x] T029 [US8] Portal home `/`: search, light filter, result cards opening `/p/:slug`
 - [x] T030 [US8] Portal frame like the team app: top bar (brand, Proyectos, Cómo funciona, theme, "Soy ejecutor" to the
   team app's sign in via `VITE_TEAM_APP_URL`), footer with the legal frame, and a `/como-funciona` page
+- [x] T031 [US8] Home like the team app's (spec 016): the living gradient hero with search, suggestions and a live
+  preview of a published project, the projects panel over it, then what you see, how it works, who it's for,
+  questions and a call to executing entities
 
 ## Phase 9: Polish & demo (~20 min)
 
