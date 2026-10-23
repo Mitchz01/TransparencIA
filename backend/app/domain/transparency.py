@@ -194,49 +194,230 @@ class TeamPortal(Portal):
 
 
 def end_date(budget: Budget, duration_weeks: int) -> dt.date:
-    return budget.start_date + dt.timedelta(weeks=duration_weeks)
+    """The contract's last day, inclusive: 26 weeks from Monday 2026-08-03 end on Sunday 2027-01-31."""
+    return budget.start_date + dt.timedelta(weeks=duration_weeks, days=-1)
 
 
 def cop(amount: int) -> str:
     """1850000 → "$1.850.000" (Colombian pesos, dots as thousands separator)."""
-    return "$" + f"{amount:,}".replace(",", ".")
+    return ("-" if amount < 0 else "") + "$" + f"{abs(amount):,}".replace(",", ".")
+
+
+def _num(value: float) -> str:
+    """15.0 → "15", 15.25 → "15,3": how the reasons write percentages and points."""
+    return f"{value:.1f}".rstrip("0").rstrip(".").replace(".", ",")
+
+
+def _pct(part: float, whole: float) -> float:
+    return round(part / whole * 100, 1) if whole else 0.0
+
+
+def _spent(expenses: list[Expense]) -> int:
+    return sum(e.amount or 0 for e in expenses)
+
+
+def _text_error(errors: list[FieldError], field: str, value: str, max_len: int) -> None:
+    if not value.strip():
+        errors.append(FieldError(field, "Required."))
+    elif len(value.strip()) > max_len:
+        errors.append(FieldError(field, f"Max {max_len} characters."))
 
 
 def budget_errors(budget: Budget) -> list[FieldError]:
-    raise NotImplementedError
+    errors: list[FieldError] = []
+    _text_error(errors, "contracting_entity", budget.contracting_entity, LINE_NAME_MAX)
+    _text_error(errors, "contractor", budget.contractor, LINE_NAME_MAX)
+    if budget.contract_value <= 0:
+        errors.append(FieldError("contract_value", "Must be greater than 0."))
+    seen: set[str] = set()
+    for i, line in enumerate(budget.lines):
+        if not line.id.strip():
+            errors.append(FieldError(f"lines[{i}].id", "Required."))
+        elif line.id in seen:
+            errors.append(FieldError(f"lines[{i}].id", f"'{line.id}' is repeated."))
+        seen.add(line.id)
+        _text_error(errors, f"lines[{i}].name", line.name, LINE_NAME_MAX)
+        if line.amount < 0:
+            errors.append(FieldError(f"lines[{i}].amount", "Can't be negative."))
+    return errors
 
 
 def confirmation_errors(confirmation: ExpenseConfirmation, budget: Budget, task_ids: set[int]) -> list[FieldError]:
-    raise NotImplementedError
+    errors: list[FieldError] = []
+    if confirmation.amount is not None and confirmation.amount < 0:
+        errors.append(FieldError("amount", "Can't be negative."))
+    if confirmation.budget_line_id is not None and confirmation.budget_line_id not in {line.id for line in budget.lines}:
+        errors.append(FieldError("budget_line_id", f"The budget has no line '{confirmation.budget_line_id}'."))
+    if confirmation.task_id is not None and confirmation.task_id not in task_ids:
+        errors.append(FieldError("task_id", f"The project has no task {confirmation.task_id}."))
+    _text_error(errors, "citizen_summary", confirmation.citizen_summary, CITIZEN_SUMMARY_MAX)
+    return errors
 
 
 def line_status(budget: Budget, expenses: list[Expense]) -> list[LineStatus]:
-    raise NotImplementedError
+    """Spent and available per line; available goes negative when the line is overspent."""
+    spent = {line.id: 0 for line in budget.lines}
+    for expense in expenses:
+        if expense.budget_line_id in spent:
+            spent[expense.budget_line_id] += expense.amount or 0
+    return [
+        LineStatus(id=line.id, name=line.name, amount=line.amount, spent=spent[line.id], available=line.amount - spent[line.id])
+        for line in budget.lines
+    ]
+
+
+def physical_progress(tasks: list[Task]) -> float | None:
+    """Done points over all points (D5); None when there's nothing planned."""
+    total = sum(t.points for t in tasks)
+    if total <= 0:
+        return None
+    return _pct(sum(t.points for t in tasks if t.status == "done"), total)
+
+
+def time_elapsed(start: dt.date, end: dt.date, today: dt.date) -> float:
+    days = (end - start).days
+    if days <= 0:
+        return 100.0
+    return round(min(max((today - start).days / days * 100, 0.0), 100.0), 1)
 
 
 def summary(budget: Budget, end: dt.date, expenses: list[Expense], tasks: list[Task], today: dt.date) -> Summary:
-    raise NotImplementedError
+    spent = _spent(expenses)
+    spent_pct = _pct(spent, budget.contract_value)
+    physical_pct = physical_progress(tasks)
+    time_pct = time_elapsed(budget.start_date, end, today)
+    light, reasons = traffic_light(spent_pct, physical_pct, time_pct, [a for e in expenses for a in e.alerts])
+    return Summary(
+        spent=spent,
+        spent_pct=spent_pct,
+        physical_pct=physical_pct,
+        time_pct=time_pct,
+        unallocated=budget.contract_value - sum(line.amount for line in budget.lines),
+        light=light,
+        reasons=reasons,
+    )
+
+
+def _alerts_reason(count: int, level: str) -> str:
+    return f"Hay {count} alerta{'s' if count > 1 else ''} de nivel {level} en revisión"
 
 
 def traffic_light(
     spent_pct: float, physical_pct: float | None, time_pct: float, alerts: list[Alert]
 ) -> tuple[Light, list[str]]:
-    raise NotImplementedError
+    """FR-008. Every alert counts, answered or not (D12); low ones don't change the color.
+    Returns the color and one reason per trigger, worst first."""
+    red: list[str] = []
+    yellow: list[str] = []
+    high = sum(1 for a in alerts if a.level == "high")
+    medium = sum(1 for a in alerts if a.level == "medium")
+    if high:
+        red.append(_alerts_reason(high, "alto"))
+    if spent_pct > 100:
+        red.append(f"El gasto ({_num(spent_pct)}%) supera el valor del contrato")
+    if physical_pct is not None:
+        gap = spent_pct - physical_pct
+        if gap > 10:
+            (red if gap > 25 else yellow).append(f"Se ha gastado {_num(gap)} puntos más de lo que se ha avanzado")
+        lag = time_pct - physical_pct
+        if lag > 20:
+            yellow.append(
+                f"El tiempo transcurrido ({_num(time_pct)}%) va {_num(lag)} puntos por delante del avance ({_num(physical_pct)}%)"
+            )
+    if medium:
+        yellow.append(_alerts_reason(medium, "medio"))
+    if red:
+        return "red", red + yellow
+    if yellow:
+        return "yellow", yellow
+    return "green", ["El gasto va acorde con el avance de las actividades"]
+
+
+def _monday(day: dt.date) -> dt.date:
+    return day - dt.timedelta(days=day.weekday())
 
 
 def weekly_timeline(
     budget: Budget, end: dt.date, expenses: list[Expense], tasks: list[Task], today: dt.date
 ) -> list[WeekEntry]:
-    raise NotImplementedError
+    """FR-009: one entry per week (Monday to Sunday) from the start's week to the week of
+    min(today, end). Expenses and done tasks dated outside that span count in the first or
+    last week, so the accumulated values end where the summary does. Tasks done before
+    spec 017 (no `done_at`) count in the summary but not in any week."""
+    last_day = min(today, end)
+    if last_day < budget.start_date:
+        return []
+    weeks: list[dt.date] = []
+    week = _monday(budget.start_date)
+    while week <= last_day:
+        weeks.append(week)
+        week += dt.timedelta(weeks=1)
+
+    def index(day: dt.date) -> int:
+        return min(max((day - weeks[0]).days // 7, 0), len(weeks) - 1)
+
+    spent = [0] * len(weeks)
+    for expense in expenses:
+        spent[index(expense.date or expense.created_at.date())] += expense.amount or 0
+    done: list[list[Task]] = [[] for _ in weeks]
+    for task in sorted((t for t in tasks if t.done_at is not None), key=lambda t: t.done_at):  # type: ignore[arg-type, return-value]
+        done[index(task.done_at.date())].append(task)  # type: ignore[union-attr]
+
+    total_points = sum(t.points for t in tasks)
+    entries: list[WeekEntry] = []
+    spent_acc = points_acc = 0
+    for i, week_start in enumerate(weeks):
+        spent_acc += spent[i]
+        points_acc += sum(t.points for t in done[i])
+        entries.append(
+            WeekEntry(
+                week_start=week_start,
+                tasks_done=[TaskRef(id=t.id, title=t.title) for t in done[i] if t.id is not None],
+                spent=spent[i],
+                spent_pct_acc=_pct(spent_acc, budget.contract_value),
+                physical_pct_acc=_pct(points_acc, total_points),
+            )
+        )
+    return entries
 
 
 def sprint_progress(sprints: list[Sprint], tasks: list[Task]) -> list[SprintProgress]:
-    raise NotImplementedError
+    return [
+        SprintProgress(
+            name=sprint.name,
+            goal=sprint.goal,
+            end_date=sprint.end_date,
+            done_points=sum(t.points for t in tasks if t.sprint_id == sprint.id and t.status == "done"),
+            total_points=sum(t.points for t in tasks if t.sprint_id == sprint.id),
+        )
+        for sprint in sorted(sprints, key=lambda s: s.number)
+    ]
 
 
 def rule_alerts(budget: Budget, end: dt.date, confirmed: list[Expense], expense: Expense) -> list[AlertDraft]:
-    """`confirmed` doesn't include `expense`."""
-    raise NotImplementedError
+    """FR-005, on confirming. `confirmed` doesn't include `expense`."""
+    alerts: list[AlertDraft] = []
+    line = next((line for line in budget.lines if line.id == expense.budget_line_id), None)
+    if expense.amount is not None and line is not None:
+        available = line.amount - _spent([e for e in confirmed if e.budget_line_id == line.id])
+        if expense.amount > available:
+            alerts.append(
+                AlertDraft(
+                    level="high",
+                    reason=f"El gasto de {cop(expense.amount)} supera lo disponible en el rubro {line.name} ({cop(max(available, 0))})",
+                )
+            )
+    if expense.date is not None and not budget.start_date <= expense.date <= end:
+        alerts.append(
+            AlertDraft(
+                level="medium",
+                reason=f"La fecha del gasto ({expense.date.isoformat()}) está fuera del periodo del contrato "
+                f"({budget.start_date.isoformat()} a {end.isoformat()})",
+            )
+        )
+    if expense.amount and line is None:
+        alerts.append(AlertDraft(level="low", reason="Gasto sin rubro asignado"))
+    return alerts
 
 
 # ---------- Errors (plan.md, API Contract) ----------

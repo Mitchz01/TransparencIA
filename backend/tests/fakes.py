@@ -17,6 +17,7 @@ from app.domain.integrations import ExternalKind, ExternalLink, OwnWrite, OwnWri
 from app.domain.project import Member, Project
 from app.domain.proposals import Proposal, ProposalStatus
 from app.domain.sync import WebhookDelivery
+from app.domain.transparency import Alert, Budget, Expense, ExpenseStatus
 
 
 class _Store:
@@ -81,6 +82,9 @@ class FakeProjectRepository(_Repo):
 
     def get_by_invite_token(self, token: str) -> Project | None:
         return next((p for p in self.list() if p.invite_token == token), None)
+
+    def get_by_public_slug(self, slug: str) -> Project | None:
+        return next((p for p in self.list() if getattr(p, "public_slug", None) == slug), None)
 
 
 class FakeSprintRepository(_Repo):
@@ -254,6 +258,53 @@ class FakeSessionRepository(_Repo):
         return len(old)
 
 
+class FakeBudgetRepository(_Repo):
+    """Keyed by project: a project has one budget (spec 017)."""
+
+    def __init__(self, uow: "InMemoryUnitOfWork"):
+        super().__init__(uow, "budgets")
+
+    def save(self, budget: Budget) -> Budget:
+        self.rows[budget.project_id] = budget.model_copy(deep=True)
+        return budget.model_copy(deep=True)
+
+
+class FakeExpenseRepository(_Repo):
+    """An expense carries its alerts; saving it gives new alerts their ids (spec 017)."""
+
+    def __init__(self, uow: "InMemoryUnitOfWork"):
+        super().__init__(uow, "expenses")
+
+    def _put(self, expense: Expense) -> Expense:
+        if expense.id is None:
+            expense = expense.model_copy(update={"id": next(self._uow.store.ids)})
+        alerts = [a.model_copy(update={"id": a.id or next(self._uow.store.ids), "expense_id": expense.id}) for a in expense.alerts]
+        return super()._put(expense.model_copy(update={"alerts": alerts}))
+
+    def list_by_project(self, project_id: int, status: ExpenseStatus | None = None) -> list[Expense]:
+        return [
+            e.model_copy(deep=True)
+            for _, e in sorted(self.rows.items())
+            if e.project_id == project_id and (status is None or e.status == status)
+        ]
+
+    def delete(self, expense_id: int) -> None:
+        self.rows.pop(expense_id, None)
+
+    def get_alert(self, alert_id: int) -> Alert | None:
+        return next((a.model_copy(deep=True) for e in self.rows.values() for a in e.alerts if a.id == alert_id), None)
+
+    def save_alert(self, alert: Alert) -> Alert:
+        expense = self.rows[alert.expense_id]  # type: ignore[index]
+        expense.alerts = [alert.model_copy(deep=True) if a.id == alert.id else a for a in expense.alerts]
+        return alert.model_copy(deep=True)
+
+
+class FakeStoredFileRepository(_Repo):
+    def __init__(self, uow: "InMemoryUnitOfWork"):
+        super().__init__(uow, "files")
+
+
 class InMemoryUnitOfWork:
     """Implements the UnitOfWork port. Several instances can share one store, like
     sessions sharing a database: what one commits, the next one sees."""
@@ -275,6 +326,9 @@ class InMemoryUnitOfWork:
         self.documents = FakeDocumentRepository(self)
         self.accounts = FakeAccountRepository(self)
         self.sessions = FakeSessionRepository(self)
+        self.budgets = FakeBudgetRepository(self)  # spec 017
+        self.expenses = FakeExpenseRepository(self)  # spec 017
+        self.files = FakeStoredFileRepository(self)  # spec 017
 
     def _reset(self) -> None:
         self.working = {name: {k: v.model_copy(deep=True) for k, v in rows.items()} for name, rows in self.store.committed.items()}
