@@ -5,7 +5,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.adapters.inbound.http import health
+from app.adapters.inbound.http import health, projects
+from app.adapters.inbound.http.dependencies import open_uow
 from app.adapters.inbound.http.errors import register_error_handlers
 from app.adapters.outbound.code_host.fake import FakeCodeHost
 from app.adapters.outbound.events.in_memory_bus import InMemoryEventBus
@@ -39,6 +40,8 @@ async def lifespan(app: FastAPI):
     app.state.agents = build_agents()
     app.state.code_host = build_code_host()
     app.state.event_bus = InMemoryEventBus()
+    app.state.uow_factory = open_uow
+    app.state.on_team_changed = []  # spec 008 registers its drift-replan handler here
     yield
 
 
@@ -47,4 +50,5 @@ app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS, allow_methods=["*
 register_error_handlers(app)
 
 app.include_router(health.router)
+app.include_router(projects.router)
 # TODO: projects, planning, proposals, board, documents (adapters/inbound/http) and webhooks/github

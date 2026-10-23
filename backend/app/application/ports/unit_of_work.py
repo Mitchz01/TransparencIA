@@ -1,6 +1,13 @@
+from collections.abc import Callable
 from typing import Protocol, Self
 
-from app.application.ports.repositories import ProjectRepository, SprintRepository, TaskRepository
+from app.application.ports.repositories import (
+    ActivityRepository,
+    ProjectRepository,
+    ProposalRepository,
+    SprintRepository,
+    TaskRepository,
+)
 
 
 class UnitOfWork(Protocol):
@@ -10,8 +17,15 @@ class UnitOfWork(Protocol):
     projects: ProjectRepository
     sprints: SprintRepository
     tasks: TaskRepository
+    proposals: ProposalRepository
+    activity: ActivityRepository
 
     def __enter__(self) -> Self: ...
     def __exit__(self, *exc: object) -> None: ...
     def commit(self) -> None: ...
     def rollback(self) -> None: ...
+
+
+# Opens a fresh UnitOfWork with its own DB session. Background work (spec 005's
+# ApplyProposal, spec 002's stages) uses it instead of the request's session.
+UnitOfWorkFactory = Callable[[], UnitOfWork]

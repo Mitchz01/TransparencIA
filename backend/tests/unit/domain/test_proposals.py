@@ -26,6 +26,6 @@ def test_adjust_replaces_final_content():
 
 def test_cannot_resolve_twice():
     proposal = _proposal()
-    proposal.reject()
+    proposal.reject("Not now")
     with pytest.raises(ProposalAlreadyResolved):
         proposal.approve()
