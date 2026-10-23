@@ -1,7 +1,7 @@
 # Feature Specification: 005 · Proposals, approval and live activity
 
 **Created**: 2026-10-23  
-**Status**: Draft  
+**Status**: Approved  
 **Owner**: sandredev  
 **Reviewer**: codigotpx  
 **Use cases**: UC-04, UC-14 ([plan/use-cases.md](../../plan/use-cases.md))  
@@ -29,7 +29,7 @@ The leader asks for the proposals of their project and sees, for each one, which
 
 **Why this priority**: there's no decision without seeing the proposal. It's the base of "Agent transparency" and "Nothing is applied without approval" (constitution, principles 3 and 8).
 
-**Independent Test**: load three proposals of a project (one pending, one approved, one rejected); asking for pending ones returns one, the history returns all three in creation order, and each one has agent, kind, content, rationale and status.
+**Independent Test**: load three proposals of a project (one pending, one approved, one rejected); asking for pending ones returns one, the history returns all three, newest first, and each one has agent, kind, content, rationale and status.
 
 **Acceptance Scenarios**:
 
@@ -41,7 +41,7 @@ The leader asks for the proposals of their project and sees, for each one, which
 2. **Scenario**: History
    - **Given** a project where the roadmap proposal was rejected once and then approved
    - **When** the leader asks for the history
-   - **Then** they see both roadmap proposals in order, the first rejected with its reason and the second approved
+   - **Then** they see both roadmap proposals, newest first: the approved one, then the rejected one with its reason
 
 3. **Scenario**: Unknown proposal
    - **Given** no proposal exists with that id
@@ -252,7 +252,7 @@ The leader picks several pending proposals of their project and approves them in
 
 - **FR-001**: Every agent decision MUST be saved as a proposal before it's applied, with project, kind, subject (stage or action), agent, content, rationale, status and creation date (constitution, principle 8).
 - **FR-002**: A proposal MUST be in one of these statuses: pending, approved, adjusted, rejected or discarded. Only a pending one can move to another status, with the single exception of the edge case "adjusting a rejected proposal".
-- **FR-003**: The system MUST list a project's proposals, all of them or filtered by status, in creation order, and return one by its id.
+- **FR-003**: The system MUST list a project's proposals, all of them or filtered by status, newest first, and return one by its id.
 - **FR-004**: Approving or adjusting MUST save the decision with its date and then hand the proposal to the owner of its kind to apply it (table "Kinds of proposal"). If applying fails, the decision stays saved, the activity feed MUST say so with the reason, and the leader MUST be able to retry the application.
 - **FR-005**: Adjusting MUST validate the leader's version with the same structure the kind requires (constitution, principle 2), keep both versions and apply the leader's. If the version isn't valid, nothing MUST change and the answer MUST say which field fails.
 - **FR-006**: Later steps (other stages, the board, the documents) MUST always use the final version of a proposal: the adjusted one if there was an adjustment, the original otherwise.

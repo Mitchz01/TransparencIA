@@ -1,7 +1,7 @@
 # Feature Specification: 004 · Roadmap, methodology and architecture views
 
 **Created**: 2026-10-23  
-**Status**: Draft  
+**Status**: Approved  
 **Owner**: sandredev  
 **Reviewer**: codigotpx  
 **Use cases**: UC-07 ([plan/use-cases.md](../../plan/use-cases.md))  
