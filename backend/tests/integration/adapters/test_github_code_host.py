@@ -136,3 +136,65 @@ def test_delete_webhook_ignores_a_missing_hook():
     run(FakeGitHub(answer(404, {"message": "Not Found"})).host().delete_webhook(REPO, 42))
     with pytest.raises(GitHubError):
         run(FakeGitHub(answer(403, {"message": "Must have admin rights"})).host().delete_webhook(REPO, 42))
+
+
+# ---------- issues ----------
+
+
+def test_create_issue():
+    github = FakeGitHub(answer(201, {"number": 12, "html_url": "https://github.com/acme/app/issues/12"}))
+    issue = run(github.host().create_issue(REPO, "Login", "Body", ["type:feature"], ["ana"]))
+    assert (issue.number, issue.url, issue.state) == (12, "https://github.com/acme/app/issues/12", "open")
+    assert github.calls() == [("POST", "/repos/acme/app/issues")]
+    assert github.body() == {"title": "Login", "body": "Body", "labels": ["type:feature"], "assignees": ["ana"]}
+
+
+def test_create_issue_retries_once_without_assignees_on_422():
+    answers = iter(
+        [
+            httpx.Response(422, json={"message": "Validation Failed"}),
+            httpx.Response(201, json={"number": 3, "html_url": "u3"}),
+        ]
+    )
+    github = FakeGitHub(lambda _: next(answers))
+    assert run(github.host().create_issue(REPO, "Login", "Body", [], ["stranger"])).number == 3
+    assert [github.body(0)["assignees"], github.body(1)["assignees"]] == [["stranger"], []]
+
+    still_failing = FakeGitHub(answer(422, {"message": "Validation Failed"}))
+    with pytest.raises(GitHubError):
+        run(still_failing.host().create_issue(REPO, "Login", "Body", [], ["stranger"]))
+    assert len(still_failing.requests) == 2  # only one retry
+    no_assignees = FakeGitHub(answer(422, {"message": "Validation Failed"}))
+    with pytest.raises(GitHubError):
+        run(no_assignees.host().create_issue(REPO, "Login", "Body", [], []))
+    assert len(no_assignees.requests) == 1
+
+
+def test_update_issue():
+    github = FakeGitHub(answer(200, {"number": 12}))
+    assert run(github.host().update_issue(REPO, 12, "New title", "Body", ["priority:high"], [])) is True
+    assert github.calls() == [("PATCH", "/repos/acme/app/issues/12")]
+    assert github.body() == {"title": "New title", "body": "Body", "labels": ["priority:high"], "assignees": []}
+
+
+@pytest.mark.parametrize("status", [404, 410])
+def test_update_issue_deleted_on_github_returns_false(status):
+    github = FakeGitHub(answer(status, {"message": "This issue was deleted"}))
+    assert run(github.host().update_issue(REPO, 12, "T", "B", [], [])) is False
+
+
+def test_update_issue_retries_without_assignees_on_422():
+    answers = iter([httpx.Response(422, json={"message": "Validation Failed"}), httpx.Response(200, json={})])
+    github = FakeGitHub(lambda _: next(answers))
+    assert run(github.host().update_issue(REPO, 12, "T", "B", [], ["stranger"])) is True
+    assert github.body(1)["assignees"] == []
+
+
+def test_close_issue_comments_then_closes_as_not_planned():
+    github = FakeGitHub(answer(200, {}))
+    assert run(github.host().close_issue(REPO, 12, "not_planned", "Discarded: out of scope")) is True
+    assert github.calls() == [("POST", "/repos/acme/app/issues/12/comments"), ("PATCH", "/repos/acme/app/issues/12")]
+    assert github.body(0) == {"body": "Discarded: out of scope"}
+    assert github.body(1) == {"state": "closed", "state_reason": "not_planned"}
+
+    assert run(FakeGitHub(answer(410, {"message": "Gone"})).host().close_issue(REPO, 12, "not_planned", "x")) is False

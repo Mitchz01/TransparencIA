@@ -1,8 +1,13 @@
 """Every status row of spec 007's API Contract (repository, issues, GitHub usernames)."""
 
+import time
+
 import pytest
+from sqlmodel import Session
 
 from app.adapters.outbound.code_host.fake import FakeCodeHost
+from app.adapters.outbound.persistence.db import engine
+from app.adapters.outbound.persistence.tables import TaskTable
 from app.domain.errors import CodeHostUnavailable
 from app.domain.integrations import RepoAccess
 
@@ -15,14 +20,33 @@ PROJECT = {
 
 @pytest.fixture
 def github(client) -> FakeCodeHost:
-    """Every project gets this FakeCodeHost, whatever its token."""
-    host = FakeCodeHost()
-    client.app.state.code_host_factory = lambda token: host
+    """The app's FakeCodeHost: tests force MOCK_GITHUB, so every project gets it, whatever its token."""
+    host = client.app.state.code_host_factory("any-token")
+    assert isinstance(host, FakeCodeHost) and host is client.app.state.code_host_factory(None)
     return host
 
 
 def _project(client) -> dict:
     return client.post("/api/projects", json=PROJECT).json()
+
+
+def _tasks(project_id: int, count: int = 2) -> list[int]:
+    """Board tasks straight in the DB (spec 003 builds them; not merged here)."""
+    with Session(engine) as session:
+        rows = [TaskTable(project_id=project_id, key=f"US-{i + 1}", title=f"Task {i + 1}", position=i) for i in range(count)]
+        session.add_all(rows)
+        session.commit()
+        return [row.id for row in rows]
+
+
+def _wait_for(check, attempts: int = 100):
+    """Applying runs in the background: poll until `check()` returns something truthy."""
+    for _ in range(attempts):
+        value = check()
+        if value:
+            return value
+        time.sleep(0.01)
+    raise AssertionError("background work didn't finish")
 
 
 def _connect(client, pid: int, **body):
@@ -132,3 +156,79 @@ def test_disconnect_204_then_409(client, github):
 def test_disconnect_404_unknown_project(client, github):
     response = client.delete("/api/projects/999/repository")
     assert response.status_code == 404 and response.json()["code"] == "project_not_found"
+
+
+# ---------- POST /api/projects/{id}/issues/propose ----------
+
+
+def _applied(client, proposal_id: int) -> dict | None:
+    proposal = client.get(f"/api/proposals/{proposal_id}").json()
+    return proposal if proposal["result"] else None
+
+
+def test_propose_201_then_approve_publishes_the_issues(client, github):
+    pid = _project(client)["id"]
+    _connect(client, pid)
+    task_ids = _tasks(pid)
+    response = client.post(f"/api/projects/{pid}/issues/propose")
+    assert response.status_code == 201
+    body = response.json()
+    assert body["task_count"] == 2 and response.headers["Location"] == f"/api/proposals/{body['proposal_id']}"
+
+    proposal = client.get(f"/api/proposals/{body['proposal_id']}").json()
+    assert (proposal["kind"], proposal["key"], proposal["status"]) == ("github_action", "create_issues", "pending")
+    assert [t["task_id"] for t in proposal["content"]["tasks"]] == task_ids
+
+    assert client.post(f"/api/proposals/{body['proposal_id']}/approve").status_code == 200
+    applied = _wait_for(lambda: _applied(client, body["proposal_id"]))
+    assert applied["apply_failed"] is False
+    assert applied["result"] == {
+        "created": [{"task_id": task_ids[0], "number": 1}, {"task_id": task_ids[1], "number": 2}],
+        "failed": [],
+    }
+    assert [c["title"] for c in github.called("create_issue")] == ["Task 1", "Task 2"]
+    activity = client.get(f"/api/projects/{pid}/activity").json()
+    published = next(e for e in activity if e["type"] == "issues_published")
+    assert published["proposal_id"] == body["proposal_id"]
+    assert published["created"][0] == {"task_id": task_ids[0], "number": 1}
+
+
+def test_connecting_with_a_board_proposes_and_auto_approve_publishes(client, github):
+    pid = client.post("/api/projects", json={**PROJECT, "auto_approve": True}).json()["id"]
+    _tasks(pid, 3)
+    assert _connect(client, pid).status_code == 200
+    _wait_for(lambda: len(github.called("create_issue")) == 3)
+    [proposal] = client.get(f"/api/projects/{pid}/proposals").json()
+    assert proposal["auto_approved"] is True and proposal["key"] == "create_issues"
+
+    nothing = client.post(f"/api/projects/{pid}/issues/propose")
+    assert nothing.status_code == 409 and nothing.json()["code"] == "nothing_to_publish"
+
+
+def test_propose_404_unknown_project(client, github):
+    response = client.post("/api/projects/999/issues/propose")
+    assert response.status_code == 404 and response.json()["code"] == "project_not_found"
+
+
+def test_propose_409_repository_not_connected(client, github):
+    pid = _project(client)["id"]
+    _tasks(pid)
+    response = client.post(f"/api/projects/{pid}/issues/propose")
+    assert response.status_code == 409 and response.json()["code"] == "repository_not_connected"
+
+
+def test_propose_409_nothing_to_publish(client, github):
+    pid = _project(client)["id"]
+    _connect(client, pid)  # empty board: connecting proposes nothing
+    response = client.post(f"/api/projects/{pid}/issues/propose")
+    assert response.status_code == 409 and response.json()["code"] == "nothing_to_publish"
+
+
+def test_propose_409_publication_pending(client, github):
+    pid = _project(client)["id"]
+    _tasks(pid)
+    _connect(client, pid)  # board + repo: proposed on connect
+    [pending] = client.get(f"/api/projects/{pid}/proposals").json()
+    response = client.post(f"/api/projects/{pid}/issues/propose")
+    assert response.status_code == 409
+    assert response.json()["code"] == "publication_pending" and response.json()["proposal_id"] == pending["id"]

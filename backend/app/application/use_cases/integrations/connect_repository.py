@@ -13,7 +13,7 @@ from app.domain.integrations import validate_repository
 
 logger = logging.getLogger("agile")
 
-# Runs after a repo is connected, with the project id (ProposeIssues.after_repository_connected).
+# Runs after a repo is connected, with the project id (ProposeIssues.propose_pending).
 ConnectedHandler = Callable[[int], Awaitable[None]]
 
 

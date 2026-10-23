@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from itertools import count
 from typing import Any, Self
 
+from app.adapters.outbound.code_host.fake import FakeCodeHost
 from app.domain.board import Sprint, Task
 from app.domain.errors import ProposalAlreadyResolved
 from app.domain.events import DomainEvent
@@ -215,6 +216,18 @@ class RecordingEventBus:
         for event in list(self.events):
             if event.project_id == project_id:
                 yield event
+
+
+class CodeHosts:
+    """A CodeHostFactory (spec 007) that hands out one FakeCodeHost and remembers the tokens asked for."""
+
+    def __init__(self, host: FakeCodeHost | None = None):
+        self.host = host or FakeCodeHost()
+        self.tokens: list[str | None] = []
+
+    def __call__(self, token: str | None) -> FakeCodeHost:
+        self.tokens.append(token)
+        return self.host
 
 
 def project(**overrides: Any) -> Project:

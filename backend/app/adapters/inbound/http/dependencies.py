@@ -6,6 +6,7 @@ from datetime import date, datetime, timezone
 from fastapi import Depends, Request
 from sqlmodel import Session
 
+from app.adapters.inbound.http.background import spawn
 from app.adapters.outbound.persistence.db import engine, get_session
 from app.adapters.outbound.persistence.unit_of_work import SqlUnitOfWork
 from app.config import GITHUB_WEBHOOK_SECRET, PUBLIC_BASE_URL
@@ -20,8 +21,11 @@ from app.application.use_cases.projects.get_project import GetProject
 from app.application.use_cases.projects.list_projects import ListProjects
 from app.application.use_cases.projects.update_project import UpdateProject
 from app.application.use_cases.activity.list_activity import FollowActivity, ListActivity
+from app.application.use_cases.integrations.close_discarded_issue import CloseDiscardedIssue
 from app.application.use_cases.integrations.connect_repository import ConnectRepository
 from app.application.use_cases.integrations.disconnect_repository import DisconnectRepository
+from app.application.use_cases.integrations.propose_issues import AfterCreated, ProposeIssues
+from app.application.use_cases.integrations.sync_task_issue import SyncTaskIssue
 from app.application.use_cases.proposals.apply_proposal import ApplyProposal, ProposalAppliers, RetryApply
 from app.application.use_cases.proposals.approve_many import ApproveProposals
 from app.application.use_cases.proposals.auto_approve import AutoApprove
@@ -172,12 +176,33 @@ def webhook_url() -> str | None:
     return f"{PUBLIC_BASE_URL}/webhooks/github" if PUBLIC_BASE_URL else None
 
 
+def get_auto_approve_in_background(auto_approve: AutoApprove = Depends(get_auto_approve)) -> AfterCreated:
+    """AutoApprove.after_created for proposals created in a request: applying runs in the background."""
+
+    async def after_created(proposal_id: int) -> None:
+        spawn(auto_approve.after_created(proposal_id))
+
+    return after_created
+
+
+def get_propose_issues(
+    uow: UnitOfWork = Depends(get_uow),
+    bus: EventBus = Depends(get_event_bus),
+    after_created: AfterCreated = Depends(get_auto_approve_in_background),
+) -> ProposeIssues:
+    return ProposeIssues(uow, bus, after_created)
+
+
 def get_connect_repository(
     uow: UnitOfWork = Depends(get_uow),
     bus: EventBus = Depends(get_event_bus),
     code_hosts: CodeHostFactory = Depends(get_code_host_factory),
+    propose_issues: ProposeIssues = Depends(get_propose_issues),
 ) -> ConnectRepository:
-    return ConnectRepository(uow, bus, code_hosts, webhook_url(), GITHUB_WEBHOOK_SECRET)
+    # With a board already built, connecting proposes publishing its tasks (FR-006).
+    return ConnectRepository(
+        uow, bus, code_hosts, webhook_url(), GITHUB_WEBHOOK_SECRET, [propose_issues.propose_pending]
+    )
 
 
 def get_disconnect_repository(
@@ -186,3 +211,21 @@ def get_disconnect_repository(
     code_hosts: CodeHostFactory = Depends(get_code_host_factory),
 ) -> DisconnectRepository:
     return DisconnectRepository(uow, bus, code_hosts)
+
+
+def get_sync_task_issue(
+    uow_factory: UnitOfWorkFactory = Depends(get_uow_factory),
+    bus: EventBus = Depends(get_event_bus),
+    code_hosts: CodeHostFactory = Depends(get_code_host_factory),
+) -> SyncTaskIssue:
+    """For spec 003: register `.execute(task_id)` as an after_task_changed handler of UpdateTask."""
+    return SyncTaskIssue(uow_factory, bus, code_hosts)
+
+
+def get_close_discarded_issue(
+    uow_factory: UnitOfWorkFactory = Depends(get_uow_factory),
+    bus: EventBus = Depends(get_event_bus),
+    code_hosts: CodeHostFactory = Depends(get_code_host_factory),
+) -> CloseDiscardedIssue:
+    """For specs 003 (task deleted) and 008 (task discarded in a replan)."""
+    return CloseDiscardedIssue(uow_factory, bus, code_hosts)

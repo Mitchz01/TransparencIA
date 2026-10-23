@@ -7,6 +7,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from app.domain.board import Task
 from app.domain.errors import ValidationFailed
 
 ExternalKind = Literal["issue", "pull_request"]
@@ -101,3 +102,40 @@ def validate_repository(value: str) -> str:
     if not REPOSITORY_PATTERN.match(clean):
         raise ValidationFailed.single("repository", "Must be owner/name, e.g. acme/agile-app.")
     return clean
+
+
+# ---------- Publishing issues (US2) ----------
+
+ISSUE_FOOTER = "_Managed by Agile Planner (task {key}): edit the task on the board, changes made here are overwritten._"
+
+
+def issue_body(task: Task) -> str:
+    """The issue mirrors the task (FR-008): description, acceptance criteria and the
+    checklist as a GitHub task list. Empty sections are left out."""
+    parts: list[str] = []
+    if task.description.strip():
+        parts.append(task.description.strip())
+    if task.acceptance_criteria:
+        parts.append("## Acceptance criteria\n\n" + "\n".join(f"- {c}" for c in task.acceptance_criteria))
+    if task.checklist:
+        parts.append("## Checklist\n\n" + "\n".join(f"- [{'x' if i.done else ' '}] {i.text}" for i in task.checklist))
+    parts.append("---\n" + ISSUE_FOOTER.format(key=task.key))
+    return "\n\n".join(parts)
+
+
+def issue_labels(task: Task) -> list[str]:
+    return [f"type:{task.type}", f"priority:{task.priority}"]
+
+
+class IssueToPublish(BaseModel):
+    task_id: int
+    key: str = ""
+    title: str
+
+
+class IssuesToPublish(BaseModel):
+    """Content of a `github_action` / `create_issues` proposal. The leader adjusts it by
+    removing tasks (FR-007)."""
+
+    repository: str
+    tasks: list[IssueToPublish] = Field(min_length=1)

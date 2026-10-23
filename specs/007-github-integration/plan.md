@@ -238,18 +238,18 @@ Not part of our API, but they define our error mapping (`client.py`, T011):
 
 ### Tests for User Story 2
 
-- [ ] T015 [P] [US2] Domain tests for `issue_body()` (description, criteria, checklist as `- [ ]` task list), `issue_labels()` (`type:*`, `priority:*`) in `backend/tests/unit/domain/test_integrations.py`
-- [ ] T016 [P] [US2] `ProposeIssues` / `PublishIssues` tests (only tasks without a link; removed tasks not published; partial failure keeps created links and lists failed ones; every write recorded as `OwnWrite`) in `backend/tests/unit/application/test_publish_issues.py`
-- [ ] T017 [P] [US2] `SyncTaskIssue` / `CloseDiscardedIssue` tests (no proposal; issue updated; closed as `not_planned` with a comment; `OwnWrite` recorded) in `backend/tests/unit/application/test_sync_task_issue.py`
+- [x] T015 [P] [US2] Domain tests for `issue_body()` (description, criteria, checklist as `- [ ]` task list), `issue_labels()` (`type:*`, `priority:*`) in `backend/tests/unit/domain/test_integrations.py`
+- [x] T016 [P] [US2] `ProposeIssues` / `PublishIssues` tests (only tasks without a link; removed tasks not published; partial failure keeps created links and lists failed ones; every write recorded as `OwnWrite`) in `backend/tests/unit/application/test_publish_issues.py`
+- [x] T017 [P] [US2] `SyncTaskIssue` / `CloseDiscardedIssue` tests (no proposal; issue updated; closed as `not_planned` with a comment; `OwnWrite` recorded) in `backend/tests/unit/application/test_sync_task_issue.py`
 
 ### Implementation for User Story 2
 
-- [ ] T018 [US2] Implement `issue_body()` and `issue_labels()` in `backend/app/domain/integrations.py`
-- [ ] T019 [US2] Implement `ProposeIssues` (`github_action` proposal, key `create_issues`, content = task ids and titles) in `backend/app/application/use_cases/integrations/propose_issues.py`; trigger it when both board and repo exist for the first time (end of `ConnectRepository`, and as an `ApplyPlan` follow-up), and from `POST /api/projects/{id}/issues/propose`
-- [ ] T020 [US2] Implement `PublishIssues(proposal_id)` in `publish_issues.py`: create each issue, save the `ExternalLink`, record an `OwnWrite`, collect failures into the proposal result; publish `IssuesPublished`
-- [ ] T021 [US2] Implement `SyncTaskIssue` and register it as an `after_task_changed` handler of spec 003's `UpdateTask`; implement `CloseDiscardedIssue(task_id, reason)` for spec 008's replan
-- [ ] T022 [US2] Add the `create_issues`, `update_issue` and `close_issue` methods to `GitHubCodeHost`
-- [ ] T023 [US2] Include the issue links in spec 003's board read model and show `IssueBadge` (`#number` link, broken-link state) on `TaskCard`; add "Publish pending tasks" to `IntegrationsPage`
+- [x] T018 [US2] Implement `issue_body()` and `issue_labels()` in `backend/app/domain/integrations.py`
+- [ ] T019 [US2] Implement `ProposeIssues` (`github_action` proposal, key `create_issues`, content = task ids and titles) in `backend/app/application/use_cases/integrations/propose_issues.py`; trigger it when both board and repo exist for the first time (end of `ConnectRepository`, and as an `ApplyPlan` follow-up), and from `POST /api/projects/{id}/issues/propose` — needs spec 003 merged: `ProposeIssues`, the `ConnectRepository` trigger and the endpoint are done; registering `ProposeIssues.propose_pending` as an `ApplyPlan` follow-up is left
+- [x] T020 [US2] Implement `PublishIssues(proposal_id)` in `publish_issues.py`: create each issue, save the `ExternalLink`, record an `OwnWrite`, collect failures into the proposal result; publish `IssuesPublished`
+- [ ] T021 [US2] Implement `SyncTaskIssue` and register it as an `after_task_changed` handler of spec 003's `UpdateTask`; implement `CloseDiscardedIssue(task_id, reason)` for spec 008's replan — needs spec 003 merged: both use cases are implemented and tested (`deps.get_sync_task_issue`, `deps.get_close_discarded_issue`); registering `SyncTaskIssue.execute` as an `after_task_changed` handler of `UpdateTask` is left
+- [x] T022 [US2] Add the `create_issues`, `update_issue` and `close_issue` methods to `GitHubCodeHost`
+- [ ] T023 [US2] Include the issue links in spec 003's board read model and show `IssueBadge` (`#number` link, broken-link state) on `TaskCard`; add "Publish pending tasks" to `IntegrationsPage` — backend part (issue links in the board read model) needs spec 003 merged; `ExternalLink.issue_ref()` and `links.list_by_project()` are ready for it. UI part (`IssueBadge`, "Publish pending tasks") handed off to spec 009 (frontend)
 
 **Checkpoint**: User Stories 1 and 2 work independently
 

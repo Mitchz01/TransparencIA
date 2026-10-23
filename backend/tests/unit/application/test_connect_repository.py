@@ -2,34 +2,21 @@ import asyncio
 
 import pytest
 
-from app.adapters.outbound.code_host.fake import FakeCodeHost
 from app.application.use_cases.integrations.connect_repository import ConnectRepository
 from app.application.use_cases.integrations.disconnect_repository import DisconnectRepository
 from app.domain.errors import CodeHostUnavailable, ProjectNotFound, RepositoryNotAccessible, RepositoryNotConnected, ValidationFailed
 from app.domain.integrations import ExternalLink, RepoAccess
-from tests.fakes import InMemoryUnitOfWork, RecordingEventBus, project
+from tests.fakes import CodeHosts, InMemoryUnitOfWork, RecordingEventBus, project
 
 run = asyncio.run
 HOOK_URL = "https://planner.test/webhooks/github"
-
-
-class Hosts:
-    """A CodeHostFactory that hands out one FakeCodeHost and remembers the tokens asked for."""
-
-    def __init__(self, host: FakeCodeHost | None = None):
-        self.host = host or FakeCodeHost()
-        self.tokens: list[str | None] = []
-
-    def __call__(self, token: str | None) -> FakeCodeHost:
-        self.tokens.append(token)
-        return self.host
 
 
 def _setup(**fields):
     uow = InMemoryUnitOfWork()
     saved = uow.projects.add(project(**fields))
     uow.commit()
-    return uow, saved.id, RecordingEventBus(), Hosts()
+    return uow, saved.id, RecordingEventBus(), CodeHosts()
 
 
 def _connect(uow, bus, hosts, webhook_url=HOOK_URL, handlers=()):
