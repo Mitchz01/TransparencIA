@@ -28,6 +28,7 @@ class ProjectTable(SQLModel, table=True):
     # Spec 007. Encrypted with SECRET_KEY when it's set (see token_cipher.py), plain text otherwise.
     github_token: str | None = None
     webhook_id: int | None = None
+    invite_token: str | None = Field(default=None, index=True)  # spec 015
 
 
 class MemberTable(SQLModel, table=True):
@@ -43,6 +44,8 @@ class MemberTable(SQLModel, table=True):
     # Removed members are deactivated, never deleted, so done tasks keep their assignee (spec 001).
     active: bool = True
     github_username: str | None = None  # spec 007
+    account_id: int | None = Field(default=None, foreign_key="account.id", index=True)  # spec 015
+    permission: str = "member"  # spec 015
 
 
 class SprintTable(SQLModel, table=True):
@@ -190,3 +193,31 @@ class DocumentVersionTable(SQLModel, table=True):
     source: str = "agent"
     proposal_id: int | None = Field(default=None, foreign_key="proposal.id")
     created_at: datetime = Field(default_factory=_now)
+
+
+# ---------- Accounts (spec 015) ----------
+
+
+class AccountTable(SQLModel, table=True):
+    __tablename__ = "account"
+
+    id: int | None = Field(default=None, primary_key=True)
+    email: str = Field(unique=True, index=True)  # normalized: lowercase, trimmed
+    password_hash: str
+    name: str
+    role: str | None = None
+    seniority: str = "mid"
+    hours_per_week: int = 20
+    skills: list[str] = Field(default_factory=list, sa_column=Column(JSON))
+    github_username: str | None = None
+    created_at: datetime = Field(default_factory=_now)
+
+
+class SessionTable(SQLModel, table=True):
+    __tablename__ = "auth_session"
+
+    id: int | None = Field(default=None, primary_key=True)
+    account_id: int = Field(foreign_key="account.id", index=True)
+    token_digest: str = Field(unique=True, index=True)  # SHA-256 of the cookie's token, never the token
+    created_at: datetime = Field(default_factory=_now)
+    expires_at: datetime

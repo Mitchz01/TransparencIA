@@ -8,7 +8,7 @@ Rules every HTTP endpoint follows. Each spec's `plan.md` has an **API Contract**
 - JSON only, UTF-8. Field names in `snake_case`, the same as the Pydantic models.
 - Ids are integers. Dates and times are ISO 8601 in UTC (`2026-10-23T14:05:00Z`); dates without time are `YYYY-MM-DD`.
 - Enums are lowercase strings (`"in_progress"`, `"scrumban"`).
-- No user authentication (constitution, principle 5). The only authenticated caller is GitHub, through the webhook signature.
+- Accounts with email and password (spec 015, constitution principle 5). The session is an `HttpOnly` cookie, `agile_session`; every `/api` endpoint needs it except signing up, signing in, the invitation preview and health. GitHub authenticates through the webhook signature.
 - Secrets (GitHub tokens) are **write-only**: they are accepted in requests and never returned. Responses expose `has_token: bool` instead.
 
 ## Headers
@@ -42,7 +42,8 @@ CORS allows the origins in `CORS_ORIGINS` (`http://localhost:5173` in dev).
 | `202 Accepted` | The work continues in the background (agents, GitHub processing). Agents **never** run inside the request | An acknowledgement (`{"project_id": 1, "status": "planning"}`); progress arrives over SSE |
 | `204 No Content` | A `DELETE` succeeded | Empty |
 | `400 Bad Request` | The request can't be read: body isn't valid JSON, wrong `Content-Type`, missing required header | Error |
-| `401 Unauthorized` | Webhook signature missing or wrong | Error |
+| `401 Unauthorized` | No valid session (`not_authenticated`), wrong email or password (`invalid_credentials`), or webhook signature missing or wrong | Error |
+| `403 Forbidden` | Signed in and a member of the project, but the action needs a leader (spec 015) | Error with `code: "forbidden"` |
 | `404 Not Found` | An id in the path doesn't exist | Error |
 | `409 Conflict` | The request is valid but not allowed in the current state (planning already running, proposal already resolved, repo not connected…) | Error |
 | `422 Unprocessable Entity` | The JSON is readable but breaks a rule: missing field, wrong type, out of range, a domain validation | Error with `errors` |
@@ -103,6 +104,11 @@ Domain errors live in `backend/app/domain/errors.py`; `adapters/inbound/http/err
 | `PlanNotApplied` | 409 | `plan_not_applied` | 008 |
 | `SprintAlreadyClosed` | 409 | `sprint_already_closed` | 008 |
 | Invalid webhook signature | 401 | `invalid_signature` | 008 |
+| `NotAuthenticated` | 401 | `not_authenticated` | 015 |
+| `InvalidCredentials` | 401 | `invalid_credentials` | 015 |
+| `Forbidden` | 403 | `forbidden` | 015 |
+| `InvitationNotFound` | 404 | `invitation_not_found` | 015 |
+| `LastLeader` | 409 | `last_leader` | 015 |
 | Anything else | 500 | `internal_error` | all |
 
 ## Updates

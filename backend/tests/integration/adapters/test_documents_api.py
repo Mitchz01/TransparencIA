@@ -8,6 +8,7 @@ from app.adapters.outbound.agents.mock.data import MOCK_PLAN
 from app.adapters.outbound.persistence.db import engine
 from app.adapters.outbound.persistence.tables import DocumentTable, DocumentVersionTable, ProjectTable, ProposalTable
 from app.domain.plan import PLANNING_STAGES
+from tests.api import create_project
 
 PROJECT = {
     "name": "Bakery shop",
@@ -22,7 +23,7 @@ DIAGRAM = 'flowchart TD\n    A["Open"] --> B["Pay"]'
 
 
 def _create(client, **overrides) -> int:
-    return client.post("/api/projects", json={**PROJECT, **overrides}).json()["id"]
+    return create_project(client, {**PROJECT, **overrides})["id"]
 
 
 def _wait(check, timeout: float = 5.0):

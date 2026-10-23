@@ -7,12 +7,13 @@ from sqlmodel import Session
 from app.adapters.outbound.agents.mock.data import MOCK_PLAN
 from app.adapters.outbound.persistence.db import engine
 from app.adapters.outbound.persistence.tables import ProposalTable
+from tests.api import create_project
 
 PROJECT = {"name": "Agile Planner", "description": "Plans the work.", "members": [{"name": "Ana", "role": "Backend"}]}
 
 
 def _project(client) -> int:
-    return client.post("/api/projects", json=PROJECT).json()["id"]
+    return create_project(client, PROJECT)["id"]
 
 
 def _proposal(project_id: int, key: str = "methodology", kind: str = "plan_stage", **fields) -> int:

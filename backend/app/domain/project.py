@@ -9,6 +9,8 @@ from app.domain.errors import FieldError, MethodologyLocked, ValidationFailed
 ProjectStatus = Literal["draft", "planning", "ready", "error"]
 RequestedMethodology = Literal["auto", "scrum", "kanban", "scrumban", "xp", "shape_up"]
 Seniority = Literal["junior", "mid", "senior"]
+# What a member can do in a project (spec 015, US5): leaders do everything, members do the work.
+Permission = Literal["leader", "member"]
 
 # Spec 001, FR-004 (limits from the API contract in plan.md).
 NAME_MAX = 120
@@ -35,6 +37,10 @@ class Member(BaseModel):
     skills: list[str] = []
     # Set only from Integrations (spec 007, US3): issues are assigned and reviews requested to it.
     github_username: str | None = None
+    # Spec 015: the account this member is (None only for members made before accounts) and
+    # what they can do. Changing `permission` isn't a team change (it's not in MEMBER_FIELDS).
+    account_id: int | None = None
+    permission: Permission = "member"
 
 
 class Project(BaseModel):
@@ -59,6 +65,9 @@ class Project(BaseModel):
     github_token: str | None = Field(default=None, exclude=True)
     # Id of the webhook registered on `repository`, to delete it on disconnect (spec 007).
     webhook_id: int | None = Field(default=None, exclude=True)
+    # Spec 015: the current invitation link's token; None = invitations off. Only leaders read it
+    # (GET /invitation), so it's never serialized with the project.
+    invite_token: str | None = Field(default=None, exclude=True)
 
     @computed_field  # type: ignore[prop-decorator]
     @property

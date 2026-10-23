@@ -13,14 +13,14 @@ from app.application.use_cases.integrations.set_github_username import SetGithub
 router = APIRouter(prefix="/api", tags=["integrations"])
 
 
-@router.put("/projects/{project_id}/repository", response_model=Connection)
+@router.put("/projects/{project_id}/repository", response_model=Connection, dependencies=[Depends(deps.allow("manage"))])
 async def connect_repository(
     project_id: int, body: RepositoryConnect, use_case: ConnectRepository = Depends(deps.get_connect_repository)
 ) -> Connection:
     return await use_case.execute(project_id, body.repository, body.token)
 
 
-@router.delete("/projects/{project_id}/repository", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/projects/{project_id}/repository", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(deps.allow("manage"))])
 async def disconnect_repository(
     project_id: int, use_case: DisconnectRepository = Depends(deps.get_disconnect_repository)
 ) -> Response:
@@ -28,7 +28,7 @@ async def disconnect_repository(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.post("/projects/{project_id}/issues/propose", status_code=status.HTTP_201_CREATED, response_model=IssuesProposed)
+@router.post("/projects/{project_id}/issues/propose", status_code=status.HTTP_201_CREATED, response_model=IssuesProposed, dependencies=[Depends(deps.allow("manage"))])
 async def propose_issues(
     project_id: int, response: Response, use_case: ProposeIssues = Depends(deps.get_propose_issues)
 ) -> IssuesProposed:
@@ -38,7 +38,7 @@ async def propose_issues(
     return IssuesProposed(proposal_id=proposal.id or 0, task_count=len(proposal.content["tasks"]))
 
 
-@router.put("/members/{member_id}/github-username", response_model=MemberGithubAccess)
+@router.put("/members/{member_id}/github-username", response_model=MemberGithubAccess, dependencies=[Depends(deps.allow("manage", "member"))])
 async def set_github_username(
     member_id: int, body: GithubUsernameSet, use_case: SetGithubUsername = Depends(deps.get_set_github_username)
 ) -> MemberGithubAccess:

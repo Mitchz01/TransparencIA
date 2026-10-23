@@ -15,8 +15,12 @@ from app.domain.errors import (
     CodeHostUnavailable,
     CapacityNotApplicable,
     DomainError,
+    Forbidden,
+    InvalidCredentials,
     InvalidDiagram,
+    LastLeader,
     MethodologyLocked,
+    NotAuthenticated,
     NotFound,
     PlanningAlreadyRunning,
     PlanningNotStartable,
@@ -52,6 +56,10 @@ _STATUS: dict[type[DomainError], int] = {
     InvalidDiagram: 422,
     RegenerationInProgress: 409,
     VersionConflict: 409,
+    NotAuthenticated: 401,  # spec 015
+    InvalidCredentials: 401,  # spec 015
+    Forbidden: 403,  # spec 015
+    LastLeader: 409,  # spec 015
 }
 
 

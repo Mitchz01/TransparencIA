@@ -26,19 +26,19 @@ from app.application.use_cases.board.update_task import UpdateTask
 router = APIRouter(prefix="/api", tags=["board"])
 
 
-@router.get("/projects/{project_id}/board", response_model=BoardView)
+@router.get("/projects/{project_id}/board", response_model=BoardView, dependencies=[Depends(deps.allow("view"))])
 def get_board(project_id: int, use_case: GetBoard = Depends(deps.get_get_board)) -> BoardView:
     return use_case.execute(project_id)
 
 
-@router.put("/projects/{project_id}/capacity", response_model=CapacityResult)
+@router.put("/projects/{project_id}/capacity", response_model=CapacityResult, dependencies=[Depends(deps.allow("manage"))])
 def set_capacity(
     project_id: int, body: CapacityUpdate, use_case: SetCapacity = Depends(deps.get_set_capacity)
 ) -> CapacityResult:
     return use_case.execute(project_id, body.points_per_sprint)
 
 
-@router.post("/projects/{project_id}/tasks", response_model=TaskResult, status_code=status.HTTP_201_CREATED)
+@router.post("/projects/{project_id}/tasks", response_model=TaskResult, status_code=status.HTTP_201_CREATED, dependencies=[Depends(deps.allow("work"))])
 async def create_task(
     project_id: int, body: TaskCreate, response: Response, use_case: CreateTask = Depends(deps.get_create_task)
 ) -> TaskResult:
@@ -48,7 +48,7 @@ async def create_task(
     return result
 
 
-@router.patch("/tasks/{task_id}", response_model=TaskResult)
+@router.patch("/tasks/{task_id}", response_model=TaskResult, dependencies=[Depends(deps.allow("work", "task"))])
 async def update_task(
     task_id: int,
     body: TaskUpdate,
@@ -62,13 +62,13 @@ async def update_task(
     return await move_task.execute(task_id, move or TaskMove())  # an empty body is a 422
 
 
-@router.post("/sprints/{sprint_id}/close", response_model=SprintCloseResult)
+@router.post("/sprints/{sprint_id}/close", response_model=SprintCloseResult, dependencies=[Depends(deps.allow("manage", "sprint"))])
 async def close_sprint(sprint_id: int, use_case: CloseSprint = Depends(deps.get_close_sprint)) -> SprintCloseResult:
     """Spec 008 (US4): with unfinished tasks, a replan is proposed in the background (never auto-approved)."""
     return await use_case.execute(sprint_id)
 
 
-@router.put("/tasks/{task_id}/checklist", response_model=TaskResult)
+@router.put("/tasks/{task_id}/checklist", response_model=TaskResult, dependencies=[Depends(deps.allow("work", "task"))])
 async def replace_checklist(
     task_id: int, body: ChecklistUpdate, use_case: UpdateChecklist = Depends(deps.get_update_checklist)
 ) -> TaskResult:

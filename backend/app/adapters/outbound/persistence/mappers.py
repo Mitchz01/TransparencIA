@@ -9,6 +9,7 @@ from typing import Any
 
 from app.adapters.outbound.persistence import token_cipher
 from app.adapters.outbound.persistence.tables import (
+    AccountTable,
     ActivityTable,
     ExternalLinkTable,
     DocumentTable,
@@ -18,10 +19,12 @@ from app.adapters.outbound.persistence.tables import (
     OwnWriteTable,
     ProjectTable,
     ProposalTable,
+    SessionTable,
     SprintTable,
     TaskTable,
     WebhookDeliveryTable,
 )
+from app.domain.accounts import Account, AuthSession
 from app.domain.board import Objective, Sprint, Task
 from app.domain.documents import Document, DocumentVersion
 from app.domain.events import DomainEvent
@@ -50,10 +53,15 @@ def project_to_domain(row: ProjectTable, members: list[MemberTable]) -> Project:
 
 
 def project_to_table(project: Project) -> ProjectTable:
-    # github_token and webhook_id are excluded from dumps (write-only, spec 007): set them by hand.
+    # github_token, webhook_id (spec 007) and invite_token (spec 015) are excluded from dumps: set them by hand.
     data = project.model_dump(exclude={"members", "has_token"})
     return ProjectTable.model_validate(
-        {**data, "github_token": token_cipher.seal(project.github_token), "webhook_id": project.webhook_id}
+        {
+            **data,
+            "github_token": token_cipher.seal(project.github_token),
+            "webhook_id": project.webhook_id,
+            "invite_token": project.invite_token,
+        }
     )
 
 
@@ -155,3 +163,23 @@ def delivery_to_domain(row: WebhookDeliveryTable) -> WebhookDelivery:
 
 def delivery_to_table(delivery: WebhookDelivery) -> WebhookDeliveryTable:
     return WebhookDeliveryTable.model_validate(delivery.model_dump())
+
+
+# ---------- Accounts (spec 015) ----------
+
+
+def account_to_domain(row: AccountTable) -> Account:
+    return Account.model_validate(_with_utc(row.model_dump(), "created_at"))
+
+
+def account_to_table(account: Account) -> AccountTable:
+    # password_hash is excluded from dumps (FR-003): set it by hand.
+    return AccountTable.model_validate({**account.model_dump(), "password_hash": account.password_hash})
+
+
+def session_to_domain(row: SessionTable) -> AuthSession:
+    return AuthSession.model_validate(_with_utc(row.model_dump(), "created_at", "expires_at"))
+
+
+def session_to_table(session: AuthSession) -> SessionTable:
+    return SessionTable.model_validate(session.model_dump())

@@ -5,7 +5,19 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.adapters.inbound.http import activity, board, dev, documents, health, integrations, planning, projects, proposals
+from app.adapters.inbound.http import (
+    accounts,
+    activity,
+    board,
+    dev,
+    documents,
+    health,
+    integrations,
+    planning,
+    projects,
+    proposals,
+    team,
+)
 from app.adapters.inbound.http.background import spawn
 from app.adapters.inbound.http.dependencies import open_uow, wire_documents, wire_planning, wire_replanning
 from app.adapters.inbound.http.errors import register_error_handlers
@@ -13,6 +25,8 @@ from app.adapters.inbound.webhooks import github as github_webhooks
 from app.adapters.outbound.code_host.fake import FakeCodeHost
 from app.adapters.outbound.events.in_memory_bus import InMemoryEventBus
 from app.adapters.outbound.events.persistent_bus import PersistentEventBus
+from app.adapters.outbound.security.password_hasher import ScryptPasswordHasher
+from app.application.use_cases.accounts.sessions import PruneSessions
 from app.application.use_cases.board.evaluate_objectives import EvaluateObjectives
 from app.application.use_cases.integrations.apply_review import ApplyReview
 from app.application.use_cases.planning.apply_replan import ReplanOutcome
@@ -68,6 +82,8 @@ def build_code_host_factory(fake: CodeHost) -> CodeHostFactory:
 async def lifespan(app: FastAPI):
     create_db()
     PruneSyncRecords(open_uow).execute()  # spec 008: old webhook deliveries and consumed own writes
+    PruneSessions(open_uow).execute()  # spec 015: expired sessions
+    app.state.password_hasher = ScryptPasswordHasher()  # spec 015
     app.state.agents = build_agents()
     app.state.code_host_factory = build_code_host_factory(FakeCodeHost())  # spec 007: per project token
     app.state.code_host = app.state.code_host_factory(None)  # the installation's
@@ -140,11 +156,16 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Agile Planner", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS, allow_methods=["*"], allow_headers=["*"])
+# Credentials: the session cookie (spec 015) when the frontend is served from another origin.
+app.add_middleware(
+    CORSMiddleware, allow_origins=CORS_ORIGINS, allow_credentials=True, allow_methods=["*"], allow_headers=["*"]
+)
 register_error_handlers(app)
 
 app.include_router(health.router)
+app.include_router(accounts.router)  # spec 015
 app.include_router(projects.router)
+app.include_router(team.router)  # spec 015
 app.include_router(planning.router)
 app.include_router(proposals.router)
 app.include_router(activity.router)

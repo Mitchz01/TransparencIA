@@ -8,6 +8,7 @@ from typing import Any, Self
 
 from app.adapters.outbound.code_host.fake import FakeCodeHost
 from app.application.ports.code_host import OnRetry
+from app.domain.accounts import Account, AuthSession
 from app.domain.board import Objective, Sprint, Task
 from app.domain.documents import Document, DocumentVersion
 from app.domain.errors import ProposalAlreadyResolved
@@ -74,6 +75,12 @@ class FakeProjectRepository(_Repo):
 
     def get_by_repository(self, repository: str) -> Project | None:
         return next((p for p in self.list() if (p.repository or "").lower() == repository.lower()), None)
+
+    def list_by_account(self, account_id: int) -> "list[Project]":
+        return [p for p in self.list() if any(m.account_id == account_id for m in p.members)]
+
+    def get_by_invite_token(self, token: str) -> Project | None:
+        return next((p for p in self.list() if p.invite_token == token), None)
 
 
 class FakeSprintRepository(_Repo):
@@ -222,6 +229,31 @@ class FakeDocumentRepository(_Repo):
         return sorted(rows, key=lambda v: v.version)
 
 
+class FakeAccountRepository(_Repo):
+    def __init__(self, uow: "InMemoryUnitOfWork"):
+        super().__init__(uow, "accounts")
+
+    def get_by_email(self, email: str) -> Account | None:
+        return next((a.model_copy(deep=True) for a in self.rows.values() if a.email == email), None)
+
+
+class FakeSessionRepository(_Repo):
+    def __init__(self, uow: "InMemoryUnitOfWork"):
+        super().__init__(uow, "sessions")
+
+    def get_by_digest(self, digest: str) -> AuthSession | None:
+        return next((s.model_copy(deep=True) for s in self.rows.values() if s.token_digest == digest), None)
+
+    def delete(self, session_id: int) -> None:
+        self.rows.pop(session_id, None)
+
+    def prune_expired(self, now: datetime) -> int:
+        old = [k for k, s in self.rows.items() if s.expired(now)]
+        for key in old:
+            del self.rows[key]
+        return len(old)
+
+
 class InMemoryUnitOfWork:
     """Implements the UnitOfWork port. Several instances can share one store, like
     sessions sharing a database: what one commits, the next one sees."""
@@ -241,6 +273,8 @@ class InMemoryUnitOfWork:
         self.own_writes = FakeOwnWriteRepository(self)
         self.deliveries = FakeWebhookDeliveryRepository(self)
         self.documents = FakeDocumentRepository(self)
+        self.accounts = FakeAccountRepository(self)
+        self.sessions = FakeSessionRepository(self)
 
     def _reset(self) -> None:
         self.working = {name: {k: v.model_copy(deep=True) for k, v in rows.items()} for name, rows in self.store.committed.items()}
@@ -294,6 +328,24 @@ class CodeHosts:
         self.tokens.append(token)
         self.on_retry = on_retry
         return self.host
+
+
+class PlainHasher:
+    """A PasswordHasher (spec 015) that's fast and readable in tests: never use it for real."""
+
+    def hash(self, password: str) -> str:
+        return f"plain${password}"
+
+    def verify(self, password: str, hashed: str) -> bool:
+        return hashed == f"plain${password}"
+
+
+def account(uow: "InMemoryUnitOfWork", name: str = "Ana Gómez", **fields: Any) -> Account:
+    """A saved and committed account (spec 015)."""
+    email = fields.pop("email", name.split()[0].lower() + "@team.dev")
+    saved = uow.accounts.add(Account(email=email, name=name, password_hash="plain$secret-123", **fields))
+    uow.commit()
+    return saved
 
 
 def project(**overrides: Any) -> Project:

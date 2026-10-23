@@ -3,6 +3,7 @@ from typing import Self
 from sqlmodel import Session
 
 from app.adapters.outbound.persistence.repositories import (
+    SqlAccountRepository,
     SqlActivityRepository,
     SqlExternalLinkRepository,
     SqlDocumentRepository,
@@ -10,6 +11,7 @@ from app.adapters.outbound.persistence.repositories import (
     SqlOwnWriteRepository,
     SqlProjectRepository,
     SqlProposalRepository,
+    SqlSessionRepository,
     SqlSprintRepository,
     SqlTaskRepository,
     SqlWebhookDeliveryRepository,
@@ -30,6 +32,8 @@ class SqlUnitOfWork:
         self.own_writes = SqlOwnWriteRepository(session)  # spec 007
         self.deliveries = SqlWebhookDeliveryRepository(session)  # spec 008
         self.documents = SqlDocumentRepository(session)
+        self.accounts = SqlAccountRepository(session)  # spec 015
+        self.sessions = SqlSessionRepository(session)  # spec 015
 
     def __enter__(self) -> Self:
         return self

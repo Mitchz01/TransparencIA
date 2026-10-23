@@ -19,7 +19,8 @@ from app.application.use_cases.integrations.handle_github_event import HandleGit
 from app.domain.errors import ValidationFailed
 from app.domain.integrations import validate_repository
 
-router = APIRouter(prefix="/api/dev", tags=["dev"])
+# Spec 015: needs a session like the rest of /api.
+router = APIRouter(prefix="/api/dev", tags=["dev"], dependencies=[Depends(deps.current_account)])
 
 FIXTURES = Path(__file__).resolve().parents[4] / "tests" / "fixtures" / "github"
 

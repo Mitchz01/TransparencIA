@@ -40,3 +40,5 @@ PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "").rstrip("/")
 GITHUB_WEBHOOK_URL = os.getenv("GITHUB_WEBHOOK_URL", "")
 # Optional key to encrypt the projects' GitHub tokens at rest (Fernet); empty = stored in plain text.
 SECRET_KEY = os.getenv("SECRET_KEY", "")
+# Spec 015: the session cookie only travels over HTTPS when set (Cloud Run); off for local dev.
+COOKIE_SECURE = os.getenv("COOKIE_SECURE", "").lower() in ("1", "true")

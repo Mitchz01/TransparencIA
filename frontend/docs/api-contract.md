@@ -4,7 +4,7 @@ Everything the frontend needs to talk to the backend: how to call it, the TypeSc
 
 - **Source of truth**: [plan/api-conventions.md](../../plan/api-conventions.md) and the **API Contract** section of each spec's `plan.md`. This document gathers them for the frontend. If they ever disagree, the plan wins: fix this file in the same PR that changes the plan.
 - **Where it plugs in**: `src/adapters/http/client.ts` implements the calling rules; each gateway in `src/adapters/http/` implements one group of endpoints below (and `src/adapters/fake/` the same ones in memory); `src/domain/*.ts` holds the shapes; `src/application/ports.ts` declares the gateways and `src/application/errors.ts` holds `ApiError`, so pages and hooks can catch it without importing `adapters/`.
-- **Implemented so far**: every gateway in section 4 (`ProjectGateway` incl. `getPlanViews`, `ProposalGateway`, `ActivityGateway`, `EventStream`, `PlanningGateway`, `BoardGateway`, `DocumentGateway`, `IntegrationGateway`), with `createHttpGateways()` and `createFakeGateways()` for `app/container.tsx`. The fake one is seeded with demo projects and simulates the agents (`src/adapters/fake/fakePlanning.ts`).
+- **Implemented so far**: every gateway in section 4 (`ProjectGateway` incl. `getPlanViews`, `ProposalGateway`, `ActivityGateway`, `EventStream`, `PlanningGateway`, `BoardGateway`, `DocumentGateway`, `IntegrationGateway`), with `createHttpGateways()` and `createFakeGateways()` for `app/container.tsx`. The fake one is seeded with demo projects and simulates the agents (`src/adapters/fake/fakePlanning.ts`). **Not yet**: spec 015's `AuthGateway` and `TeamGateway` and the changed `ProjectGateway` shapes (see [specs/015-accounts-invitations/frontend-prompt.md](../../specs/015-accounts-invitations/frontend-prompt.md)).
 
 ## Contents
 
@@ -20,7 +20,7 @@ Everything the frontend needs to talk to the backend: how to call it, the TypeSc
 | Rule | Detail |
 |---|---|
 | Base URL | `/api`. In dev, Vite proxies `/api` to `http://localhost:8000` (`vite.config.ts`); never hardcode the host |
-| Auth | None. No cookies, no tokens |
+| Auth | Spec 015: a session cookie (`agile_session`, `HttpOnly`) set by sign up and sign in. `fetch` and `EventSource` send it by themselves on same-origin calls (the Vite proxy makes `/api` same-origin), so the client never reads or stores a token. Without a session every endpoint answers `401 not_authenticated`, except sign up, sign in, the invitation preview and health |
 | Body | JSON, `snake_case` fields. Send `Content-Type: application/json` on every request with a body |
 | Tracing | Send `X-Request-Id: <uuid>` (`crypto.randomUUID()`); the response echoes it. Show it in error toasts so a bug report can be matched to the server log |
 | Dates | ISO 8601 UTC strings (`2026-10-23T14:05:00Z`); `YYYY-MM-DD` for dates. Format them in the UI, never send localized dates |
@@ -94,7 +94,9 @@ export class ApiError extends Error {
 |---|---|---|
 | `0` (`network_error`) | Server unreachable | Toast "Can't reach the server" + retry. Optimistic changes are reverted |
 | `400` (`malformed_request`) | We sent something unreadable: a frontend bug | Generic error toast with the request id; log it |
-| `401` | Only the GitHub webhook; the frontend never gets it | — |
+| `401` (`not_authenticated`) | No session, or it expired (spec 015) | Drop cached data and go to `/login?next=<current path>`; after signing in, go back to `next` |
+| `401` (`invalid_credentials`) | Wrong email or password on sign in | Show `detail` at the top of the form; don't say which field is wrong |
+| `403` (`forbidden`) | A member tried a leader action (spec 015) | Toast with `detail` and refetch the project: the UI shouldn't have offered it |
 | `404` (`*_not_found`) | The id doesn't exist (deleted, bad URL) | On a page load: "Not found" page with a link home. On an action: toast + refetch |
 | `409` | Valid but not allowed right now | Show `detail` next to the action and refresh the state; see the table below for codes with a specific action |
 | `422` (`validation_failed`) | A field breaks a rule | Map `errors[].field` to the form inputs and show each `message` under its input; `field: ""` goes at the top of the form. Keep what the user typed |
@@ -129,6 +131,11 @@ Field paths match the request body, so for the project form `members[1].name` is
 | `code_host_unavailable` | 502 | 007 | Retry toast |
 | `plan_not_applied` | 409 | 008 | Disable "Replan" until the board exists |
 | `sprint_already_closed` | 409 | 008 | Refetch the board |
+| `not_authenticated` | 401 | 015 | Go to `/login?next=…` |
+| `invalid_credentials` | 401 | 015 | Form-level error on sign in |
+| `forbidden` | 403 | 015 | Toast + refetch; hide the action for members |
+| `invitation_not_found` | 404 | 015 | Join page: "This invitation isn't valid anymore. Ask the leader for a new link." |
+| `last_leader` | 409 | 015 | Show `detail` next to the action: make someone else Leader first |
 | `internal_error` | 500 | all | Generic toast with the request id |
 
 ## 3. Shapes
@@ -140,6 +147,7 @@ Response shapes. Every `id` returned by the API is a `number` (never `null`). Mi
 export type ProjectStatus = 'draft' | 'planning' | 'ready' | 'error'
 export type RequestedMethodology = 'auto' | 'scrum' | 'kanban' | 'scrumban' | 'xp' | 'shape_up'
 export type Seniority = 'junior' | 'mid' | 'senior'
+export type Permission = 'leader' | 'member' // spec 015
 
 export interface Member {
   id: number
@@ -149,6 +157,8 @@ export interface Member {
   hours_per_week: number
   skills: string[]
   github_username?: string | null // new, spec 007 (not returned until 007 lands)
+  account_id: number | null // spec 015: the account this member is (null only for pre-015 data)
+  permission: Permission // spec 015
 }
 
 export interface Project {
@@ -173,6 +183,36 @@ export interface ProjectSummary {
   duration_weeks: number
   member_count: number
   created_at: string
+  permission: Permission // spec 015: the caller's in this project
+}
+
+// ---------- Accounts and invitations (spec 015) ----------
+export interface Account {
+  id: number
+  email: string
+  name: string
+  role: string | null // what they usually do; copied into each project they join
+  seniority: Seniority
+  hours_per_week: number
+  skills: string[]
+  github_username: string | null
+  created_at: string
+}
+
+export interface Invitation {
+  active: boolean
+  token: string | null // the link is `${location.origin}/join/${token}`
+}
+
+export interface InvitationPreview {
+  project_name: string
+  leaders: string[] // names
+  already_member: boolean // false when signed out
+}
+
+export interface JoinResult {
+  project_id: number
+  joined: boolean // false = already a member, nothing changed
 }
 
 // ---------- Proposals (spec 002 / 005) ----------
@@ -412,38 +452,30 @@ Dropping replan changes before approving is an `adjust` with the remaining `chan
 
 Each block is one gateway in `src/application/ports.ts`. "Errors" lists the codes that endpoint can return besides `400 malformed_request`, `500 internal_error` and network errors, which any call can get.
 
-### ProjectGateway (spec 001)
+### ProjectGateway (spec 001, changed by spec 015)
 
 | Method | Endpoint | Request | Success | Errors |
 |---|---|---|---|---|
-| `create(body)` | `POST /api/projects` | `ProjectCreate` | `201` `Project` | `422 validation_failed` |
-| `list()` | `GET /api/projects` | — | `200` `ProjectSummary[]` (newest first) | — |
+| `create(body)` | `POST /api/projects` | `ProjectCreate` | `201` `Project` (one member: you, `leader`) | `422 validation_failed` |
+| `list()` | `GET /api/projects` | — | `200` `ProjectSummary[]` (only yours, newest first) | — |
 | `get(id)` | `GET /api/projects/{id}` | — | `200` `Project` | `404 project_not_found` |
-| `update(id, body)` | `PATCH /api/projects/{id}` | `ProjectUpdate` | `200` `Project` | `404 project_not_found`, `409 methodology_locked`, `422 validation_failed` |
+| `update(id, body)` | `PATCH /api/projects/{id}` | `ProjectUpdate` | `200` `Project` | `403 forbidden`, `404 project_not_found`, `409 methodology_locked`, `422 validation_failed` |
 | `getPlanViews(id)` | `GET /api/projects/{id}/plan` | — | `200` `PlanViews` | `404 project_not_found` |
 
-```ts
-export interface MemberInput {
-  id?: number // PATCH only: present = edit that member, absent = new member
-  name: string
-  role: string
-  seniority?: Seniority // default "mid"
-  hours_per_week?: number // default 20
-  skills?: string[] // default []
-}
+Every project endpoint (here and in the gateways below) answers `404 *_not_found` to someone outside the project, and `403 forbidden` to a member doing a leader action (spec 015, "Guards on the existing endpoints" in its plan).
 
+```ts
 export interface ProjectCreate {
   name: string
   description: string
   duration_weeks?: number // default 8
   requested_methodology?: RequestedMethodology // default "auto"
   auto_approve?: boolean // default false
-  members: MemberInput[]
+  role?: string // spec 015: your role in this project; default your profile's, required if it has none
 }
 
-// Every field optional, at least one. `members` is the WHOLE new team:
-// members missing from the list are removed.
-export type ProjectUpdate = Partial<Omit<ProjectCreate, 'members'>> & { members?: MemberInput[] }
+// Every field optional, at least one. The team isn't edited here any more (TeamGateway).
+export type ProjectUpdate = Partial<Omit<ProjectCreate, 'role'>>
 ```
 
 Validation (`422`, `errors[].field` → message). Mirror these rules in the form so most errors never reach the server:
@@ -454,17 +486,56 @@ Validation (`422`, `errors[].field` → message). Mirror these rules in the form
 | `description` | Required, max 5000 chars |
 | `duration_weeks` | Integer 1–52 |
 | `requested_methodology` | One of the enum |
-| `members` | At least 1 |
-| `members[i].name` | Required, unique in the team (case-insensitive) |
-| `members[i].role` | Required, max 60 chars |
-| `members[i].seniority` | `junior` \| `mid` \| `senior` |
-| `members[i].hours_per_week` | Integer 1–60 |
-| `members[i].skills[j]` | Max 40 chars |
-| `members[i].id` | Must be a member of this project (PATCH) |
+| `role` | Required when the profile has no role; max 60 chars |
 
 `requested_methodology` can only change while `status === 'draft'`; disable the select otherwise.
 
 `getPlanViews` (spec 004) feeds the roadmap, methodology and architecture screens in one request. A view that isn't `approved` shows "Not generated yet" or "Waiting for approval" (link to the proposal), never its content.
+
+### AuthGateway (spec 015)
+
+| Method | Endpoint | Request | Success | Errors |
+|---|---|---|---|---|
+| `signUp(body)` | `POST /api/auth/signup` | `{name, email, password}` | `201` `Account` + cookie | `422 validation_failed` (`email`: "Already registered." when taken) |
+| `signIn(body)` | `POST /api/auth/signin` | `{email, password}` | `200` `Account` + cookie | `401 invalid_credentials`, `422 validation_failed` |
+| `signOut()` | `POST /api/auth/signout` | — | `204` (always) | — |
+| `me()` | `GET /api/me` | — | `200` `Account` | `401 not_authenticated` (= signed out, not an error to show) |
+| `updateProfile(body)` | `PATCH /api/me` | `ProfileUpdate` | `200` `Account` | `422 validation_failed` |
+
+```ts
+// Partial; null clears role and github_username. A new name renames you in every project.
+export type ProfileUpdate = Partial<Pick<Account, 'name' | 'role' | 'seniority' | 'hours_per_week' | 'skills' | 'github_username'>>
+```
+
+| Field | Rule |
+|---|---|
+| `name` | Required, max 120 chars |
+| `email` | An email address, max 254; unique ignoring case |
+| `password` | 8–128 chars |
+| `role` | Optional, max 60 chars |
+| `hours_per_week` | Integer 1–60 |
+| `skills[j]` | Max 40 chars, duplicates dropped |
+| `github_username` | GitHub's rule (letters, digits, single hyphens, max 39); a leading `@` is dropped |
+
+### TeamGateway (spec 015)
+
+| Method | Endpoint | Request | Success | Errors |
+|---|---|---|---|---|
+| `updateMember(projectId, memberId, body)` | `PATCH /api/projects/{id}/members/{member_id}` | `MemberUpdate` | `200` `Project` | `403 forbidden`, `404 member_not_found`, `409 last_leader`, `422 validation_failed` (field = `name`, `role`…) |
+| `removeMember(projectId, memberId)` | `DELETE /api/projects/{id}/members/{member_id}` | — | `204` | `403 forbidden` (a member removing someone else), `404 member_not_found`, `409 last_leader` |
+| `getInvitation(projectId)` | `GET /api/projects/{id}/invitation` | — | `200` `Invitation` | `403 forbidden` |
+| `renewInvitation(projectId)` | `POST /api/projects/{id}/invitation` | — | `200` `Invitation` (new token; turns it on) | `403 forbidden` |
+| `disableInvitation(projectId)` | `DELETE /api/projects/{id}/invitation` | — | `204` | `403 forbidden` |
+| `previewInvitation(token)` | `GET /api/invitations/{token}` | — | `200` `InvitationPreview` (works signed out) | `404 invitation_not_found` |
+| `join(token, body?)` | `POST /api/invitations/{token}/join` | `{role?: string}` | `200` `JoinResult` | `401 not_authenticated`, `404 invitation_not_found`, `422 validation_failed` (`role` when neither the body nor the profile has one) |
+
+```ts
+// Partial edit of one member by a leader. Only `permission` changes don't publish team_changed.
+export type MemberUpdate = Partial<Pick<Member, 'name' | 'role' | 'seniority' | 'hours_per_week' | 'skills' | 'permission'>>
+```
+
+- Leaving a project = `removeMember(projectId, myMemberId)`; find your member with `account_id === me.id`.
+- Joining, leaving and member edits arrive over SSE as `team_changed` (spec 001); refetch the project.
 
 ### ProposalGateway (spec 005)
 

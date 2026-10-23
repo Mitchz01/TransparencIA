@@ -20,9 +20,10 @@ from app.domain.integrations import IssueRef
 from app.domain.documents import Document, DocumentKind, DocumentVersion, VersionSource
 from app.domain.plan import WipLimit
 from app.domain.proposals import ProposalOrigin
+from app.domain.accounts import Account
 from app.domain.project import (
     Member,
-    MemberPatch,
+    Permission,
     Project,
     ProjectChanges,
     ProjectStatus,
@@ -30,56 +31,32 @@ from app.domain.project import (
     Seniority,
 )
 
-# ---------- Projects (spec 001) ----------
-
-
-class MemberCreate(BaseModel):
-    name: str
-    role: str
-    seniority: Seniority = "mid"
-    hours_per_week: int = 20
-    skills: list[str] = []
+# ---------- Projects (spec 001, team from accounts since spec 015) ----------
 
 
 class ProjectCreate(BaseModel):
+    """The team isn't sent: the creator is its first member, as leader (spec 015, FR-006)."""
+
     name: str
     description: str
     duration_weeks: int = 8
     requested_methodology: RequestedMethodology = "auto"
     auto_approve: bool = False
-    members: list[MemberCreate]
-
-
-class MemberUpsert(BaseModel):
-    """An item of the whole new team in a PATCH: `id` = edit that member, no `id` = new member.
-    Only the fields sent are applied."""
-
-    id: int | None = None
-    name: str | None = None
-    role: str | None = None
-    seniority: Seniority | None = None
-    hours_per_week: int | None = None
-    skills: list[str] | None = None
+    role: str | None = None  # the creator's role in this project; defaults to their profile's
 
 
 class ProjectUpdate(BaseModel):
-    """Partial update: missing fields are left as they are."""
+    """Partial update: missing fields are left as they are. The team changes through
+    the member endpoints (spec 015, US6)."""
 
     name: str | None = None
     description: str | None = None
     duration_weeks: int | None = None
     requested_methodology: RequestedMethodology | None = None
     auto_approve: bool | None = None
-    members: list[MemberUpsert] | None = None
 
     def to_changes(self) -> ProjectChanges:
-        sent = self.model_dump(include=self.model_fields_set - {"members"})
-        members = None
-        if "members" in self.model_fields_set and self.members is not None:
-            members = [MemberPatch(m.id, m.model_dump(include=m.model_fields_set - {"id"})) for m in self.members]
-        elif "members" in self.model_fields_set:
-            sent["members"] = None  # explicit null: reported as "Required."
-        return ProjectChanges(values=sent, members=members)
+        return ProjectChanges(values=self.model_dump(include=self.model_fields_set))
 
 
 class ProjectSummary(BaseModel):
@@ -89,9 +66,10 @@ class ProjectSummary(BaseModel):
     duration_weeks: int
     member_count: int
     created_at: datetime
+    permission: Permission  # the caller's (spec 015)
 
     @classmethod
-    def of(cls, project: Project) -> "ProjectSummary":
+    def of(cls, project: Project, permission: Permission) -> "ProjectSummary":
         return cls(
             id=project.id or 0,
             name=project.name,
@@ -99,6 +77,7 @@ class ProjectSummary(BaseModel):
             duration_weeks=project.duration_weeks,
             member_count=len(project.members),
             created_at=project.created_at,
+            permission=permission,
         )
 
 
@@ -406,3 +385,72 @@ class RegenerationAccepted(BaseModel):
 
     document_id: int
     status: str = "regenerating"
+
+
+# ---------- Accounts, invitations and the team (spec 015) ----------
+
+
+class SignUpRequest(BaseModel):
+    name: str
+    email: str
+    password: str
+
+
+class SignInRequest(BaseModel):
+    email: str
+    password: str
+
+
+class SignedIn(BaseModel):
+    """The account and the session token to put in the cookie (never in a response body)."""
+
+    account: Account
+    token: str
+
+
+class ProfileUpdate(BaseModel):
+    """Partial: missing fields are left as they are; null clears `role` and `github_username`."""
+
+    name: str | None = None
+    role: str | None = None
+    seniority: Seniority | None = None
+    hours_per_week: int | None = None
+    skills: list[str] | None = None
+    github_username: str | None = None
+
+
+class MemberUpdate(BaseModel):
+    """Partial edit of one member by a leader (US6)."""
+
+    name: str | None = None
+    role: str | None = None
+    seniority: Seniority | None = None
+    hours_per_week: int | None = None
+    skills: list[str] | None = None
+    permission: Permission | None = None
+
+
+class Invitation(BaseModel):
+    active: bool
+    token: str | None  # the link is {frontend origin}/join/{token}
+
+    @classmethod
+    def of(cls, project: Project) -> "Invitation":
+        return cls(active=project.invite_token is not None, token=project.invite_token)
+
+
+class InvitationPreview(BaseModel):
+    """Only what someone outside the project may see (FR-009)."""
+
+    project_name: str
+    leaders: list[str]
+    already_member: bool
+
+
+class JoinRequest(BaseModel):
+    role: str | None = None  # defaults to the profile's role
+
+
+class JoinResult(BaseModel):
+    project_id: int
+    joined: bool  # False: already a member, nothing changed
