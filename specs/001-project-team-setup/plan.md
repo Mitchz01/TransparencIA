@@ -2,7 +2,7 @@
 
 **Date**: 2026-10-23  
 **Spec**: [spec.md](spec.md)  
-**Status**: Draft
+**Status**: Approved
 
 ## Summary
 
@@ -216,11 +216,11 @@ No backend setup is needed: the frontend shell tasks (T001–T005) are [handed o
 
 **⚠️ CRITICAL**: no user story work can begin until this phase is complete
 
-- [ ] T006 Add `ValidationFailed(errors: list[FieldError])` and `MethodologyLocked` to `backend/app/domain/errors.py`, and give every `DomainError` a stable `code`. In `backend/app/adapters/inbound/http/errors.py` implement the shared conventions ([plan/api-conventions.md](../../plan/api-conventions.md), "Implementation checklist"): the error body `{code, detail, errors}`, the status table, `RequestValidationError` → 400 (bad JSON) / 422, a catch-all 500 and the `X-Request-Id` middleware; test them in `backend/tests/integration/adapters/test_errors.py`
-- [ ] T007 Add to `backend/app/domain/project.py`: `normalize_name()` (trim + collapse spaces), skill dedup, and `validate_project(project)` covering FR-004 (required fields, ≥ 1 member, unique names case-insensitive, duration 1–52, hours 1–60)
-- [ ] T008 [P] Add `ProjectUpdate` (all fields optional, `members: list[MemberUpsert] | None`) and `ProjectSummary` to `backend/app/application/dto.py`; `MemberUpsert` carries an optional `id` so existing members are edited, not recreated
-- [ ] T009 [P] Create `backend/tests/fakes.py` with `InMemoryUnitOfWork` (dict-backed repos for every port in `application/ports/repositories.py`) and `RecordingEventBus`
-- [ ] T010 Add `MemberTable.active: bool = True` in `backend/app/adapters/outbound/persistence/tables.py`, and make `SqlProjectRepository.save` in `repositories.py` sync the team: update members with an id, insert new ones and set `active = False` on missing ones (never delete, so done tasks keep their assignee). `Project.members` only returns active members. `create_all` doesn't migrate: delete any local `agile.db`
+- [x] T006 Add `ValidationFailed(errors: list[FieldError])` and `MethodologyLocked` to `backend/app/domain/errors.py`, and give every `DomainError` a stable `code`. In `backend/app/adapters/inbound/http/errors.py` implement the shared conventions ([plan/api-conventions.md](../../plan/api-conventions.md), "Implementation checklist"): the error body `{code, detail, errors}`, the status table, `RequestValidationError` → 400 (bad JSON) / 422, a catch-all 500 and the `X-Request-Id` middleware; test them in `backend/tests/integration/adapters/test_errors.py`
+- [x] T007 Add to `backend/app/domain/project.py`: `normalize_name()` (trim + collapse spaces), skill dedup, and `validate_project(project)` covering FR-004 (required fields, ≥ 1 member, unique names case-insensitive, duration 1–52, hours 1–60)
+- [x] T008 [P] Add `ProjectUpdate` (all fields optional, `members: list[MemberUpsert] | None`) and `ProjectSummary` to `backend/app/application/dto.py`; `MemberUpsert` carries an optional `id` so existing members are edited, not recreated
+- [x] T009 [P] Create `backend/tests/fakes.py` with `InMemoryUnitOfWork` (dict-backed repos for every port in `application/ports/repositories.py`) and `RecordingEventBus`
+- [x] T010 Add `MemberTable.active: bool = True` in `backend/app/adapters/outbound/persistence/tables.py`, and make `SqlProjectRepository.save` in `repositories.py` sync the team: update members with an id, insert new ones and set `active = False` on missing ones (never delete, so done tasks keep their assignee). `Project.members` only returns active members. `create_all` doesn't migrate: delete any local `agile.db`
 
 **Checkpoint**: foundation ready — user story implementation can now begin
 
@@ -234,14 +234,14 @@ No backend setup is needed: the frontend shell tasks (T001–T005) are [handed o
 
 ### Tests for User Story 1
 
-- [ ] T011 [P] [US1] Unit tests for `validate_project` (every FR-004 case, normalization, defaults) in `backend/tests/unit/domain/test_project_rules.py`
-- [ ] T012 [P] [US1] Use case tests (draft status, nothing saved on invalid input, planning not started) in `backend/tests/unit/application/test_create_project.py`
-- [ ] T013 [P] [US1] API test for `POST /api/projects` (201 + `Location`, 400, 422 with every failing field in `errors`) in `backend/tests/integration/adapters/test_projects_api.py`
+- [x] T011 [P] [US1] Unit tests for `validate_project` (every FR-004 case, normalization, defaults) in `backend/tests/unit/domain/test_project_rules.py`
+- [x] T012 [P] [US1] Use case tests (draft status, nothing saved on invalid input, planning not started) in `backend/tests/unit/application/test_create_project.py`
+- [x] T013 [P] [US1] API test for `POST /api/projects` (201 + `Location`, 400, 422 with every failing field in `errors`) in `backend/tests/integration/adapters/test_projects_api.py`
 
 ### Implementation for User Story 1
 
-- [ ] T014 [US1] Implement `CreateProject` in `backend/app/application/use_cases/projects/create_project.py` (normalize, validate, `projects.add`, commit; status always `draft`)
-- [ ] T015 [US1] Create `backend/app/adapters/inbound/http/projects.py` with `POST /api/projects` (201), add its provider to `dependencies.py` and include the router in `backend/app/main.py`
+- [x] T014 [US1] Implement `CreateProject` in `backend/app/application/use_cases/projects/create_project.py` (normalize, validate, `projects.add`, commit; status always `draft`)
+- [x] T015 [US1] Create `backend/app/adapters/inbound/http/projects.py` with `POST /api/projects` (201), add its provider to `dependencies.py` and include the router in `backend/app/main.py`
 
 **Checkpoint**: a project can be created through the API
 
@@ -255,12 +255,12 @@ No backend setup is needed: the frontend shell tasks (T001–T005) are [handed o
 
 ### Tests for User Story 2
 
-- [ ] T020 [P] [US2] API tests for `GET /api/projects` and `GET /api/projects/{id}` (200, 404 `project_not_found`) in `backend/tests/integration/adapters/test_projects_api.py`
+- [x] T020 [P] [US2] API tests for `GET /api/projects` and `GET /api/projects/{id}` (200, 404 `project_not_found`) in `backend/tests/integration/adapters/test_projects_api.py`
 
 ### Implementation for User Story 2
 
-- [ ] T021 [US2] Implement `GetProject` (raises `ProjectNotFound`) and `ListProjects` (returns `ProjectSummary`) in `backend/app/application/use_cases/projects/`
-- [ ] T022 [US2] Add `GET /api/projects` and `GET /api/projects/{id}` to `backend/app/adapters/inbound/http/projects.py`
+- [x] T021 [US2] Implement `GetProject` (raises `ProjectNotFound`) and `ListProjects` (returns `ProjectSummary`) in `backend/app/application/use_cases/projects/`
+- [x] T022 [US2] Add `GET /api/projects` and `GET /api/projects/{id}` to `backend/app/adapters/inbound/http/projects.py`
 
 **Checkpoint**: User Stories 1 and 2 work independently
 
@@ -274,13 +274,13 @@ No backend setup is needed: the frontend shell tasks (T001–T005) are [handed o
 
 ### Tests for User Story 3
 
-- [ ] T024 [P] [US3] Use case tests (partial change, add/edit/remove members, empty team rejected, methodology locked once planning started, pending tasks of a removed member unassigned and done ones untouched, 404) in `backend/tests/unit/application/test_update_project.py`
-- [ ] T025 [P] [US3] Persistence test for member sync (insert, update and deactivate in one save; inactive members not returned) in `backend/tests/integration/adapters/test_persistence.py`
+- [x] T024 [P] [US3] Use case tests (partial change, add/edit/remove members, empty team rejected, methodology locked once planning started, pending tasks of a removed member unassigned and done ones untouched, 404) in `backend/tests/unit/application/test_update_project.py`
+- [x] T025 [P] [US3] Persistence test for member sync (insert, update and deactivate in one save; inactive members not returned) in `backend/tests/integration/adapters/test_persistence.py`
 
 ### Implementation for User Story 3
 
-- [ ] T026 [US3] Implement `UpdateProject` in `backend/app/application/use_cases/projects/update_project.py`: apply only the given fields, validate the result, raise `MethodologyLocked` if the methodology changes and `status != "draft"`, set `assignee_id = None` on the not-done tasks of removed members (`uow.tasks.list_by_project` + `save`), save and commit
-- [ ] T027 [US3] Add `PATCH /api/projects/{id}` to `backend/app/adapters/inbound/http/projects.py`
+- [x] T026 [US3] Implement `UpdateProject` in `backend/app/application/use_cases/projects/update_project.py`: apply only the given fields, validate the result, raise `MethodologyLocked` if the methodology changes and `status != "draft"`, set `assignee_id = None` on the not-done tasks of removed members (`uow.tasks.list_by_project` + `save`), save and commit
+- [x] T027 [US3] Add `PATCH /api/projects/{id}` to `backend/app/adapters/inbound/http/projects.py`
 
 **Checkpoint**: User Stories 1–3 work independently
 
@@ -294,13 +294,13 @@ No backend setup is needed: the frontend shell tasks (T001–T005) are [handed o
 
 ### Tests for User Story 4
 
-- [ ] T029 [P] [US4] Unit tests for `diff_team` (joined, left, changed fields; no diff when only project fields change) in `backend/tests/unit/domain/test_project_rules.py`
-- [ ] T030 [P] [US4] Use case tests: one event per edit, none for invalid edits, handlers called with the event, in `backend/tests/unit/application/test_update_project.py`
+- [x] T029 [P] [US4] Unit tests for `diff_team` (joined, left, changed fields; no diff when only project fields change) in `backend/tests/unit/domain/test_project_rules.py`
+- [x] T030 [P] [US4] Use case tests: one event per edit, none for invalid edits, handlers called with the event, in `backend/tests/unit/application/test_update_project.py`
 
 ### Implementation for User Story 4
 
-- [ ] T031 [US4] Add `TeamChanged(joined, left, changed: list[MemberChange])` to `backend/app/domain/events.py` and `diff_team(old, new)` to `backend/app/domain/project.py`
-- [ ] T032 [US4] Publish `TeamChanged` from `UpdateProject` after commit and call its `on_team_changed` handlers (constructor argument, empty by default); spec 008 registers its drift handler there
+- [x] T031 [US4] Add `TeamChanged(joined, left, changed: list[MemberChange])` to `backend/app/domain/events.py` and `diff_team(old, new)` to `backend/app/domain/project.py`
+- [x] T032 [US4] Publish `TeamChanged` from `UpdateProject` after commit and call its `on_team_changed` handlers (constructor argument, empty by default); spec 008 registers its drift handler there
 
 **Checkpoint**: all user stories work independently
 
@@ -308,7 +308,7 @@ No backend setup is needed: the frontend shell tasks (T001–T005) are [handed o
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T035 Update the TODO list in `README.md`, including the note about deleting a local `agile.db` (T010)
+- [x] T035 Update the TODO list in `README.md`, including the note about deleting a local `agile.db` (T010)
 
 ---
 

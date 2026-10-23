@@ -2,7 +2,7 @@
 
 **Date**: 2026-10-23  
 **Spec**: [spec.md](spec.md)  
-**Status**: Draft
+**Status**: Approved
 
 ## Summary
 
@@ -200,7 +200,7 @@ No body. Read-only: it never writes anything (FR-009).
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T001 Check that `backend/tests/fakes.py` (spec 001, T009) has `proposals` and `tasks` in `InMemoryUnitOfWork`; add them if missing
+- [x] T001 Check that `backend/tests/fakes.py` (spec 001, T009) has `proposals` and `tasks` in `InMemoryUnitOfWork`; add them if missing
 
 ---
 
@@ -210,9 +210,9 @@ No body. Read-only: it never writes anything (FR-009).
 
 **⚠️ CRITICAL**: no user story work can begin until this phase is complete
 
-- [ ] T002 Create `backend/app/domain/plan_views.py` with `StageView`, `ViewStatus`, `Progress` and `PlanViews`, and `build_plan_views` with the status rule (`not_generated`, and `approved` from `project.plan`)
-- [ ] T003 [P] Status tests: project in draft (everything `not_generated`) and a stage in `project.plan` (`approved`), in `backend/tests/unit/domain/test_plan_views.py`
-- [ ] T004 Implement `GetPlanViews` in `backend/app/application/use_cases/projects/get_plan_views.py` and `GET /api/projects/{id}/plan` in `projects.py` (200, 404), with `today` injected from `dependencies.py`
+- [x] T002 Create `backend/app/domain/plan_views.py` with `StageView`, `ViewStatus`, `Progress` and `PlanViews`, and `build_plan_views` with the status rule (`not_generated`, and `approved` from `project.plan`)
+- [x] T003 [P] Status tests: project in draft (everything `not_generated`) and a stage in `project.plan` (`approved`), in `backend/tests/unit/domain/test_plan_views.py`
+- [x] T004 Implement `GetPlanViews` in `backend/app/application/use_cases/projects/get_plan_views.py` and `GET /api/projects/{id}/plan` in `projects.py` (200, 404), with `today` injected from `dependencies.py`
 
 **Checkpoint**: the endpoint answers with each view's status
 
@@ -226,14 +226,14 @@ No body. Read-only: it never writes anything (FR-009).
 
 ### Tests for User Story 1
 
-- [ ] T005 [P] [US1] Progress tests: per epic, per phase, total including tasks without an epic, epic without tasks (`has_tasks = False`)
-- [ ] T006 [P] [US1] Current week tests with a pinned `today`: no board (`None`), week 2 after 10 days, `overdue`, a week in a gap between phases
-- [ ] T007 [P] [US1] API test with `MOCK_PLAN` stored in `project.plan` and tasks created by hand, in `backend/tests/integration/adapters/test_plan_views_api.py`
+- [x] T005 [P] [US1] Progress tests: per epic, per phase, total including tasks without an epic, epic without tasks (`has_tasks = False`)
+- [x] T006 [P] [US1] Current week tests with a pinned `today`: no board (`None`), week 2 after 10 days, `overdue`, a week in a gap between phases
+- [x] T007 [P] [US1] API test with `MOCK_PLAN` stored in `project.plan` and tasks created by hand, in `backend/tests/integration/adapters/test_plan_views_api.py`
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] Add `EpicView`, `PhaseView` and `RoadmapView` and the progress calculation in `backend/app/domain/plan_views.py`
-- [ ] T009 [US1] Add the current week, current phase and `overdue` calculation
+- [x] T008 [US1] Add `EpicView`, `PhaseView` and `RoadmapView` and the progress calculation in `backend/app/domain/plan_views.py`
+- [x] T009 [US1] Add the current week, current phase and `overdue` calculation
 
 **Checkpoint**: the roadmap can be drawn with its progress
 
@@ -247,11 +247,11 @@ No body. Read-only: it never writes anything (FR-009).
 
 ### Tests for User Story 2
 
-- [ ] T010 [P] [US2] Tests: recommended by the agents (`requested_methodology = "auto"`) and chosen by the leader (`"kanban"`)
+- [x] T010 [P] [US2] Tests: recommended by the agents (`requested_methodology = "auto"`) and chosen by the leader (`"kanban"`)
 
 ### Implementation for User Story 2
 
-- [ ] T011 [US2] Add `MethodologyView` and `chosen_by` in `build_plan_views`
+- [x] T011 [US2] Add `MethodologyView` and `chosen_by` in `build_plan_views`
 
 ---
 
@@ -263,11 +263,11 @@ No body. Read-only: it never writes anything (FR-009).
 
 ### Tests for User Story 3
 
-- [ ] T012 [P] [US3] Architecture view test (components, stack and decisions in order)
+- [x] T012 [P] [US3] Architecture view test (components, stack and decisions in order)
 
 ### Implementation for User Story 3
 
-- [ ] T013 [US3] Build `StageView[Architecture]` from `project.plan["architecture"]`
+- [x] T013 [US3] Build `StageView[Architecture]` from `project.plan["architecture"]`
 
 ---
 
@@ -279,11 +279,11 @@ No body. Read-only: it never writes anything (FR-009).
 
 ### Tests for User Story 4
 
-- [ ] T014 [P] [US4] Origin tests: `leader`, `adjusted` and `auto`; the newest approved one wins after earlier rejections; a pending proposal never shows content; an approved stage with a new pending proposal stays `approved`
+- [x] T014 [P] [US4] Origin tests: `leader`, `adjusted` and `auto`; the newest approved one wins after earlier rejections; a pending proposal never shows content; an approved stage with a new pending proposal stays `approved`
 
 ### Implementation for User Story 4
 
-- [ ] T015 [US4] Add `ViewOrigin`, the `pending` status and picking the newest approved proposal of the subject in `build_plan_views`
+- [x] T015 [US4] Add `ViewOrigin`, the `pending` status and picking the newest approved proposal of the subject in `build_plan_views`
 
 **Checkpoint**: all user stories work independently
 
@@ -291,9 +291,9 @@ No body. Read-only: it never writes anything (FR-009).
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T016 Run the full `pytest`, including `test_layers.py`
-- [ ] T017 [P] Update the UC-07 diagram in [plan/use-cases.md](../../plan/use-cases.md) (`GET /api/projects/{id}/plan`, `GetPlanViews`)
-- [ ] T018 Measure the response time with 50 tasks (SC-001) and check the scenarios by hand in mock mode
+- [x] T016 Run the full `pytest`, including `test_layers.py`
+- [x] T017 [P] Update the UC-07 diagram in [plan/use-cases.md](../../plan/use-cases.md) (`GET /api/projects/{id}/plan`, `GetPlanViews`)
+- [x] T018 Measure the response time with 50 tasks (SC-001) and check the scenarios by hand in mock mode
 
 ---
 

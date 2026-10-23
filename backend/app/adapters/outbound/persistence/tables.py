@@ -36,6 +36,8 @@ class MemberTable(SQLModel, table=True):
     seniority: str = "mid"
     hours_per_week: int = 20
     skills: list[str] = Field(default_factory=list, sa_column=Column(JSON))
+    # Removed members are deactivated, never deleted, so done tasks keep their assignee (spec 001).
+    active: bool = True
 
 
 class SprintTable(SQLModel, table=True):
@@ -67,3 +69,36 @@ class TaskTable(SQLModel, table=True):
     priority: str = "medium"
     status: str = "backlog"
     position: int = 0
+
+
+class ProposalTable(SQLModel, table=True):
+    __tablename__ = "proposal"
+
+    id: int | None = Field(default=None, primary_key=True)
+    project_id: int = Field(foreign_key="project.id", index=True)
+    kind: str
+    key: str
+    agent: str
+    content: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+    rationale: str = ""
+    status: str = "pending"
+    adjusted_content: dict[str, Any] | None = Field(default=None, sa_column=Column(JSON))
+    rejection_reason: str | None = None
+    auto_approved: bool = False
+    origin: str = "leader"
+    apply_failed: bool = False
+    apply_error: str | None = None
+    created_at: datetime = Field(default_factory=_now)
+    resolved_at: datetime | None = None
+
+
+class ActivityTable(SQLModel, table=True):
+    """One row per domain event. The autoincrement id is the event's `seq` (spec 005)."""
+
+    __tablename__ = "activity"
+
+    id: int | None = Field(default=None, primary_key=True)
+    project_id: int = Field(index=True)
+    type: str
+    occurred_at: datetime = Field(default_factory=_now)
+    payload: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))

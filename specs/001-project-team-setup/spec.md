@@ -1,7 +1,7 @@
 # Feature Specification: 001 · Project and team setup
 
 **Created**: 2026-10-23  
-**Status**: Draft  
+**Status**: Approved  
 **Owner**: sandredev  
 **Reviewer**: codigotpx  
 **Use cases**: UC-01, UC-02 ([plan/use-cases.md](../../plan/use-cases.md))  

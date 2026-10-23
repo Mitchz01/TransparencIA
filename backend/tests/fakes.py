@@ -1,0 +1,181 @@
+"""In-memory test doubles for the application ports, shared by every spec's tests.
+They copy entities in and out, like a database would, so tests can't rely on aliasing."""
+
+from collections.abc import AsyncIterator, Callable
+from itertools import count
+from typing import Any, Self
+
+from app.domain.board import Sprint, Task
+from app.domain.errors import ProposalAlreadyResolved
+from app.domain.events import DomainEvent
+from app.domain.project import Member, Project
+from app.domain.proposals import Proposal, ProposalStatus
+
+
+class _Store:
+    """Committed rows plus a working copy that commit() publishes and rollback() drops."""
+
+    def __init__(self) -> None:
+        self.committed: dict[str, dict[int, Any]] = {}
+        self.ids = count(1)
+
+    def table(self, name: str) -> dict[int, Any]:
+        return self.committed.setdefault(name, {})
+
+
+class _Repo:
+    def __init__(self, uow: "InMemoryUnitOfWork", table: str):
+        self._uow = uow
+        self._table = table
+
+    @property
+    def rows(self) -> dict[int, Any]:
+        return self._uow.working.setdefault(self._table, {})
+
+    def _put(self, entity: Any) -> Any:
+        if entity.id is None:
+            entity = entity.model_copy(update={"id": next(self._uow.store.ids)})
+        self.rows[entity.id] = entity.model_copy(deep=True)
+        return entity.model_copy(deep=True)
+
+    def get(self, id: int) -> Any:
+        row = self.rows.get(id)
+        return row.model_copy(deep=True) if row else None
+
+    def add(self, entity: Any) -> Any:
+        return self._put(entity)
+
+    def save(self, entity: Any) -> Any:
+        return self._put(entity)
+
+
+class FakeProjectRepository(_Repo):
+    def __init__(self, uow: "InMemoryUnitOfWork"):
+        super().__init__(uow, "projects")
+
+    def add(self, project: Project) -> Project:
+        members = [m if m.id is not None else m.model_copy(update={"id": next(self._uow.store.ids)}) for m in project.members]
+        return self._put(project.model_copy(update={"members": members}))
+
+    def save(self, project: Project) -> Project:
+        return self.add(project)
+
+    def list(self) -> list[Project]:
+        return [p.model_copy(deep=True) for _, p in sorted(self.rows.items())]
+
+
+class FakeSprintRepository(_Repo):
+    def __init__(self, uow: "InMemoryUnitOfWork"):
+        super().__init__(uow, "sprints")
+
+    def list_by_project(self, project_id: int) -> list[Sprint]:
+        return sorted((s.model_copy(deep=True) for s in self.rows.values() if s.project_id == project_id), key=lambda s: s.number)
+
+
+class FakeTaskRepository(_Repo):
+    def __init__(self, uow: "InMemoryUnitOfWork"):
+        super().__init__(uow, "tasks")
+
+    def list_by_project(self, project_id: int) -> list[Task]:
+        return sorted((t.model_copy(deep=True) for t in self.rows.values() if t.project_id == project_id), key=lambda t: t.position)
+
+
+class FakeProposalRepository(_Repo):
+    def __init__(self, uow: "InMemoryUnitOfWork"):
+        super().__init__(uow, "proposals")
+
+    def list_by_project(self, project_id: int) -> list[Proposal]:
+        rows = [p.model_copy(deep=True) for p in self.rows.values() if p.project_id == project_id]
+        return sorted(rows, key=lambda p: (p.created_at, p.id or 0), reverse=True)
+
+    def save_if_status(self, proposal: Proposal, expected: ProposalStatus) -> Proposal:
+        # Like UPDATE ... WHERE status = :expected: what another unit already committed counts.
+        committed = self._uow.store.table("proposals").get(proposal.id)  # type: ignore[arg-type]
+        current = committed if committed is not None else self.rows.get(proposal.id)  # type: ignore[arg-type]
+        if current is None or current.status != expected:
+            raise ProposalAlreadyResolved(proposal.id, current.status if current else "missing")
+        return self._put(proposal)
+
+
+class FakeActivityRepository(_Repo):
+    def __init__(self, uow: "InMemoryUnitOfWork"):
+        super().__init__(uow, "activity")
+
+    def add(self, event: DomainEvent) -> DomainEvent:
+        seq = next(self._uow.store.ids)
+        saved = event.model_copy(update={"seq": seq})
+        self.rows[seq] = saved
+        return saved
+
+    def list_recent(self, project_id: int, before_seq: int | None, limit: int) -> list[DomainEvent]:
+        rows = [e for s, e in sorted(self.rows.items(), reverse=True) if e.project_id == project_id and (before_seq is None or s < before_seq)]
+        return rows[:limit]
+
+    def list_after(self, project_id: int, after_seq: int, limit: int) -> list[DomainEvent]:
+        rows = [e for s, e in sorted(self.rows.items()) if e.project_id == project_id and s > after_seq]
+        return rows[:limit]
+
+
+class InMemoryUnitOfWork:
+    """Implements the UnitOfWork port. Several instances can share one store, like
+    sessions sharing a database: what one commits, the next one sees."""
+
+    def __init__(self, store: _Store | None = None):
+        self.store = store or _Store()
+        self.working: dict[str, dict[int, Any]] = {}
+        self.commits = 0
+        self._reset()
+        self.projects = FakeProjectRepository(self)
+        self.sprints = FakeSprintRepository(self)
+        self.tasks = FakeTaskRepository(self)
+        self.proposals = FakeProposalRepository(self)
+        self.activity = FakeActivityRepository(self)
+
+    def _reset(self) -> None:
+        self.working = {name: {k: v.model_copy(deep=True) for k, v in rows.items()} for name, rows in self.store.committed.items()}
+
+    def __enter__(self) -> Self:
+        self._reset()
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        self.rollback()
+
+    def commit(self) -> None:
+        self.store.committed = {name: {k: v.model_copy(deep=True) for k, v in rows.items()} for name, rows in self.working.items()}
+        self.commits += 1
+
+    def rollback(self) -> None:
+        self._reset()
+
+    def factory(self) -> Callable[[], "InMemoryUnitOfWork"]:
+        """A UnitOfWorkFactory whose units share this one's store."""
+        return lambda: InMemoryUnitOfWork(self.store)
+
+
+class RecordingEventBus:
+    """Implements the EventBus port and keeps what was published, with a seq like the real bus."""
+
+    def __init__(self) -> None:
+        self.events: list[DomainEvent] = []
+
+    async def publish(self, event: DomainEvent) -> None:
+        self.events.append(event.model_copy(update={"seq": len(self.events) + 1}))
+
+    def of_type(self, type_: str) -> list[DomainEvent]:
+        return [e for e in self.events if e.type == type_]
+
+    async def subscribe(self, project_id: int) -> AsyncIterator[DomainEvent]:
+        for event in list(self.events):
+            if event.project_id == project_id:
+                yield event
+
+
+def project(**overrides: Any) -> Project:
+    """A valid two-member project for tests."""
+    data: dict[str, Any] = {
+        "name": "Agile Planner",
+        "description": "Jira-like tool where AI agents plan the work.",
+        "members": [Member(name="Ana Gómez", role="Backend", seniority="senior", hours_per_week=30), Member(name="Leo Ruiz", role="Frontend")],
+    }
+    return Project(**{**data, **overrides})

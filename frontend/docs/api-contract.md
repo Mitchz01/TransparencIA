@@ -3,7 +3,8 @@
 Everything the frontend needs to talk to the backend: how to call it, the TypeScript shapes of every request and response, what each status code means, and how the UI should react to each error.
 
 - **Source of truth**: [plan/api-conventions.md](../../plan/api-conventions.md) and the **API Contract** section of each spec's `plan.md`. This document gathers them for the frontend. If they ever disagree, the plan wins: fix this file in the same PR that changes the plan.
-- **Where it plugs in**: `src/adapters/http/client.ts` implements the calling rules; each gateway in `src/adapters/http/` implements one group of endpoints below; `src/domain/*.ts` holds the shapes.
+- **Where it plugs in**: `src/adapters/http/client.ts` implements the calling rules; each gateway in `src/adapters/http/` implements one group of endpoints below (and `src/adapters/fake/` the same ones in memory); `src/domain/*.ts` holds the shapes; `src/application/ports.ts` declares the gateways and `src/application/errors.ts` holds `ApiError`, so pages and hooks can catch it without importing `adapters/`.
+- **Implemented so far**: `ProjectGateway` (incl. `getPlanViews`), `ProposalGateway`, `ActivityGateway` and `EventStream`, with `createHttpGateways()` and `createFakeGateways()` (seeded with a demo project) for `app/container.tsx`.
 
 ## Contents
 
@@ -68,6 +69,7 @@ export interface ApiErrorBody {
   [extra: string]: unknown // some codes add context (reason, proposal_id, current_version)
 }
 
+// In src/application/errors.ts (client.ts imports it).
 // Explicit fields: the app's tsconfig uses erasableSyntaxOnly (no parameter properties).
 export class ApiError extends Error {
   status: number // 0 = network error
@@ -146,7 +148,7 @@ export interface Member {
   seniority: Seniority
   hours_per_week: number
   skills: string[]
-  github_username: string | null // new, spec 007
+  github_username?: string | null // new, spec 007 (not returned until 007 lands)
 }
 
 export interface Project {
@@ -158,7 +160,7 @@ export interface Project {
   status: ProjectStatus
   auto_approve: boolean
   repository: string | null
-  has_token: boolean // new, spec 007
+  has_token?: boolean // new, spec 007 (not returned until 007 lands)
   plan: Partial<StageOutputs> | null // approved stage outputs (src/domain/plan.ts)
   members: Member[]
   created_at: string
@@ -544,7 +546,7 @@ export type DomainEvent = BaseEvent &
     | { type: 'plan_failed'; agent: string; error: string }
     | { type: 'plan_completed' }
     // spec 001: team
-    | { type: 'team_changed'; joined: string[]; left: string[]; changed: { member_id: number; fields: string[] }[] }
+    | { type: 'team_changed'; joined: string[]; left: string[]; changed: { member_id: number; name: string; fields: string[] }[] }
     // spec 003: board
     | { type: 'plan_applied'; skipped_story_keys: string[] }
     | { type: 'task_status_changed'; task_id: number; status: TaskStatus }

@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 from typing import Protocol
 
 from app.domain.board import Sprint, Task
 from app.domain.documents import Document
+from app.domain.events import DomainEvent
 from app.domain.project import Project
-from app.domain.proposals import Proposal
+from app.domain.proposals import Proposal, ProposalStatus
 
 
 class ProjectRepository(Protocol):
@@ -12,7 +15,9 @@ class ProjectRepository(Protocol):
     def add(self, project: Project) -> Project:
         """Saves the project with its team and returns the version with ids."""
         ...
-    def save(self, project: Project) -> Project: ...
+    def save(self, project: Project) -> Project:
+        """Saves the project and syncs its team (members missing from the list are deactivated)."""
+        ...
 
 
 class SprintRepository(Protocol):
@@ -29,9 +34,26 @@ class TaskRepository(Protocol):
 
 class ProposalRepository(Protocol):
     def get(self, proposal_id: int) -> Proposal | None: ...
-    def list_by_project(self, project_id: int) -> list[Proposal]: ...
+    def list_by_project(self, project_id: int) -> list[Proposal]:
+        """Newest first."""
+        ...
     def add(self, proposal: Proposal) -> Proposal: ...
     def save(self, proposal: Proposal) -> Proposal: ...
+    def save_if_status(self, proposal: Proposal, expected: ProposalStatus) -> Proposal:
+        """Saves only if the stored proposal is still `expected`; otherwise raises ProposalAlreadyResolved."""
+        ...
+
+
+class ActivityRepository(Protocol):
+    def add(self, event: DomainEvent) -> DomainEvent:
+        """Saves the event and returns it with its `seq`."""
+        ...
+    def list_recent(self, project_id: int, before_seq: int | None, limit: int) -> list[DomainEvent]:
+        """Newest first."""
+        ...
+    def list_after(self, project_id: int, after_seq: int, limit: int) -> list[DomainEvent]:
+        """Oldest first, for SSE replay."""
+        ...
 
 
 class DocumentRepository(Protocol):

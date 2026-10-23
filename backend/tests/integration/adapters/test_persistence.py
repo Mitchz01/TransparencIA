@@ -59,3 +59,37 @@ def test_without_commit_nothing_is_saved(session):
 
     with SqlUnitOfWork(session) as uow:
         assert uow.projects.list() == []
+
+
+def test_save_syncs_the_team_and_deactivates_removed_members(session):
+    from app.adapters.outbound.persistence.tables import MemberTable
+
+    with SqlUnitOfWork(session) as uow:
+        saved = uow.projects.add(
+            Project(name="Demo", description="Algo", members=[Member(name="Ana", role="Backend"), Member(name="Leo", role="Frontend")])
+        )
+        uow.commit()
+
+    ana, leo = saved.members
+    edited = saved.model_copy(
+        update={"members": [ana.model_copy(update={"hours_per_week": 30}), Member(name="Sofía", role="QA")]}
+    )
+    with SqlUnitOfWork(session) as uow:
+        uow.projects.save(edited)
+        uow.commit()
+
+    with SqlUnitOfWork(session) as uow:
+        loaded = uow.projects.get(saved.id)
+    assert [(m.name, m.hours_per_week) for m in loaded.members] == [("Ana", 30), ("Sofía", 20)]
+    # Leo is kept as an inactive row, so his done tasks still point to him.
+    leo_row = session.get(MemberTable, leo.id)
+    assert leo_row is not None and leo_row.active is False
+
+
+def test_dates_come_back_in_utc(session):
+    with SqlUnitOfWork(session) as uow:
+        saved = uow.projects.add(Project(name="Demo", description="Algo"))
+        uow.commit()
+    session.expire_all()
+    with SqlUnitOfWork(session) as uow:
+        assert uow.projects.get(saved.id).created_at.tzinfo is not None

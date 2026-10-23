@@ -1,11 +1,25 @@
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Literal
+from typing import Any, Literal, get_args
 
 from pydantic import BaseModel, Field
+
+from app.domain.errors import FieldError, MethodologyLocked, ValidationFailed
 
 ProjectStatus = Literal["draft", "planning", "ready", "error"]
 RequestedMethodology = Literal["auto", "scrum", "kanban", "scrumban", "xp", "shape_up"]
 Seniority = Literal["junior", "mid", "senior"]
+
+# Spec 001, FR-004 (limits from the API contract in plan.md).
+NAME_MAX = 120
+DESCRIPTION_MAX = 5000
+ROLE_MAX = 60
+SKILL_MAX = 40
+WEEKS_RANGE = (1, 52)
+HOURS_RANGE = (1, 60)
+
+# Member fields whose change is reported in TeamChanged.
+MEMBER_FIELDS = ("name", "role", "seniority", "hours_per_week", "skills")
 
 
 def _now() -> datetime:
@@ -39,7 +53,201 @@ class Project(BaseModel):
     auto_approve: bool = False
     # Connected GitHub repo, "owner/name" format. Only one per project.
     repository: str | None = None
-    # approved analysis, methodology, architecture, roadmap
+    # approved stage outputs keyed by stage (spec 002)
     plan: dict[str, Any] | None = None
     members: list[Member] = []
     created_at: datetime = Field(default_factory=_now)
+
+
+# ---------- Normalization and validation (spec 001, FR-004) ----------
+
+
+def normalize_name(value: str) -> str:
+    """Trim and collapse inner whitespace: '  Ana   Gómez ' -> 'Ana Gómez'."""
+    return " ".join(value.split())
+
+
+def normalize_skills(skills: list[str]) -> list[str]:
+    """Trimmed, without empty entries and without case-insensitive duplicates (first one wins)."""
+    seen: set[str] = set()
+    result: list[str] = []
+    for skill in skills:
+        clean = normalize_name(skill)
+        if clean and clean.casefold() not in seen:
+            seen.add(clean.casefold())
+            result.append(clean)
+    return result
+
+
+def normalize_member(member: Member) -> Member:
+    return member.model_copy(
+        update={
+            "name": normalize_name(member.name),
+            "role": normalize_name(member.role),
+            "skills": normalize_skills(member.skills),
+        }
+    )
+
+
+def normalize_project(project: Project) -> Project:
+    return project.model_copy(
+        update={
+            "name": normalize_name(project.name),
+            "description": project.description.strip(),
+            "members": [normalize_member(m) for m in project.members],
+        }
+    )
+
+
+def _check_text(errors: list[FieldError], path: str, value: str, max_len: int) -> None:
+    if not value:
+        errors.append(FieldError(path, "Required."))
+    elif len(value) > max_len:
+        errors.append(FieldError(path, f"Max {max_len} characters."))
+
+
+def _check_range(errors: list[FieldError], path: str, value: int, bounds: tuple[int, int]) -> None:
+    low, high = bounds
+    if not low <= value <= high:
+        errors.append(FieldError(path, f"Must be between {low} and {high}."))
+
+
+def project_errors(project: Project) -> list[FieldError]:
+    """Every FR-004 rule that fails, for an already normalized project."""
+    errors: list[FieldError] = []
+    _check_text(errors, "name", project.name, NAME_MAX)
+    _check_text(errors, "description", project.description, DESCRIPTION_MAX)
+    _check_range(errors, "duration_weeks", project.duration_weeks, WEEKS_RANGE)
+    if project.requested_methodology not in get_args(RequestedMethodology):
+        errors.append(FieldError("requested_methodology", "Must be one of: " + ", ".join(get_args(RequestedMethodology)) + "."))
+
+    if not project.members:
+        errors.append(FieldError("members", "The team needs at least one member."))
+    seen_names: set[str] = set()
+    for i, member in enumerate(project.members):
+        path = f"members[{i}]"
+        _check_text(errors, f"{path}.name", member.name, NAME_MAX)
+        if member.name:
+            key = member.name.casefold()
+            if key in seen_names:
+                errors.append(FieldError(f"{path}.name", "Duplicated name."))
+            seen_names.add(key)
+        _check_text(errors, f"{path}.role", member.role, ROLE_MAX)
+        _check_range(errors, f"{path}.hours_per_week", member.hours_per_week, HOURS_RANGE)
+        for j, skill in enumerate(member.skills):
+            if len(skill) > SKILL_MAX:
+                errors.append(FieldError(f"{path}.skills[{j}]", f"Max {SKILL_MAX} characters."))
+    return errors
+
+
+def validate_project(project: Project) -> Project:
+    """Normalizes the project and raises ValidationFailed with every failing field."""
+    normalized = normalize_project(project)
+    errors = project_errors(normalized)
+    if errors:
+        raise ValidationFailed(errors, "The project has invalid fields.")
+    return normalized
+
+
+# ---------- Team changes (spec 001, US4) ----------
+
+
+@dataclass(frozen=True)
+class MemberChange:
+    member_id: int
+    name: str
+    fields: list[str]
+
+
+@dataclass(frozen=True)
+class TeamDiff:
+    joined: list[str] = field(default_factory=list)  # names
+    left: list[str] = field(default_factory=list)
+    changed: list[MemberChange] = field(default_factory=list)
+    left_ids: list[int] = field(default_factory=list)
+
+    @property
+    def empty(self) -> bool:
+        return not (self.joined or self.left or self.changed)
+
+
+def diff_team(old: list[Member], new: list[Member]) -> TeamDiff:
+    """Members are matched by id; members without id are new."""
+    old_by_id = {m.id: m for m in old if m.id is not None}
+    new_ids = {m.id for m in new if m.id is not None}
+    joined = [m.name for m in new if m.id is None or m.id not in old_by_id]
+    left_members = [m for m in old if m.id not in new_ids]
+    changed: list[MemberChange] = []
+    for member in new:
+        before = old_by_id.get(member.id) if member.id is not None else None
+        if before is None:
+            continue
+        fields = [f for f in MEMBER_FIELDS if getattr(before, f) != getattr(member, f)]
+        if fields:
+            changed.append(MemberChange(member.id, member.name, fields))  # type: ignore[arg-type]
+    return TeamDiff(
+        joined=joined,
+        left=[m.name for m in left_members],
+        changed=changed,
+        left_ids=[m.id for m in left_members if m.id is not None],
+    )
+
+
+@dataclass
+class MemberPatch:
+    """One item of the new team in an edit: `id` set = edit that member, None = new member.
+    `values` only carries the fields the client sent."""
+
+    id: int | None
+    values: dict[str, Any]
+
+
+@dataclass
+class ProjectChanges:
+    """Fields sent in an edit (PATCH). `members`, when not None, is the whole new team."""
+
+    values: dict[str, Any] = field(default_factory=dict)
+    members: list[MemberPatch] | None = None
+
+
+NULLABLE_PROJECT_FIELDS: frozenset[str] = frozenset()
+
+
+def apply_update(project: Project, changes: ProjectChanges) -> tuple[Project, TeamDiff]:
+    """Returns the edited, validated project and what changed in its team.
+    Raises ValidationFailed (every failing field) or MethodologyLocked; never mutates `project`."""
+    errors: list[FieldError] = []
+    if not changes.values and changes.members is None:
+        raise ValidationFailed.single("", "No fields to update.")
+
+    for name, value in changes.values.items():
+        if value is None and name not in NULLABLE_PROJECT_FIELDS:
+            errors.append(FieldError(name, "Required."))
+
+    members = project.members
+    if changes.members is not None:
+        current = {m.id: m for m in project.members}
+        members = []
+        for i, patch in enumerate(changes.members):
+            values = {k: v for k, v in patch.values.items() if k != "id"}
+            for name, value in values.items():
+                if value is None:
+                    errors.append(FieldError(f"members[{i}].{name}", "Required."))
+            values = {k: v for k, v in values.items() if v is not None}
+            if patch.id is None:
+                members.append(Member(**{"name": "", "role": "", **values}))
+            elif patch.id not in current:
+                errors.append(FieldError(f"members[{i}].id", "Unknown member."))
+            else:
+                members.append(current[patch.id].model_copy(update=values))
+
+    values = {k: v for k, v in changes.values.items() if v is not None}
+    edited = normalize_project(project.model_copy(update={**values, "members": members}))
+    errors.extend(project_errors(edited))
+    if errors:
+        raise ValidationFailed(errors, "The project has invalid fields.")
+
+    if edited.requested_methodology != project.requested_methodology and project.status != "draft":
+        raise MethodologyLocked()
+
+    return edited, diff_team(project.members, edited.members)

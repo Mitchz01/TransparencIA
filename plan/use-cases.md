@@ -125,10 +125,15 @@ stateDiagram-v2
     pending --> approved: approve (or auto-approve)
     pending --> adjusted: adjust with changes
     pending --> rejected: reject with a reason
+    pending --> discarded: replaced by a newer one (system)
+    rejected --> adjusted: only the newest one, after 3 rejections in a row
     approved --> [*]: it's applied
     adjusted --> [*]: the adjusted version is applied
     rejected --> [*]: the agent redoes it
+    discarded --> [*]
 ```
+
+Applying is separate from the status: an approved or adjusted proposal whose application fails keeps its status, gets `apply_failed = true`, and can be retried (`POST /api/proposals/{id}/apply`, spec 005).
 
 ### Task
 
@@ -259,16 +264,16 @@ sequenceDiagram
 
 - **Trigger**: the leader opens a pending proposal (sees what the agent decided and why) and chooses.
 - **Result**:
-  - **Approve or adjust**: `final_content` is applied according to the proposal kind (see table) and the next stage starts.
-  - **Reject**: the reason is saved and the agent automatically redoes the stage with that reason as context. After 3 rejections in a row of the same stage, it waits for the leader.
-- **Use cases**: `proposals/approve_proposal.py`, `adjust_proposal.py`, `reject_proposal.py`
+  - **Approve or adjust**: the decision is saved right away; then the step its owner spec registered applies `final_content` (see table) and, for plan stages, the next stage starts.
+  - **Reject**: the reason (required) is saved and handed to the owner; for plan stages, spec 002 redoes the stage with the reason as context. After 3 rejections in a row of the same stage, it waits for the leader, who can adjust the newest rejected proposal with their own version.
+- **Use cases**: `proposals/resolve_proposal.py` (`ApproveProposal`, `AdjustProposal`, `RejectProposal`), `proposals/apply_proposal.py` (`ApplyProposal`, `ApplierRegistry`, `RetryApply`), `proposals/auto_approve.py`, `proposals/approve_many.py`
 
-| Proposal kind | What approving it does |
-|---|---|
-| `plan_stage` | Saves the stage in `project.plan`. If it's `sprints`, triggers UC-05. Launches the next stage. |
-| `document` | Creates or versions a `Document` (UC-08). |
-| `github_action` | Runs the action on `CodeHost` (UC-10, UC-11). |
-| `replan` | Applies the changes to the board (UC-13). |
+| Proposal kind | What applying it does | Registered step |
+|---|---|---|
+| `plan_stage` | Saves the stage in `project.plan` and launches the next one; after `sprints`, triggers UC-05. On rejection, redoes the stage | `AdvancePlanning.on_proposal_resolved` (002) |
+| `document` | Creates or versions a `Document` (UC-08) | `ApplyDocumentProposal` (006) |
+| `github_action` | Runs the action on `CodeHost` (UC-10, UC-11) | `PublishIssues` / `ApplyReview` (007) |
+| `replan` | Applies the changes to the board (UC-13) | `ApplyReplan` (008) |
 
 ```mermaid
 sequenceDiagram
@@ -278,27 +283,32 @@ sequenceDiagram
     participant UC as ApproveProposal
     participant UoW
     participant Bus as EventBus
-    participant Next as Next step
+    participant AP as ApplyProposal
+    participant Step as Owner spec step
 
     L->>UI: approves or adjusts (with changes)
     UI->>HTTP: POST /api/proposals/{id}/approve or /adjust
     HTTP->>UC: execute(id, optional adjusted content)
     UC->>UoW: proposals.get(id)
-    UC->>UC: proposal.approve() or adjust(content)
-    alt already resolved
+    UC->>UC: proposal.approve() or adjust(validated content)
+    alt already resolved (or decided at the same time by someone else)
         UC-->>HTTP: ProposalAlreadyResolved
         HTTP-->>UI: 409
     else pending
-        UC->>UoW: applies according to kind (table)
-        UC->>UoW: proposals.save(proposal)
+        UC->>UoW: proposals.save_if_status(proposal, "pending")
         UC->>UoW: commit()
         UC->>Bus: publish(ProposalResolved)
-        UC->>Next: next stage (UC-03), apply board (UC-05) or GitHub action
-        HTTP-->>UI: 202 Accepted
+        HTTP-->>UI: 200 Proposal
+        HTTP->>AP: spawn(execute(id)), own UnitOfWork
+        AP->>Step: registered step for the kind (table)
+        alt the step fails
+            AP->>UoW: mark_apply_failed(error)
+            AP->>Bus: publish(ProposalApplyFailed)
+        end
     end
 ```
 
-With **auto-approve** the flow is the same, but `RunPlanningStep` calls it with `auto=true` instead of the UI. The proposal is recorded with `auto_approved = true`.
+With **auto-approve**, the creator calls `AutoApprove.after_created(proposal_id)` after saving the proposal: it's approved with `auto_approved = true` and applied the same way, unless its `origin` is `automatic` (spec 008 drift replans always wait for the leader).
 
 ### UC-05 · Apply the approved plan to the board
 
@@ -364,22 +374,23 @@ sequenceDiagram
 ### UC-07 · View roadmap, methodology and architecture
 
 - **Trigger**: the leader or a member opens the plan views.
-- **Result**: visual roadmap by phases and weeks, methodology with ceremonies and discarded alternatives, and architecture with ADRs. Each view shows the agent's rationale.
-- **Use case**: `projects/get_project.py` (read-only). The roadmap is drawn in the frontend from `Roadmap.phases`.
+- **Result**: visual roadmap by phases and weeks with each epic's and phase's progress, methodology with ceremonies and discarded alternatives, and architecture with its decisions. Each view says its status (not generated, waiting for approval, approved) and, when approved, the agent, its rationale and how it was approved.
+- **Use case**: `projects/get_plan_views.py` (read-only). The views are built by the pure `domain/plan_views.build_plan_views`; the roadmap is drawn in the frontend from `RoadmapView.phases`.
 
 ```mermaid
 sequenceDiagram
     actor L as Leader
     participant UI
     participant HTTP as HTTP projects
-    participant UC as GetProjectDetail
+    participant UC as GetPlanViews
     participant UoW
 
     L->>UI: opens Roadmap
-    UI->>HTTP: GET /api/projects/{id}
+    UI->>HTTP: GET /api/projects/{id}/plan
     HTTP->>UC: execute(id)
-    UC->>UoW: projects.get, sprints and tasks by project
-    UC-->>HTTP: ProjectDetail
+    UC->>UoW: projects.get, proposals and tasks by project
+    UC->>UC: build_plan_views(project, proposals, tasks, today)
+    UC-->>HTTP: PlanViews
     HTTP-->>UI: 200
     UI->>UI: timeline with phases, epics and their tasks' progress
 ```
@@ -584,26 +595,28 @@ sequenceDiagram
 ### UC-14 · Follow the live activity
 
 - **Trigger**: any project screen is open.
-- **Result**: the UI sees live which agent is working, the new proposals and the board changes, without reloading ("Agent transparency").
-- **Adapter**: `inbound/http/planning.py` exposes `GET /api/projects/{id}/events` as SSE (`sse-starlette`) and subscribes to the `EventBus`.
+- **Result**: the UI sees live which agent is working, the new proposals and the board changes, without reloading ("Agent transparency"). Every event is also kept as the project's history.
+- **Adapter**: `inbound/http/activity.py` exposes `GET /api/projects/{id}/events` as SSE (`sse-starlette`) and `GET /api/projects/{id}/activity` for the history. `PersistentEventBus` saves every event (its row id is the event's `seq`) before fanning it out; `FollowActivity` replays what a reconnecting client missed.
 
 ```mermaid
 sequenceDiagram
     participant UI
     participant HTTP as HTTP SSE
-    participant Bus as EventBus
+    participant FA as FollowActivity
+    participant Bus as PersistentEventBus
     participant UC as Any use case
 
-    UI->>HTTP: GET /api/projects/{id}/events
-    HTTP->>Bus: subscribe(project_id)
+    UI->>HTTP: GET /api/projects/{id}/events (Last-Event-ID: 41)
+    HTTP->>FA: stream(project_id, after=41)
+    FA->>Bus: subscribe(project_id) first, so nothing is lost
+    FA->>FA: replay activity after 41 (or one resync if more than 200)
+    FA-->>UI: id: 42 · event: proposal_resolved …
     UC->>Bus: publish(AgentStarted)
-    Bus-->>HTTP: event
-    HTTP-->>UI: event agent_started
-    UC->>Bus: publish(ProposalCreated)
-    Bus-->>HTTP: event
-    HTTP-->>UI: event proposal_created
+    Bus->>Bus: save as activity (seq 43)
+    Bus-->>FA: event
+    FA-->>UI: id: 43 · event: agent_started
     UI->>UI: refetches what changed
-    Note over UI,HTTP: if it drops, the UI reconnects and GETs the full state
+    Note over UI,HTTP: on a drop, EventSource reconnects with Last-Event-ID and gets what it missed
 ```
 
 ---
