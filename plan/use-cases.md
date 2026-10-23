@@ -619,6 +619,6 @@ Lo que estos casos de uso agregan a lo que ya está en `main`:
 
 ## Preguntas abiertas
 
-1. **UC-11**: ¿el sistema solo pide reviews y comenta, o también debería **abrir PRs** (por ejemplo, una rama con un PR borrador por tarea para que el dev arranque)? Hoy lo dejé solo como reviews.
+1. ~~**UC-11**: ¿el sistema también abre PRs?~~ **Resuelta en la spec 007**: no, solo pide reviews y comenta. Los PRs los abre el equipo.
 2. **UC-04 rechazar**: ¿el agente rehace la etapa automáticamente con el motivo, o el líder decide cuándo?
 3. **UC-12**: ¿la detección de desvío (sprint cerrado con pendientes) propone re-planificar sola, o solo avisa?
