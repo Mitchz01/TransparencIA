@@ -13,6 +13,8 @@ export interface FakeBackend {
   gateways: Gateways
   store: FakeStore
   planning: FakePlanning
+  /** Stops saving and drops the saved state; the next load starts from the demo seed. */
+  forget: () => void
 }
 
 export interface FakeBackendOptions extends FakePlanningOptions {
@@ -23,9 +25,10 @@ export interface FakeBackendOptions extends FakePlanningOptions {
 
 /** In-memory backend (no API) seeded with demo projects, with fake agents. Only app/container.tsx should import this. */
 export function createFakeBackend({ store = new FakeStore(), storage, ...options }: FakeBackendOptions = {}): FakeBackend {
+  let forgotten = false
+  const save = () => storage && !forgotten && store.save(storage)
   if (storage) {
     store.restore(storage)
-    const save = () => store.save(storage)
     window.addEventListener('pagehide', save)
     document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && save())
   }
@@ -34,6 +37,10 @@ export function createFakeBackend({ store = new FakeStore(), storage, ...options
   return {
     store,
     planning,
+    forget() {
+      forgotten = true
+      if (storage) FakeStore.clear(storage)
+    },
     gateways: {
       projects: fakeProjectGateway(store),
       proposals: fakeProposalGateway(store),
