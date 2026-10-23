@@ -274,7 +274,7 @@ From the board, the leader closes a sprint or asks for a replan with a reason. T
 ### Functional Requirements
 
 - **FR-001**: The app MUST provide the screens in the screen map and, inside a project, a narrow icon rail for the sections plus a top bar with the views of the current section. No wide sidebar with labels.
-- **FR-002**: Every screen MUST be built only with the approved design system: its colors, type, shapes, spacing and icon set, and its rules (no status dots, no separator lines, no lines or small labels around text, no em dashes, no dot separators, no emojis, no side strokes on cards, at most three numbers per screen). If something is missing, it's added to the design system first.
+- **FR-002**: Every screen MUST be built only with the approved design system: its colors, type, shapes, spacing and icon set, and its rules (no status dots except the one in a board column label, spec 014; no separator lines, no lines or small labels around text, no em dashes, no dot separators, no emojis, no side strokes on cards, at most three numbers per screen). If something is missing, it's added to the design system first.
 - **FR-003**: The app MUST offer light and dark themes, follow the system preference by default and remember the person's choice.
 - **FR-004**: The app MUST talk to the service only as the API contract describes, and react to each error code as the contract says.
 - **FR-005**: Board moves MUST show immediately and go back with a message if saving fails.
