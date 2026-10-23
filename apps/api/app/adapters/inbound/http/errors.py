@@ -35,8 +35,12 @@ from app.domain.errors import (
     ValidationFailed,
     VersionConflict,
 )
+from app.domain.transparency import AgentUnavailable, BudgetMissing, ExpenseNotDraft, UnsupportedFile
 
 REQUEST_ID_HEADER = "X-Request-Id"
+
+# Spec 017 (D3): the only endpoint that takes multipart/form-data is the evidence upload.
+_UPLOAD_PATH = re.compile(r"^/api/projects/\d+/expenses/?$")
 
 # Anything not listed here and not a NotFound/ValidationFailed is a state conflict (409).
 _STATUS: dict[type[DomainError], int] = {
@@ -60,6 +64,10 @@ _STATUS: dict[type[DomainError], int] = {
     InvalidCredentials: 401,  # spec 015
     Forbidden: 403,  # spec 015
     LastLeader: 409,  # spec 015
+    BudgetMissing: 409,  # spec 017
+    ExpenseNotDraft: 409,  # spec 017
+    UnsupportedFile: 422,  # spec 017
+    AgentUnavailable: 502,  # spec 017
 }
 
 
@@ -146,7 +154,8 @@ class RequestContextMiddleware:
 
         has_body = scope["method"] in ("POST", "PUT", "PATCH") and int(headers.get("content-length", "0") or 0) > 0
         content_type = headers.get("content-type", "")
-        if has_body and not content_type.startswith("application/json"):
+        is_upload = scope["method"] == "POST" and bool(_UPLOAD_PATH.match(scope["path"])) and content_type.startswith("multipart/form-data")
+        if has_body and not is_upload and not content_type.startswith("application/json"):
             response = JSONResponse(
                 status_code=400,
                 content=error_body("malformed_request", "The body must be JSON (Content-Type: application/json)."),

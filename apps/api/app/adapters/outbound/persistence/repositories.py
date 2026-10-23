@@ -8,6 +8,10 @@ from sqlmodel import Session, col, select
 from app.adapters.outbound.persistence import mappers
 from app.adapters.outbound.persistence.tables import (
     AccountTable,
+    AlertTable,
+    BudgetTable,
+    ExpenseTable,
+    StoredFileTable,
     ActivityTable,
     ExternalLinkTable,
     DocumentTable,
@@ -31,6 +35,7 @@ from app.domain.integrations import ExternalKind, ExternalLink, OwnWrite, OwnWri
 from app.domain.project import Project
 from app.domain.proposals import Proposal, ProposalStatus
 from app.domain.sync import WebhookDelivery
+from app.domain.transparency import Alert, Budget, Expense, ExpenseStatus, StoredFile
 
 
 class SqlProjectRepository:
@@ -111,6 +116,10 @@ class SqlProjectRepository:
 
     def get_by_invite_token(self, token: str) -> Project | None:
         row = self._session.exec(select(ProjectTable).where(ProjectTable.invite_token == token)).first()
+        return self._to_domain(row) if row else None
+
+    def get_by_public_slug(self, slug: str) -> Project | None:
+        row = self._session.exec(select(ProjectTable).where(ProjectTable.public_slug == slug)).first()
         return self._to_domain(row) if row else None
 
 
@@ -477,3 +486,100 @@ class SqlSessionRepository:
     def prune_expired(self, now: datetime) -> int:
         result = self._session.exec(delete(SessionTable).where(col(SessionTable.expires_at) <= now))  # type: ignore[call-overload]
         return result.rowcount or 0
+
+
+# ---------- Transparency portal (spec 017) ----------
+
+
+class SqlBudgetRepository:
+    def __init__(self, session: Session):
+        self._session = session
+
+    def get(self, project_id: int) -> Budget | None:
+        row = self._session.get(BudgetTable, project_id)
+        return mappers.budget_to_domain(row) if row else None
+
+    def save(self, budget: Budget) -> Budget:
+        row = self._session.merge(mappers.budget_to_table(budget))
+        self._session.flush()
+        return mappers.budget_to_domain(row)
+
+
+class SqlStoredFileRepository:
+    def __init__(self, session: Session):
+        self._session = session
+
+    def add(self, file: StoredFile) -> StoredFile:
+        row = mappers.stored_file_to_table(file)
+        self._session.add(row)
+        self._session.flush()
+        return mappers.stored_file_to_domain(row)
+
+    def get(self, file_id: int) -> StoredFile | None:
+        row = self._session.get(StoredFileTable, file_id)
+        return mappers.stored_file_to_domain(row) if row else None
+
+
+class SqlExpenseRepository:
+    """An expense and its alerts are one unit: reading assembles it, saving writes both."""
+
+    def __init__(self, session: Session):
+        self._session = session
+
+    def get(self, expense_id: int) -> Expense | None:
+        row = self._session.get(ExpenseTable, expense_id)
+        return self._assemble([row])[0] if row else None
+
+    def list_by_project(self, project_id: int, status: ExpenseStatus | None = None) -> list[Expense]:
+        query = select(ExpenseTable).where(ExpenseTable.project_id == project_id)
+        if status is not None:
+            query = query.where(ExpenseTable.status == status)
+        return self._assemble(list(self._session.exec(query.order_by(ExpenseTable.id)).all()))
+
+    def add(self, expense: Expense) -> Expense:
+        return self.save(expense.model_copy(update={"id": None}))
+
+    def save(self, expense: Expense) -> Expense:
+        row = self._session.merge(mappers.expense_to_table(expense))
+        self._session.flush()
+        kept = {a.id for a in expense.alerts if a.id is not None}
+        for current in self._alert_rows([row.id]):  # type: ignore[list-item]
+            if current.id not in kept:
+                self._session.delete(current)
+        for alert in expense.alerts:
+            self._session.merge(mappers.alert_to_table(alert, row.id))  # type: ignore[arg-type]
+        self._session.flush()
+        return self._assemble([row])[0]
+
+    def delete(self, expense_id: int) -> None:
+        row = self._session.get(ExpenseTable, expense_id)
+        if row is None:
+            return
+        for alert in self._alert_rows([expense_id]):
+            self._session.delete(alert)
+        self._session.delete(row)
+        self._session.flush()
+
+    def get_alert(self, alert_id: int) -> Alert | None:
+        row = self._session.get(AlertTable, alert_id)
+        return mappers.alert_to_domain(row) if row else None
+
+    def save_alert(self, alert: Alert) -> Alert:
+        row = self._session.merge(mappers.alert_to_table(alert, alert.expense_id))  # type: ignore[arg-type]
+        self._session.flush()
+        return mappers.alert_to_domain(row)
+
+    def _alert_rows(self, expense_ids: list[int]) -> list[AlertTable]:
+        if not expense_ids:
+            return []
+        return list(
+            self._session.exec(
+                select(AlertTable).where(col(AlertTable.expense_id).in_(expense_ids)).order_by(AlertTable.id)
+            ).all()
+        )
+
+    def _assemble(self, rows: list[ExpenseTable]) -> list[Expense]:
+        alerts: dict[int, list[AlertTable]] = {}
+        for alert in self._alert_rows([r.id for r in rows if r.id is not None]):
+            alerts.setdefault(alert.expense_id, []).append(alert)
+        return [mappers.expense_to_domain(row, alerts.get(row.id or 0, [])) for row in rows]
