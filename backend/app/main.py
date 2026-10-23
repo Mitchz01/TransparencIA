@@ -96,7 +96,7 @@ async def lifespan(app: FastAPI):
         open_uow, app.state.event_bus, app.state.agents, app.state.appliers, app.state.on_plan_completed
     )
     # Spec 008: on-demand and drift replans; approving one runs ApplyReplan, then these follow-ups
-    # (007's issues, objectives; spec 006 will add MarkDocumentsOutdated).
+    # (007's issues, 006's MarkDocumentsOutdated, objectives).
     app.state.on_replan_applied = []
     app.state.replan = wire_replanning(
         open_uow,

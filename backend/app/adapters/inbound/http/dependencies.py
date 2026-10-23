@@ -421,8 +421,13 @@ def wire_replanning(
         for task in outcome.discarded_tasks:
             await close_issue.execute(task.task_id, task.rationale, task.key)
 
-    on_replan_applied.extend([propose_added_tasks, close_discarded_issues])
-    # TODO(spec 006): append MarkDocumentsOutdated to on_replan_applied once spec 006 lands.
+    # Spec 006 (FR-011): the plan changed, so its documents are flagged outdated.
+    mark_outdated = MarkDocumentsOutdated(uow_factory, bus)
+
+    async def mark_documents_outdated(outcome: ReplanOutcome) -> None:
+        await mark_outdated.execute(outcome.project_id)
+
+    on_replan_applied.extend([propose_added_tasks, close_discarded_issues, mark_documents_outdated])
     return Replan(uow_factory, agents, bus, auto_approve.after_created)
 
 

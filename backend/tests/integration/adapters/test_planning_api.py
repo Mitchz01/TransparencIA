@@ -86,6 +86,32 @@ def test_auto_approve_generates_the_whole_plan_and_the_board(client):
     _assert_error(client.post(f"/api/projects/{pid}/planning"), 409, "planning_not_startable")
 
 
+def test_completed_plan_builds_the_board_proposes_issues_and_writes_the_documents(client):
+    """on_plan_completed in order: ApplyPlan (spec 003) with ProposePendingIssues (spec 007)
+    as its follow-up, then GenerateDocuments (spec 006). Leader-approved, to see each step."""
+    pid = _create(client)
+    assert client.put(f"/api/projects/{pid}/repository", json={"repository": "acme/agile-app"}).status_code == 200
+    assert client.post(f"/api/projects/{pid}/planning").status_code == 202
+    for key in STAGE_KEYS:
+        proposal = _wait(lambda: _pending(client, pid, key))
+        assert client.post(f"/api/proposals/{proposal['id']}/approve").status_code == 200
+
+    _wait(lambda: client.get(f"/api/projects/{pid}").json()["status"] == "ready")
+    board = client.get(f"/api/projects/{pid}/board").json()
+    issues = _wait(lambda: _pending(client, pid, "create_issues"))
+    assert [t["task_id"] for t in issues["content"]["tasks"]] == [t["id"] for t in board["tasks"]]
+    documents = _wait(lambda: [p for p in _proposals(client, pid) if p["kind"] == "document"])
+    assert any(p["key"] == "general_spec" for p in documents)
+
+    _wait(lambda: "documents_generated" in [e["type"] for e in client.get(f"/api/projects/{pid}/activity?limit=200").json()])
+    events = list(reversed(client.get(f"/api/projects/{pid}/activity?limit=200").json()))
+    types = [e["type"] for e in events]
+    created = [(i, e["kind"], e["key"]) for i, e in enumerate(events) if e["type"] == "proposal_created"]
+    issues_created = next(i for i, kind, key in created if key == "create_issues")
+    first_document = next(i for i, kind, _ in created if kind == "document")
+    assert types.index("plan_completed") < types.index("plan_applied") < issues_created < first_document
+
+
 def test_stage_by_stage_with_manual_approval(client):
     pid = _create(client, requested_methodology="kanban")
     assert client.post(f"/api/projects/{pid}/planning").status_code == 202

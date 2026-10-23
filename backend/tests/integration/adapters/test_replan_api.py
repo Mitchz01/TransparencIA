@@ -10,7 +10,7 @@ from sqlmodel import Session
 from app.adapters.inbound.http.dependencies import open_uow
 from app.adapters.outbound.agents.mock.data import MOCK_PLAN
 from app.adapters.outbound.persistence.db import engine
-from app.adapters.outbound.persistence.tables import ProjectTable
+from app.adapters.outbound.persistence.tables import DocumentTable, ProjectTable
 from app.application.use_cases.planning.apply_plan import ApplyPlan
 from tests.fakes import RecordingEventBus
 
@@ -167,3 +167,25 @@ def test_approving_applies_the_changes_and_runs_the_github_follow_ups(client):
     activity = client.get(f"/api/projects/{pid}/activity").json()
     applied = next(e for e in activity if e["type"] == "replan_applied")
     assert applied["applied"] == ["US-1", "US-20", "US-11"] and applied["discarded"] == []
+
+
+def test_applying_a_replan_marks_the_projects_documents_outdated(client):
+    """Spec 006 (FR-011): MarkDocumentsOutdated is an ApplyReplan follow-up."""
+    pid = _ready(client)
+    with Session(engine) as session:
+        for key, kind in (("general_spec", "general_spec"), ("flow_diagram:1", "flow_diagram")):
+            session.add(DocumentTable(project_id=pid, key=key, kind=kind, title=key, content="v1"))
+        session.commit()
+    assert not any(d["outdated"] for d in client.get(f"/api/projects/{pid}/documents").json())
+
+    _replan(client, pid)
+    proposal = _pending_replan(client, pid)
+    assert client.post(f"/api/proposals/{proposal['id']}/approve").status_code == 200
+
+    documents = _wait_for(
+        lambda: (docs := client.get(f"/api/projects/{pid}/documents").json()) and all(d["outdated"] for d in docs) and docs
+    )
+    assert len(documents) == 2
+    activity = client.get(f"/api/projects/{pid}/activity").json()
+    [outdated] = [e for e in activity if e["type"] == "documents_outdated"]
+    assert sorted(outdated["document_ids"]) == sorted(d["id"] for d in documents)
