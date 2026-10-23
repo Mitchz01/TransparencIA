@@ -43,9 +43,11 @@ pytest                 # tests (includes the architecture layer test)
 ```bash
 cd frontend
 npm install
-npm i -D tailwindcss @tailwindcss/vite   # pending: failed because the disk was full
-npm run dev                               # :5173, proxy /api → :8000
+npm run dev                      # :5173, proxy /api → :8000
+VITE_USE_FAKE=true npm run dev   # whole demo without a backend (fake agents)
 ```
+
+Scripts, the fake backend and the checks: [frontend/README.md](frontend/README.md).
 
 ## TODO
 
@@ -58,6 +60,6 @@ npm run dev                               # :5173, proxy /api → :8000
 - [ ] Per-stage planning pipeline (spec 002) and its `plan_stage` applier, `PATCH /tasks/{id}` (spec 003)
 - [ ] Persist the approved plan as Sprint and Task
 - [ ] Generated specs and diagrams (006), GitHub (007), sync and replanning (008)
-- [ ] Frontend: project setup, agent progress, kanban, roadmap
-- [ ] Extra: replan ("a dev left, adjust the sprint")
+- [x] Frontend (spec 009): every screen, on the API contract or on the fake backend
+- [x] Extra: replan ("a dev left, adjust the sprint"), on the frontend and its fake backend
 - [ ] Deploy to Cloud Run
