@@ -1,7 +1,7 @@
 import type { ProjectGateway } from '../../application/ports'
 import type { Member, MemberInput, Project, ProjectSummary } from '../../domain/project'
 import { canChangeMethodology, validateMembers, validateProjectCreate } from '../../domain/project'
-import { demoPlanViews } from './demoData'
+import { buildPlanViews } from './planViews'
 import { type FakeStore, fail, invalid, notFound, reply } from './store'
 
 const tidy = (value: string) => value.trim().replace(/\s+/g, ' ')
@@ -86,7 +86,7 @@ export function fakeProjectGateway(store: FakeStore): ProjectGateway {
 
     async getPlanViews(id) {
       const project = find(id)
-      return reply(demoPlanViews(project, [...store.proposals.values()].filter((p) => p.project_id === id)))
+      return reply(buildPlanViews(project, [...store.proposals.values()].filter((p) => p.project_id === id), store.boards.get(id)?.tasks ?? []))
     },
   }
 }

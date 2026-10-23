@@ -3,7 +3,6 @@
 // second project whose plan is complete and whose board is already in use.
 
 import type { BoardView, Task } from '../../domain/board'
-import type { PlanViews } from '../../domain/planViews'
 import type { StageKey } from '../../domain/plan'
 import type { Project } from '../../domain/project'
 import type { Proposal } from '../../domain/proposals'
@@ -100,34 +99,4 @@ export function demoBoard(nextId: () => number): BoardView {
     board.tasks.filter((t) => t.sprint_id === sprintOne && t.status === status).forEach((t, i) => (t.position = i))
   }
   return board
-}
-
-/** What the API would answer for the demo project, before the board exists. */
-export function demoPlanViews(project: Project, proposals: Proposal[]): PlanViews {
-  const origin = (key: string) => {
-    const p = proposals.find((x) => x.key === key && (x.status === 'approved' || x.status === 'adjusted'))
-    return p ? { agent: p.agent, rationale: p.rationale, approved_at: p.resolved_at ?? created, decision: p.auto_approved ? 'auto' as const : p.status === 'adjusted' ? 'adjusted' as const : 'leader' as const } : null
-  }
-  const status = (key: 'roadmap' | 'methodology' | 'architecture') =>
-    project.plan?.[key] ? 'approved' as const : proposals.some((p) => p.key === key && p.status === 'pending') ? 'pending' as const : 'not_generated' as const
-  const zero = { tasks: 0, tasks_done: 0, points: 0, points_done: 0 }
-  const roadmap = project.plan?.roadmap
-  return {
-    roadmap: status('roadmap') === 'approved' && roadmap
-      ? {
-          status: 'approved',
-          origin: origin('roadmap'),
-          content: {
-            phases: roadmap.phases.map((phase) => ({ ...phase, progress: zero, epics: phase.epics.map((e) => ({ ...e, progress: zero, has_tasks: false })) })),
-            progress: zero, current_week: null, current_phase: null, overdue: false,
-          },
-        }
-      : { status: status('roadmap'), origin: null, content: null },
-    methodology: status('methodology') === 'approved' && project.plan?.methodology
-      ? { status: 'approved', origin: origin('methodology'), content: { decision: project.plan.methodology, chosen_by: project.requested_methodology === 'auto' ? 'agents' : 'leader' } }
-      : { status: status('methodology'), origin: null, content: null },
-    architecture: status('architecture') === 'approved' && project.plan?.architecture
-      ? { status: 'approved', origin: origin('architecture'), content: project.plan.architecture }
-      : { status: status('architecture'), origin: null, content: null },
-  }
 }

@@ -1,9 +1,10 @@
 import { createBrowserRouter, type RouteObject } from 'react-router-dom'
-import { Calendar03Icon, File01Icon, Plug01Icon, Settings01Icon } from '../ui/components/ds/icons'
+import { File01Icon, Plug01Icon, Settings01Icon } from '../ui/components/ds/icons'
 import { BoardPage } from '../ui/pages/BoardPage'
 import { ErrorPage } from '../ui/pages/ErrorPage'
 import { NewProjectPage } from '../ui/pages/NewProjectPage'
 import { NotFoundPage } from '../ui/pages/NotFoundPage'
+import { PlanPage } from '../ui/pages/PlanPage'
 import { PlanningPage } from '../ui/pages/PlanningPage'
 import { ProjectIndex, ProjectLayout } from '../ui/pages/ProjectLayout'
 import { ProjectsPage } from '../ui/pages/ProjectsPage'
@@ -23,10 +24,7 @@ export const routes: RouteObject[] = [
           { index: true, element: <ProjectIndex /> },
           { path: 'planning', element: <PlanningPage /> },
           { path: 'board', element: <BoardPage /> },
-          {
-            path: 'plan',
-            element: <UpcomingPage title="Plan" icon={Calendar03Icon}>El roadmap, la metodología y la arquitectura, cada uno con su origen.</UpcomingPage>,
-          },
+          { path: 'plan', element: <PlanPage /> },
           {
             path: 'documents',
             element: <UpcomingPage title="Documentos" icon={File01Icon}>Las specs y los diagramas generados, con sus versiones.</UpcomingPage>,

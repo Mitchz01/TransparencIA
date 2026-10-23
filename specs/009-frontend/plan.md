@@ -225,10 +225,10 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ### Implementation for User Story 4
 
-- [ ] T039 [P] [US4] Create `ViewOrigin` (agent, rationale, approval date in words, how it was approved) and the "not generated yet" / "waiting for approval" states linking to the proposal, in `frontend/src/ui/components/plan/`
-- [ ] T040 [US4] Create `RoadmapTimeline`: phases as blocks across a week grid, epics inside with their progress track, the current week highlighted with a fill (no lines)
-- [ ] T041 [US4] Create `MethodologyView` (decision, iteration, ceremonies, WIP limits, discarded alternatives, chosen by leader or agents) and `ArchitectureView` (style, components, stack, decisions)
-- [ ] T042 [US4] Create `PlanPage` at `/projects/:id/plan` with a segmented control for Roadmap, Methodology and Architecture, fed by `usePlanViews`
+- [x] T039 [P] [US4] Create `ViewOrigin` (agent, rationale, approval date in words, how it was approved) and the "not generated yet" / "waiting for approval" states linking to the proposal, in `frontend/src/ui/components/plan/`
+- [x] T040 [US4] Create `RoadmapTimeline`: phases as blocks across a week grid, epics inside with their progress track, the current week highlighted with a fill (no lines)
+- [x] T041 [US4] Create `MethodologyView` (decision, iteration, ceremonies, WIP limits, discarded alternatives, chosen by leader or agents) and `ArchitectureView` (style, components, stack, decisions)
+- [x] T042 [US4] Create `PlanPage` at `/projects/:id/plan` with a segmented control for Roadmap, Methodology and Architecture, fed by `usePlanViews`
 
 **Checkpoint**: User Stories 1–4 work independently
 
