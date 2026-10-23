@@ -5,7 +5,7 @@ import { Button } from '../Button'
 import { Card } from '../Card'
 import { cop, pct, shortDay } from './format'
 
-const RECENT_WEEKS = 4 // the rest behind a button, so the page reaches the budget lines fast on a phone
+const RECENT_WEEKS = 4 // weeks with movement; the rest behind a button, so a phone reaches the budget lines fast
 
 const W = 320
 const H = 120
@@ -22,7 +22,7 @@ function Chart({ timeline }: { timeline: WeekEntry[] }) {
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="none"
         role="img"
-        aria-label={`Acumulado: dinero gastado ${pct(last.spent_pct_acc)}, avance ${pct(last.physical_pct_acc)}`}
+        aria-label={`Acumulado semana a semana: dinero usado ${pct(last.spent_pct_acc)}, trabajo hecho ${pct(last.physical_pct_acc)}`}
         className="h-32 w-full overflow-visible"
       >
         <line x1={0} x2={W} y1={H} y2={H} className="stroke-surface-strong" strokeWidth={1} />
@@ -30,8 +30,8 @@ function Chart({ timeline }: { timeline: WeekEntry[] }) {
         <path d={path((week) => week.physical_pct_acc)} fill="none" className="stroke-chart-2" strokeWidth={2.5} vectorEffect="non-scaling-stroke" />
       </svg>
       <figcaption className="flex flex-wrap gap-x-5 gap-y-1 text-caption text-ink-muted">
-        <Legend className="stroke-chart-1">Dinero gastado {pct(last.spent_pct_acc)}</Legend>
-        <Legend className="stroke-chart-2">Avance de actividades {pct(last.physical_pct_acc)}</Legend>
+        <Legend className="stroke-chart-1">Dinero usado {pct(last.spent_pct_acc)}</Legend>
+        <Legend className="stroke-chart-2">Trabajo hecho {pct(last.physical_pct_acc)}</Legend>
       </figcaption>
     </figure>
   )
@@ -51,11 +51,11 @@ function Legend({ className, children }: { className: string; children: ReactNod
 export function WeeklyTimeline({ timeline }: { timeline: WeekEntry[] }) {
   const [all, setAll] = useState(false)
   if (timeline.length === 0) return null
-  const newestFirst = [...timeline].reverse()
-  const shown = all ? newestFirst : newestFirst.slice(0, RECENT_WEEKS)
+  const active = [...timeline].reverse().filter((week) => week.spent > 0 || week.tasks_done.length > 0)
+  const quiet = timeline.length - active.length
+  const shown = all ? active : active.slice(0, RECENT_WEEKS)
   return (
     <Card className="grid gap-5">
-      <h2 className="text-heading">Semana a semana</h2>
       <Chart timeline={timeline} />
       <ol className="grid gap-2">
         {shown.map((week) => (
@@ -76,10 +76,17 @@ export function WeeklyTimeline({ timeline }: { timeline: WeekEntry[] }) {
           </li>
         ))}
       </ol>
-      {timeline.length > RECENT_WEEKS && (
+      {active.length > RECENT_WEEKS && (
         <Button variant="secondary" size="sm" className="justify-self-start" onClick={() => setAll(!all)}>
-          {all ? 'Ver solo las últimas semanas' : `Ver las ${timeline.length} semanas`}
+          {all ? 'Ver solo las últimas' : `Ver las ${active.length} semanas con movimiento`}
         </Button>
+      )}
+      {quiet > 0 && (
+        <p className="text-caption text-ink-muted">
+          {active.length === 0
+            ? `${quiet === 1 ? 'Una semana' : `${quiet} semanas`} desde el inicio, todavía sin actividades terminadas ni gastos.`
+            : `${quiet === 1 ? 'Otra semana' : `Otras ${quiet} semanas`} sin actividades terminadas ni gastos.`}
+        </p>
       )}
     </Card>
   )
