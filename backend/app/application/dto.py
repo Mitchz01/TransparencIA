@@ -5,7 +5,16 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from app.domain.board import Objective, Sprint, SprintLoad, Task, TaskStatus
+from app.domain.board import (
+    BoardWarning,
+    ChecklistItem,
+    Objective,
+    Priority,
+    Sprint,
+    SprintLoad,
+    Task,
+    TaskStatus,
+)
 from app.domain.plan import WipLimit
 from app.domain.project import (
     MemberPatch,
@@ -111,7 +120,33 @@ class BoardView(BaseModel):
     tasks: list[Task]
 
 
-class TaskUpdate(BaseModel):
+class _SentFields(BaseModel):
+    def sent(self) -> dict[str, Any]:
+        """Only the fields the client sent: a missing field is left as is, null clears it."""
+        return self.model_dump(include=self.model_fields_set)
+
+
+class TaskMove(_SentFields):
+    """`sprint_id: null` = back to the backlog."""
+
+    status: TaskStatus | None = None
+    position: int | None = None
+    sprint_id: int | None = None
+
+
+class TaskEdit(_SentFields):
+    """`assignee_id: null` = unassigned; assigning someone clears `missing_role`."""
+
+    title: str | None = None
+    description: str | None = None
+    points: int | None = None
+    priority: Priority | None = None
+    assignee_id: int | None = None
+
+
+class TaskUpdate(_SentFields):
+    """PATCH /api/tasks/{id}: move fields and edit fields can be combined."""
+
     status: TaskStatus | None = None
     sprint_id: int | None = None
     assignee_id: int | None = None
@@ -119,6 +154,39 @@ class TaskUpdate(BaseModel):
     title: str | None = None
     description: str | None = None
     points: int | None = None
+    priority: Priority | None = None
+
+    def move(self) -> TaskMove | None:
+        sent = {k: v for k, v in self.sent().items() if k in TaskMove.model_fields}
+        return TaskMove(**sent) if sent else None
+
+    def edit(self) -> TaskEdit | None:
+        sent = {k: v for k, v in self.sent().items() if k in TaskEdit.model_fields}
+        return TaskEdit(**sent) if sent else None
+
+
+class ChecklistUpdate(BaseModel):
+    items: list[ChecklistItem]
+
+
+class TaskResult(BaseModel):
+    task: Task
+    warnings: list[BoardWarning] = []  # never block (constitution, principle 4)
+    suggest_advance: bool = False  # the checklist is complete: offer to move it forward (FR-015)
+
+
+class CapacityUpdate(BaseModel):
+    points_per_sprint: int | None  # required; null = back to the estimate from the team
+
+
+class SprintLoadView(BaseModel):
+    id: int
+    load: SprintLoad
+
+
+class CapacityResult(BaseModel):
+    capacity_override: int | None
+    sprints: list[SprintLoadView]
 
 
 # ---------- Proposals and activity (spec 005) ----------

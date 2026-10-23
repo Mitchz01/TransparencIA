@@ -117,6 +117,8 @@ class TaskStatusChanged(DomainEvent):
     type: Literal["task_status_changed"] = "task_status_changed"
     task_id: int
     status: str
+    sprint_id: int | None = None
+    position: int | None = None
 
 
 class TaskUpdated(DomainEvent):

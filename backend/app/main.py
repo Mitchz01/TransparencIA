@@ -50,6 +50,7 @@ async def lifespan(app: FastAPI):
     #   008: "replan" → ApplyReplan
     app.state.appliers = ApplierRegistry()
     app.state.on_team_changed = []  # spec 008 registers its drift-replan handler here
+    app.state.after_task_changed = []  # spec 007 registers issue sync, spec 008 objective evaluation
     yield
 
 

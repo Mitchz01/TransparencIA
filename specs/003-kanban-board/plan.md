@@ -256,15 +256,15 @@ Request headers: `Content-Type: application/json`
 
 ### Tests for User Story 2
 
-- [ ] T014 [P] [US2] `reorder` and `wip_warnings` tests in `backend/tests/unit/domain/test_board_rules.py`
-- [ ] T015 [P] [US2] `MoveTask` tests (status/position saved, positions compacted, WIP warning returned without blocking, `TaskStatusChanged` published, 404) in `backend/tests/unit/application/test_move_task.py`
-- [ ] T016 [P] [US2] API test for `PATCH /api/tasks/{id}` with a move in `backend/tests/integration/adapters/test_board_api.py`
+- [x] T014 [P] [US2] `reorder` and `wip_warnings` tests in `backend/tests/unit/domain/test_board_rules.py`
+- [x] T015 [P] [US2] `MoveTask` tests (status/position saved, positions compacted, WIP warning returned without blocking, `TaskStatusChanged` published, 404) in `backend/tests/unit/application/test_move_task.py`
+- [x] T016 [P] [US2] API test for `PATCH /api/tasks/{id}` with a move in `backend/tests/integration/adapters/test_board_api.py`
 
 ### Implementation for User Story 2
 
-- [ ] T017 [US2] Implement `reorder(tasks, task_id, status, position)` and `wip_warnings(tasks, wip_limits)` in `backend/app/domain/board.py`
-- [ ] T018 [US2] Implement `MoveTask` in `backend/app/application/use_cases/board/move_task.py` (returns the task + WIP warnings) and call its `after_task_changed` handlers (empty by default; spec 008 registers objective evaluation)
-- [ ] T019 [US2] Add `PATCH /api/tasks/{id}` (move) to `backend/app/adapters/inbound/http/board.py`
+- [x] T017 [US2] Implement `reorder(tasks, task_id, status, position)` and `wip_warnings(tasks, wip_limits)` in `backend/app/domain/board.py`
+- [x] T018 [US2] Implement `MoveTask` in `backend/app/application/use_cases/board/move_task.py` (returns the task + WIP warnings) and call its `after_task_changed` handlers (empty by default; spec 008 registers objective evaluation)
+- [x] T019 [US2] Add `PATCH /api/tasks/{id}` (move) to `backend/app/adapters/inbound/http/board.py`
 - [ ] T020 [US2] Wire dnd-kit in `KanbanBoard` (`DndContext` + `SortableContext` per column); `useBoard` applies the move optimistically, calls `BoardGateway.moveTask` and reverts with a toast on error; `Column` shows the WIP warning — handed off to spec 009 (frontend)
 
 **Checkpoint**: User Stories 1 and 2 work independently
@@ -279,13 +279,13 @@ Request headers: `Content-Type: application/json`
 
 ### Tests for User Story 3
 
-- [ ] T021 [P] [US3] `UpdateTask` and `UpdateChecklist` tests (assigning clears `missing_role`; progress recalculated; complete checklist returns `suggest_advance` but doesn't move; `TaskUpdated` published) in `backend/tests/unit/application/test_update_task.py`
+- [x] T021 [P] [US3] `UpdateTask` and `UpdateChecklist` tests (assigning clears `missing_role`; progress recalculated; complete checklist returns `suggest_advance` but doesn't move; `TaskUpdated` published) in `backend/tests/unit/application/test_update_task.py`
 
 ### Implementation for User Story 3
 
-- [ ] T022 [US3] Implement `UpdateTask` in `backend/app/application/use_cases/board/update_task.py` with `after_task_changed` handlers (spec 007 registers issue sync)
-- [ ] T023 [US3] Implement `UpdateChecklist` (replace the item list) in `backend/app/application/use_cases/board/update_checklist.py`
-- [ ] T024 [US3] Accept edit fields in `PATCH /api/tasks/{id}` and add `PUT /api/tasks/{id}/checklist` in `backend/app/adapters/inbound/http/board.py`
+- [x] T022 [US3] Implement `UpdateTask` in `backend/app/application/use_cases/board/update_task.py` with `after_task_changed` handlers (spec 007 registers issue sync)
+- [x] T023 [US3] Implement `UpdateChecklist` (replace the item list) in `backend/app/application/use_cases/board/update_checklist.py`
+- [x] T024 [US3] Accept edit fields in `PATCH /api/tasks/{id}` and add `PUT /api/tasks/{id}/checklist` in `backend/app/adapters/inbound/http/board.py`
 - [ ] T025 [US3] Create `TaskDrawer` and `Checklist` with `useTaskEditor`; show the "move to In review?" suggestion when the checklist completes — handed off to spec 009 (frontend)
 
 **Checkpoint**: User Stories 1–3 work independently
@@ -300,11 +300,11 @@ Request headers: `Content-Type: application/json`
 
 ### Tests for User Story 4
 
-- [ ] T026 [P] [US4] Tests: moving to another sprint lands in `todo`; `SprintLoad` uses `domain/capacity.py` or the override; `continuous` for Kanban, in `backend/tests/unit/application/test_move_task.py` and `test_board_rules.py`
+- [x] T026 [P] [US4] Tests: moving to another sprint lands in `todo`; `SprintLoad` uses `domain/capacity.py` or the override; `continuous` for Kanban, in `backend/tests/unit/application/test_move_task.py` and `test_board_rules.py`
 
 ### Implementation for User Story 4
 
-- [ ] T027 [US4] Accept `sprint_id` (or `null` for backlog) in `MoveTask`
+- [x] T027 [US4] Accept `sprint_id` (or `null` for backlog) in `MoveTask`
 - [ ] T028 [US4] Implement `SetCapacity` (`backend/app/application/use_cases/board/set_capacity.py`) and `PUT /api/projects/{id}/capacity` for the fixed points override (FR-017)
 - [ ] T029 [US4] Create `SprintSelector` (defaults to the first sprint with unfinished tasks) and `CapacityBar` (overload warning); drop target "Move to sprint…" on cards; continuous layout without selector when `continuous`, objectives as a filter — handed off to spec 009 (frontend)
 
