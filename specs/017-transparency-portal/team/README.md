@@ -177,7 +177,7 @@ class StoredFileRepository(Protocol):
 | `GetBudget(uow)` | P3 | `(project_id) → Budget \| None` |
 | `SetBudget(uow)` | P3 | `(project_id, budget) → Budget` |
 | `DraftExpense(uow, agents)` | P3 | `(project_id, filename, mime, data) → Expense` |
-| `ConfirmExpense(uow, today)` | **P1** | `(project_id, expense_id, ExpenseConfirmation) → Expense` |
+| `ConfirmExpense(uow)` | **P1** | `(project_id, expense_id, ExpenseConfirmation) → Expense` |
 | `DiscardExpense(uow)` | P3 | `(project_id, expense_id) → None` |
 | `SetPublication(uow, public_app_url)` | P3 | `(project_id, public: bool) → (public, public_url)` |
 | `GetPortal(uow, public_app_url, today)` | P3 | `.for_team(project_id) → TeamPortal`, `.for_public(slug) → Portal` |

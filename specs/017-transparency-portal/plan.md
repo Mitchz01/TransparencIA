@@ -288,7 +288,7 @@ Sync points:
 ## Phase 5: US2 — Expenses with evidence (~35 min)
 
 - [ ] T012 [US2] Use cases `draft_expense`, `discard_expense`; file storage and `GET /api/files/{id}`
-- [ ] T014 [US2] Use case `confirm_expense` (rule alerts)
+- [x] T014 [US2] Use case `confirm_expense` (rule alerts)
 - [ ] T013 [US2] Endpoints + API tests for every status row
 - [ ] T017 [US2] Upload with spinner → draft review form (task picker from the board) → confirm or discard;
   alerts with their source (IA / regla)
