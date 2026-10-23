@@ -9,7 +9,9 @@ import { STAGE_AGENTS, STAGE_KEYS, isStageKey } from '../../domain/proposalConte
 import { REASON_MAX, finalContent, isDecided, type Proposal } from '../../domain/proposals'
 import { rejectedInARow, stageProposals } from '../../domain/stepper'
 import { buildBoard } from './demoBoard'
+import { epicSpecs, flowDiagram, generalSpec } from './demoDocuments'
 import { DEMO_RATIONALES, DEMO_STAGES, demoStage } from './demoPlan'
+import { applyDocumentProposal, documentProposal, regenerated } from './fakeDocuments'
 import { type FakeStore, fail, invalid, notFound } from './store'
 
 export interface FakePlanningOptions {
@@ -136,43 +138,28 @@ export function createFakePlanning(store: FakeStore, { stageDelayMs = 1200 }: Fa
       type: 'plan_applied', project_id: project.id, actor: 'system', ref: { kind: 'project', id: project.id },
       summary: `El tablero está listo con ${board.tasks.length} tareas`, skipped_story_keys: [],
     })
-    proposeGeneralSpec(project.id)
+    proposeDocuments(project.id)
   }
 
-  function proposeGeneralSpec(projectId: number) {
+  function proposeDocuments(projectId: number) {
     const project = projectOf(projectId)
-    const proposal: Proposal = {
-      id: store.id(), project_id: projectId, kind: 'document', key: 'general_spec', agent: 'Spec writer',
-      content: {
-        title: 'Spec general',
-        markdown: `# ${project.name}\n\n${project.description}\n\n## Objetivos\n\n${DEMO_STAGES.analysis.goals.map((g) => `- ${g}`).join('\n')}\n`,
-        rationale: 'Armada con el análisis, la arquitectura, el roadmap y el backlog aprobados.',
-      },
-      rationale: 'Armada con el análisis, la arquitectura, el roadmap y el backlog aprobados.',
-      status: 'pending', adjusted_content: null, rejection_reason: null, auto_approved: false, origin: 'leader',
-      apply_failed: false, apply_error: null, created_at: store.now(), resolved_at: null,
-    }
-    store.proposals.set(proposal.id, proposal)
-    store.publish({
-      type: 'proposal_created', project_id: projectId, actor: 'agent', ref: { kind: 'proposal', id: proposal.id },
-      summary: 'El redactor de specs propuso la spec general', proposal_id: proposal.id, kind: 'document', key: 'general_spec', agent: 'Spec writer',
-    })
-    if (project.auto_approve) approveAutomatically(proposal)
+    const plan = project.plan ?? {}
+    const proposals = [
+      documentProposal(store, projectId, 'general_spec', generalSpec(project, plan), 'Armada con el análisis, la arquitectura, el roadmap y el backlog aprobados.', 'El redactor de specs propuso la spec general'),
+      ...epicSpecs(plan).map((spec) =>
+        documentProposal(store, projectId, `epic_spec:${spec.epic_key}`, spec, spec.rationale, `El redactor de specs propuso la spec de ${spec.epic_key}`),
+      ),
+      documentProposal(store, projectId, 'flow_diagram:1', flowDiagram(project), 'El recorrido del líder, de la idea al tablero.', 'El redactor de specs propuso el diagrama de flujo'),
+    ]
+    if (project.auto_approve) proposals.forEach(approveAutomatically)
   }
 
   function onDocumentResolved(proposal: Proposal) {
     if (!isDecided(proposal)) return
-    const content = finalContent(proposal) as { title: string; markdown: string }
-    const id = store.id()
-    const now = store.now()
-    store.documents.set(id, {
-      id, project_id: proposal.project_id, kind: 'general_spec', epic_key: null, title: content.title, version: 1,
-      outdated: false, updated_at: now, contents: { 1: content.markdown },
-      versions: [{ version: 1, created_at: now, source: 'agent', proposal_id: proposal.id }],
-    })
+    const doc = applyDocumentProposal(store, proposal)
     store.publish({
-      type: 'documents_generated', project_id: proposal.project_id, actor: 'agent', ref: { kind: 'document', id },
-      summary: 'La spec general está lista', missing: [],
+      type: 'documents_generated', project_id: proposal.project_id, actor: 'agent', ref: { kind: 'document', id: doc.id },
+      summary: doc.version === 1 ? `Se creó ${doc.title}` : `${doc.title} tiene la versión ${doc.version}`, missing: [],
     })
   }
 
@@ -219,6 +206,19 @@ export function createFakePlanning(store: FakeStore, { stageDelayMs = 1200 }: Fa
       const pending = proposalsOf(projectId).find((p) => p.kind === 'replan' && p.status === 'pending')
       if (pending) store.proposals.set(pending.id, { ...pending, status: 'discarded', resolved_at: store.now() })
       return { project_id: projectId, status: 'replanning' as const, supersedes: pending?.id ?? null }
+    },
+
+    /** The spec writer rewrites a document with the leader's instructions; the result is a proposal. */
+    regenerateDocument(documentId: number, instructions: string) {
+      const doc = store.documents.get(documentId)
+      if (!doc) return
+      later(() => {
+        const current = store.documents.get(documentId)
+        if (!current) return
+        const content = regenerated(current, instructions)
+        const proposal = documentProposal(store, current.project_id, current.key, content, `Regenerada con tus instrucciones: "${instructions}".`, `El redactor de specs propuso una versión nueva de ${current.title}`)
+        if (store.projects.get(current.project_id)?.auto_approve) approveAutomatically(proposal)
+      })
     },
 
     /** Picks up the stages that were running when the page was reloaded. */

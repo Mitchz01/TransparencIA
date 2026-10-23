@@ -273,9 +273,9 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ### Implementation for User Story 7
 
-- [ ] T048 [P] [US7] Install `react-markdown` and `mermaid`; create `MarkdownView` (themed typography) and `MermaidView` (themed render; shows the source with a message when it can't be drawn)
-- [ ] T049 [US7] Create `VersionHistory`, `RegenerateDialog` and `DocumentEditor` (sends `base_version`; `version_conflict` offers reload or copy)
-- [ ] T050 [US7] Create `DocumentsPage` at `/projects/:id/documents`: general spec, epic specs grouped by phase, diagrams, outdated badge with a regenerate shortcut
+- [x] T048 [P] [US7] Install `react-markdown` and `mermaid`; create `MarkdownView` (themed typography) and `MermaidView` (themed render; shows the source with a message when it can't be drawn)
+- [x] T049 [US7] Create `VersionHistory`, `RegenerateDialog` and `DocumentEditor` (sends `base_version`; `version_conflict` offers reload or copy)
+- [x] T050 [US7] Create `DocumentsPage` at `/projects/:id/documents`: general spec, epic specs grouped by phase, diagrams, outdated badge with a regenerate shortcut
 
 **Checkpoint**: User Stories 1–7 work independently
 

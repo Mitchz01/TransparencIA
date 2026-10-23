@@ -8,6 +8,7 @@ import type { DomainEvent } from '../../domain/events'
 import type { Connection } from '../../domain/integrations'
 import type { Project } from '../../domain/project'
 import type { Proposal } from '../../domain/proposals'
+import { boardCreatedAt, seedDocuments } from './seedDocuments'
 import { demoBoard, demoBoardProject, demoBoardProposals, demoHistory, demoProject, demoProposals } from './demoData'
 
 type Listener = (event: DomainEvent) => void
@@ -17,6 +18,7 @@ export type NewEvent = DomainEvent extends infer E ? (E extends DomainEvent ? Om
 
 /** A stored document keeps the content of every version; the API only returns one at a time. */
 export interface StoredDocument extends Omit<ProjectDocument, 'content'> {
+  key: string // the proposal key that creates and updates it
   contents: Record<number, string>
   updated_at: string
 }
@@ -40,6 +42,7 @@ export class FakeStore {
     for (const project of [demoBoardProject, demoProject]) this.projects.set(project.id, structuredClone(project))
     for (const proposal of [...demoBoardProposals, ...demoProposals]) this.proposals.set(proposal.id, structuredClone(proposal))
     this.boards.set(demoBoardProject.id, demoBoard(() => this.id()))
+    seedDocuments(this, demoBoardProject, boardCreatedAt)
     for (const [event, at] of demoHistory(this.boards.get(demoBoardProject.id)!)) this.record(event, at)
   }
 

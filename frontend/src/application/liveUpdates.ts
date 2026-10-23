@@ -38,7 +38,7 @@ export function keysForEvent(event: DomainEvent): QueryKey[] | null {
     case 'sprint_closed':
       return [queryKeys.board(id), queryKeys.planViews(id)]
     case 'documents_generated':
-      return [queryKeys.documents(id)]
+      return [queryKeys.documents(id), ['document']]
     case 'issues_published':
       return [queryKeys.board(id), queryKeys.proposal(event.proposal_id), queryKeys.proposals(id)]
     default:

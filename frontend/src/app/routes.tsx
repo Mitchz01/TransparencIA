@@ -1,6 +1,7 @@
 import { createBrowserRouter, type RouteObject } from 'react-router-dom'
-import { File01Icon, Plug01Icon } from '../ui/components/ds/icons'
+import { Plug01Icon } from '../ui/components/ds/icons'
 import { BoardPage } from '../ui/pages/BoardPage'
+import { DocumentsPage } from '../ui/pages/DocumentsPage'
 import { ErrorPage } from '../ui/pages/ErrorPage'
 import { NewProjectPage } from '../ui/pages/NewProjectPage'
 import { NotFoundPage } from '../ui/pages/NotFoundPage'
@@ -26,10 +27,7 @@ export const routes: RouteObject[] = [
           { path: 'planning', element: <PlanningPage /> },
           { path: 'board', element: <BoardPage /> },
           { path: 'plan', element: <PlanPage /> },
-          {
-            path: 'documents',
-            element: <UpcomingPage title="Documentos" icon={File01Icon}>Las specs y los diagramas generados, con sus versiones.</UpcomingPage>,
-          },
+          { path: 'documents', element: <DocumentsPage /> },
           {
             path: 'integrations',
             element: <UpcomingPage title="Integraciones" icon={Plug01Icon}>Conecta un repo de GitHub y publica las tareas como issues.</UpcomingPage>,
