@@ -1,5 +1,8 @@
 COMMON = (
-    "You're part of a team of agents that plans software projects. "
+    "You're part of a team of agents that plans projects of any kind: software, but just as often "
+    "field work, environmental restoration, construction, social programs, events or research. "
+    "Let the project description set the domain — never default to a software product unless the "
+    "description is actually about building one. "
     "Answer in the same language as the project description. "
     "Be concrete and realistic about the team's size and experience. "
     "Fill `rationale` with why you decided this, in 2-3 sentences: the leader reads it before approving. "
@@ -34,12 +37,21 @@ PROMPTS: dict[str, str] = {
         "Define ceremonies, iteration length (1-4 weeks) and WIP limits."
     ),
     "architecture": (
-        "Propose the architecture: style, components, stack per layer and key "
-        "decisions (ADR-style). Prefer technologies the team already knows from their skills."
+        "Design how the project is structured and carried out, fitting the schema to its own domain: "
+        "software architecture (style, services, stack) for a software product; the operational "
+        "structure for anything else (e.g. a vivero, field crews, logistics and monitoring for "
+        "environmental restoration; work fronts and crews for construction; intake, delivery and "
+        "follow-up for a social program). `style` is the overall approach; `components` are the "
+        "project's main parts or work fronts, each with its responsibility and the technology, method, "
+        "equipment or role it relies on; `stack` lists per layer or discipline what's used and why "
+        "(tools, platforms, materials, species, techniques — whatever the domain calls for); "
+        "`decisions` captures the key calls made and their trade-offs (ADR-style). Prefer what the "
+        "team already knows from their skills."
     ),
     "roadmap": (
-        "Build the roadmap by phases (e.g. discovery, MVP, beta, launch) that fits "
-        "in `duration_weeks`; if the scope doesn't fit, cut the scope, never the deadline. "
+        "Build the roadmap by phases (e.g. discovery, MVP, beta and launch for a software product; "
+        "diagnosis, setup, execution, monitoring and handover for field or environmental work) that "
+        "fits in `duration_weeks`; if the scope doesn't fit, cut the scope, never the deadline. "
         "Each phase has a goal, weeks, deliverables and "
         "epics with a unique key (EP-1, EP-2, ...)."
     ),
@@ -79,7 +91,8 @@ PROMPTS: dict[str, str] = {
         "`velocity.points_per_sprint` when you can. Give every change its own `rationale`."
     ),
     "general_spec": (
-        "Write the general product spec from the approved plan: the problem, the users, the goals, "
+        "Write the general project spec from the approved plan: the problem, the users or "
+        "beneficiaries, the goals, "
         "what's in and out of scope, the main user stories (one or two per roadmap epic, prioritized) "
         "and the success criteria. Use only what's in the context; don't invent features. "
         f"{SPEC_STRUCTURE}"
@@ -92,9 +105,12 @@ PROMPTS: dict[str, str] = {
         f"{SPEC_STRUCTURE}"
     ),
     "flow_diagrams": (
-        "Draw the product in Mermaid: one diagram of kind 'architecture' with the approved components "
-        "and how they talk, and one diagram of kind 'flow' per main user journey (sign-up, the core "
-        "task, etc.). Each `mermaid` starts with its type: flowchart, graph, sequenceDiagram, "
+        "Draw the project in Mermaid: one diagram of kind 'architecture' with the approved components "
+        "or work fronts and how they relate or hand off work, and one diagram of kind 'flow' per main "
+        "process or journey (sign-up and the core task for a software product; diagnosis, nursery, "
+        "planting and monitoring for field or environmental work; intake, service and follow-up for a "
+        "social program; etc., following whatever the project's own domain is). Each `mermaid` starts "
+        "with its type: flowchart, graph, sequenceDiagram, "
         "stateDiagram-v2 or erDiagram. Put node labels in double quotes (A[\"Sign up\"]), keep every "
         "bracket and quote balanced, and never use HTML tags (no <br>): it must render on GitHub."
     ),
