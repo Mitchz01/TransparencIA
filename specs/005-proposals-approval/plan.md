@@ -548,8 +548,8 @@ data: {"type":"resync","project_id":12}
 ## Phase 10: Polish & Cross-Cutting Concerns
 
 - [x] T034 Run the full `pytest`, including `test_layers.py`
-- [ ] T035 [P] Update the proposal state diagram and UC-04/UC-14 in [plan/use-cases.md](../../plan/use-cases.md): `discarded`, decide-then-apply with retry, SSE in `activity.py`, `200` on approve
-- [ ] T036 Check the scenarios by hand with `fastapi dev`, `curl -N` on `/events` and mock mode
+- [x] T035 [P] Update the proposal state diagram and UC-04/UC-14 in [plan/use-cases.md](../../plan/use-cases.md): `discarded`, decide-then-apply with retry, SSE in `activity.py`, `200` on approve
+- [x] T036 Check the scenarios by hand with `fastapi dev`, `curl -N` on `/events` and mock mode
 
 ---
 

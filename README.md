@@ -49,8 +49,13 @@ npm run dev                               # :5173, proxy /api → :8000
 
 ## TODO
 
-- [ ] Routers (`adapters/inbound/http`): create project, detail, `PATCH /tasks/{id}`, planning SSE
-- [ ] Proposals and per-stage approval (spec 005)
+> The `member.active`, `proposal` and `activity` columns/tables are new and `create_db()` doesn't migrate: delete any local `backend/agile.db` before running.
+
+
+- [x] Projects and team API (spec 001): `POST/GET/PATCH /api/projects`
+- [x] Proposals, approval and live activity (spec 005): `/api/proposals/...`, `/activity`, SSE `/events` with replay
+- [x] Plan views (spec 004): `GET /api/projects/{id}/plan`
+- [ ] Per-stage planning pipeline (spec 002) and its `plan_stage` applier, `PATCH /tasks/{id}` (spec 003)
 - [ ] Persist the approved plan as Sprint and Task
 - [ ] Generated specs and diagrams (006), GitHub (007), sync and replanning (008)
 - [ ] Frontend: project setup, agent progress, kanban, roadmap

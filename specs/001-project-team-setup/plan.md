@@ -308,7 +308,7 @@ No backend setup is needed: the frontend shell tasks (T001–T005) are [handed o
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T035 Update the TODO list in `README.md`, including the note about deleting a local `agile.db` (T010)
+- [x] T035 Update the TODO list in `README.md`, including the note about deleting a local `agile.db` (T010)
 
 ---
 

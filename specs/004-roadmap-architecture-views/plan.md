@@ -292,8 +292,8 @@ No body. Read-only: it never writes anything (FR-009).
 ## Phase 7: Polish & Cross-Cutting Concerns
 
 - [x] T016 Run the full `pytest`, including `test_layers.py`
-- [ ] T017 [P] Update the UC-07 diagram in [plan/use-cases.md](../../plan/use-cases.md) (`GET /api/projects/{id}/plan`, `GetPlanViews`)
-- [ ] T018 Measure the response time with 50 tasks (SC-001) and check the scenarios by hand in mock mode
+- [x] T017 [P] Update the UC-07 diagram in [plan/use-cases.md](../../plan/use-cases.md) (`GET /api/projects/{id}/plan`, `GetPlanViews`)
+- [x] T018 Measure the response time with 50 tasks (SC-001) and check the scenarios by hand in mock mode
 
 ---
 
