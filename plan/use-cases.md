@@ -384,7 +384,7 @@ sequenceDiagram
 
 - **Disparador**: termina de aprobarse el plan (después de `sprints`), o el líder pide regenerar un documento.
 - **Resultado**: propuestas de tipo `document`: spec general, una spec por épica del roadmap, y diagramas de flujo en Mermaid. Al aprobarse se convierten en `Document` versionados.
-- **Etapas nuevas** en `PLANNING_STAGES`: `general_spec`, `use_case_specs`, `flow_diagrams`, cada una con su esquema de salida.
+- **Etapas nuevas** en `PLANNING_STAGES`: `general_spec`, `epic_specs`, `flow_diagrams`, cada una con su esquema de salida.
 - **Caso de uso**: `planning/generate_documents.py`, que reutiliza `RunPlanningStep`.
 
 ```mermaid
@@ -396,7 +396,7 @@ sequenceDiagram
     participant Bus as EventBus
 
     AP->>UC: plan completo aprobado
-    loop general_spec, use_case_specs, flow_diagrams
+    loop general_spec, epic_specs, flow_diagrams
         UC->>Bus: publish(AgentStarted)
         UC->>AG: run_stage(stage, plan aprobado)
         AG-->>UC: documentos (Markdown o Mermaid)
@@ -608,7 +608,7 @@ Lo que estos casos de uso agregan a lo que ya está en `main`:
 
 | Dónde | Qué falta |
 |---|---|
-| `domain/plan.py` | Etapas `general_spec`, `use_case_specs`, `flow_diagrams`, `code_review`, `replan`, con sus esquemas |
+| `domain/plan.py` | Etapas `general_spec`, `epic_specs`, `flow_diagrams`, `code_review`, `replan`, con sus esquemas |
 | `domain/proposals.py` | `rejection_reason` en `Proposal` |
 | `domain/project.py` | `Member.github_username`; `Objective` vinculado a fase y tareas |
 | `domain/events.py` | `TeamChanged`, `PlanApplied`, `IssuesPublished`, `ObjectiveClosed` |

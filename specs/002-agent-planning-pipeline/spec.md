@@ -14,7 +14,7 @@ Cuando el líder termina de crear el proyecto y el equipo, un grupo de agentes a
 
 **Why this priority**: es el corazón del producto y lo que se muestra en la demo. Sin esto no hay tablero, roadmap ni documentos.
 
-**Independent Test**: crear un proyecto con auto-aprobar activado y verificar que, sin otra intervención, quedan seis propuestas aprobadas en orden, cada una con su justificación.
+**Independent Test**: crear un proyecto con auto-aprobar activado, iniciar la planificación y verificar que, sin otra intervención, quedan seis propuestas aprobadas en orden, cada una con su justificación.
 
 **Acceptance Scenarios**:
 
@@ -131,7 +131,8 @@ Si un agente falla (el servicio no responde o devuelve algo inválido), el líde
 - ¿Qué pasa si la duración no alcanza para el alcance? El roadmap ajusta el alcance al plazo y deja lo que no entra en "fuera de alcance", sin estirar el plazo.
 - ¿Qué pasa si se inicia la planificación de un proyecto que ya está planificando? Se rechaza: hay una sola ejecución activa por proyecto.
 - ¿Qué pasa si el agente devuelve algo con el formato incorrecto? Se reintenta una vez; si vuelve a fallar, la etapa queda en error (User Story 5).
-- ¿Qué pasa si el líder cambia el equipo mientras se planifica? Las etapas ya aprobadas no cambian; el cambio se toma en cuenta en las etapas siguientes y luego se puede re-planificar (spec 008).
+- ¿Qué pasa si el líder cambia el equipo mientras se planifica? Se permite (spec 001): las etapas ya aprobadas no cambian, las siguientes usan el equipo nuevo y luego se puede re-planificar (spec 008).
+- ¿Qué pasa si el líder quiere cambiar la metodología mientras se planifica? No se permite una vez que arrancó la planificación, porque la etapa de metodología ya la usó o la está usando (spec 001, FR-009). Para cambiarla hay que rechazar la propuesta de metodología con ese motivo.
 
 ## Requirements *(mandatory)*
 
@@ -152,6 +153,7 @@ Si un agente falla (el servicio no responde o devuelve algo inválido), el líde
 - **FR-013**: Solo PUEDE haber una planificación activa por proyecto.
 - **FR-014**: Los resultados DEBEN estar en el idioma de la descripción del proyecto.
 - **FR-015**: El pipeline DEBE poder correr sin conexión al servicio de IA, con un plan de ejemplo, para desarrollar y hacer demos (constitución, principio 6).
+- **FR-016**: La planificación DEBE arrancar con un pedido explícito de "empezar a planificar" sobre un proyecto en borrador o en error; crear el proyecto no la arranca (spec 001, FR-005). Este pedido es de esta spec, junto con la regla de FR-013.
 
 ### Key Entities
 

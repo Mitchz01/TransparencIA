@@ -107,7 +107,7 @@ El sistema detecta cuándo el plan se desvió de la realidad (un sprint terminó
 
 2. **Scenario**: Cambio de equipo
    - **Given** un plan aplicado
-   - **When** el líder agrega o quita un miembro del equipo
+   - **When** el líder agrega o quita un miembro, o le cambia el rol, la seniority o las horas
    - **Then** aparece una propuesta de re-planificación cuyo motivo indica quién entró o salió
 
 ---
@@ -136,7 +136,8 @@ El sistema detecta cuándo el plan se desvió de la realidad (un sprint terminó
 - **FR-007**: Un objetivo DEBE marcarse como cumplido cuando todas sus tareas están hechas, sin importar si llegaron a "hecha" desde GitHub o a mano.
 - **FR-008**: El líder DEBE poder pedir re-planificar con un motivo en texto libre.
 - **FR-009**: La re-planificación DEBE llegar como una propuesta con una lista de cambios (mover de sprint, reasignar, agregar, descartar), cada uno con su justificación, basada en el plan aprobado, el equipo actual, el tablero y el avance real.
-- **FR-010**: Cuando un sprint termina con pendientes o cambia el equipo con un plan aplicado, el sistema DEBE proponer automáticamente una re-planificación cuyo motivo describe el desvío (qué tareas quedaron pendientes, o quién entró o salió del equipo). La propuesta sigue la regla de aprobación del proyecto, como cualquier otra (constitución, principio 8).
+- **FR-010**: Cuando un sprint termina con pendientes o cambia el equipo con un plan aplicado, el sistema DEBE proponer automáticamente una re-planificación cuyo motivo describe el desvío (qué tareas quedaron pendientes, o qué cambió en el equipo). Los cambios de equipo que la disparan son altas, bajas y cambios de rol, seniority u horas, porque cambian la capacidad o a quién se le puede asignar trabajo; renombrar un miembro o cambiar sus skills no la dispara. El sistema reacciona al aviso "cambió el equipo" de la spec 001 (FR-010).
+- **FR-016**: Las re-planificaciones propuestas automáticamente (FR-010) DEBEN esperar la decisión del líder aunque el proyecto tenga auto-aprobar, porque reorganizan trabajo en curso sin que nadie lo haya pedido. Las que pide el líder (FR-008) siguen la regla de auto-aprobar del proyecto.
 - **FR-011**: Ninguna re-planificación DEBE modificar tareas hechas.
 - **FR-012**: Al aprobar una re-planificación, sus cambios DEBEN aplicarse todos juntos o ninguno, salvo los descartados por el caso borde del tablero cambiado, que se informan.
 - **FR-013**: El líder DEBE poder quitar cambios individuales de la propuesta antes de aprobarla.
