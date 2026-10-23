@@ -57,6 +57,10 @@
   --card: #ffffff;
   --card-hover: #f4f5f0;
   --card-inset: #e8eae2;
+  /* Tinted columns (spec 014): the hue's soft fill in light, a darker tint in dark so cards stand out */
+  --lane-blue: #e8eefd;
+  --lane-amber: #fbf0da;
+  --lane-teal: #e0f4ef;
 
   /* Type */
   --font-sans: "Geist Variable", "Geist", "Segoe UI", system-ui, sans-serif;
@@ -140,6 +144,9 @@
   --card: #22261e;
   --card-hover: #2b3026;
   --card-inset: #383d31;
+  --lane-blue: #111829;
+  --lane-amber: #1d180e;
+  --lane-teal: #0e1d19;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -190,5 +197,8 @@
     --card: #22261e;
     --card-hover: #2b3026;
     --card-inset: #383d31;
+    --lane-blue: #111829;
+    --lane-amber: #1d180e;
+    --lane-teal: #0e1d19;
   }
 }

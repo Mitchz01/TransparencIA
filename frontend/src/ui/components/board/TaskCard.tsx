@@ -67,14 +67,15 @@ export function TaskCard({ task, assignee, overlay = false, onOpen }: TaskCardPr
   )
 }
 
-/** A card that can be dragged with the pointer or the keyboard (space to pick up, arrows to move). */
+/** A card that can be dragged with the pointer or the keyboard (space to pick up, arrows to move).
+ *  While it's dragged, its place is a `primary-soft` gap of its size where it will land (spec 014). */
 export function SortableTaskCard({ task, assignee, onOpen }: Omit<TaskCardProps, 'overlay'>) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id, data: { status: task.status } })
   return (
     <li
       ref={setNodeRef}
       style={{ transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined, transition }}
-      className={cn('touch-none rounded-md', isDragging && 'opacity-40')}
+      className={cn('touch-none rounded-md', isDragging && 'bg-primary-soft')}
       {...attributes}
       {...listeners}
       aria-roledescription="tarea arrastrable"
@@ -88,7 +89,9 @@ export function SortableTaskCard({ task, assignee, onOpen }: Omit<TaskCardProps,
         }
       }}
     >
-      <TaskCard task={task} assignee={assignee} onOpen={onOpen} />
+      <div className={cn(isDragging && 'invisible')}>
+        <TaskCard task={task} assignee={assignee} onOpen={onOpen} />
+      </div>
     </li>
   )
 }

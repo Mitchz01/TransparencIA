@@ -29,6 +29,9 @@
   --color-card: var(--card);
   --color-card-hover: var(--card-hover);
   --color-card-inset: var(--card-inset);
+  --color-lane-blue: var(--lane-blue);
+  --color-lane-amber: var(--lane-amber);
+  --color-lane-teal: var(--lane-teal);
   --color-scrim: var(--scrim);
   --color-blue: var(--blue);
   --color-blue-soft: var(--blue-soft);

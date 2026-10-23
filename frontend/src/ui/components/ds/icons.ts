@@ -30,6 +30,7 @@ export {
   HourglassIcon,
   InformationCircleIcon,
   Layers01Icon,
+  ListViewIcon,
   Loading03Icon,
   Menu01Icon,
   Moon02Icon,
