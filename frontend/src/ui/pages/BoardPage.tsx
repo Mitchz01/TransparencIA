@@ -1,14 +1,17 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useBoard, useMoveTask } from '../../application/use-cases/useBoard'
+import { usePendingReplan } from '../../application/use-cases/useReplan'
 import type { Priority } from '../../domain/board'
 import { BOARD_COLUMNS, CONTINUOUS_COLUMNS, defaultSprint, filterTasks, sprintLoad, type TaskFilters } from '../../domain/rules'
 import { BoardFilters } from '../components/board/BoardFilters'
 import { CapacityBar } from '../components/board/CapacityBar'
 import { KanbanBoard } from '../components/board/KanbanBoard'
 import { TaskDrawer } from '../components/board/TaskDrawer'
-import { ButtonLink, EmptyState, Segmented, Skeleton, SkeletonCard } from '../components/ds'
+import { Button, ButtonLink, EmptyState, Segmented, Skeleton, SkeletonCard } from '../components/ds'
 import { AiMagicIcon, DashboardSquare01Icon } from '../components/ds/icons'
+import { CloseSprintButton, ReplanDialog } from '../components/replan/BoardActions'
+import { ReplanDiff } from '../components/replan/ReplanDiff'
 import { PageHeader } from '../components/shell/PageHeader'
 import { TopBarViews } from '../components/shell/TopBarViews'
 import { formatDate } from '../format'
@@ -51,6 +54,8 @@ export function BoardPage() {
   const move = useMoveTask(project.id)
   const { sprintParam, taskParam, clearTask, filters, setSprint, setFilters } = useBoardParams()
   const [openId, setOpenId] = useState<number | null>(null)
+  const [replanning, setReplanning] = useState(false)
+  const pendingReplan = usePendingReplan(project.id)
 
   if (isPending) {
     return (
@@ -107,8 +112,19 @@ export function BoardPage() {
       <PageHeader
         title={sprint?.name ?? 'Tablero'}
         description={sprint ? `${sprint.goal}. Fase ${sprint.phase}${sprint.end_date ? `, termina el ${formatDate(sprint.end_date)}` : ''}.` : 'Kanban: todas las tareas en un flujo continuo.'}
-        actions={load && sprint ? <CapacityBar projectId={project.id} load={load} override={board.capacity_override} /> : undefined}
+        actions={
+          <>
+            {load && sprint && <CapacityBar projectId={project.id} load={load} override={board.capacity_override} />}
+            <Button icon={AiMagicIcon} disabled={Boolean(pendingReplan)} onClick={() => setReplanning(true)}>Replanificar</Button>
+            {sprint && <CloseSprintButton projectId={project.id} sprint={sprint} tasks={board.tasks} />}
+          </>
+        }
       />
+      {pendingReplan && (
+        <div className="mb-5">
+          <ReplanDiff key={pendingReplan.proposal.id} projectId={project.id} proposal={pendingReplan.proposal} content={pendingReplan.content} />
+        </div>
+      )}
       <div className="mb-5">
         <BoardFilters filters={filters} members={project.members} epics={epics} onChange={setFilters} />
       </div>
@@ -122,6 +138,7 @@ export function BoardPage() {
         onMove={(taskId, status, position) => move.mutate({ taskId, status, position })}
         onOpen={(task) => setOpenId(task.id)}
       />
+      {replanning && <ReplanDialog projectId={project.id} onClose={() => setReplanning(false)} />}
       {open && <TaskDrawer key={open.id} projectId={project.id} task={open} members={project.members} columns={columns} onClose={() => { setOpenId(null); clearTask() }} />}
     </>
   )

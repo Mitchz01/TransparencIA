@@ -305,9 +305,9 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ### Implementation for User Story 9
 
-- [ ] T054 [P] [US9] Create `ReplanDialog` (reason 1–1000 chars) and `CloseSprintButton` (end date in words, warning when it's past)
-- [ ] T055 [US9] Create `ReplanDiff`: changes grouped by kind, each with its rationale and a toggle to drop it; approving with dropped changes sends `adjust` with the remaining ones
-- [ ] T056 [US9] Add both actions to the board header and the `replan` body to `ProposalCard`; extend `fakePlanning.ts` with a sample replan
+- [x] T054 [P] [US9] Create `ReplanDialog` (reason 1–1000 chars) and `CloseSprintButton` (end date in words, warning when it's past)
+- [x] T055 [US9] Create `ReplanDiff`: changes grouped by kind, each with its rationale and a toggle to drop it; approving with dropped changes sends `adjust` with the remaining ones
+- [x] T056 [US9] Add both actions to the board header and show the pending replan (`ReplanDiff`) on the board, where its changes apply; extend `fakePlanning.ts` with a sample replan and the automatic one after closing a sprint
 
 **Checkpoint**: all user stories work independently
 

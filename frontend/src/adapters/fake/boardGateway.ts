@@ -12,7 +12,7 @@ const emptyBoard = (projectId: number): BoardView => ({
   project_id: projectId, continuous: false, wip_limits: [], capacity_override: null, sprints: [], objectives: [], tasks: [],
 })
 
-export function fakeBoardGateway(store: FakeStore): BoardGateway {
+export function fakeBoardGateway(store: FakeStore, onSprintClosed: (projectId: number, sprintName: string, pendingKeys: string[]) => void): BoardGateway {
   const boardOfTask = (taskId: number) => {
     for (const board of store.boards.values()) {
       const task = board.tasks.find((t) => t.id === taskId)
@@ -151,7 +151,8 @@ export function fakeBoardGateway(store: FakeStore): BoardGateway {
         type: 'sprint_closed', project_id: board!.project_id, actor: 'person', ref: { kind: 'sprint', id: sprintId },
         summary: `Se cerró ${sprint.name}`, sprint_id: sprintId, pending_task_keys: pending,
       })
-      return reply({ sprint, pending_task_keys: pending, replan_proposed: false })
+      if (pending.length) onSprintClosed(board!.project_id, sprint.name, pending)
+      return reply({ sprint, pending_task_keys: pending, replan_proposed: pending.length > 0 })
     },
   }
 }

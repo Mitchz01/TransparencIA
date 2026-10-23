@@ -47,7 +47,7 @@ export function createFakeBackend({ store = new FakeStore(), storage, ...options
       activity: fakeActivityGateway(store),
       events: fakeEventStream(store),
       planning: fakePlanningGateway(planning),
-      board: fakeBoardGateway(store),
+      board: fakeBoardGateway(store, planning.replanAfterClosing),
       documents: fakeDocumentGateway(store, planning.regenerateDocument),
       integrations: fakeIntegrationGateway(store),
     },
