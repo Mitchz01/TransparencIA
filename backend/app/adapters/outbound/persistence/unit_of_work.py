@@ -11,6 +11,7 @@ from app.adapters.outbound.persistence.repositories import (
     SqlProposalRepository,
     SqlSprintRepository,
     SqlTaskRepository,
+    SqlWebhookDeliveryRepository,
 )
 
 
@@ -26,6 +27,7 @@ class SqlUnitOfWork:
         self.activity = SqlActivityRepository(session)
         self.links = SqlExternalLinkRepository(session)  # spec 007
         self.own_writes = SqlOwnWriteRepository(session)  # spec 007
+        self.deliveries = SqlWebhookDeliveryRepository(session)  # spec 008
 
     def __enter__(self) -> Self:
         return self

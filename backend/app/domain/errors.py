@@ -136,8 +136,37 @@ class CapacityNotApplicable(DomainError):
         self.project_id = project_id
 
 
-# TODO(spec 008): SprintClosed (409 sprint_closed) once sprints can be closed; PATCH /tasks/{id}
-# then rejects moving a task into a closed sprint (plan 003, API Contract).
+class SprintNotFound(NotFound):
+    def __init__(self, id: int | None):
+        super().__init__("Sprint", id)
+
+
+class SprintClosed(DomainError):
+    """PATCH /tasks/{id} can't move a task into a closed sprint (spec 003, closed by spec 008)."""
+
+    code = "sprint_closed"
+
+    def __init__(self, sprint_id: int | None):
+        super().__init__(f"Sprint {sprint_id} is closed: it takes no more tasks.")
+        self.sprint_id = sprint_id
+
+
+class SprintAlreadyClosed(DomainError):
+    code = "sprint_already_closed"
+
+    def __init__(self, sprint_id: int | None):
+        super().__init__(f"Sprint {sprint_id} is already closed.")
+        self.sprint_id = sprint_id
+
+
+class PlanNotApplied(DomainError):
+    """A replan needs a board: the project must be `ready` (spec 008)."""
+
+    code = "plan_not_applied"
+
+    def __init__(self, project_id: int | None):
+        super().__init__(f"Project {project_id} has no applied plan yet: finish planning before replanning.")
+        self.project_id = project_id
 
 
 class NoApplierForProposal(DomainError):

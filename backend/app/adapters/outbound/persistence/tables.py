@@ -1,6 +1,6 @@
 """SQLModel tables. Only this adapter knows them; everything else uses the domain/ entities."""
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Any
 
 from sqlalchemy import JSON, Column
@@ -54,6 +54,8 @@ class SprintTable(SQLModel, table=True):
     name: str
     goal: str
     phase: str = ""
+    closed: bool = False  # spec 008
+    end_date: date | None = None  # spec 008
 
 
 class TaskTable(SQLModel, table=True):
@@ -135,6 +137,17 @@ class ExternalLinkTable(SQLModel, table=True):
     url: str
     state: str = "open"
     broken: bool = False
+
+
+class WebhookDeliveryTable(SQLModel, table=True):
+    """A received GitHub delivery, to process each one once (spec 008, FR-003)."""
+
+    __tablename__ = "webhook_delivery"
+
+    id: int | None = Field(default=None, primary_key=True)
+    delivery_id: str = Field(unique=True, index=True)
+    event: str
+    received_at: datetime = Field(default_factory=_now)
 
 
 class OwnWriteTable(SQLModel, table=True):

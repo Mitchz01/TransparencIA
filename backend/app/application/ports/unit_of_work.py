@@ -10,6 +10,7 @@ from app.application.ports.repositories import (
     ProposalRepository,
     SprintRepository,
     TaskRepository,
+    WebhookDeliveryRepository,
 )
 
 
@@ -25,6 +26,7 @@ class UnitOfWork(Protocol):
     activity: ActivityRepository
     links: ExternalLinkRepository  # spec 007
     own_writes: OwnWriteRepository  # spec 007
+    deliveries: WebhookDeliveryRepository  # spec 008
 
     def __enter__(self) -> Self: ...
     def __exit__(self, *exc: object) -> None: ...

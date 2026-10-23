@@ -13,6 +13,7 @@ from app.domain.events import DomainEvent
 from app.domain.integrations import ExternalKind, ExternalLink, OwnWrite, OwnWriteAction
 from app.domain.project import Member, Project
 from app.domain.proposals import Proposal, ProposalStatus
+from app.domain.sync import WebhookDelivery
 
 
 class _Store:
@@ -169,6 +170,17 @@ class FakeOwnWriteRepository(_Repo):
         return False
 
 
+class FakeWebhookDeliveryRepository(_Repo):
+    def __init__(self, uow: "InMemoryUnitOfWork"):
+        super().__init__(uow, "deliveries")
+
+    def seen(self, delivery_id: str) -> bool:
+        return any(d.delivery_id == delivery_id for d in self.rows.values())
+
+    def all(self) -> list[WebhookDelivery]:
+        return [d.model_copy(deep=True) for _, d in sorted(self.rows.items())]
+
+
 class InMemoryUnitOfWork:
     """Implements the UnitOfWork port. Several instances can share one store, like
     sessions sharing a database: what one commits, the next one sees."""
@@ -186,6 +198,7 @@ class InMemoryUnitOfWork:
         self.activity = FakeActivityRepository(self)
         self.links = FakeExternalLinkRepository(self)
         self.own_writes = FakeOwnWriteRepository(self)
+        self.deliveries = FakeWebhookDeliveryRepository(self)
 
     def _reset(self) -> None:
         self.working = {name: {k: v.model_copy(deep=True) for k, v in rows.items()} for name, rows in self.store.committed.items()}

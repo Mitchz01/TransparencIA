@@ -1,5 +1,6 @@
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
+from datetime import date, timedelta
 from typing import Any, Literal
 
 from pydantic import BaseModel
@@ -21,6 +22,9 @@ class Sprint(BaseModel):
     name: str
     goal: str
     phase: str = ""
+    # Spec 008: a closed sprint takes no more tasks; end_date is when it's due (None on a continuous board).
+    closed: bool = False
+    end_date: date | None = None
 
 
 class ChecklistItem(BaseModel):
@@ -194,6 +198,12 @@ def wip_limits(project: Project) -> list[WipLimit]:
 def sprint_weeks(project: Project) -> int:
     approved = (project.plan or {}).get("methodology") or {}
     return approved.get("sprint_length_weeks") or DEFAULT_SPRINT_WEEKS
+
+
+def sprint_end_date(start: date, number: int, weeks: int) -> date:
+    """Iterations run back to back from `start` (the day the plan is applied): sprint 1 ends
+    `weeks` weeks later, sprint 2 `weeks` after that, and so on (spec 008, T002)."""
+    return start + timedelta(weeks=weeks * number)
 
 
 def sprint_capacity(project: Project) -> int:

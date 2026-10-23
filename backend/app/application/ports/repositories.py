@@ -8,6 +8,7 @@ from app.domain.events import DomainEvent
 from app.domain.integrations import ExternalKind, ExternalLink, OwnWrite, OwnWriteAction
 from app.domain.project import Project
 from app.domain.proposals import Proposal, ProposalStatus
+from app.domain.sync import WebhookDelivery
 
 
 class ProjectRepository(Protocol):
@@ -97,3 +98,13 @@ class OwnWriteRepository(Protocol):
     def consume_matching(self, repository: str, number: int, action: OwnWriteAction) -> bool:
         """Spec 008: marks the oldest unconsumed matching write as consumed; False if there's none."""
         ...
+
+
+# ---------- GitHub sync (spec 008) ----------
+
+
+class WebhookDeliveryRepository(Protocol):
+    def seen(self, delivery_id: str) -> bool:
+        """True if a delivery with this id was already received (FR-003)."""
+        ...
+    def add(self, delivery: WebhookDelivery) -> WebhookDelivery: ...

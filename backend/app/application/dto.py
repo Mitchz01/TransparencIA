@@ -1,9 +1,9 @@
 """Use case inputs and outputs. The HTTP adapter uses them as body/response."""
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.application.ports.code_host import CodeHostMode
 from app.domain.board import (
@@ -18,6 +18,7 @@ from app.domain.board import (
 )
 from app.domain.integrations import IssueRef
 from app.domain.plan import WipLimit
+from app.domain.proposals import ProposalOrigin
 from app.domain.project import (
     Member,
     MemberPatch,
@@ -249,6 +250,8 @@ class MemberGithubAccess(BaseModel):
     member: Member
     # False = the user can't access the repo (saved with a warning); None = no repo or GitHub unreachable.
     has_access: bool | None
+
+
 # ---------- Planning (spec 002) ----------
 
 
@@ -268,3 +271,51 @@ class PlanningAccepted(BaseModel):
     project_id: int
     status: ProjectStatus = "planning"
     stage: str
+
+
+# ---------- Sync and replanning (spec 008) ----------
+
+IgnoredReason = Literal["duplicate", "unhandled_event", "unknown_repository"]
+
+
+class WebhookReceipt(BaseModel):
+    """202 body of POST /webhooks/github: received, not necessarily applied."""
+
+    delivery_id: str
+    status: Literal["accepted", "ignored"]
+    reason: IgnoredReason | None = None
+
+
+class ReplanRequest(BaseModel):
+    reason: str
+
+
+class ReplanRun(BaseModel):
+    """A replan to run in the background: Replan.prepare decides it, the router spawns it."""
+
+    project_id: int
+    reason: str  # merged with the reason of the pending replan it supersedes (FR-014)
+    origin: ProposalOrigin = "leader"
+    supersedes: int | None = None
+
+
+class ReplanAccepted(BaseModel):
+    """202 body of POST /api/projects/{id}/replan."""
+
+    project_id: int
+    status: Literal["replanning"] = "replanning"
+    supersedes: int | None = None
+
+
+class SprintCloseResult(BaseModel):
+    sprint: Sprint
+    pending_task_keys: list[str]
+    replan_proposed: bool
+
+
+class DevGithubEvent(BaseModel):
+    """Body of the dev-only POST /api/dev/github-events (T029)."""
+
+    fixture: str
+    repository: str | None = None
+    number: int | None = Field(default=None, ge=1)

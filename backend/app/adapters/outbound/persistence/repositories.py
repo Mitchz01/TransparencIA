@@ -16,6 +16,7 @@ from app.adapters.outbound.persistence.tables import (
     ProposalTable,
     SprintTable,
     TaskTable,
+    WebhookDeliveryTable,
 )
 from app.domain.board import Objective, Sprint, Task
 from app.domain.errors import ProposalAlreadyResolved
@@ -23,6 +24,7 @@ from app.domain.events import DomainEvent
 from app.domain.integrations import ExternalKind, ExternalLink, OwnWrite, OwnWriteAction
 from app.domain.project import Project
 from app.domain.proposals import Proposal, ProposalStatus
+from app.domain.sync import WebhookDelivery
 
 
 class SqlProjectRepository:
@@ -318,3 +320,22 @@ class SqlOwnWriteRepository:
         self._session.add(row)
         self._session.flush()
         return True
+
+
+# ---------- GitHub sync (spec 008) ----------
+
+
+class SqlWebhookDeliveryRepository:
+    def __init__(self, session: Session):
+        self._session = session
+
+    def seen(self, delivery_id: str) -> bool:
+        return self._session.exec(
+            select(WebhookDeliveryTable.id).where(WebhookDeliveryTable.delivery_id == delivery_id)
+        ).first() is not None
+
+    def add(self, delivery: WebhookDelivery) -> WebhookDelivery:
+        row = mappers.delivery_to_table(delivery)
+        self._session.add(row)
+        self._session.flush()
+        return mappers.delivery_to_domain(row)

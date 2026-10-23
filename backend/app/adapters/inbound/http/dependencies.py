@@ -34,6 +34,7 @@ from app.application.use_cases.activity.list_activity import FollowActivity, Lis
 from app.application.use_cases.integrations.close_discarded_issue import CloseDiscardedIssue
 from app.application.use_cases.integrations.connect_repository import ConnectRepository
 from app.application.use_cases.integrations.disconnect_repository import DisconnectRepository
+from app.application.use_cases.integrations.handle_github_event import HandleGithubEvent
 from app.application.use_cases.integrations.propose_issues import AfterCreated, ProposeIssues, ProposePendingIssues
 from app.application.use_cases.integrations.propose_review import ProposeReview
 from app.application.use_cases.integrations.set_github_username import SetGithubUsername
@@ -52,6 +53,7 @@ from app.application.use_cases.proposals.resolve_proposal import (
     ApproveProposal,
     RejectProposal,
 )
+from app.domain.sync import PullRequestOpened
 
 
 def get_uow(session: Session = Depends(get_session)) -> Iterator[UnitOfWork]:
@@ -342,3 +344,24 @@ def get_start_planning(uow: UnitOfWork = Depends(get_uow)) -> StartPlanning:
 
 def get_retry_stage(uow: UnitOfWork = Depends(get_uow)) -> RetryStage:
     return RetryStage(uow)
+
+
+# ---------- Sync and replanning (spec 008) ----------
+
+
+def webhook_secret(request: Request) -> str:
+    """The secret GitHub signs deliveries with (the one spec 007 registers webhooks with)."""
+    return getattr(request.app.state, "webhook_secret", GITHUB_WEBHOOK_SECRET)
+
+
+def get_handle_github_event(
+    uow_factory: UnitOfWorkFactory = Depends(get_uow_factory),
+    bus: EventBus = Depends(get_event_bus),
+    handlers: list[TaskChangedHandler] = Depends(get_after_task_changed),
+    propose_review: ProposeReview = Depends(get_propose_review),
+) -> HandleGithubEvent:
+    # Spec 007 (T033): a PR that closes project issues gets a review proposal.
+    async def review(event: PullRequestOpened) -> None:
+        await propose_review.execute(event.repository, event.number, event.author, event.body, event.url)
+
+    return HandleGithubEvent(uow_factory, bus, handlers, review)

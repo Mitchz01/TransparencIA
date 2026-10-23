@@ -293,7 +293,7 @@ Not part of our API, but they define our error mapping (`client.py`, T011):
 - [x] T030 [US4] Implement `closing_refs()` and `pick_reviewers()` in `backend/app/domain/integrations.py`
 - [x] T031 [US4] Implement `ProposeReview(repository, pr_number, author, body)` (fetch the diff, truncate it and set `reviewed_fully=false` when too big, run the stage, pick reviewers, create the `request_review` proposal) and `ApplyReview(proposal_id)`
 - [x] T032 [US4] Add `get_pull_request_diff`, `request_review` and `comment_on_pull_request` to `GitHubCodeHost`
-- [ ] T033 [US4] Call `ProposeReview` from the `pull_request.opened` branch of spec 008's webhook router — needs spec 008 (the webhook router doesn't exist yet); `ProposeReview` is ready to call through `deps.get_propose_review`
+- [x] T033 [US4] Call `ProposeReview` from the `pull_request.opened` branch of spec 008's webhook router — done by spec 008: `deps.get_handle_github_event` passes `ProposeReview.execute` as `HandleGithubEvent`'s `on_pull_request_opened`, which runs in the webhook's background job after the board is updated
 
 **Checkpoint**: all user stories work independently
 

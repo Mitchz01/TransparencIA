@@ -21,7 +21,10 @@ from app.domain.errors import (
     PlanningNotStartable,
     ProposalAlreadyResolved,
     ProposalNotRetryable,
+    PlanNotApplied,
     RepositoryNotAccessible,
+    SprintAlreadyClosed,
+    SprintClosed,
     StageNotRetryable,
     ValidationFailed,
 )
@@ -40,6 +43,9 @@ _STATUS: dict[type[DomainError], int] = {
     PlanningAlreadyRunning: 409,
     PlanningNotStartable: 409,
     StageNotRetryable: 409,
+    PlanNotApplied: 409,  # spec 008
+    SprintAlreadyClosed: 409,  # spec 008
+    SprintClosed: 409,  # spec 003, once spec 008 closes sprints
 }
 
 

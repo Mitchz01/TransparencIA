@@ -18,12 +18,14 @@ from app.adapters.outbound.persistence.tables import (
     ProposalTable,
     SprintTable,
     TaskTable,
+    WebhookDeliveryTable,
 )
 from app.domain.board import Objective, Sprint, Task
 from app.domain.events import DomainEvent
 from app.domain.integrations import ExternalLink, OwnWrite
 from app.domain.project import Member, Project
 from app.domain.proposals import Proposal
+from app.domain.sync import WebhookDelivery
 
 
 def utc(value: datetime | None) -> datetime | None:
@@ -123,3 +125,14 @@ def own_write_to_domain(row: OwnWriteTable) -> OwnWrite:
 
 def own_write_to_table(write: OwnWrite) -> OwnWriteTable:
     return OwnWriteTable.model_validate(write.model_dump())
+
+
+# ---------- GitHub sync (spec 008) ----------
+
+
+def delivery_to_domain(row: WebhookDeliveryTable) -> WebhookDelivery:
+    return WebhookDelivery.model_validate(_with_utc(row.model_dump(), "received_at"))
+
+
+def delivery_to_table(delivery: WebhookDelivery) -> WebhookDeliveryTable:
+    return WebhookDeliveryTable.model_validate(delivery.model_dump())

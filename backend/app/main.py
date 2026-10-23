@@ -9,6 +9,7 @@ from app.adapters.inbound.http import activity, board, health, integrations, pla
 from app.adapters.inbound.http.background import spawn
 from app.adapters.inbound.http.dependencies import open_uow, wire_planning
 from app.adapters.inbound.http.errors import register_error_handlers
+from app.adapters.inbound.webhooks import github as github_webhooks
 from app.adapters.outbound.code_host.fake import FakeCodeHost
 from app.adapters.outbound.events.in_memory_bus import InMemoryEventBus
 from app.adapters.outbound.events.persistent_bus import PersistentEventBus
@@ -21,7 +22,15 @@ from app.domain.board import Task
 from app.domain.events import DomainEvent
 from app.application.ports.agents import PlanningAgents
 from app.application.ports.code_host import CodeHost, CodeHostFactory
-from app.config import CORS_ORIGINS, GEMINI_MODEL, GITHUB_TOKEN, MOCK_AGENTS, MOCK_AGENTS_DELAY, MOCK_GITHUB_FORCED
+from app.config import (
+    CORS_ORIGINS,
+    GEMINI_MODEL,
+    GITHUB_TOKEN,
+    GITHUB_WEBHOOK_SECRET,
+    MOCK_AGENTS,
+    MOCK_AGENTS_DELAY,
+    MOCK_GITHUB_FORCED,
+)
 
 
 def build_agents() -> PlanningAgents:
@@ -57,6 +66,7 @@ async def lifespan(app: FastAPI):
     app.state.code_host_factory = build_code_host_factory(FakeCodeHost())  # spec 007: per project token
     app.state.code_host = app.state.code_host_factory(None)  # the installation's
     app.state.uow_factory = open_uow
+    app.state.webhook_secret = GITHUB_WEBHOOK_SECRET  # spec 008: verifies POST /webhooks/github
     # Every event is saved as activity (seq, history, SSE replay) before it's fanned out (spec 005).
     app.state.event_bus = PersistentEventBus(InMemoryEventBus(), open_uow)
     # Steps that apply each kind of proposal, registered by their owner specs (spec 005, "Applying"):
@@ -98,4 +108,5 @@ app.include_router(proposals.router)
 app.include_router(activity.router)
 app.include_router(integrations.router)  # spec 007
 app.include_router(board.router)
-# TODO: projects, planning, proposals, board, documents (adapters/inbound/http) and webhooks/github
+app.include_router(github_webhooks.router)  # spec 008
+# TODO: documents (spec 006)

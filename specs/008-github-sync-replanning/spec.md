@@ -1,7 +1,7 @@
 # Feature Specification: 008 · GitHub sync and replanning
 
 **Created**: 2026-10-23  
-**Status**: Draft  
+**Status**: Approved  
 **Owner**: Mitchz01  
 **Reviewer**: sandredev  
 **Use cases**: UC-12, UC-13 ([plan/use-cases.md](../../plan/use-cases.md))  

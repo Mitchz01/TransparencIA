@@ -1,4 +1,5 @@
 import asyncio
+from datetime import date
 
 import pytest
 
@@ -39,6 +40,27 @@ def test_builds_the_board_sets_ready_and_publishes():
     [event] = bus.events
     assert event.type == "plan_applied" and event.project_id == saved.id
     assert (event.sprints, event.tasks, event.skipped_story_keys) == (3, 11, [])
+
+
+def test_sprints_get_back_to_back_end_dates_from_the_approval_day():
+    uow, saved = _setup()
+    asyncio.run(ApplyPlan(uow.factory(), RecordingEventBus(), today=lambda: date(2026, 10, 23)).execute(saved.id))
+    with uow:
+        sprints = uow.sprints.list_by_project(saved.id)
+    # The mock methodology has 2-week iterations
+    assert [(s.end_date, s.closed) for s in sprints] == [
+        (date(2026, 11, 6), False),
+        (date(2026, 11, 20), False),
+        (date(2026, 12, 4), False),
+    ]
+
+
+def test_a_continuous_board_has_no_end_dates():
+    kanban = {**MOCK_PLAN, "methodology": {**MOCK_PLAN["methodology"], "methodology": "kanban"}}
+    uow, saved = _setup(kanban)
+    asyncio.run(ApplyPlan(uow.factory(), RecordingEventBus()).execute(saved.id))
+    with uow:
+        assert all(s.end_date is None for s in uow.sprints.list_by_project(saved.id))
 
 
 def test_running_it_twice_creates_nothing_new():

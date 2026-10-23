@@ -210,3 +210,63 @@ class ReviewRequested(DomainEvent):
     proposal_id: int
     pr_number: int
     reviewers: list[str]
+
+
+# ---------- GitHub sync and replanning (spec 008) ----------
+
+
+class GithubEventIgnored(DomainEvent):
+    """A GitHub change the board doesn't apply on its own, shown so the leader decides:
+    today, an issue closed as "not planned" by someone on GitHub."""
+
+    type: Literal["github_event_ignored"] = "github_event_ignored"
+    actor: Actor = "github"
+    repository: str
+    number: int
+    task_id: int | None = None
+    reason: str
+
+
+class ObjectiveClosed(DomainEvent):
+    """Every task of the sprint's objective is done (FR-007), from GitHub or by hand."""
+
+    type: Literal["objective_closed"] = "objective_closed"
+    objective_id: int
+    sprint_id: int
+
+
+class ObjectiveReopened(DomainEvent):
+    """A task of a met objective left "done": the objective is in progress again."""
+
+    type: Literal["objective_reopened"] = "objective_reopened"
+    objective_id: int
+    sprint_id: int
+
+
+class SprintClosed(DomainEvent):
+    type: Literal["sprint_closed"] = "sprint_closed"
+    actor: Actor = "person"
+    sprint_id: int
+    pending_task_keys: list[str]
+
+
+class ReplanDiscardedChange(BaseModel):
+    task_key: str
+    reason: str
+
+
+class ReplanApplied(DomainEvent):
+    """An approved replan changed the board; stale changes were discarded and reported (FR-012)."""
+
+    type: Literal["replan_applied"] = "replan_applied"
+    proposal_id: int
+    applied: list[str]  # task keys (the new story's key for an added task)
+    discarded: list[ReplanDiscardedChange]
+
+
+class ReplanFailed(DomainEvent):
+    """The replan agent couldn't produce a valid proposal after its retry. The board is untouched."""
+
+    type: Literal["replan_failed"] = "replan_failed"
+    actor: Actor = "agent"
+    error: str  # safe to show

@@ -2,7 +2,7 @@
 
 **Date**: 2026-10-23  
 **Spec**: [spec.md](spec.md)  
-**Status**: Draft
+**Status**: Approved
 
 ## Summary
 
@@ -168,8 +168,8 @@ Request headers: `Content-Type: application/json`
 
 **Purpose**: test fixtures and entity fields
 
-- [ ] T001 [P] Save sample GitHub webhook payloads (`pull_request` opened, ready_for_review, closed+merged; `issues` closed completed, closed not_planned, reopened) in `backend/tests/fixtures/github/`
-- [ ] T002 Add `closed: bool` and `end_date: date | None` to `Sprint` in `backend/app/domain/board.py` (spec 003's `ApplyPlan` fills `end_date` from the approval date and `sprint_length_weeks`), `origin` and the `discarded` status to `Proposal` in `backend/app/domain/proposals.py`, and the matching columns in `tables.py`
+- [x] T001 [P] Save sample GitHub webhook payloads (`pull_request` opened, ready_for_review, closed+merged; `issues` closed completed, closed not_planned, reopened) in `backend/tests/fixtures/github/`
+- [x] T002 Add `closed: bool` and `end_date: date | None` to `Sprint` in `backend/app/domain/board.py` (spec 003's `ApplyPlan` fills `end_date` from the approval date and `sprint_length_weeks`), `origin` and the `discarded` status to `Proposal` in `backend/app/domain/proposals.py`, and the matching columns in `tables.py`
 
 ---
 
@@ -179,9 +179,9 @@ Request headers: `Content-Type: application/json`
 
 **⚠️ CRITICAL**: no user story work can begin until this phase is complete
 
-- [ ] T003 Define the GitHub domain events in `backend/app/domain/sync.py`: `PullRequestOpened(repo, number, author, closes, draft)`, `PullRequestReadyForReview`, `PullRequestMerged`, `IssueClosed(repo, number, reason)`, `IssueReopened`
-- [ ] T004 Add `WebhookDeliveryTable` and `WebhookDeliveryRepository` (`seen(delivery_id)`, `add`) with `deliveries` on the `UnitOfWork` port, `SqlUnitOfWork` and `backend/tests/fakes.py`
-- [ ] T005 Create `backend/app/adapters/inbound/webhooks/github.py`: `POST /webhooks/github` verifies `X-Hub-Signature-256` against `GITHUB_WEBHOOK_SECRET` with `hmac.compare_digest` (401 if invalid), maps `X-GitHub-Event` + action to the domain events, answers 202 and processes in the background with `spawn`; include it in `main.py`
+- [x] T003 Define the GitHub domain events in `backend/app/domain/sync.py`: `PullRequestOpened(repo, number, author, closes, draft)`, `PullRequestReadyForReview`, `PullRequestMerged`, `IssueClosed(repo, number, reason)`, `IssueReopened`
+- [x] T004 Add `WebhookDeliveryTable` and `WebhookDeliveryRepository` (`seen(delivery_id)`, `add`) with `deliveries` on the `UnitOfWork` port, `SqlUnitOfWork` and `backend/tests/fakes.py`
+- [x] T005 Create `backend/app/adapters/inbound/webhooks/github.py`: `POST /webhooks/github` verifies `X-Hub-Signature-256` against `GITHUB_WEBHOOK_SECRET` with `hmac.compare_digest` (401 if invalid), maps `X-GitHub-Event` + action to the domain events, answers 202 and processes in the background with `spawn`; include it in `main.py`
 
 **Checkpoint**: signed events reach a use case, and unsigned ones are rejected
 
@@ -195,15 +195,15 @@ Request headers: `Content-Type: application/json`
 
 ### Tests for User Story 1
 
-- [ ] T006 [P] [US1] `next_status(current, event)` tests for every row of the spec table, plus "never out of done except reopen" and "not planned → no change", in `backend/tests/unit/domain/test_sync_rules.py`
-- [ ] T007 [P] [US1] `HandleGithubEvent` tests (unknown repo or unlinked issue → ignored; same delivery twice → applied once; event matching an `OwnWrite` → ignored and consumed; merge completes the checklist; PR closing two issues moves both; `TaskStatusChanged` published) in `backend/tests/unit/application/test_handle_github_event.py`
-- [ ] T008 [P] [US1] Webhook API tests (valid signature → 202; invalid → 401 and no change; fixtures end to end with `FakeCodeHost`) in `backend/tests/integration/adapters/test_github_webhook.py`
+- [x] T006 [P] [US1] `next_status(current, event)` tests for every row of the spec table, plus "never out of done except reopen" and "not planned → no change", in `backend/tests/unit/domain/test_sync_rules.py`
+- [x] T007 [P] [US1] `HandleGithubEvent` tests (unknown repo or unlinked issue → ignored; same delivery twice → applied once; event matching an `OwnWrite` → ignored and consumed; merge completes the checklist; PR closing two issues moves both; `TaskStatusChanged` published) in `backend/tests/unit/application/test_handle_github_event.py`
+- [x] T008 [P] [US1] Webhook API tests (valid signature → 202; invalid → 401 and no change; fixtures end to end with `FakeCodeHost`) in `backend/tests/integration/adapters/test_github_webhook.py`
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] Implement `next_status()` in `backend/app/domain/sync.py`
-- [ ] T010 [US1] Implement `HandleGithubEvent` in `backend/app/application/use_cases/integrations/handle_github_event.py`: dedupe by delivery id, find the project by repository and tasks by `ExternalLink` (spec 007), skip events matching an `OwnWrite` (FR-015), apply `next_status`, complete the checklist on merge, update the link state, commit, publish events; "not planned" closes publish `GithubEventIgnored` for the activity feed
-- [ ] T011 [US1] Route `pull_request.opened` to spec 007's `ProposeReview` as well (if 007 isn't merged yet, leave the call behind a no-op default)
+- [x] T009 [US1] Implement `next_status()` in `backend/app/domain/sync.py`
+- [x] T010 [US1] Implement `HandleGithubEvent` in `backend/app/application/use_cases/integrations/handle_github_event.py`: dedupe by delivery id, find the project by repository and tasks by `ExternalLink` (spec 007), skip events matching an `OwnWrite` (FR-015), apply `next_status`, complete the checklist on merge, update the link state, commit, publish events; "not planned" closes publish `GithubEventIgnored` for the activity feed
+- [x] T011 [US1] Route `pull_request.opened` to spec 007's `ProposeReview` as well (if 007 isn't merged yet, leave the call behind a no-op default)
 
 **Checkpoint**: GitHub progress shows up live on the board
 
