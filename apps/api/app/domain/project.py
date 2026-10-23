@@ -70,6 +70,10 @@ class Project(BaseModel):
     # Spec 015: the current invitation link's token; None = invitations off. Only leaders read it
     # (GET /invitation), so it's never serialized with the project.
     invite_token: str | None = Field(default=None, exclude=True)
+    # Spec 017 (D9): the public portal. The slug is made on the first publish and kept when unpublishing,
+    # so the link and the printed QR never change.
+    public: bool = False
+    public_slug: str | None = None
 
     @computed_field  # type: ignore[prop-decorator]
     @property

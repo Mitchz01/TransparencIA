@@ -1,9 +1,10 @@
 """SQLModel tables. Only this adapter knows them; everything else uses the domain/ entities."""
 
+import datetime as dt
 from datetime import date, datetime, timezone
 from typing import Any
 
-from sqlalchemy import JSON, Column
+from sqlalchemy import JSON, Column, LargeBinary
 from sqlmodel import Field, SQLModel
 
 
@@ -29,6 +30,8 @@ class ProjectTable(SQLModel, table=True):
     github_token: str | None = None
     webhook_id: int | None = None
     invite_token: str | None = Field(default=None, index=True)  # spec 015
+    public: bool = False  # spec 017
+    public_slug: str | None = Field(default=None, unique=True, index=True)  # spec 017
 
 
 class MemberTable(SQLModel, table=True):
@@ -81,6 +84,7 @@ class TaskTable(SQLModel, table=True):
     status: str = "backlog"
     position: int = 0
     missing_role: str | None = None
+    done_at: datetime | None = None  # spec 017
 
 
 class ObjectiveTable(SQLModel, table=True):
@@ -223,3 +227,63 @@ class SessionTable(SQLModel, table=True):
     token_digest: str = Field(unique=True, index=True)  # SHA-256 of the cookie's token, never the token
     created_at: datetime = Field(default_factory=_now)
     expires_at: datetime
+
+
+# ---------- Transparency portal (spec 017) ----------
+
+
+class BudgetTable(SQLModel, table=True):
+    """One row per project; the lines travel as JSON because nothing queries them on their own."""
+
+    __tablename__ = "budget"
+
+    project_id: int = Field(primary_key=True, foreign_key="project.id")
+    contracting_entity: str
+    contractor: str
+    contract_value: int
+    start_date: date
+    lines: list[dict[str, Any]] = Field(default_factory=list, sa_column=Column(JSON))
+
+
+class StoredFileTable(SQLModel, table=True):
+    """An uploaded piece of evidence, kept as bytes (D4)."""
+
+    __tablename__ = "stored_file"
+
+    id: int | None = Field(default=None, primary_key=True)
+    project_id: int = Field(foreign_key="project.id", index=True)
+    name: str
+    mime: str
+    data: bytes = Field(sa_column=Column(LargeBinary))
+
+
+class ExpenseTable(SQLModel, table=True):
+    __tablename__ = "expense"
+
+    id: int | None = Field(default=None, primary_key=True)
+    project_id: int = Field(foreign_key="project.id", index=True)
+    file_id: int = Field(foreign_key="stored_file.id")
+    mime: str
+    kind: str
+    status: str = "draft"
+    amount: int | None = None
+    date: dt.date | None = None  # the field shadows the `date` import inside this class
+    supplier: str | None = None
+    concept: str | None = None
+    budget_line_id: str | None = None
+    task_id: int | None = None  # no foreign key: the evidence outlives a deleted task and keeps its title
+    task_title: str | None = None
+    citizen_summary: str = ""
+    created_at: datetime = Field(default_factory=_now)
+
+
+class AlertTable(SQLModel, table=True):
+    __tablename__ = "alert"
+
+    id: int | None = Field(default=None, primary_key=True)
+    expense_id: int = Field(foreign_key="expense.id", index=True)
+    level: str
+    reason: str
+    source: str
+    answer: str | None = None
+    answered_at: datetime | None = None

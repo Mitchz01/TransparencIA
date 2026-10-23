@@ -10,6 +10,10 @@ from typing import Any
 from app.adapters.outbound.persistence import token_cipher
 from app.adapters.outbound.persistence.tables import (
     AccountTable,
+    AlertTable,
+    BudgetTable,
+    ExpenseTable,
+    StoredFileTable,
     ActivityTable,
     ExternalLinkTable,
     DocumentTable,
@@ -32,6 +36,7 @@ from app.domain.integrations import ExternalLink, OwnWrite
 from app.domain.project import Member, Project
 from app.domain.proposals import Proposal
 from app.domain.sync import WebhookDelivery
+from app.domain.transparency import Alert, Budget, BudgetLine, Expense, StoredFile
 
 
 def utc(value: datetime | None) -> datetime | None:
@@ -82,7 +87,7 @@ def sprint_to_table(sprint: Sprint) -> SprintTable:
 
 
 def task_to_domain(row: TaskTable) -> Task:
-    return Task.model_validate(row.model_dump())
+    return Task.model_validate(_with_utc(row.model_dump(), "done_at"))
 
 
 def task_to_table(task: Task) -> TaskTable:
@@ -183,3 +188,40 @@ def session_to_domain(row: SessionTable) -> AuthSession:
 
 def session_to_table(session: AuthSession) -> SessionTable:
     return SessionTable.model_validate(session.model_dump())
+
+
+# ---------- Transparency portal (spec 017) ----------
+
+
+def budget_to_domain(row: BudgetTable) -> Budget:
+    return Budget.model_validate({**row.model_dump(), "lines": [BudgetLine.model_validate(line) for line in row.lines]})
+
+
+def budget_to_table(budget: Budget) -> BudgetTable:
+    return BudgetTable.model_validate({**budget.model_dump(mode="json"), "start_date": budget.start_date})
+
+
+def alert_to_domain(row: AlertTable) -> Alert:
+    return Alert.model_validate(_with_utc(row.model_dump(), "answered_at"))
+
+
+def alert_to_table(alert: Alert, expense_id: int) -> AlertTable:
+    return AlertTable.model_validate({**alert.model_dump(), "expense_id": expense_id})
+
+
+def expense_to_domain(row: ExpenseTable, alerts: list[AlertTable]) -> Expense:
+    data = _with_utc(row.model_dump(), "created_at")
+    return Expense.model_validate({**data, "alerts": [alert_to_domain(a) for a in alerts]})
+
+
+def expense_to_table(expense: Expense) -> ExpenseTable:
+    # The alerts live in their own table: the repository writes them.
+    return ExpenseTable.model_validate(expense.model_dump(exclude={"alerts"}))
+
+
+def stored_file_to_domain(row: StoredFileTable) -> StoredFile:
+    return StoredFile.model_validate(row.model_dump())
+
+
+def stored_file_to_table(file: StoredFile) -> StoredFileTable:
+    return StoredFileTable.model_validate(file.model_dump())
