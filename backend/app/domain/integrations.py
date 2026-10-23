@@ -81,7 +81,7 @@ REPOSITORY_PATTERN = re.compile(r"^[A-Za-z0-9-]{1,39}/[A-Za-z0-9._-]{1,100}$")
 class RepoAccess(BaseModel):
     """What the token can do on a repo, as the code host reports it."""
 
-    status: Literal["ok", "not_found", "forbidden"]
+    status: Literal["ok", "not_found", "forbidden", "missing_permissions"]
     url: str = ""  # web URL of the repo
     can_write: bool = False  # create issues, comment, request reviews
     can_admin: bool = False  # manage webhooks

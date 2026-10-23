@@ -117,3 +117,61 @@ class TaskStatusChanged(DomainEvent):
     type: Literal["task_status_changed"] = "task_status_changed"
     task_id: int
     status: str
+
+
+# ---------- GitHub integration (spec 007) ----------
+# Every action taken on GitHub is recorded in the activity (FR-020): what, when and which
+# proposal authorized it (`proposal_id`; None for issue updates caused by a person, FR-021).
+
+
+class RepositoryConnected(DomainEvent):
+    type: Literal["repository_connected"] = "repository_connected"
+    actor: Actor = "person"
+    repository: str
+    replaced: str | None = None
+    mode: str = "github"
+    webhook_registered: bool = False
+
+
+class RepositoryDisconnected(DomainEvent):
+    type: Literal["repository_disconnected"] = "repository_disconnected"
+    actor: Actor = "person"
+    repository: str
+
+
+class PublishedIssue(BaseModel):
+    task_id: int
+    number: int
+
+
+class FailedIssue(BaseModel):
+    task_id: int
+    error: str
+
+
+class IssuesPublished(DomainEvent):
+    type: Literal["issues_published"] = "issues_published"
+    proposal_id: int
+    created: list[PublishedIssue]
+    failed: list[FailedIssue]
+
+
+class IssueUpdated(DomainEvent):
+    type: Literal["issue_updated"] = "issue_updated"
+    task_id: int
+    number: int
+    broken: bool = False  # the issue was deleted on GitHub
+
+
+class IssueClosed(DomainEvent):
+    type: Literal["issue_closed"] = "issue_closed"
+    task_id: int
+    number: int
+    reason: str
+
+
+class ReviewRequested(DomainEvent):
+    type: Literal["review_requested"] = "review_requested"
+    proposal_id: int
+    pr_number: int
+    reviewers: list[str]

@@ -8,6 +8,7 @@ from sqlmodel import Session
 
 from app.adapters.outbound.persistence.db import engine, get_session
 from app.adapters.outbound.persistence.unit_of_work import SqlUnitOfWork
+from app.config import GITHUB_WEBHOOK_SECRET, PUBLIC_BASE_URL
 from app.application.ports.agents import PlanningAgents
 from app.application.ports.code_host import CodeHost, CodeHostFactory
 from app.application.ports.event_bus import EventBus
@@ -19,6 +20,8 @@ from app.application.use_cases.projects.get_project import GetProject
 from app.application.use_cases.projects.list_projects import ListProjects
 from app.application.use_cases.projects.update_project import UpdateProject
 from app.application.use_cases.activity.list_activity import FollowActivity, ListActivity
+from app.application.use_cases.integrations.connect_repository import ConnectRepository
+from app.application.use_cases.integrations.disconnect_repository import DisconnectRepository
 from app.application.use_cases.proposals.apply_proposal import ApplyProposal, ProposalAppliers, RetryApply
 from app.application.use_cases.proposals.approve_many import ApproveProposals
 from app.application.use_cases.proposals.auto_approve import AutoApprove
@@ -159,3 +162,27 @@ def today_utc() -> date:
 
 def get_plan_views(uow: UnitOfWork = Depends(get_uow)) -> GetPlanViews:
     return GetPlanViews(uow, today_utc)
+
+
+# ---------- GitHub integration (spec 007) ----------
+
+
+def webhook_url() -> str | None:
+    """Where GitHub sends the repo's events (spec 008's endpoint); None without a public URL."""
+    return f"{PUBLIC_BASE_URL}/webhooks/github" if PUBLIC_BASE_URL else None
+
+
+def get_connect_repository(
+    uow: UnitOfWork = Depends(get_uow),
+    bus: EventBus = Depends(get_event_bus),
+    code_hosts: CodeHostFactory = Depends(get_code_host_factory),
+) -> ConnectRepository:
+    return ConnectRepository(uow, bus, code_hosts, webhook_url(), GITHUB_WEBHOOK_SECRET)
+
+
+def get_disconnect_repository(
+    uow: UnitOfWork = Depends(get_uow),
+    bus: EventBus = Depends(get_event_bus),
+    code_hosts: CodeHostFactory = Depends(get_code_host_factory),
+) -> DisconnectRepository:
+    return DisconnectRepository(uow, bus, code_hosts)

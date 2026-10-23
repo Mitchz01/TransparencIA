@@ -216,15 +216,15 @@ Not part of our API, but they define our error mapping (`client.py`, T011):
 
 ### Tests for User Story 1
 
-- [ ] T009 [P] [US1] `ConnectRepository` / `DisconnectRepository` tests (no access → error and nothing saved; replace → old webhook deleted; disconnect keeps links) in `backend/tests/unit/application/test_connect_repository.py`
-- [ ] T010 [P] [US1] `GitHubCodeHost` tests for `check_access`, `register_webhook` and `delete_webhook` with `httpx.MockTransport` in `backend/tests/integration/adapters/test_github_code_host.py`
+- [x] T009 [P] [US1] `ConnectRepository` / `DisconnectRepository` tests (no access → error and nothing saved; replace → old webhook deleted; disconnect keeps links) in `backend/tests/unit/application/test_connect_repository.py`
+- [x] T010 [P] [US1] `GitHubCodeHost` tests for `check_access`, `register_webhook` and `delete_webhook` with `httpx.MockTransport` in `backend/tests/integration/adapters/test_github_code_host.py`
 
 ### Implementation for User Story 1
 
-- [ ] T011 [US1] Implement the REST client in `backend/app/adapters/outbound/code_host/github/client.py` (base URL, auth header, error mapping) and `GitHubCodeHost` in `code_host.py` with the connection methods
-- [ ] T012 [US1] Implement `ConnectRepository` and `DisconnectRepository` in `backend/app/application/use_cases/integrations/`
-- [ ] T013 [US1] Create `backend/app/adapters/inbound/http/integrations.py` with `PUT /api/projects/{id}/repository` (`{repository, token?}`) and `DELETE /api/projects/{id}/repository`; include it in `main.py`
-- [ ] T014 [US1] Add `IntegrationGateway` (ports, http, fake), `useIntegrations`, `IntegrationsPage` and `RepositoryForm` (replace confirmation, write-only token field); route `/projects/:id/integrations`
+- [x] T011 [US1] Implement the REST client in `backend/app/adapters/outbound/code_host/github/client.py` (base URL, auth header, error mapping) and `GitHubCodeHost` in `code_host.py` with the connection methods
+- [x] T012 [US1] Implement `ConnectRepository` and `DisconnectRepository` in `backend/app/application/use_cases/integrations/`
+- [x] T013 [US1] Create `backend/app/adapters/inbound/http/integrations.py` with `PUT /api/projects/{id}/repository` (`{repository, token?}`) and `DELETE /api/projects/{id}/repository`; include it in `main.py`
+- [ ] T014 [US1] Add `IntegrationGateway` (ports, http, fake), `useIntegrations`, `IntegrationsPage` and `RepositoryForm` (replace confirmation, write-only token field); route `/projects/:id/integrations` — handed off to spec 009 (frontend)
 
 **Checkpoint**: a repo can be connected from the UI
 

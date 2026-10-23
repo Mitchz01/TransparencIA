@@ -5,8 +5,10 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from app.application.ports.code_host import CodeHostMode
 from app.domain.board import Sprint, Task, TaskStatus
 from app.domain.project import (
+    Member,
     MemberPatch,
     Project,
     ProjectChanges,
@@ -125,3 +127,35 @@ class BulkResult(BaseModel):
     id: int
     ok: bool
     error: dict[str, Any] | None = None
+
+
+# ---------- GitHub integration (spec 007) ----------
+
+
+class RepositoryConnect(BaseModel):
+    repository: str
+    # Write-only. Missing (or null) = keep the project's token; "" = delete it (FR-004).
+    token: str | None = None
+
+
+class Connection(BaseModel):
+    repository: str
+    has_token: bool
+    mode: CodeHostMode
+    webhook_registered: bool
+    replaced: str | None = None
+
+
+class IssuesProposed(BaseModel):
+    proposal_id: int
+    task_count: int
+
+
+class GithubUsernameSet(BaseModel):
+    github_username: str | None  # required; null removes it
+
+
+class MemberGithubAccess(BaseModel):
+    member: Member
+    # False = the user can't access the repo (saved with a warning); None = no repo or GitHub unreachable.
+    has_access: bool | None
