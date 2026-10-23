@@ -4,6 +4,7 @@ from sqlmodel import Session
 
 from app.adapters.outbound.persistence.repositories import (
     SqlActivityRepository,
+    SqlObjectiveRepository,
     SqlProjectRepository,
     SqlProposalRepository,
     SqlSprintRepository,
@@ -17,6 +18,7 @@ class SqlUnitOfWork:
         self._owns_session = owns_session
         self.projects = SqlProjectRepository(session)
         self.sprints = SqlSprintRepository(session)
+        self.objectives = SqlObjectiveRepository(session)
         self.tasks = SqlTaskRepository(session)
         self.proposals = SqlProposalRepository(session)
         self.activity = SqlActivityRepository(session)

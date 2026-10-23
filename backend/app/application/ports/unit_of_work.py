@@ -3,6 +3,7 @@ from typing import Protocol, Self
 
 from app.application.ports.repositories import (
     ActivityRepository,
+    ObjectiveRepository,
     ProjectRepository,
     ProposalRepository,
     SprintRepository,
@@ -16,6 +17,7 @@ class UnitOfWork(Protocol):
 
     projects: ProjectRepository
     sprints: SprintRepository
+    objectives: ObjectiveRepository
     tasks: TaskRepository
     proposals: ProposalRepository
     activity: ActivityRepository

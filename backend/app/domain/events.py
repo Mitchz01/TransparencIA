@@ -117,3 +117,23 @@ class TaskStatusChanged(DomainEvent):
     type: Literal["task_status_changed"] = "task_status_changed"
     task_id: int
     status: str
+    sprint_id: int | None = None
+    position: int | None = None
+
+
+class TaskUpdated(DomainEvent):
+    """A task's data or checklist was edited (moves publish TaskStatusChanged)."""
+
+    type: Literal["task_updated"] = "task_updated"
+    actor: Actor = "person"
+    task_id: int
+    fields: list[str]
+
+
+class PlanApplied(DomainEvent):
+    """The approved plan became a board (contract 005 → 003)."""
+
+    type: Literal["plan_applied"] = "plan_applied"
+    sprints: int
+    tasks: int
+    skipped_story_keys: list[str] = []

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from app.domain.board import Sprint, Task
+from app.domain.board import Objective, Sprint, Task
 from app.domain.documents import Document
 from app.domain.events import DomainEvent
 from app.domain.project import Project
@@ -21,8 +21,16 @@ class ProjectRepository(Protocol):
 
 
 class SprintRepository(Protocol):
+    def get(self, sprint_id: int) -> Sprint | None: ...
     def list_by_project(self, project_id: int) -> list[Sprint]: ...
     def add(self, sprint: Sprint) -> Sprint: ...
+    def save(self, sprint: Sprint) -> Sprint: ...
+
+
+class ObjectiveRepository(Protocol):
+    def list_by_project(self, project_id: int) -> list[Objective]: ...
+    def add(self, objective: Objective) -> Objective: ...
+    def save(self, objective: Objective) -> Objective: ...
 
 
 class TaskRepository(Protocol):
