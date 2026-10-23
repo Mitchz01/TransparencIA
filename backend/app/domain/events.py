@@ -54,7 +54,22 @@ class AgentFinished(DomainEvent):
 class PlanFailed(DomainEvent):
     type: Literal["plan_failed"] = "plan_failed"
     agent: str
-    error: str
+    error: str  # safe to show: never a stack trace or the raw service error
+
+
+class StageNeedsLeader(DomainEvent):
+    """A stage was rejected MAX_CONSECUTIVE_REJECTIONS times in a row: it isn't redone
+    automatically; the leader retries it or adjusts the last proposal (FR-011)."""
+
+    type: Literal["stage_needs_leader"] = "stage_needs_leader"
+    stage: str
+    rejections: int
+
+
+class PlanCompleted(DomainEvent):
+    """Every stage is approved: the on_plan_completed handlers run next (board, documents)."""
+
+    type: Literal["plan_completed"] = "plan_completed"
 
 
 # ---------- Proposals (spec 005) ----------

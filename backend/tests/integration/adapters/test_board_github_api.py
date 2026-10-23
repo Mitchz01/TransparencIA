@@ -6,7 +6,6 @@ import time
 
 from sqlmodel import Session
 
-from app.adapters.inbound.http import dependencies as deps
 from app.adapters.inbound.http.dependencies import open_uow
 from app.adapters.outbound.agents.mock.data import MOCK_PLAN
 from app.adapters.outbound.code_host.fake import FakeCodeHost
@@ -46,6 +45,13 @@ def _link(pid: int, task_id: int, number: int, **fields) -> None:
             )
         )
         session.commit()
+
+
+def _complete_plan(client, pid: int) -> None:
+    """What AdvancePlanning does after the last stage: run the app's on_plan_completed handlers
+    (wire_planning registers ApplyPlan there, with 007's ProposePendingIssues as its follow-up)."""
+    for handler in client.app.state.on_plan_completed:
+        asyncio.run(handler(pid))
 
 
 def _wait_for(check, attempts: int = 100):
@@ -114,10 +120,7 @@ def test_applying_a_plan_with_a_connected_repo_proposes_the_issues(client):
     _connect(client, pid)
     assert client.get(f"/api/projects/{pid}/proposals").json() == []  # no board yet: nothing proposed
 
-    bus = client.app.state.event_bus
-    apply_proposal = deps.get_apply_proposal(open_uow, bus, client.app.state.appliers)
-    auto_approve = deps.get_auto_approve(open_uow, bus, apply_proposal)
-    asyncio.run(deps.get_apply_plan(open_uow, bus, auto_approve).execute(pid))
+    _complete_plan(client, pid)
 
     board = client.get(f"/api/projects/{pid}/board").json()
     [proposal] = client.get(f"/api/projects/{pid}/proposals").json()
@@ -127,8 +130,6 @@ def test_applying_a_plan_with_a_connected_repo_proposes_the_issues(client):
 
 def test_applying_a_plan_without_a_repo_proposes_nothing(client):
     pid = _project_with_plan(client)
-    bus = client.app.state.event_bus
-    auto_approve = deps.get_auto_approve(open_uow, bus, deps.get_apply_proposal(open_uow, bus, client.app.state.appliers))
-    asyncio.run(deps.get_apply_plan(open_uow, bus, auto_approve).execute(pid))
+    _complete_plan(client, pid)
     assert client.get(f"/api/projects/{pid}/board").json()["tasks"]
     assert client.get(f"/api/projects/{pid}/proposals").json() == []

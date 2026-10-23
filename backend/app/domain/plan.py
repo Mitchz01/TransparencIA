@@ -2,12 +2,18 @@
 The agents use them as output_schema, so the result arrives as validated
 JSON and can be persisted directly."""
 
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
+from app.domain.errors import StageNotFound
+
 Level = Literal["low", "medium", "high"]
+
+# Every stage output says why: it's the rationale the leader sees on the proposal (spec 002, FR-004).
+RATIONALE = "Why you decided this, in 2-3 sentences"
 
 
 # ---------- Product analyst ----------
@@ -27,6 +33,7 @@ class Analysis(BaseModel):
     risks: list[Risk]
     complexity: Level
     team_gaps: list[str] = Field(description="Roles or skills the team is missing")
+    rationale: str = Field(description=RATIONALE)
 
 
 # ---------- Agile coach ----------
@@ -84,6 +91,7 @@ class Architecture(BaseModel):
     components: list[Component]
     stack: list[StackItem]
     decisions: list[ArchitectureDecision]
+    rationale: str = Field(description=RATIONALE)
 
 
 # ---------- Roadmap ----------
@@ -106,6 +114,7 @@ class Phase(BaseModel):
 
 class Roadmap(BaseModel):
     phases: list[Phase]
+    rationale: str = Field(description=RATIONALE)
 
 
 # ---------- Backlog ----------
@@ -125,6 +134,7 @@ class Story(BaseModel):
 
 class Backlog(BaseModel):
     stories: list[Story]
+    rationale: str = Field(description=RATIONALE)
 
 
 # ---------- Sprint planner ----------
@@ -146,6 +156,7 @@ class Assignment(BaseModel):
 class SprintPlanning(BaseModel):
     sprints: list[SprintPlan]
     assignments: list[Assignment]
+    rationale: str = Field(description=RATIONALE)
 
 
 # ---------- Stages ----------
@@ -159,15 +170,118 @@ class PlanningStage:
     inputs: tuple[str, ...]  # previous results it needs as context
 
 
+# Inputs that aren't a previous stage: "project" (data and team) and "capacity" (derived from
+# the team and the approved iteration length, spec 002 FR-010).
 PLANNING_STAGES: tuple[PlanningStage, ...] = (
     PlanningStage("analysis", "Product analyst", Analysis, ("project",)),
     PlanningStage("methodology", "Agile coach", MethodologyDecision, ("project", "analysis")),
     PlanningStage("architecture", "Software architect", Architecture, ("project", "analysis", "methodology")),
     PlanningStage("roadmap", "Product manager", Roadmap, ("project", "analysis", "methodology", "architecture")),
     PlanningStage("backlog", "Product owner", Backlog, ("project", "architecture", "roadmap")),
-    PlanningStage("sprints", "Scrum master", SprintPlanning, ("project", "methodology", "roadmap", "backlog")),
+    PlanningStage(
+        "sprints", "Scrum master", SprintPlanning, ("project", "methodology", "roadmap", "backlog", "capacity")
+    ),
 )
 
+_BY_KEY = {stage.key: stage for stage in PLANNING_STAGES}
+
+
+def stage_by_key(key: str) -> PlanningStage:
+    if key not in _BY_KEY:
+        raise StageNotFound(key)
+    return _BY_KEY[key]
+
+
+def next_stage(key: str) -> PlanningStage | None:
+    """The stage after `key`, or None after the last one (sprints)."""
+    index = PLANNING_STAGES.index(stage_by_key(key))
+    return PLANNING_STAGES[index + 1] if index + 1 < len(PLANNING_STAGES) else None
+
+
+def first_pending_stage(approved_keys: Iterable[str]) -> PlanningStage | None:
+    """The first stage, in order, without an approved (or adjusted) proposal; None = plan complete.
+    Resuming after an error starts here, so approved stages never run again (FR-012)."""
+    approved = set(approved_keys)
+    return next((stage for stage in PLANNING_STAGES if stage.key not in approved), None)
+
+
+# ---------- Consistency rules (beyond the schema) ----------
+#
+# The schema says an output can be displayed; these rules say it makes sense with the
+# approved context. Each issue is a sentence the agent gets back as feedback on its retry.
+
+
+def _methodology_issues(output: dict[str, Any], context: dict[str, Any]) -> list[str]:
+    requested = (context.get("project") or {}).get("requested_methodology", "auto")
+    if requested != "auto":
+        if output["methodology"] != requested:
+            return [f"The leader chose '{requested}': the methodology must be '{requested}', not '{output['methodology']}'."]
+        return []
+    if len(output["alternatives"]) < 2:
+        return ["List at least two discarded alternatives, each with why_not."]
+    return []
+
+
+def _epic_keys(roadmap: dict[str, Any] | None) -> set[str]:
+    return {epic["key"] for phase in (roadmap or {}).get("phases", []) for epic in phase.get("epics", [])}
+
+
+def _backlog_issues(output: dict[str, Any], context: dict[str, Any]) -> list[str]:
+    issues: list[str] = []
+    epics = _epic_keys(context.get("roadmap"))
+    seen: set[str] = set()
+    for story in output["stories"]:
+        if story["key"] in seen:
+            issues.append(f"Story key {story['key']} is repeated: keys must be unique.")
+        seen.add(story["key"])
+        if story["epic_key"] not in epics:
+            issues.append(f"Story {story['key']} belongs to epic {story['epic_key']}, which isn't in the roadmap.")
+    return issues
+
+
+def _sprints_issues(output: dict[str, Any], context: dict[str, Any]) -> list[str]:
+    issues: list[str] = []
+    stories = {s["key"]: s for s in (context.get("backlog") or {}).get("stories", [])}
+    placed: dict[str, int] = {}
+    for sprint in output["sprints"]:
+        for key in sprint["story_keys"]:
+            if key not in stories:
+                issues.append(f"Iteration {sprint['number']} has story {key}, which isn't in the backlog.")
+            placed[key] = placed.get(key, 0) + 1
+    for key in stories:
+        if placed.get(key, 0) == 0:
+            issues.append(f"Story {key} isn't in any iteration.")
+        elif placed[key] > 1:
+            issues.append(f"Story {key} is in {placed[key]} iterations: it must be in exactly one.")
+
+    members = {m["name"] for m in (context.get("project") or {}).get("members", [])}
+    for assignment in output["assignments"]:
+        if assignment["member_name"] not in members:
+            issues.append(f"{assignment['member_name']} isn't on the team: use a member's exact name.")
+        if assignment["story_key"] not in stories:
+            issues.append(f"The assignment of {assignment['story_key']} refers to a story that isn't in the backlog.")
+
+    # Kanban has a continuous board without sprint capacity (spec 003).
+    continuous = (context.get("methodology") or {}).get("methodology") == "kanban"
+    capacity = (context.get("capacity") or {}).get("points_per_sprint")
+    if not continuous and capacity is not None:
+        for sprint in output["sprints"]:
+            keys = [k for k in sprint["story_keys"] if k in stories]
+            points = sum(stories[k]["points"] for k in keys)
+            # A single story bigger than the capacity can't be split here: it gets its own iteration.
+            if points > capacity and len(keys) > 1:
+                issues.append(f"Iteration {sprint['number']} has {points} points, over the team's capacity of {capacity}.")
+    return issues
+
+
+_RULES = {"methodology": _methodology_issues, "backlog": _backlog_issues, "sprints": _sprints_issues}
+
+
+def validate_stage_output(stage_key: str, output: dict[str, Any], context: dict[str, Any]) -> list[str]:
+    """Consistency issues of a schema-valid stage output against its context (FR-008 to FR-010).
+    `output` is the output dumped as JSON; `context` is what the agent received. Empty = valid."""
+    rule = _RULES.get(stage_key)
+    return rule(output, context) if rule else []
 
 # ---------- Code reviewer (spec 007, US4) ----------
 # Not a planning stage: it runs on its own when a PR that closes a project issue is opened.

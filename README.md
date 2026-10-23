@@ -71,8 +71,8 @@ npm run dev                               # :5173, proxy /api → :8000
 - [x] Projects and team API (spec 001): `POST/GET/PATCH /api/projects`
 - [x] Proposals, approval and live activity (spec 005): `/api/proposals/...`, `/activity`, SSE `/events` with replay
 - [x] Plan views (spec 004): `GET /api/projects/{id}/plan`
-- [ ] Per-stage planning pipeline (spec 002) and its `plan_stage` applier, `PATCH /tasks/{id}` (spec 003)
-- [ ] Persist the approved plan as Sprint and Task
+- [x] Per-stage planning pipeline (spec 002): `POST /api/projects/{id}/planning`, stage retry, the `plan_stage` applier
+- [x] Persist the approved plan as Sprint and Task (spec 003's `ApplyPlan`, run when the plan completes)
 - [x] GitHub integration backend (spec 007): `PUT/DELETE /api/projects/{id}/repository`, `POST /api/projects/{id}/issues/propose`, `PUT /api/members/{id}/github-username`, `github_action` appliers (hooks into 003 and 008 pending)
 - [ ] Generated specs and diagrams (006), sync and replanning (008)
 - [ ] Frontend: project setup, agent progress, kanban, roadmap

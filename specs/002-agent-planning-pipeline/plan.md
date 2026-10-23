@@ -2,7 +2,7 @@
 
 **Date**: 2026-10-23  
 **Spec**: [spec.md](spec.md)  
-**Status**: Draft
+**Status**: Approved
 
 ## Summary
 
@@ -163,8 +163,8 @@ data: {"seq":1520,"type":"agent_started","project_id":12,"agent":"analysis","tit
 
 **Purpose**: wiring for background work and per-task DB sessions
 
-- [ ] T001 Create `backend/app/adapters/inbound/http/background.py` with `spawn(coro)`: `asyncio.create_task`, keeps a reference in a module-level set until done, logs unhandled exceptions
-- [ ] T002 Add `get_uow_factory()` to `backend/app/adapters/inbound/http/dependencies.py`: returns a callable that opens `SqlUnitOfWork(Session(engine))`, so background use cases never reuse the request's session
+- [x] T001 Create `backend/app/adapters/inbound/http/background.py` with `spawn(coro)`: `asyncio.create_task`, keeps a reference in a module-level set until done, logs unhandled exceptions — already done by spec 005
+- [x] T002 Add `get_uow_factory()` to `backend/app/adapters/inbound/http/dependencies.py`: returns a callable that opens `SqlUnitOfWork(Session(engine))`, so background use cases never reuse the request's session — already done by spec 005
 
 ---
 
@@ -174,13 +174,13 @@ data: {"seq":1520,"type":"agent_started","project_id":12,"agent":"analysis","tit
 
 **⚠️ CRITICAL**: no user story work can begin until this phase is complete
 
-- [ ] T003 Add `rejection_reason: str | None` and `reject(reason: str)` to `backend/app/domain/proposals.py`; update `backend/tests/unit/domain/test_proposals.py`
-- [ ] T004 Add `ProposalTable` to `backend/app/adapters/outbound/persistence/tables.py`, its mappers, `SqlProposalRepository` (get, list_by_project, add, save) and `proposals` on `SqlUnitOfWork` and the `UnitOfWork` port
-- [ ] T005 [P] Add a required `rationale: str` field (2–3 sentences, "why you decided this") to `Analysis`, `Architecture`, `Roadmap`, `Backlog` and `SprintPlanning` in `backend/app/domain/plan.py`; add it to `backend/app/adapters/outbound/agents/mock/data.py` and to `frontend/src/domain/plan.ts`
-- [ ] T006 [P] Create `backend/app/domain/capacity.py`: `HOURS_PER_POINT = {"junior": 8, "mid": 6, "senior": 4}`, `member_capacity(member, sprint_weeks)` and `team_capacity(members, sprint_weeks)` in points; mirror it in `frontend/src/domain/rules.ts`. This is the single capacity rule (spec 003, FR-017)
-- [ ] T007 [P] Add `stage_by_key()`, `next_stage()` and `first_pending_stage(approved_keys)` to `backend/app/domain/plan.py`
-- [ ] T008 Add `PlanningAlreadyRunning` and `PlanningNotStartable` (409) to `backend/app/domain/errors.py` and the HTTP error mapping; add `StageNeedsLeader(stage, rejections)` and `PlanCompleted` to `backend/app/domain/events.py`
-- [ ] T009 Create `backend/app/adapters/inbound/http/planning.py` with `GET /api/projects/{id}/events`: SSE (`sse-starlette`) over `EventBus.subscribe`, one `event:` per `DomainEvent.type`. It's the UC-14 transport; spec 005 builds the activity UI on top of it
+- [x] T003 Add `rejection_reason: str | None` and `reject(reason: str)` to `backend/app/domain/proposals.py`; update `backend/tests/unit/domain/test_proposals.py` — already done by spec 005
+- [x] T004 Add `ProposalTable` to `backend/app/adapters/outbound/persistence/tables.py`, its mappers, `SqlProposalRepository` (get, list_by_project, add, save) and `proposals` on `SqlUnitOfWork` and the `UnitOfWork` port — already done by spec 005
+- [x] T005 [P] Add a required `rationale: str` field (2–3 sentences, "why you decided this") to `Analysis`, `Architecture`, `Roadmap`, `Backlog` and `SprintPlanning` in `backend/app/domain/plan.py`; add it to `backend/app/adapters/outbound/agents/mock/data.py` and to `frontend/src/domain/plan.ts` — backend done; `frontend/src/domain/plan.ts` handed off to spec 009 (frontend)
+- [x] T006 [P] Create `backend/app/domain/capacity.py`: `HOURS_PER_POINT = {"junior": 8, "mid": 6, "senior": 4}`, `member_capacity(member, sprint_weeks)` and `team_capacity(members, sprint_weeks)` in points; mirror it in `frontend/src/domain/rules.ts`. This is the single capacity rule (spec 003, FR-017) — backend already done by spec 003 (tests in `test_board_rules.py`); the `rules.ts` mirror is handed off to spec 009 (frontend)
+- [x] T007 [P] Add `stage_by_key()`, `next_stage()` and `first_pending_stage(approved_keys)` to `backend/app/domain/plan.py`
+- [x] T008 Add `PlanningAlreadyRunning` and `PlanningNotStartable` (409) to `backend/app/domain/errors.py` and the HTTP error mapping; add `StageNeedsLeader(stage, rejections)` and `PlanCompleted` to `backend/app/domain/events.py`
+- [x] T009 Create `backend/app/adapters/inbound/http/planning.py` with `GET /api/projects/{id}/events`: SSE (`sse-starlette`) over `EventBus.subscribe`, one `event:` per `DomainEvent.type`. It's the UC-14 transport; spec 005 builds the activity UI on top of it — already done by spec 005 (in `adapters/inbound/http/activity.py`, with replay)
 
 **Checkpoint**: proposals persist, and every stage output carries a rationale
 
@@ -194,21 +194,21 @@ data: {"seq":1520,"type":"agent_started","project_id":12,"agent":"analysis","tit
 
 ### Tests for User Story 1
 
-- [ ] T010 [P] [US1] `StartPlanning` tests (status → planning, rejects when already planning or ready, picks the first pending stage) in `backend/tests/unit/application/test_start_planning.py`
-- [ ] T011 [P] [US1] `RunPlanningStep` tests (context only has `stage.inputs` with final content; pending proposal saved; `AgentStarted`/`AgentFinished`/`ProposalCreated` published; auto-approve chains to the next stage) in `backend/tests/unit/application/test_run_planning_step.py`
-- [ ] T012 [P] [US1] `AdvancePlanning` tests (approved → `project.plan[key]` saved and next stage runs; adjusted content is what the next stage receives; last stage → `PlanCompleted` and completion handlers called) in `backend/tests/unit/application/test_advance_planning.py`
-- [ ] T013 [P] [US1] API test: `POST /api/projects/{id}/planning` returns 202 and, with mock agents and auto-approve, the project ends with six approved proposals, in `backend/tests/integration/adapters/test_planning_api.py`
+- [x] T010 [P] [US1] `StartPlanning` tests (status → planning, rejects when already planning or ready, picks the first pending stage) in `backend/tests/unit/application/test_start_planning.py`
+- [x] T011 [P] [US1] `RunPlanningStep` tests (context only has `stage.inputs` with final content; pending proposal saved; `AgentStarted`/`AgentFinished`/`ProposalCreated` published; auto-approve chains to the next stage) in `backend/tests/unit/application/test_run_planning_step.py`
+- [x] T012 [P] [US1] `AdvancePlanning` tests (approved → `project.plan[key]` saved and next stage runs; adjusted content is what the next stage receives; last stage → `PlanCompleted` and completion handlers called) in `backend/tests/unit/application/test_advance_planning.py`
+- [x] T013 [P] [US1] API test: `POST /api/projects/{id}/planning` returns 202 and, with mock agents and auto-approve, the project ends with six approved proposals, in `backend/tests/integration/adapters/test_planning_api.py`
 
 ### Implementation for User Story 1
 
-- [ ] T014 [US1] Move `_project_context` from `run_planning.py` to `backend/app/application/use_cases/planning/context.py` and add `build_stage_context(stage, project, proposals)`, which takes the `final_content` of the latest approved or adjusted proposal per key
-- [ ] T015 [US1] Implement `RunPlanningStep` in `backend/app/application/use_cases/planning/run_planning_step.py`: publish `AgentStarted`, call `agents.run_stage`, save a `pending` `plan_stage` proposal (`agent` = stage title, `rationale` from the output), publish `AgentFinished` + `ProposalCreated`; if `project.auto_approve`, `approve(auto=True)` and call `AdvancePlanning`
-- [ ] T016 [US1] Implement `AdvancePlanning` in `backend/app/application/use_cases/planning/advance_planning.py`: entry point `on_proposal_resolved(proposal_id)`; for approved/adjusted, store the final content in `project.plan[stage.key]` and run the next stage, or, after `sprints`, publish `PlanCompleted` and call the `on_plan_completed` handlers (spec 003's `ApplyPlan`, spec 006's `GenerateDocuments`)
-- [ ] T017 [US1] Implement `StartPlanning` in `backend/app/application/use_cases/planning/start_planning.py` (FR-013, FR-016): only from `draft` or `error`, set `planning`, run `first_pending_stage`
-- [ ] T018 [US1] Add `POST /api/projects/{id}/planning` (202, `spawn`) to `backend/app/adapters/inbound/http/planning.py`; wire `StartPlanning`, `RunPlanningStep` and `AdvancePlanning` in `dependencies.py`; include the router in `backend/app/main.py`
-- [ ] T019 [US1] Remove `backend/app/application/use_cases/planning/run_planning.py`, its provider and `backend/tests/unit/application/test_run_planning.py` (their assertions move to T011)
-- [ ] T020 [P] [US1] Add `PlanningGateway.start()` and `EventStream` to `frontend/src/application/ports.ts`; implement them in `frontend/src/adapters/http/planningGateway.ts` and `frontend/src/adapters/http/eventStream.ts` (`EventSource`, reconnect + refetch), plus fakes in `frontend/src/adapters/fake/`
-- [ ] T021 [US1] Create `useProjectEvents` and `usePlanning` in `frontend/src/application/use-cases/`, and `PlanningPage` with `StageStepper` (six stages: waiting, working, pending approval, approved, failed) in `frontend/src/ui/`; route `/projects/:id/planning`. Spec 005 adds the proposal cards to this page
+- [x] T014 [US1] Move `_project_context` from `run_planning.py` to `backend/app/application/use_cases/planning/context.py` and add `build_stage_context(stage, project, proposals)`, which takes the `final_content` of the latest approved or adjusted proposal per key
+- [x] T015 [US1] Implement `RunPlanningStep` in `backend/app/application/use_cases/planning/run_planning_step.py`: publish `AgentStarted`, call `agents.run_stage`, save a `pending` `plan_stage` proposal (`agent` = stage title, `rationale` from the output), publish `AgentFinished` + `ProposalCreated`; if `project.auto_approve`, `approve(auto=True)` and call `AdvancePlanning` — calls spec 005's `AutoApprove.after_created` instead of approving inline
+- [x] T016 [US1] Implement `AdvancePlanning` in `backend/app/application/use_cases/planning/advance_planning.py`: entry point `on_proposal_resolved(proposal_id)`; for approved/adjusted, store the final content in `project.plan[stage.key]` and run the next stage, or, after `sprints`, publish `PlanCompleted` and call the `on_plan_completed` handlers (spec 003's `ApplyPlan`, spec 006's `GenerateDocuments`)
+- [x] T017 [US1] Implement `StartPlanning` in `backend/app/application/use_cases/planning/start_planning.py` (FR-013, FR-016): only from `draft` or `error`, set `planning`, run `first_pending_stage`
+- [x] T018 [US1] Add `POST /api/projects/{id}/planning` (202, `spawn`) to `backend/app/adapters/inbound/http/planning.py`; wire `StartPlanning`, `RunPlanningStep` and `AdvancePlanning` in `dependencies.py`; include the router in `backend/app/main.py`
+- [x] T019 [US1] Remove `backend/app/application/use_cases/planning/run_planning.py`, its provider and `backend/tests/unit/application/test_run_planning.py` (their assertions move to T011)
+- [ ] T020 [P] [US1] Add `PlanningGateway.start()` and `EventStream` to `frontend/src/application/ports.ts`; implement them in `frontend/src/adapters/http/planningGateway.ts` and `frontend/src/adapters/http/eventStream.ts` (`EventSource`, reconnect + refetch), plus fakes in `frontend/src/adapters/fake/` — handed off to spec 009 (frontend)
+- [ ] T021 [US1] Create `useProjectEvents` and `usePlanning` in `frontend/src/application/use-cases/`, and `PlanningPage` with `StageStepper` (six stages: waiting, working, pending approval, approved, failed) in `frontend/src/ui/`; route `/projects/:id/planning`. Spec 005 adds the proposal cards to this page — handed off to spec 009 (frontend)
 
 **Checkpoint**: with auto-approve, the plan is generated end to end through the API and the stepper shows each agent live
 
@@ -222,13 +222,13 @@ data: {"seq":1520,"type":"agent_started","project_id":12,"agent":"analysis","tit
 
 ### Tests for User Story 2
 
-- [ ] T022 [P] [US2] Validation tests (output differs from a non-auto `requested_methodology` → invalid; fewer than 2 alternatives with `auto` → invalid) in `backend/tests/unit/domain/test_plan_validation.py`
+- [x] T022 [P] [US2] Validation tests (output differs from a non-auto `requested_methodology` → invalid; fewer than 2 alternatives with `auto` → invalid) in `backend/tests/unit/domain/test_plan_validation.py`
 
 ### Implementation for User Story 2
 
-- [ ] T023 [US2] Add `validate_stage_output(stage_key, output, context) -> list[str]` to `backend/app/domain/plan.py`, starting with the methodology rules
-- [ ] T024 [US2] In `RunPlanningStep`, run `validate_stage_output` after the schema check; on issues, retry the stage once passing them as `feedback`, then fail the stage (edge case "wrong format")
-- [ ] T025 [US2] Tighten the `methodology` prompt in `backend/app/adapters/outbound/agents/adk/prompts.py` (respect the requested one, at least two alternatives with `why_not`)
+- [x] T023 [US2] Add `validate_stage_output(stage_key, output, context) -> list[str]` to `backend/app/domain/plan.py`, starting with the methodology rules
+- [x] T024 [US2] In `RunPlanningStep`, run `validate_stage_output` after the schema check; on issues, retry the stage once passing them as `feedback`, then fail the stage (edge case "wrong format")
+- [x] T025 [US2] Tighten the `methodology` prompt in `backend/app/adapters/outbound/agents/adk/prompts.py` (respect the requested one, at least two alternatives with `why_not`)
 
 **Checkpoint**: User Stories 1 and 2 work independently
 
@@ -242,14 +242,14 @@ data: {"seq":1520,"type":"agent_started","project_id":12,"agent":"analysis","tit
 
 ### Tests for User Story 3
 
-- [ ] T026 [P] [US3] Unit tests for `capacity.py` in `backend/tests/unit/domain/test_capacity.py`
-- [ ] T027 [P] [US3] Validation tests for `backlog` (every story in an existing epic) and `sprints` (each story exactly once, assignments to real members, points per iteration ≤ capacity) in `backend/tests/unit/domain/test_plan_validation.py`
+- [x] T026 [P] [US3] Unit tests for `capacity.py` in `backend/tests/unit/domain/test_capacity.py` — already done by spec 003 (in `backend/tests/unit/domain/test_board_rules.py`)
+- [x] T027 [P] [US3] Validation tests for `backlog` (every story in an existing epic) and `sprints` (each story exactly once, assignments to real members, points per iteration ≤ capacity) in `backend/tests/unit/domain/test_plan_validation.py`
 
 ### Implementation for User Story 3
 
-- [ ] T028 [US3] Add a derived `capacity` input to the `sprints` stage in `PLANNING_STAGES` (points per member and per iteration, from `capacity.py` and `sprint_length_weeks`) and build it in `context.py`
-- [ ] T029 [US3] Extend `validate_stage_output` with the backlog and sprints rules (FR-009, FR-010)
-- [ ] T030 [US3] Update the `backlog` and `sprints` prompts to use `capacity` and the exact member names
+- [x] T028 [US3] Add a derived `capacity` input to the `sprints` stage in `PLANNING_STAGES` (points per member and per iteration, from `capacity.py` and `sprint_length_weeks`) and build it in `context.py`
+- [x] T029 [US3] Extend `validate_stage_output` with the backlog and sprints rules (FR-009, FR-010)
+- [x] T030 [US3] Update the `backlog` and `sprints` prompts to use `capacity` and the exact member names
 
 **Checkpoint**: User Stories 1–3 work independently
 
@@ -263,13 +263,13 @@ data: {"seq":1520,"type":"agent_started","project_id":12,"agent":"analysis","tit
 
 ### Tests for User Story 4
 
-- [ ] T031 [P] [US4] `AdvancePlanning` tests: rejected → the same stage runs with `feedback = {reason, rejected_content}`; third consecutive rejection → no rerun and `StageNeedsLeader` published; an approval resets the count, in `backend/tests/unit/application/test_advance_planning.py`
+- [x] T031 [P] [US4] `AdvancePlanning` tests: rejected → the same stage runs with `feedback = {reason, rejected_content}`; third consecutive rejection → no rerun and `StageNeedsLeader` published; an approval resets the count, in `backend/tests/unit/application/test_advance_planning.py`
 
 ### Implementation for User Story 4
 
-- [ ] T032 [US4] Handle rejected proposals in `AdvancePlanning`: count consecutive rejections of that stage key since its last approval; below 3, rerun the stage with `feedback`; otherwise publish `StageNeedsLeader`
-- [ ] T033 [US4] Let `build_stage_context` include an optional `feedback` key and add to `COMMON` in `prompts.py`: "If the context has `feedback`, the leader rejected your previous proposal: fix it following the reason"
-- [ ] T034 [US4] Add `POST /api/projects/{id}/planning/stages/{key}/retry` (202) so the leader can rerun a capped stage; `StageStepper` shows the "needs you" state with a retry button
+- [x] T032 [US4] Handle rejected proposals in `AdvancePlanning`: count consecutive rejections of that stage key since its last approval; below 3, rerun the stage with `feedback`; otherwise publish `StageNeedsLeader` — uses spec 005's `consecutive_rejections` and `MAX_CONSECUTIVE_REJECTIONS`
+- [x] T033 [US4] Let `build_stage_context` include an optional `feedback` key and add to `COMMON` in `prompts.py`: "If the context has `feedback`, the leader rejected your previous proposal: fix it following the reason"
+- [x] T034 [US4] Add `POST /api/projects/{id}/planning/stages/{key}/retry` (202) so the leader can rerun a capped stage; `StageStepper` shows the "needs you" state with a retry button — backend endpoint done; the `StageStepper` part is handed off to spec 009 (frontend)
 
 **Checkpoint**: User Stories 1–4 work independently
 
@@ -283,12 +283,12 @@ data: {"seq":1520,"type":"agent_started","project_id":12,"agent":"analysis","tit
 
 ### Tests for User Story 5
 
-- [ ] T035 [P] [US5] Tests: agent exception → `project.status = error`, `PlanFailed(agent, error)` published; restart from `error` runs only the first unapproved stage, in `backend/tests/unit/application/test_run_planning_step.py` and `test_start_planning.py`
+- [x] T035 [P] [US5] Tests: agent exception → `project.status = error`, `PlanFailed(agent, error)` published; restart from `error` runs only the first unapproved stage, in `backend/tests/unit/application/test_run_planning_step.py` and `test_start_planning.py`
 
 ### Implementation for User Story 5
 
-- [ ] T036 [US5] Catch agent and validation failures in `RunPlanningStep` after the retry: set `error`, publish `PlanFailed`, commit
-- [ ] T037 [US5] Show the failed stage and a "Retry" button in `StageStepper` (calls `PlanningGateway.start()`)
+- [x] T036 [US5] Catch agent and validation failures in `RunPlanningStep` after the retry: set `error`, publish `PlanFailed`, commit
+- [ ] T037 [US5] Show the failed stage and a "Retry" button in `StageStepper` (calls `PlanningGateway.start()`) — handed off to spec 009 (frontend)
 
 **Checkpoint**: all user stories work independently
 
@@ -296,9 +296,9 @@ data: {"seq":1520,"type":"agent_started","project_id":12,"agent":"analysis","tit
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T038 [P] Check that the mock run (`MOCK_AGENTS=1`) covers the whole demo: project → plan → board (SC-006)
-- [ ] T039 [P] Log stage duration and retries in `RunPlanningStep` to check SC-001 against Gemini
-- [ ] T040 Update `plan/use-cases.md` (UC-03) if the implementation drifted, and the README TODO list
+- [x] T038 [P] Check that the mock run (`MOCK_AGENTS=1`) covers the whole demo: project → plan → board (SC-006)
+- [x] T039 [P] Log stage duration and retries in `RunPlanningStep` to check SC-001 against Gemini
+- [x] T040 Update `plan/use-cases.md` (UC-03) if the implementation drifted, and the README TODO list
 
 ---
 
@@ -338,3 +338,14 @@ data: {"seq":1520,"type":"agent_started","project_id":12,"agent":"analysis","tit
 - Each user story is independently completable and testable
 - Commit after each task or logical group, and check the box here
 - Avoid: vague tasks, editing the same file from two parallel tasks, cross-story dependencies that break independence
+
+### Implementation notes (backend)
+
+- The pipeline is wired once at startup by `wire_planning()` in `dependencies.py` (called from `main.py`), because its pieces call each other: `RunPlanningStep` → spec 005's `AutoApprove` → `ApplyProposal` → `AdvancePlanning` → `RunPlanningStep`. It registers `AdvancePlanning.on_proposal_resolved` as the `plan_stage` applier (decided and rejected) and spec 003's `ApplyPlan` as the first `on_plan_completed` handler. `app.state.on_plan_completed` is a plain list: spec 006 appends `GenerateDocuments` to it.
+- `AdvancePlanning` only acts while the project is `planning`; a stage decision on a draft or ready project changes nothing. It doesn't set the project `ready`: `ApplyPlan` does when the board is built, so a failed `ApplyPlan` can be retried through spec 005's `POST /api/proposals/{id}/apply` on the sprints proposal.
+- The retry after an invalid output or an agent failure reuses the `feedback` shape (`{reason, rejected_content}`); when the stage was already being redone after a rejection, the leader's reason is kept in front of the issues.
+- Capacity rule exception: an iteration with a single story bigger than `points_per_sprint` is valid (an approved story can't be split by the sprint planner). Kanban has no capacity check (continuous board, spec 003).
+- `capacity.points_per_sprint` uses `project.sprint_capacity_override` when the leader set one, like the board.
+- `StartPlanning` from `error`: if the first unapproved stage already has a `pending` proposal, it only sets `planning` (no agent run, the 202 body is the same); if its newest proposal is `rejected`, the stage reruns with that rejection as `feedback`. `RetryStage` sets `planning` back if the project was in `error`.
+- The mock agents fit the sample plan to the context (requested methodology, roadmap epics, capacity packing, assignment by role), so the demo passes the consistency rules with any team. `MOCK_AGENTS_DELAY` (default 0.8 s) sets their delay; tests use 0.
+- `PlanFailed.error` never carries the raw exception: "The <agent> didn't return a valid result…" or the list of broken rules.

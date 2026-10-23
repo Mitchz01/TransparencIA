@@ -1,7 +1,7 @@
 # Feature Specification: 002 · Agent planning pipeline
 
 **Created**: 2026-10-23  
-**Status**: Draft  
+**Status**: Approved  
 **Owner**: Mitchz01  
 **Reviewer**: sandredev  
 **Use cases**: UC-03 ([plan/use-cases.md](../../plan/use-cases.md))  

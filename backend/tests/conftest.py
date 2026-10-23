@@ -6,6 +6,7 @@ _DB_DIR = tempfile.mkdtemp(prefix="agile-tests-")
 os.environ["DATABASE_URL"] = f"sqlite:///{_DB_DIR}/test.db"
 os.environ.setdefault("MOCK_AGENTS", "1")
 os.environ.setdefault("MOCK_GITHUB", "1")  # spec 007: tests never call the real GitHub API
+os.environ.setdefault("MOCK_AGENTS_DELAY", "0")
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

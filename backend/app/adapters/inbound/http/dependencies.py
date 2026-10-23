@@ -20,8 +20,11 @@ from app.application.use_cases.board.move_task import MoveTask
 from app.application.use_cases.board.set_capacity import SetCapacity
 from app.application.use_cases.board.update_checklist import UpdateChecklist
 from app.application.use_cases.board.update_task import UpdateTask
+from app.application.use_cases.planning.advance_planning import AdvancePlanning, PlanCompletedHandler
 from app.application.use_cases.planning.apply_plan import ApplyPlan
-from app.application.use_cases.planning.run_planning import RunPlanning
+from app.application.use_cases.planning.retry_stage import RetryStage
+from app.application.use_cases.planning.run_planning_step import RunPlanningStep
+from app.application.use_cases.planning.start_planning import StartPlanning
 from app.application.use_cases.projects.create_project import CreateProject
 from app.application.use_cases.projects.get_plan_views import GetPlanViews
 from app.application.use_cases.projects.get_project import GetProject
@@ -35,7 +38,12 @@ from app.application.use_cases.integrations.propose_issues import AfterCreated, 
 from app.application.use_cases.integrations.propose_review import ProposeReview
 from app.application.use_cases.integrations.set_github_username import SetGithubUsername
 from app.application.use_cases.integrations.sync_task_issue import SyncTaskIssue
-from app.application.use_cases.proposals.apply_proposal import ApplyProposal, ProposalAppliers, RetryApply
+from app.application.use_cases.proposals.apply_proposal import (
+    ApplierRegistry,
+    ApplyProposal,
+    ProposalAppliers,
+    RetryApply,
+)
 from app.application.use_cases.proposals.approve_many import ApproveProposals
 from app.application.use_cases.proposals.auto_approve import AutoApprove
 from app.application.use_cases.proposals.list_proposals import GetProposal, ListProposals
@@ -75,10 +83,6 @@ def get_code_host_factory(request: Request) -> CodeHostFactory:
 
 def get_event_bus(request: Request) -> EventBus:
     return request.app.state.event_bus
-
-
-def get_run_planning(agents: PlanningAgents = Depends(get_agents)) -> RunPlanning:
-    return RunPlanning(agents)
 
 
 # ---------- Projects (spec 001) ----------
@@ -300,15 +304,41 @@ def get_set_capacity(uow: UnitOfWork = Depends(get_uow)) -> SetCapacity:
     return SetCapacity(uow)
 
 
-# TODO(spec 002): register ApplyPlan as an `on_plan_completed` handler of AdvancePlanning
-# (plan 003, T012) once AdvancePlanning exists. It isn't registered in spec 005's ApplierRegistry
-# on purpose: a ("plan_stage", "sprints") applier would shadow AdvancePlanning for the last stage,
-# and the approved backlog/sprints only reach project.plan through AdvancePlanning.
-def get_apply_plan(
-    uow_factory: UnitOfWorkFactory = Depends(get_uow_factory),
-    bus: EventBus = Depends(get_event_bus),
-    auto_approve: AutoApprove = Depends(get_auto_approve),
-) -> ApplyPlan:
+# ---------- Planning pipeline (spec 002) ----------
+
+
+def wire_planning(
+    uow_factory: UnitOfWorkFactory,
+    bus: EventBus,
+    agents: PlanningAgents,
+    appliers: ApplierRegistry,
+    on_plan_completed: list[PlanCompletedHandler],
+) -> RunPlanningStep:
+    """Builds the pipeline once, at startup (main.py), because its pieces call each other:
+    RunPlanningStep → AutoApprove → ApplyProposal → AdvancePlanning → RunPlanningStep."""
+    auto_approve = AutoApprove(uow_factory, bus, ApplyProposal(uow_factory, bus, appliers))
+    run_step = RunPlanningStep(uow_factory, agents, bus, auto_approve)
+    advance = AdvancePlanning(uow_factory, bus, run_step, on_plan_completed)
+    # Every resolution of a stage proposal goes to AdvancePlanning (spec 005, "Applying").
+    appliers.register("plan_stage", advance.on_proposal_resolved, on=("decided", "rejected"))
+    # Spec 003 (plan 003, T012): the approved plan becomes the board. It's a plan-completed handler,
+    # not a ("plan_stage", "sprints") applier: that would shadow AdvancePlanning for the last stage,
+    # and the approved backlog/sprints only reach project.plan through AdvancePlanning.
     # Spec 007 (T019): with a repo connected, the new board's tasks are proposed as issues.
     # ApplyPlan already runs in the background, so auto-approve applies in that same job.
-    return ApplyPlan(uow_factory, bus, [ProposePendingIssues(uow_factory, bus, auto_approve.after_created)])
+    # Spec 006 appends GenerateDocuments to the same list.
+    propose_issues = ProposePendingIssues(uow_factory, bus, auto_approve.after_created)
+    on_plan_completed.append(ApplyPlan(uow_factory, bus, [propose_issues]).execute)
+    return run_step
+
+
+def get_run_planning_step(request: Request) -> RunPlanningStep:
+    return request.app.state.run_planning_step
+
+
+def get_start_planning(uow: UnitOfWork = Depends(get_uow)) -> StartPlanning:
+    return StartPlanning(uow)
+
+
+def get_retry_stage(uow: UnitOfWork = Depends(get_uow)) -> RetryStage:
+    return RetryStage(uow)

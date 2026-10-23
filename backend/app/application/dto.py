@@ -249,3 +249,22 @@ class MemberGithubAccess(BaseModel):
     member: Member
     # False = the user can't access the repo (saved with a warning); None = no repo or GitHub unreachable.
     has_access: bool | None
+# ---------- Planning (spec 002) ----------
+
+
+class StageRun(BaseModel):
+    """A stage to run in the background after the request: StartPlanning and RetryStage
+    decide it, the router spawns RunPlanningStep with it."""
+
+    project_id: int
+    stage: str
+    feedback: dict[str, Any] | None = None  # {reason, rejected_content} when redoing a rejection
+    run: bool = True  # False when the stage already has a proposal waiting for the leader
+
+
+class PlanningAccepted(BaseModel):
+    """202 body of POST /planning and POST /planning/stages/{key}/retry."""
+
+    project_id: int
+    status: ProjectStatus = "planning"
+    stage: str
