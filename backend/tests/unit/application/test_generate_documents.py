@@ -1,5 +1,7 @@
 """GenerateDocuments: the writer proposes the documents once the plan is complete (spec 006)."""
 
+import asyncio
+
 from app.adapters.outbound.agents.mock.data import MOCK_PLAN
 from app.domain.plan import document_stage
 from tests.unit.application.document_fixtures import writer
@@ -126,6 +128,81 @@ def test_a_failed_epic_spec_does_not_stop_the_others():
 
     assert w.proposals("epic_spec:EP-1") == [] and len(w.proposals("epic_spec:EP-2")) == 1
     assert w.bus.of_type("documents_generated")[0].missing == ["Spec of EP-1"]
+
+
+# ---------- T029: the epic specs are written concurrently (SC-001) ----------
+
+
+class SlowAgents(ScriptedAgents):
+    """Takes a while on each epic spec and records how many of them run at once; the epics in
+    `failing` always fail, and `delays` lets an epic finish before the ones listed earlier."""
+
+    def __init__(self, failing: tuple[str, ...] = (), delays: dict[str, float] | None = None):
+        super().__init__()
+        self.in_flight = 0
+        self.max_in_flight = 0
+        self.attempts: list[str] = []
+        self._failing = failing
+        self._delays = delays or {}
+
+    async def run_stage(self, stage, context):
+        if stage.key != "epic_spec":
+            return await super().run_stage(stage, context)
+        self.attempts.append(context["epic"]["key"])
+        self.in_flight += 1
+        self.max_in_flight = max(self.max_in_flight, self.in_flight)
+        try:
+            await asyncio.sleep(self._delays.get(context["epic"]["key"], 0.02))
+            if context["epic"]["key"] in self._failing:
+                raise RuntimeError("down")
+            return await super().run_stage(stage, context)
+        finally:
+            self.in_flight -= 1
+
+
+def _epic_keys(w) -> list[str]:
+    return [p.key for p in w.proposals() if p.key.startswith("epic_spec:")]
+
+
+def test_the_epic_specs_run_concurrently_up_to_the_limit():
+    agents = SlowAgents()
+    w = writer(agents, plan={"roadmap": FIVE_EPICS})
+    w.generate._concurrency = 3
+    w.run()
+
+    assert agents.max_in_flight == 3
+    assert _epic_keys(w) == [f"epic_spec:EP-{n}" for n in range(1, 6)]
+    assert len(w.bus.of_type("agent_started")) == len(w.bus.of_type("agent_finished"))
+
+
+def test_the_epic_proposals_keep_the_roadmap_order_whatever_finishes_first():
+    # EP-1 is the slowest and EP-5 the fastest: the proposals still go EP-1 … EP-5.
+    delays = {f"EP-{n}": 0.01 * (6 - n) for n in range(1, 6)}
+    w = writer(SlowAgents(delays=delays), plan={"roadmap": FIVE_EPICS})
+    w.generate._concurrency = 5
+    w.run()
+
+    assert _epic_keys(w) == [f"epic_spec:EP-{n}" for n in range(1, 6)]
+    finished = [e.output["epic_key"] for e in w.bus.of_type("agent_finished") if e.agent == "epic_spec"]
+    assert finished == [f"EP-{n}" for n in range(5, 0, -1)]  # they really ran at once
+
+
+def test_a_failing_epic_does_not_stop_the_concurrent_others():
+    agents = SlowAgents(failing=("EP-3",))
+    w = writer(agents, plan={"roadmap": FIVE_EPICS})
+    w.run()
+
+    assert _epic_keys(w) == [f"epic_spec:EP-{n}" for n in (1, 2, 4, 5)]
+    assert agents.attempts.count("EP-3") == 2  # it got its retry
+    assert w.bus.of_type("documents_generated")[0].missing == ["Spec of EP-3"]
+
+
+def test_a_concurrency_of_one_writes_the_epics_one_at_a_time():
+    agents = SlowAgents()
+    w = writer(agents, plan={"roadmap": FIVE_EPICS})
+    w.generate._concurrency = 1
+    w.run()
+    assert agents.max_in_flight == 1 and len(_epic_keys(w)) == 5
 
 
 # ---------- US3: flow diagrams ----------

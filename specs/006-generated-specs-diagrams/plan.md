@@ -280,7 +280,7 @@ Request headers: `Content-Type: application/json`. A leader edit isn't an agent 
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T029 [P] Check SC-001 against Gemini with a 5-epic project; if it's too slow, run the epic specs concurrently with `asyncio.gather` (each one still a separate proposal) — pending: needs a real Gemini key (tests never call Gemini); the sequential loop stays until it is measured
+- [x] T029 [P] Check SC-001 against Gemini with a 5-epic project; if it's too slow, run the epic specs concurrently with `asyncio.gather` (each one still a separate proposal) — concurrency implemented: `GenerateDocuments` writes the epic specs with `asyncio.gather` under an `asyncio.Semaphore` (`DOCUMENTS_CONCURRENCY`, default 3); each call keeps its events and retry (`run_agent`), a failed epic goes to `DocumentsGenerated.missing`, and the outputs are proposed afterwards one by one in roadmap order (one UnitOfWork at a time). The real Gemini timing is still to be measured with a key: set `GOOGLE_API_KEY` and `MOCK_AGENTS=0`, plan a project whose roadmap has 5 epics, approve the sprints stage, and read the `Documents of project N proposed in X.Xs` log line (plus each `Stage epic_spec done in …` line); compare `DOCUMENTS_CONCURRENCY=1` against the default
 - [x] T030 [P] "Approve all" for a batch of document proposals is part of spec 005's proposal UI; make sure document proposals carry what it needs (kind, epic, title)
 - [x] T031 Update `plan/use-cases.md` (UC-08) if the implementation drifted
 

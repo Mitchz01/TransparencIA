@@ -6,9 +6,15 @@ the flow and architecture diagrams. Each output becomes a
 `document` proposal, so nothing exists as a document until it's approved (FR-002). The agent
 call, its retry and the events are spec 002's (run_agent). A document that still fails after
 its retry isn't proposed: DocumentsGenerated names it in `missing`; the project isn't put in
-`error`, because its plan and board are already done."""
+`error`, because its plan and board are already done.
 
+The epic specs are written concurrently (T029, SC-001): up to `concurrency` agent calls at once,
+each with its own events and retry. The outputs are proposed afterwards, one by one in roadmap
+order, so the proposals keep a deterministic order and only one UnitOfWork writes at a time."""
+
+import asyncio
 import logging
+import time
 from typing import Any
 
 from app.application.ports.agents import PlanningAgents
@@ -45,8 +51,17 @@ def _no_issues(output: dict[str, Any], context: dict[str, Any]) -> list[str]:
 
 
 class GenerateDocuments:
-    def __init__(self, uow_factory: UnitOfWorkFactory, agents: PlanningAgents, bus: EventBus, auto_approve: AutoApprove):
+    def __init__(
+        self,
+        uow_factory: UnitOfWorkFactory,
+        agents: PlanningAgents,
+        bus: EventBus,
+        auto_approve: AutoApprove,
+        concurrency: int = 3,
+    ):
         self._uow_factory = uow_factory
+        # How many epic specs are written at once (config.DOCUMENTS_CONCURRENCY).
+        self._concurrency = max(1, concurrency)
         self._agents = agents
         self._bus = bus
         self._auto_approve = auto_approve
@@ -56,6 +71,7 @@ class GenerateDocuments:
 
     async def execute(self, project_id: int) -> None:
         project, outputs, taken = self._load(project_id)
+        started = time.monotonic()
         proposed = 0
         missing: list[str] = []
 
@@ -65,14 +81,15 @@ class GenerateDocuments:
             else:
                 missing.append("General spec")
 
-        # One spec per roadmap epic, in roadmap order (FR-005); each one is its own proposal.
-        for epic in roadmap_epics(outputs.get("roadmap")):
-            if f"epic_spec:{epic['key']}" in taken:
-                continue
-            if await self._epic_spec(project, outputs, epic):
-                proposed += 1
-            else:
+        # One spec per roadmap epic (FR-005); each one is its own proposal, in roadmap order.
+        epics = [e for e in roadmap_epics(outputs.get("roadmap")) if f"epic_spec:{e['key']}" not in taken]
+        written = await self._epic_specs(project, outputs, epics)
+        for epic, output in zip(epics, written, strict=True):
+            if output is None:
                 missing.append(f"Spec of {epic['key']}")
+                continue
+            await self._propose(project.id, f"epic_spec:{epic['key']}", document_stage("epic_spec"), output)  # type: ignore[arg-type]
+            proposed += 1
 
         # The diagrams come from one call: each one that renders is its own proposal (FR-006).
         if not any(key.startswith("flow_diagram:") for key in taken):
@@ -80,6 +97,8 @@ class GenerateDocuments:
             proposed += diagrams
             missing += broken
 
+        # SC-001 (< 2 min for 5 epics): measured against Gemini from this line (T029).
+        logger.info("Documents of project %s proposed in %.1fs (%d proposed)", project_id, time.monotonic() - started, proposed)
         await self._bus.publish(
             DocumentsGenerated(
                 project_id=project_id,
@@ -172,6 +191,19 @@ class GenerateDocuments:
         context = build_document_context(stage, project, outputs, feedback=feedback)
         return await self._write(project.id, "general_spec", stage, context, "the general spec")  # type: ignore[arg-type]
 
+    async def _epic_specs(
+        self, project: Project, outputs: dict[str, dict[str, Any]], epics: list[dict[str, Any]]
+    ) -> list[dict[str, Any] | None]:
+        """Writes the epics' specs concurrently, at most `concurrency` at once; returns each
+        epic's output (None if it failed) in the epics' order. Nothing is proposed here."""
+        limit = asyncio.Semaphore(self._concurrency)
+
+        async def one(epic: dict[str, Any]) -> dict[str, Any] | None:
+            async with limit:
+                return await self._epic_output(project, outputs, epic)
+
+        return list(await asyncio.gather(*(one(epic) for epic in epics)))
+
     async def _epic_spec(
         self,
         project: Project,
@@ -179,6 +211,19 @@ class GenerateDocuments:
         epic: dict[str, Any],
         feedback: dict[str, Any] | None = None,
     ) -> bool:
+        output = await self._epic_output(project, outputs, epic, feedback)
+        if output is None:
+            return False
+        await self._propose(project.id, f"epic_spec:{epic['key']}", document_stage("epic_spec"), output)  # type: ignore[arg-type]
+        return True
+
+    async def _epic_output(
+        self,
+        project: Project,
+        outputs: dict[str, dict[str, Any]],
+        epic: dict[str, Any],
+        feedback: dict[str, Any] | None = None,
+    ) -> dict[str, Any] | None:
         stage = document_stage("epic_spec")
         context = build_document_context(stage, project, outputs, epic=epic, feedback=feedback)
 
@@ -188,7 +233,7 @@ class GenerateDocuments:
             return []
 
         label = f"the spec of {epic['key']} {epic['title']}"
-        return await self._write(project.id, f"epic_spec:{epic['key']}", stage, context, label, check)  # type: ignore[arg-type]
+        return await self._generate(project.id, f"epic_spec:{epic['key']}", stage, context, label, check)  # type: ignore[arg-type]
 
     async def _diagrams(
         self,
@@ -260,17 +305,33 @@ class GenerateDocuments:
         check: OutputCheck = _no_issues,
     ) -> bool:
         """Runs one document's agent and proposes its output; False if it failed after the retry."""
+        output = await self._generate(project_id, key, stage, context, label, check)
+        if output is None:
+            return False
+        await self._propose(project_id, key, stage, output)
+        return True
+
+    async def _generate(
+        self,
+        project_id: int,
+        key: str,
+        stage: PlanningStage,
+        context: dict[str, Any],
+        label: str,
+        check: OutputCheck = _no_issues,
+    ) -> dict[str, Any] | None:
+        """Runs one document's agent with its events, without proposing it: the valid output,
+        or None if it failed after the retry. Doesn't write, so it can run concurrently."""
         await self._started(project_id, stage, label)
         try:
             output, issues = await run_agent(self._agents, stage, context, check)
         except StageFailed:
-            return False
+            return None
         if issues:
             logger.warning("Document %s still broke its rules after the retry: %s", key, issues)
-            return False
+            return None
         await self._finished(project_id, stage, output, label)
-        await self._propose(project_id, key, stage, output)
-        return True
+        return output
 
     async def _started(self, project_id: int, stage: PlanningStage, label: str) -> None:
         # FR-010: the UI shows live which document is being written.

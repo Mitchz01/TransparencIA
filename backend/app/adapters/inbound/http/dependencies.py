@@ -9,7 +9,7 @@ from sqlmodel import Session
 from app.adapters.inbound.http.background import spawn
 from app.adapters.outbound.persistence.db import engine, get_session
 from app.adapters.outbound.persistence.unit_of_work import SqlUnitOfWork
-from app.config import GITHUB_WEBHOOK_SECRET, GITHUB_WEBHOOK_URL, PUBLIC_BASE_URL
+from app.config import DOCUMENTS_CONCURRENCY, GITHUB_WEBHOOK_SECRET, GITHUB_WEBHOOK_URL, PUBLIC_BASE_URL
 from app.application.ports.agents import PlanningAgents
 from app.application.ports.code_host import CodeHost, CodeHostFactory
 from app.application.ports.event_bus import EventBus
@@ -352,7 +352,7 @@ def wire_documents(
 ) -> GenerateDocuments:
     """Spec 006's writer, once at startup (main.py, after wire_planning so ApplyPlan runs first)."""
     auto_approve = AutoApprove(uow_factory, bus, ApplyProposal(uow_factory, bus, appliers))
-    generate = GenerateDocuments(uow_factory, agents, bus, auto_approve)
+    generate = GenerateDocuments(uow_factory, agents, bus, auto_approve, DOCUMENTS_CONCURRENCY)
     # An approved or adjusted document proposal creates or versions the document; a rejected
     # one is rewritten with the reason, following spec 002's redo rule (spec 005, "Applying").
     appliers.register("document", ApplyDocumentProposal(uow_factory, bus).execute)

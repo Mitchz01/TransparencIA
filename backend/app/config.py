@@ -24,6 +24,8 @@ _has_credentials = bool(
 MOCK_AGENTS = os.getenv("MOCK_AGENTS", "").lower() in ("1", "true") or not _has_credentials
 # Seconds each mock agent "thinks", so the UI shows progress; tests set it to 0.
 MOCK_AGENTS_DELAY = float(os.getenv("MOCK_AGENTS_DELAY", "0.8"))
+# How many epic specs the writer asks Gemini for at once (spec 006, T029).
+DOCUMENTS_CONCURRENCY = max(1, int(os.getenv("DOCUMENTS_CONCURRENCY", "3")))
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
 GITHUB_WEBHOOK_SECRET = os.getenv("GITHUB_WEBHOOK_SECRET", "")
