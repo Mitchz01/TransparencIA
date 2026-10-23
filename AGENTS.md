@@ -14,6 +14,7 @@ Reglas:
 - Si la implementación contradice la spec, se actualiza la spec primero.
 - Respetar [specs/constitution.md](specs/constitution.md).
 - Plantillas en [specs/_templates/](specs/_templates/).
+- Para trabajo de frontend, seguir las skills de [.claude/skills/](.claude/skills/README.md) (diseño visual, composición y rendimiento en React, auditoría de UI).
 
 ## Stack
 
