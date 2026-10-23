@@ -173,11 +173,11 @@ Un miembro filtra el tablero para ver solo sus tarjetas, o por prioridad o épic
 - ¿Qué pasa si el plan referencia una historia que no existe en el backlog? Se ignora y se avisa al líder; no se crea una tarjeta vacía.
 - ¿Qué pasa si hay dos miembros con el mismo nombre? Se asigna por rol, como si el nombre no coincidiera.
 - ¿Qué pasa si se intenta armar el tablero dos veces para el mismo plan? No se duplican tarjetas; volver a planificar es re-planificación (spec 008).
-- ¿Qué pasa si se quita del equipo a un miembro con tareas? Sus tarjetas quedan sin asignar y marcadas para reasignar.
+- ¿Qué pasa si se quita del equipo a un miembro con tareas? Sus tarjetas quedan sin asignar y marcadas para reasignar, y el sistema propone re-planificar (spec 008, FR-010).
 - ¿Qué pasa si dos personas mueven la misma tarjeta a la vez? Queda el último cambio, y ambos lo ven (actividad en vivo, spec 005).
-- ¿Qué pasa si una tarea vinculada a una issue de GitHub se mueve a mano? Se respeta: el tablero es la fuente de verdad. Un evento posterior de GitHub puede volver a moverla (spec 008).
+- ¿Qué pasa si una tarea vinculada a una issue de GitHub se mueve a mano? Se respeta: el tablero es la fuente de verdad. Un evento posterior de GitHub puede volver a moverla, pero nunca la saca de "Hecho" salvo que se reabra la issue (spec 008, FR-004).
 - ¿Qué pasa con una historia sin criterios de aceptación? La tarjeta queda con el checklist vacío.
-- ¿Qué pasa si la metodología elegida es Kanban (sin iteraciones)? El tablero es continuo: todas las tareas en una sola vista, sin selector de sprint ni aviso de capacidad por sprint. Las iteraciones que arma el agente se guardan como **hitos** del roadmap y se pueden usar como filtro.
+- ¿Qué pasa si la metodología elegida es Kanban (sin iteraciones)? El tablero es continuo: todas las tareas en una sola vista, sin selector de sprint ni aviso de capacidad por sprint. Las iteraciones que arma el agente se guardan igual, con su objetivo y sus tareas, pero el tablero no las separa: se muestran como **objetivos** que se pueden usar como filtro y que se cumplen igual que en Scrum (FR-002).
 
 ## Requirements *(mandatory)*
 
@@ -186,7 +186,7 @@ Un miembro filtra el tablero para ver solo sus tarjetas, o por prioridad o épic
 **Armado del tablero (UC-05)**
 
 - **FR-001**: El sistema MUST crear el tablero automáticamente cuando se aprueba la etapa de sprints del plan, manual o por auto-aprobar.
-- **FR-002**: El sistema MUST crear un sprint por cada iteración del plan, con su número, nombre, objetivo y fase del roadmap.
+- **FR-002**: El sistema MUST crear un sprint por cada iteración del plan, con su número, nombre y fase del roadmap, y un **objetivo** formado por la meta de la iteración y sus tareas. El objetivo se cumple cuando todas sus tareas están hechas (lo cierra la spec 008).
 - **FR-003**: El sistema MUST crear una tarea por cada historia del backlog aprobado, sin duplicados ni pérdidas, en el sprint que le asignó el plan.
 - **FR-004**: Cada tarea MUST conservar de la historia: clave (US-n), épica, título, descripción, criterios de aceptación, tipo, puntos y prioridad.
 - **FR-005**: El sistema MUST generar el checklist inicial de cada tarea con un ítem por criterio de aceptación.
@@ -203,14 +203,15 @@ Un miembro filtra el tablero para ver solo sus tarjetas, o por prioridad o épic
 - **FR-013**: Los usuarios MUST poder editar título, descripción, puntos, prioridad y responsable de una tarea.
 - **FR-014**: Los usuarios MUST poder tildar, destildar, agregar, editar y quitar ítems del checklist; la tarjeta MUST mostrar el progreso (tildados sobre total).
 - **FR-015**: Cuando se completa el checklist, el sistema MUST sugerir avanzar la tarjeta, sin moverla solo.
-- **FR-016**: Los usuarios MUST poder cambiar de sprint con un selector, ver el backlog y mover tarjetas entre sprints o al backlog. Si la metodología es Kanban, el tablero MUST ser continuo y las iteraciones se muestran como hitos (ver casos borde).
-- **FR-017**: El sistema MUST mostrar los puntos totales de cada sprint frente a la capacidad del equipo y avisar si hay sobrecarga. La capacidad se estima sola a partir de las horas por semana de cada miembro, su seniority y la duración del sprint; el líder MUST poder reemplazarla por un valor fijo de puntos por sprint (por ejemplo, cuando ya conoce la velocidad real del equipo).
+- **FR-016**: Los usuarios MUST poder cambiar de sprint con un selector, ver el backlog y mover tarjetas entre sprints o al backlog. Si la metodología es Kanban, el tablero MUST ser continuo y las iteraciones se muestran como objetivos (ver casos borde).
+- **FR-017**: El sistema MUST mostrar los puntos totales de cada sprint frente a la capacidad del equipo y avisar si hay sobrecarga. La capacidad se estima sola a partir de las horas por semana de cada miembro, su seniority y la duración del sprint, con la misma regla que usan los agentes para armar los sprints (spec 002, FR-010), para que un plan recién generado nunca aparezca sobrecargado; el líder MUST poder reemplazarla por un valor fijo de puntos por sprint (por ejemplo, cuando ya conoce la velocidad real del equipo).
 - **FR-018**: Los usuarios MUST poder filtrar el tablero por responsable, prioridad y épica.
 - **FR-019**: Cada cambio en el tablero MUST publicarse como actividad del proyecto para que los demás lo vean en vivo (spec 005).
 
 ### Key Entities *(include if feature involves data)*
 
 - **Sprint**: iteración del proyecto. Número, nombre, objetivo y fase del roadmap a la que pertenece. Agrupa tareas.
+- **Objetivo**: la meta de un sprint junto con sus tareas. Se cumple cuando todas están hechas; lo cierra la spec 008. Con Kanban, es lo único que queda visible de cada iteración.
 - **Tarea (tarjeta)**: unidad de trabajo que sale de una historia. Clave, épica, título, descripción, criterios de aceptación, tipo, puntos, prioridad, columna, posición dentro de la columna, sprint (o backlog) y responsable (o rol faltante).
 - **Ítem de checklist**: paso concreto de una tarea. Texto y si está hecho.
 - **Límite WIP**: máximo de tarjetas por columna según la metodología aprobada. Solo genera avisos.
@@ -219,7 +220,8 @@ Un miembro filtra el tablero para ver solo sus tarjetas, o por prioridad o épic
 ### Dependencies
 
 - **005 → 003**: el armado del tablero arranca cuando se aprueba la etapa de sprints. Hay que acordar con sandredev qué datos trae la aprobación (contrato `PlanApplied` en [specs/README.md](../README.md)).
-- **002**: la forma del backlog y de los sprints que generan los agentes.
+- **002**: la forma del backlog y de los sprints que generan los agentes, y la regla de capacidad, que tiene que ser la misma en las dos specs.
+- **008**: cierra los objetivos y propone re-planificar cuando cambia el equipo o un sprint termina con pendientes.
 - **005**: los eventos del tablero que se muestran en la actividad en vivo (contrato 003, 005).
 
 ## Success Criteria *(mandatory)*

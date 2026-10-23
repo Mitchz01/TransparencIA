@@ -73,9 +73,14 @@ Con el tablero armado y el repo conectado, el sistema propone publicar las tarea
    - **Then** solo se publican las tareas que quedaron; las otras pueden publicarse más adelante
 
 4. **Scenario**: Tareas nuevas
-   - **Given** tareas ya publicadas y una tarea nueva creada después
-   - **When** el sistema arma la siguiente propuesta de publicación
-   - **Then** la propuesta incluye solo las tareas sin issue; nunca se publica dos veces la misma tarea
+   - **Given** tareas ya publicadas y tareas nuevas sin issue
+   - **When** se aprueba una re-planificación que agrega tareas (spec 008), o el líder pide "Publicar tareas pendientes"
+   - **Then** aparece una propuesta que incluye solo las tareas sin issue; nunca se publica dos veces la misma tarea
+
+6. **Scenario**: Tarea descartada
+   - **Given** una tarea publicada como issue #12
+   - **When** se aprueba una re-planificación que la descarta, o el líder la borra
+   - **Then** la issue #12 se cierra como "no planificada", con un comentario que explica el motivo, y eso no marca ninguna tarea como hecha
 
 5. **Scenario**: Falla parcial
    - **Given** GitHub rechaza la creación de algunas issues
@@ -144,7 +149,8 @@ Cuando alguien abre un PR que resuelve una tarea del proyecto, el sistema propon
 - ¿Qué pasa si se edita una tarea ya publicada (título, descripción, criterios, checklist, responsable)? La issue se actualiza sola, sin propuesta: publicarla ya se aprobó, la issue es un espejo de la tarea, y el cambio lo hizo una persona, no un agente. Queda registrado en la actividad.
 - ¿Qué pasa si alguien edita la issue directamente en GitHub? No se toca la tarea; desde GitHub solo entran cambios de estado (spec 008).
 - ¿Qué pasa si la issue se borra en GitHub? La tarjeta muestra el link como roto y la tarea vuelve a poder publicarse.
-- ¿Qué pasa si el autor del PR es el único miembro con ese rol? Se sugiere al líder como revisor.
+- ¿Qué pasa si el autor del PR es el único miembro con ese rol? Se sugiere al miembro con usuario de GitHub que tenga menos reviews pendientes, aunque sea de otro rol, y se lo justifica. Si no hay nadie más con usuario de GitHub, la propuesta sale sin revisores, solo con el comentario del agente, y el líder puede agregarlos.
+- ¿Qué pasa con los avisos que GitHub manda por cambios que hizo el propio sistema (crear, editar o cerrar una issue)? Se ignoran: no vuelven a entrar como avance (spec 008). Por ejemplo, cerrar la issue de una tarea descartada nunca la marca como hecha.
 - ¿Qué pasa si el PR es muy grande para revisar entero? El agente revisa lo que alcanza y lo dice explícitamente en el comentario.
 - ¿Qué pasa si GitHub no responde o limita las llamadas? La acción queda pendiente y se reintenta; el líder ve que está demorada.
 - ¿Qué pasa si se abren varios PRs para la misma tarea? Se propone revisión para cada uno.
@@ -164,7 +170,7 @@ Cuando alguien abre un PR que resuelve una tarea del proyecto, el sistema propon
 
 **Publicación de issues (UC-10)**
 
-- **FR-006**: Con tablero y repo, el sistema MUST proponer la publicación de todas las tareas que todavía no tienen issue.
+- **FR-006**: Con tablero y repo, el sistema MUST proponer la publicación de todas las tareas que todavía no tienen issue en tres momentos: cuando se tienen ambos por primera vez, cuando se aprueba una re-planificación que agrega tareas (spec 008) y cuando el líder lo pide. Crear una tarea a mano no genera una propuesta por sí sola, para no llenar al líder de propuestas.
 - **FR-007**: El líder MUST poder quitar tareas de la propuesta antes de aprobarla.
 - **FR-008**: Al aprobarse, el sistema MUST crear una issue por tarea con título, descripción, criterios de aceptación, checklist como lista de tareas, etiquetas de tipo y prioridad, y el responsable si tiene usuario de GitHub.
 - **FR-009**: Cada tarjeta publicada MUST mostrar el número y el link de su issue.
@@ -187,8 +193,10 @@ Cuando alguien abre un PR que resuelve una tarea del proyecto, el sistema propon
 **Transversales**
 
 - **FR-019**: Toda escritura nueva en GitHub (crear issues, pedir reviews, comentar) MUST pasar por una propuesta aprobada, manual o por auto-aprobar (spec 005).
-- **FR-021**: Cuando se edita una tarea ya publicada, el sistema MUST actualizar su issue sin propuesta (título, descripción, criterios, checklist y responsable), porque la publicación ya fue aprobada y el cambio lo hizo una persona.
 - **FR-020**: Cada acción hecha en GitHub MUST quedar registrada en la actividad del proyecto: qué, cuándo y qué propuesta la autorizó.
+- **FR-021**: Cuando se edita una tarea ya publicada, el sistema MUST actualizar su issue sin propuesta (título, descripción, criterios, checklist y responsable), porque la publicación ya fue aprobada y el cambio lo hizo una persona (o una re-planificación aprobada).
+- **FR-022**: Cuando una tarea publicada se descarta en una re-planificación aprobada (spec 008) o se borra, el sistema MUST cerrar su issue como "no planificada", con un comentario que explique el motivo.
+- **FR-023**: El sistema MUST reconocer los cambios que él mismo hizo en GitHub, para que no vuelvan a entrar como avance del equipo (spec 008, FR-015).
 
 ### Key Entities *(include if feature involves data)*
 
@@ -204,7 +212,7 @@ Cuando alguien abre un PR que resuelve una tarea del proyecto, el sistema propon
 - **003**: las tareas que se publican salen del tablero.
 - **005**: todas las escrituras en GitHub son propuestas con aprobación.
 - **001**: el usuario de GitHub es un dato del miembro; hay que acordar con sandredev si se carga al crear el equipo o solo en Integraciones.
-- **007 → 008**: qué eventos de GitHub llegan y cómo mueven las tareas lo define la 008; esta spec solo usa el evento "PR abierto" para la revisión (contrato en [specs/README.md](../README.md)).
+- **007 → 008**: qué eventos de GitHub llegan y cómo mueven las tareas lo define la 008; esta spec solo usa el evento "PR abierto" para la revisión (contrato en [specs/README.md](../README.md)). Las dos specs comparten una regla: los cambios que hizo el propio sistema en GitHub no vuelven como avance (FR-023 acá, FR-015 en la 008).
 
 ## Success Criteria *(mandatory)*
 
