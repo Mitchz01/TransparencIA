@@ -1,7 +1,7 @@
 # Feature Specification: 012 · Visual plan views
 
 **Created**: 2026-10-23  
-**Status**: Draft  
+**Status**: Approved  
 **Owner**: Mitchz01  
 **Reviewer**: codigotpx  
 **Use cases**: UC-07 ([plan/use-cases.md](../../plan/use-cases.md))  

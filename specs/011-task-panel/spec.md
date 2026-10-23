@@ -1,7 +1,7 @@
 # Feature Specification: 011 · Compact task panel
 
 **Created**: 2026-10-23  
-**Status**: Draft  
+**Status**: Approved  
 **Owner**: Mitchz01  
 **Reviewer**: codigotpx  
 **Use cases**: UC-08 to UC-10 ([plan/use-cases.md](../../plan/use-cases.md))  

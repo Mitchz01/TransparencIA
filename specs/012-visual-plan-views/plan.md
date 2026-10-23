@@ -2,7 +2,7 @@
 
 **Date**: 2026-10-23  
 **Spec**: [spec.md](spec.md)  
-**Status**: Draft
+**Status**: Approved
 
 ## Summary
 
