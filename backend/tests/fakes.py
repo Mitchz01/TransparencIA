@@ -7,6 +7,7 @@ from itertools import count
 from typing import Any, Self
 
 from app.adapters.outbound.code_host.fake import FakeCodeHost
+from app.application.ports.code_host import OnRetry
 from app.domain.board import Objective, Sprint, Task
 from app.domain.documents import Document, DocumentVersion
 from app.domain.errors import ProposalAlreadyResolved
@@ -287,9 +288,11 @@ class CodeHosts:
     def __init__(self, host: FakeCodeHost | None = None):
         self.host = host or FakeCodeHost()
         self.tokens: list[str | None] = []
+        self.on_retry: OnRetry | None = None  # the last one handed in
 
-    def __call__(self, token: str | None) -> FakeCodeHost:
+    def __call__(self, token: str | None, on_retry: OnRetry | None = None) -> FakeCodeHost:
         self.tokens.append(token)
+        self.on_retry = on_retry
         return self.host
 
 

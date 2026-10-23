@@ -205,3 +205,15 @@ def test_auto_approve_applies_the_review_through_the_registry():
     stored = uow.factory()().proposals.get(proposal.id)
     assert stored.auto_approved and not stored.apply_failed
     assert len(hosts.host.called("comment_on_pull_request")) == 1
+
+
+def test_github_retries_while_applying_show_the_review_delayed():
+    uow, _, _, bus, hosts, agent = _setup()
+    proposal = _propose(uow, bus, hosts, agent)
+    _approve(uow, proposal.id)
+    run(ApplyReview(uow.factory(), bus, hosts).execute(proposal.id))
+
+    run(hosts.on_retry(1, 0.5))  # what the GitHub client calls before waiting to retry (T034)
+    [event] = bus.of_type("github_action_delayed")
+    assert (event.proposal_id, event.attempt, event.retry_in_seconds) == (proposal.id, 1, 0.5)
+    assert "requesting the review" in event.summary

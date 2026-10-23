@@ -25,7 +25,7 @@ from app.adapters.outbound.persistence.db import create_db
 from app.domain.board import Task
 from app.domain.events import DomainEvent, SprintClosed, TeamChanged
 from app.application.ports.agents import PlanningAgents
-from app.application.ports.code_host import CodeHost, CodeHostFactory
+from app.application.ports.code_host import CodeHost, CodeHostFactory, OnRetry
 from app.config import (
     CORS_ORIGINS,
     ENV,
@@ -53,13 +53,13 @@ def build_code_host_factory(fake: CodeHost) -> CodeHostFactory:
     """Per project (spec 007, FR-004/FR-005): its own token, else the installation's
     GITHUB_TOKEN, else `fake` (test mode). One shared fake keeps the demo's records together."""
 
-    def for_token(project_token: str | None) -> CodeHost:
+    def for_token(project_token: str | None, on_retry: OnRetry | None = None) -> CodeHost:
         token = project_token or GITHUB_TOKEN
         if MOCK_GITHUB_FORCED or not token:
             return fake
         from app.adapters.outbound.code_host.github.code_host import GitHubCodeHost
 
-        return GitHubCodeHost(token)
+        return GitHubCodeHost(token, on_retry=on_retry)
 
     return for_token
 

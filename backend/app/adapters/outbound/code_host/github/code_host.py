@@ -3,6 +3,7 @@
 from typing import Literal
 
 from app.adapters.outbound.code_host.github.client import GitHubClient, GitHubError
+from app.application.ports.code_host import OnRetry
 from app.domain.integrations import IssueRef, PullRequestRef, RepoAccess, closing_refs
 
 # GitHub roles that can create issues with labels/assignees, comment and request reviews.
@@ -14,8 +15,8 @@ GONE = (404, 410)  # the issue was deleted (410) or can't be found anymore (404)
 class GitHubCodeHost:
     mode: Literal["github", "test"] = "github"
 
-    def __init__(self, token: str, client: GitHubClient | None = None):
-        self._client = client or GitHubClient(token)
+    def __init__(self, token: str, client: GitHubClient | None = None, on_retry: OnRetry | None = None):
+        self._client = client or GitHubClient(token, on_retry=on_retry)
 
     # ---------- Connection (US1) ----------
 

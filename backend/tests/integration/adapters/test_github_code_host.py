@@ -23,7 +23,7 @@ class FakeGitHub:
         self.requests: list[httpx.Request] = []
         self.sleeps: list[float] = []
 
-    def host(self, retries: int = 2) -> GitHubCodeHost:
+    def host(self, retries: int = 2, on_retry=None) -> GitHubCodeHost:
         async def no_sleep(seconds: float) -> None:
             self.sleeps.append(seconds)
 
@@ -31,7 +31,7 @@ class FakeGitHub:
             self.requests.append(request)
             return self.handler(request)
 
-        client = GitHubClient("tok", transport=httpx.MockTransport(record), retries=retries, sleep=no_sleep)
+        client = GitHubClient("tok", transport=httpx.MockTransport(record), retries=retries, sleep=no_sleep, on_retry=on_retry)
         return GitHubCodeHost("tok", client)
 
     def calls(self) -> list[tuple[str, str]]:
@@ -97,6 +97,35 @@ def test_secondary_rate_limit_waits_retry_after():
     github = FakeGitHub(lambda _: next(answers))
     assert run(github.host().check_access(REPO)).status == "ok"
     assert github.sleeps == [3.0]
+
+
+def test_each_retry_is_announced_before_waiting():
+    answers = iter(
+        [
+            httpx.Response(502),
+            httpx.Response(403, json={"message": "You have exceeded a secondary rate limit"}, headers={"Retry-After": "3"}),
+            httpx.Response(200, json={"html_url": "u", "permissions": {"push": True}}),
+        ]
+    )
+    github = FakeGitHub(lambda _: next(answers))
+    retries: list[tuple[int, float, int]] = []
+
+    async def on_retry(attempt: int, wait: float) -> None:
+        retries.append((attempt, wait, len(github.sleeps)))  # called before the wait
+
+    assert run(github.host(on_retry=on_retry).check_access(REPO)).status == "ok"
+    assert retries == [(1, 0.5, 0), (2, 3.0, 1)] and github.sleeps == [0.5, 3.0]
+
+
+def test_no_retry_no_announcement():
+    retries: list = []
+
+    async def on_retry(attempt: int, wait: float) -> None:
+        retries.append(attempt)
+
+    github = FakeGitHub(answer(404, {"message": "Not Found"}))
+    assert run(github.host(on_retry=on_retry).check_access(REPO)).status == "not_found"
+    assert retries == []
 
 
 def test_timeout_becomes_unavailable():

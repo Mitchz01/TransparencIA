@@ -7,6 +7,7 @@ result, so a retry after a failure doesn't post the comment twice."""
 from app.application.ports.code_host import CodeHostFactory
 from app.application.ports.event_bus import EventBus
 from app.application.ports.unit_of_work import UnitOfWorkFactory
+from app.application.use_cases.integrations.delays import report_delays
 from app.domain.errors import ProposalNotFound, RepositoryNotConnected
 from app.domain.events import EventRef, ReviewRequested
 from app.domain.integrations import OwnWrite, OwnWriteAction, ReviewToRequest, agent_comment
@@ -27,7 +28,8 @@ class ApplyReview:
         content = ReviewToRequest.model_validate(proposal.final_content)
         if project is None or project.repository is None or project.repository.lower() != content.repository.lower():
             raise RepositoryNotConnected(proposal.project_id)
-        host = self._code_hosts(project.github_token)
+        on_retry = report_delays(self._bus, project.id or 0, proposal_id, "requesting the review")
+        host = self._code_hosts(project.github_token, on_retry=on_retry)
         done = dict(proposal.result or {})
         reviewers = [r.github_username for r in content.reviewers]
 

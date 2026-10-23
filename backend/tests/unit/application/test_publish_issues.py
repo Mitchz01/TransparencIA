@@ -1,6 +1,11 @@
 import asyncio
+import json
 
+import httpx
 import pytest
+
+from app.adapters.outbound.code_host.github.client import GitHubClient
+from app.adapters.outbound.code_host.github.code_host import GitHubCodeHost
 
 from app.application.use_cases.integrations.connect_repository import ConnectRepository
 from app.application.use_cases.integrations.propose_issues import ProposeIssues
@@ -247,3 +252,74 @@ def test_failed_publication_is_flagged_on_the_proposal_for_retry():
     run(ApplyProposal(uow.factory(), bus, registry).execute(proposal.id))
     stored = uow.factory()().proposals.get(proposal.id)
     assert stored.apply_failed and stored.apply_error == "1 issue(s) couldn't be created. Retry to publish them."
+
+
+# ---------- T034: "delayed" while GitHub is failing ----------
+
+
+class FlakyGitHub:
+    """A CodeHostFactory whose GitHubCodeHost talks to an httpx.MockTransport: the first
+    `failures` requests fail (502, then a secondary rate limit), the rest create issues."""
+
+    def __init__(self, failures: int = 2):
+        self.failures = failures
+        self.requests: list[httpx.Request] = []
+        self.sleeps: list[float] = []
+
+    def _answer(self, request: httpx.Request) -> httpx.Response:
+        self.requests.append(request)
+        if len(self.requests) == 1 and self.failures >= 1:
+            return httpx.Response(502, json={"message": "Bad gateway"})
+        if len(self.requests) <= self.failures:
+            return httpx.Response(403, json={"message": "You have exceeded a secondary rate limit"}, headers={"Retry-After": "2"})
+        number = len(self.requests)
+        title = json.loads(request.content)["title"]
+        return httpx.Response(201, json={"number": number, "html_url": f"https://github.com/{REPO}/issues/{number}", "title": title})
+
+    def __call__(self, token, on_retry=None) -> GitHubCodeHost:
+        async def no_sleep(seconds: float) -> None:
+            self.sleeps.append(seconds)
+
+        client = GitHubClient("tok", transport=httpx.MockTransport(self._answer), retries=2, sleep=no_sleep, on_retry=on_retry)
+        return GitHubCodeHost("tok", client)
+
+
+def test_github_failing_twice_shows_the_proposal_delayed_then_publishes():
+    uow, pid, bus, _ = _setup(tasks=1, github_token="ghp")
+    github = FlakyGitHub(failures=2)
+    proposal = run(ProposeIssues(uow, bus).execute(pid))
+    _approve(uow, proposal.id)
+
+    run(PublishIssues(uow.factory(), bus, github).execute(proposal.id))
+    uow.rollback()
+
+    delayed = bus.of_type("github_action_delayed")
+    assert [(e.proposal_id, e.attempt, e.retry_in_seconds) for e in delayed] == [(proposal.id, 1, 0.5), (proposal.id, 2, 2.0)]
+    assert delayed[0].ref.kind == "proposal" and delayed[0].ref.id == proposal.id and delayed[0].project_id == pid
+    assert github.sleeps == [0.5, 2.0] and len(github.requests) == 3
+    # The application ended: the issue exists and issues_published closes the "delayed" state.
+    [event] = bus.of_type("issues_published")
+    assert [c.number for c in event.created] == [3] and event.failed == []
+    assert bus.events.index(event) > bus.events.index(delayed[-1])
+    assert [link.number for link in uow.links.list_by_project(pid)] == [3]
+
+
+def test_github_down_for_good_is_delayed_then_reported_failed():
+    uow, pid, bus, _ = _setup(tasks=1)
+    github = FlakyGitHub(failures=99)
+    proposal = run(ProposeIssues(uow, bus).execute(pid))
+    _approve(uow, proposal.id)
+
+    with pytest.raises(IssuesNotPublished):
+        run(PublishIssues(uow.factory(), bus, github).execute(proposal.id))
+    assert len(bus.of_type("github_action_delayed")) == 2
+    [event] = bus.of_type("issues_published")
+    assert event.created == [] and len(event.failed) == 1
+
+
+def test_the_fake_host_is_never_delayed():
+    uow, pid, bus, hosts = _setup()
+    proposal = run(ProposeIssues(uow, bus).execute(pid))
+    _approve(uow, proposal.id)
+    run(PublishIssues(uow.factory(), bus, hosts).execute(proposal.id))
+    assert hosts.on_retry is not None and bus.of_type("github_action_delayed") == []

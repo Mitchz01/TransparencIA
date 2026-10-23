@@ -8,6 +8,7 @@ POST /proposals/{id}/apply) only publishes what's missing: a task never gets two
 from app.application.ports.code_host import CodeHostFactory
 from app.application.ports.event_bus import EventBus
 from app.application.ports.unit_of_work import UnitOfWorkFactory
+from app.application.use_cases.integrations.delays import report_delays
 from app.domain.errors import ProposalNotFound, RepositoryNotConnected
 from app.domain.events import EventRef, FailedIssue, IssuesPublished, PublishedIssue
 from app.domain.integrations import ExternalLink, IssuesToPublish, OwnWrite, issue_body, issue_labels
@@ -32,7 +33,8 @@ class PublishIssues:
         if project is None or project.repository is None:
             raise RepositoryNotConnected(proposal.project_id)
         repository = project.repository  # the connected repo now, even if it changed since proposing
-        host = self._code_hosts(project.github_token)
+        on_retry = report_delays(self._bus, project.id or 0, proposal_id, "publishing the issues")
+        host = self._code_hosts(project.github_token, on_retry=on_retry)
         usernames = {m.id: m.github_username for m in project.members}
         content = IssuesToPublish.model_validate(proposal.final_content)
 

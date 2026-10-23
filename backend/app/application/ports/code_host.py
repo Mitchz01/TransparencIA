@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Literal, Protocol
 
 from app.domain.integrations import IssueRef, PullRequestRef, RepoAccess
@@ -36,6 +36,14 @@ class CodeHost(Protocol):
     async def comment_on_pull_request(self, repository: str, number: int, body: str) -> None: ...
 
 
-# Picks the code host for a project's token (FR-004): the project's token, else the
-# installation's, else FakeCodeHost (test mode). Built in the composition root.
-CodeHostFactory = Callable[[str | None], CodeHost]
+# Called before each retry of a failed GitHub call (5xx, timeout, rate limit; T034) with the
+# retry's number (1 = first retry) and the seconds until it: the use case shows "delayed".
+OnRetry = Callable[[int, float], Awaitable[None]]
+
+
+class CodeHostFactory(Protocol):
+    """Picks the code host for a project's token (FR-004): the project's token, else the
+    installation's, else FakeCodeHost (test mode). Built in the composition root.
+    `on_retry` is told about every retry the host makes while GitHub is failing."""
+
+    def __call__(self, token: str | None, on_retry: OnRetry | None = None) -> CodeHost: ...

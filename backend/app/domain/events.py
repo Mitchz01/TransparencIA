@@ -212,6 +212,18 @@ class ReviewRequested(DomainEvent):
     reviewers: list[str]
 
 
+class GithubActionDelayed(DomainEvent):
+    """GitHub is failing (5xx, timeout, rate limit) while a `github_action` proposal is being
+    applied, and the call will be retried in `retry_in_seconds` (T034). The proposal shows
+    "delayed" until its application ends: issues_published, review_requested or
+    proposal_apply_failed for the same proposal_id."""
+
+    type: Literal["github_action_delayed"] = "github_action_delayed"
+    proposal_id: int
+    attempt: int  # the retry about to be made: 1 = first retry
+    retry_in_seconds: float
+
+
 # ---------- GitHub sync and replanning (spec 008) ----------
 
 

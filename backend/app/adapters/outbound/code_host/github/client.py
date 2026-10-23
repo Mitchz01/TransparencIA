@@ -2,7 +2,9 @@
 
 Error mapping (plan 007, "Calls to GitHub"):
 - timeout, connection error, 5xx, 429 or a secondary rate limit → retried with exponential
-  backoff; if it still fails → CodeHostUnavailable (502 in a request).
+  backoff (or the Retry-After header); `on_retry(retry, wait_seconds)` is awaited before each
+  wait, so the proposal being applied shows "delayed" (T034); if it still fails →
+  CodeHostUnavailable (502 in a request).
 - any other non-2xx → GitHubError with the status, for GitHubCodeHost to interpret."""
 
 import asyncio
@@ -11,6 +13,7 @@ from typing import Any
 
 import httpx
 
+from app.application.ports.code_host import OnRetry
 from app.domain.errors import CodeHostUnavailable
 
 API_URL = "https://api.github.com"
@@ -57,6 +60,7 @@ class GitHubClient:
         retries: int = 3,
         backoff_seconds: float = 0.5,
         sleep: Sleep = asyncio.sleep,
+        on_retry: OnRetry | None = None,
     ):
         self._base_url = base_url
         self._transport = transport  # tests pass an httpx.MockTransport
@@ -64,6 +68,7 @@ class GitHubClient:
         self._retries = retries
         self._backoff = backoff_seconds
         self._sleep = sleep
+        self._on_retry = on_retry
         self._headers = {
             "Authorization": f"Bearer {token}",
             "Accept": "application/vnd.github+json",
@@ -93,7 +98,12 @@ class GitHubClient:
                     raise CodeHostUnavailable(f"GitHub failed with {response.status_code}. Try again in a moment.")
                 retry_after = response.headers.get("retry-after", "")
                 if retry_after.isdigit():
-                    await self._sleep(min(float(retry_after), 60.0))
+                    await self._wait(attempt, min(float(retry_after), 60.0))
                     continue
-            await self._sleep(self._backoff * 2**attempt)
+            await self._wait(attempt, self._backoff * 2**attempt)
         raise AssertionError("unreachable")
+
+    async def _wait(self, attempt: int, seconds: float) -> None:
+        if self._on_retry is not None:
+            await self._on_retry(attempt + 1, seconds)
+        await self._sleep(seconds)

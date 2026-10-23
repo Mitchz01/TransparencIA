@@ -608,6 +608,8 @@ export type DomainEvent = BaseEvent &
     | { type: 'issue_updated'; task_id: number; number: number; broken: boolean } // broken = deleted on GitHub
     | { type: 'issue_closed'; task_id: number; number: number; reason: string } // closed as "not planned"
     | { type: 'review_requested'; proposal_id: number; pr_number: number; reviewers: string[] }
+    // GitHub is failing while a github_action proposal is applied; it retries in retry_in_seconds (attempt 1 = first retry)
+    | { type: 'github_action_delayed'; proposal_id: number; attempt: number; retry_in_seconds: number }
     // spec 008: sync and replanning
     | { type: 'objective_closed'; objective_id: number }
     | { type: 'sprint_closed'; sprint_id: number; pending_task_keys: string[] }
@@ -628,6 +630,7 @@ What to refetch per event:
 | `plan_applied`, `task_status_changed`, `task_updated`, `objective_closed`, `sprint_closed`, `replan_applied` | Board |
 | `documents_generated` | Documents list |
 | `issues_published` | Board (issue badges) and the proposal |
+| `github_action_delayed` | Nothing: show "delayed" (e.g. "GitHub isn't answering, retrying in Ns") on that `proposal_id` until `issues_published`, `review_requested` or `proposal_apply_failed` arrives for it. Not stored on the proposal: after a reload it just shows as applying |
 | `repository_connected`, `repository_disconnected` | Project (Integrations) |
 | `issue_updated`, `issue_closed` | Board (issue badges) |
 
