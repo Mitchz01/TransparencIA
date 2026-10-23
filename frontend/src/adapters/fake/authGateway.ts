@@ -20,7 +20,7 @@ export function fakeAuthGateway(store: FakeStore): AuthGateway {
       if (issues.length) invalid(issues)
       const account: FakeAccount = {
         id: store.id(), email: normalizeEmail(body.email), name: tidy(body.name), role: null, seniority: 'mid', hours_per_week: 20,
-        skills: [], github_username: null, created_at: store.now(), password: body.password,
+        skills: [], github_username: null, avatar_url: null, created_at: store.now(), password: body.password,
       }
       store.accounts.set(account.id, account)
       store.session = account.id
@@ -59,15 +59,17 @@ export function fakeAuthGateway(store: FakeStore): AuthGateway {
         role: body.role === undefined ? account.role : body.role && tidy(body.role) ? tidy(body.role) : null,
         skills: body.skills ? [...new Set(body.skills.map(tidy).filter(Boolean))] : account.skills,
         github_username: body.github_username === undefined ? account.github_username : body.github_username ? cleanGithubUsername(body.github_username) : null,
+        avatar_url: body.avatar_url === undefined ? account.avatar_url : body.avatar_url?.trim() || null,
       }
       store.accounts.set(account.id, updated)
-      // A new name follows you into every project; the rest of the project's data is the leader's call.
-      if (updated.name !== account.name) {
+      // A new name and a new photo follow you into every project; the rest of the project's data is the leader's call.
+      // saveTeam publishes team_changed for the name only: the photo isn't a team change.
+      if (updated.name !== account.name || updated.avatar_url !== account.avatar_url) {
         for (const project of store.projects.values()) {
           const mine = project.members.find((m) => m.account_id === account.id)
           if (!mine) continue
-          const name = uniqueName(updated.name, project.members.filter((m) => m.id !== mine.id).map((m) => m.name))
-          saveTeam(store, project.id, project.members.map((m) => (m.id === mine.id ? { ...m, name } : m)))
+          const name = updated.name === account.name ? mine.name : uniqueName(updated.name, project.members.filter((m) => m.id !== mine.id).map((m) => m.name))
+          saveTeam(store, project.id, project.members.map((m) => (m.id === mine.id ? { ...m, name, avatar_url: updated.avatar_url } : m)))
         }
       }
       return reply(publicAccount(updated))

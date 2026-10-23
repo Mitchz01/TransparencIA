@@ -8,13 +8,13 @@
 
 ## Scope
 
-- **Includes**: accounts (sign up, sign in, sign out) with email and password, and a personal profile (name, what you do, seniority, hours, skills) that is brought into each project you join.
+- **Includes**: accounts (sign up, sign in, sign out) with email and password, and a personal profile (name, photo, what you do, seniority, hours, skills) that is brought into each project you join.
 - **Includes**: inviting people to a project with a link, joining with it, and two permissions per project: **Leader** and **Member**, on top of the team role the agents already use (Frontend, Design…).
 - **Includes**: every project and everything inside it is only visible to its members; leader-only actions are rejected for members.
 - **Includes**: the screens for all of the above (sign in, sign up, profile, join, team), following spec 009 and the design system.
 - **Changes spec 001**: the leader no longer types the team. The creator is the first member (Leader) and everyone else joins with the link. The leader still edits each member's team role, seniority and hours, and removes members. "Team changed" keeps being published on joins, leaves and edits (001, FR-010).
 - **Changes the constitution, principle 5**: "no user auth until it's needed" becomes "accounts with email and password; nothing more until it's needed".
-- **Doesn't include**: signing in with Google, GitHub or SSO (the buttons are shown but only say "Próximamente"), email verification, password reset, sending emails, two-factor auth, deleting an account, organizations or workspaces, and showing who did each action in the activity feed.
+- **Doesn't include**: signing in with Google, GitHub or SSO (the buttons are shown but only say "Próximamente"), uploading a profile photo (only the demo accounts have one; everyone else shows their initials), email verification, password reset, sending emails, two-factor auth, deleting an account, organizations or workspaces, and showing who did each action in the activity feed.
 - **Doesn't include**: moving projects created before this feature to accounts. The demo starts from an empty database.
 
 ## User Scenarios & Testing *(mandatory)*
@@ -255,7 +255,7 @@ On the team screen the leader sees each member with their team role, seniority, 
 - **FR-002**: The system MUST let a person sign in with email and password and keep them signed in on that device for 30 days or until they sign out. A failed sign in MUST NOT say whether the email exists.
 - **FR-003**: The system MUST never store or return passwords in readable form.
 - **FR-004**: Without a valid session, every endpoint MUST be rejected as unauthorized, except signing up, signing in, the invitation preview, health and the GitHub webhook (which keeps its own signature check, spec 007).
-- **FR-005**: Each account MUST have a profile: name, role (optional), seniority (mid by default), hours per week (20 by default), skills (none by default) and GitHub username (optional), with the same limits as a member in spec 001 (FR-004).
+- **FR-005**: Each account MUST have a profile: name, photo (optional, a link to an image; without one the initials are shown), role (optional), seniority (mid by default), hours per week (20 by default), skills (none by default) and GitHub username (optional), with the same limits as a member in spec 001 (FR-004).
 - **FR-006**: Creating a project MUST NOT take a team. The creator MUST become its first member, as Leader, with their profile's data, and a role for this project if their profile has none.
 - **FR-007**: The project list MUST only include the projects the person belongs to, each with their permission. Any project resource of a project they don't belong to MUST answer "not found".
 - **FR-008**: Each project MUST have at most one active invitation link. The leader MUST be able to see it, create a new one (the old one stops working) and turn invitations off.
@@ -263,7 +263,7 @@ On the team screen the leader sees each member with their team role, seniority, 
 - **FR-010**: Joining with a valid link MUST add the person as Member with their profile's role (confirmed or typed when joining), seniority, hours, skills and GitHub username, and publish "team changed" (spec 001, FR-010). Joining a project you already belong to MUST change nothing.
 - **FR-011**: Member names MUST stay unique per project: when a joining person's name clashes, a number is added ("Ana Gómez 2").
 - **FR-012**: Members MUST be allowed only the actions in Story 5's table; any other action MUST be rejected as forbidden without changing anything.
-- **FR-013**: The leader MUST be able to change a member's name, team role, seniority, hours, skills and permission, and remove members. Changes to member data MUST publish "team changed"; permission changes MUST NOT. Profile changes after joining MUST NOT change project data, except the name.
+- **FR-013**: The leader MUST be able to change a member's name, team role, seniority, hours, skills and permission, and remove members. Changes to member data MUST publish "team changed"; permission changes MUST NOT. Profile changes after joining MUST NOT change project data, except the name and the photo. A new photo MUST NOT publish "team changed".
 - **FR-014**: A member MUST be able to leave a project. Leaving or being removed MUST unassign their pending tasks, keep their name on done tasks and end their access to the project, including its live activity.
 - **FR-015**: A project MUST always keep at least one Leader; leaving, removing or demoting the last one MUST be rejected with a clear message.
 - **FR-016**: The sign in screen MUST show "Continuar con Google", "Continuar con GitHub" and "Continuar con SSO", which only say the option is coming soon.
@@ -273,9 +273,9 @@ On the team screen the leader sees each member with their team role, seniority, 
 ### Key Entities *(include if feature involves data)*
 
 - **Account**: a person who uses the app. Email (unique), password (never readable), creation date, and their profile.
-- **Profile**: what a person brings to every project: name, role, seniority, hours per week, skills, GitHub username.
+- **Profile**: what a person brings to every project: name, photo, role, seniority, hours per week, skills, GitHub username.
 - **Session**: a signed in device. Belongs to one account; ends after 30 days or on sign out.
-- **Member** (from spec 001): now linked to one account and with a **permission** (Leader or Member). Its name, role, seniority, hours and skills are a copy of the profile taken when joining, edited by the leader from then on (the name follows the profile).
+- **Member** (from spec 001): now linked to one account and with a **permission** (Leader or Member). Its name, role, seniority, hours and skills are a copy of the profile taken when joining, edited by the leader from then on (the name and the photo follow the profile).
 - **Invitation link**: a project's current link to join. Active or off; creating a new one replaces the previous one.
 
 ### Contracts with other specs

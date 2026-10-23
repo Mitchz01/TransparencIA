@@ -30,7 +30,7 @@ export function fakeProjectGateway(store: FakeStore): ProjectGateway {
         plan: null,
         members: [{
           id: store.id(), name: account.name, role: role!, seniority: account.seniority, hours_per_week: account.hours_per_week,
-          skills: [...account.skills], github_username: account.github_username, account_id: account.id, permission: 'leader',
+          skills: [...account.skills], github_username: account.github_username, avatar_url: account.avatar_url, account_id: account.id, permission: 'leader',
         }],
         created_at: store.now(),
       }

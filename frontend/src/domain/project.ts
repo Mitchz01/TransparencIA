@@ -22,6 +22,7 @@ export interface Member {
   github_username?: string | null // spec 007
   account_id: number | null // spec 015: the account this member is (null only for pre-015 data)
   permission: Permission // spec 015
+  avatar_url?: string | null // spec 015 (FR-005 amended): the account's photo, kept in sync with the profile
 }
 
 export interface Objective {

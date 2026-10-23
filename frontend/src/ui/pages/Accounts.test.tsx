@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { createFakeBackend, FakeStore } from '../../adapters/fake'
@@ -128,5 +128,48 @@ describe('Sign up and profile (spec 015, US1 and US2)', () => {
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/login'))
     expect(backend.store.session).toBeNull()
+  })
+})
+
+describe('My profile (spec 015, US2)', () => {
+  it('shows how the team sees you, following the form as you type, and saves', async () => {
+    const user = userEvent.setup()
+    const backend = createFakeBackend({ store: new FakeStore(), stageDelayMs: 10 })
+    const { router } = renderApp('/profile', backend)
+
+    const card = await screen.findByRole('article', { name: 'Así te ve tu equipo' })
+    expect(card.querySelector('img')).toHaveAttribute('src', '/avatars/ana-gomez.jpg')
+    expect(within(card).getByRole('heading', { name: 'Ana Gómez' })).toBeInTheDocument()
+    expect(within(card).getByText('Backend')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Fullstack' }))
+    const hours = screen.getByRole('textbox', { name: 'Horas por semana' })
+    await user.clear(hours)
+    expect(within(card).getByText('30 h por semana')).toBeInTheDocument() // half-written: keeps the saved value
+    await user.type(hours, '25')
+    expect(within(card).getByText('Fullstack')).toBeInTheDocument()
+    expect(within(card).getByText('25 h por semana')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+    await waitFor(() => expect(router.state.location.pathname).toBe('/'))
+    expect(backend.store.accounts.get(1)).toMatchObject({ role: 'Fullstack', hours_per_week: 25, avatar_url: '/avatars/ana-gomez.jpg' })
+  })
+
+  it('gives the demo people their photos in a demo saved before photos existed', () => {
+    const storage = new Map<string, string>()
+    const fakeStorage = { getItem: (k: string) => storage.get(k) ?? null, setItem: (k: string, v: string) => void storage.set(k, v) } as Storage
+    const old = new FakeStore()
+    for (const account of old.accounts.values()) delete (account as Partial<typeof account>).avatar_url
+    for (const project of old.projects.values()) project.members.forEach((m) => delete m.avatar_url)
+    old.accounts.get(2)!.avatar_url = null // Leo removed his on purpose: it stays removed
+    old.save(fakeStorage)
+
+    const restored = new FakeStore(false)
+    expect(restored.restore(fakeStorage)).toBe(true)
+    expect(restored.accounts.get(1)!.avatar_url).toBe('/avatars/ana-gomez.jpg')
+    expect(restored.accounts.get(2)!.avatar_url).toBeNull()
+    const members = [...restored.projects.values()].flatMap((p) => p.members)
+    expect(members.find((m) => m.name === 'Marta Díaz')!.avatar_url).toBe('/avatars/marta-diaz.jpg')
+    expect(members.filter((m) => m.account_id === 1).every((m) => m.avatar_url === '/avatars/ana-gomez.jpg')).toBe(true)
   })
 })

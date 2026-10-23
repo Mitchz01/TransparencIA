@@ -41,6 +41,8 @@ class Member(BaseModel):
     # what they can do. Changing `permission` isn't a team change (it's not in MEMBER_FIELDS).
     account_id: int | None = None
     permission: Permission = "member"
+    # The account's photo (FR-005): it follows the profile, like the name, but isn't a team change.
+    avatar_url: str | None = None
 
 
 class Project(BaseModel):

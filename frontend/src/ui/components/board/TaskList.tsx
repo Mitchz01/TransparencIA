@@ -30,7 +30,7 @@ function TaskRow({ task, assignee, onOpen }: { task: Task; assignee?: Member; on
         <span className="hidden min-w-0 items-center gap-2 text-caption text-ink-muted sm:flex">
           {assignee ? (
             <>
-              <Avatar name={assignee.name} className="bg-card-inset!" />
+              <Avatar name={assignee.name} src={assignee.avatar_url} className="bg-card-inset!" />
               <span className="truncate">{assignee.name}</span>
             </>
           ) : task.missing_role ? (

@@ -12,6 +12,7 @@ export interface Account {
   hours_per_week: number
   skills: string[]
   github_username: string | null
+  avatar_url: string | null // photo; null = initials. No upload yet: only the demo accounts have one
   created_at: string
 }
 
@@ -26,8 +27,8 @@ export interface SignIn {
   password: string
 }
 
-// Partial; null clears role and github_username. A new name renames you in every project.
-export type ProfileUpdate = Partial<Pick<Account, 'name' | 'role' | 'seniority' | 'hours_per_week' | 'skills' | 'github_username'>>
+// Partial; null clears role, github_username and avatar_url. A new name renames you in every project; a new photo changes it there too.
+export type ProfileUpdate = Partial<Pick<Account, 'name' | 'role' | 'seniority' | 'hours_per_week' | 'skills' | 'github_username' | 'avatar_url'>>
 
 // Partial edit of one member by a leader. Only `permission` changes don't publish team_changed.
 export type MemberUpdate = Partial<Pick<Member, 'name' | 'role' | 'seniority' | 'hours_per_week' | 'skills' | 'permission'>>
@@ -50,7 +51,7 @@ export interface JoinResult {
 
 // ---------- Rules (FR-001, FR-005), mirrored so most errors never reach the server ----------
 
-export const ACCOUNT_LIMITS = { email: 254, password: [8, 128], github: 39 } as const
+export const ACCOUNT_LIMITS = { email: 254, password: [8, 128], github: 39, avatarUrl: 500 } as const
 
 export const PROFILE_DEFAULTS = { seniority: 'mid' as Seniority, hours_per_week: 20 }
 
@@ -98,8 +99,15 @@ export function validateProfile(body: ProfileUpdate): FieldIssue[] {
       issues.push({ field: 'github_username', message: 'Solo letras, números y guiones sueltos, hasta 39.' })
     }
   }
+  if (body.avatar_url?.trim() && !isAvatarUrl(body.avatar_url.trim())) {
+    issues.push({ field: 'avatar_url', message: `Usa un enlace https:// o una ruta que empiece por /, hasta ${ACCOUNT_LIMITS.avatarUrl} caracteres.` })
+  }
   return issues
 }
+
+/** An https link, or a path on the app's own origin (the demo photos); never `//host`. */
+const isAvatarUrl = (url: string) =>
+  url.length <= ACCOUNT_LIMITS.avatarUrl && (url.startsWith('https://') || (url.startsWith('/') && !url.startsWith('//')))
 
 /** A leader's edit of one member: the same limits, and a role is never empty. */
 export function validateMemberUpdate(body: MemberUpdate): FieldIssue[] {

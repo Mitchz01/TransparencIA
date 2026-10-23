@@ -50,7 +50,7 @@ def _joined(uow, project, name="Beto Díaz", **profile):
 
 def test_join_adds_a_member_from_the_profile_and_publishes_team_changed():
     uow, _, project = _setup()
-    beto = account(uow, "Beto Díaz", role="Design", seniority="junior", skills=["Figma"], github_username="beto")
+    beto = account(uow, "Beto Díaz", role="Design", seniority="junior", skills=["Figma"], github_username="beto", avatar_url="/avatars/beto.jpg")
     bus, received = RecordingEventBus(), []
 
     async def handler(event):
@@ -61,7 +61,7 @@ def test_join_adds_a_member_from_the_profile_and_publishes_team_changed():
     assert result.project_id == project.id and result.joined
     member = uow.projects.get(project.id).members[1]
     assert (member.name, member.role, member.seniority, member.hours_per_week, member.skills) == ("Beto Díaz", "Design", "junior", 20, ["Figma"])
-    assert (member.account_id, member.permission, member.github_username) == (beto.id, "member", "beto")
+    assert (member.account_id, member.permission, member.github_username, member.avatar_url) == (beto.id, "member", "beto", "/avatars/beto.jpg")
     [event] = bus.events
     assert event.type == "team_changed" and event.joined == ["Beto Díaz"] and event.summary == "Team changed: Beto Díaz joined"
     assert [e.type for e in received] == ["team_changed"]  # spec 008's drift handler hears it

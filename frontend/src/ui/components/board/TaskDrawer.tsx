@@ -129,7 +129,7 @@ export function TaskDrawer({ projectId, task, members, columns, onClose }: TaskD
             >
               {assignee ? (
                 <span className="flex items-center gap-2 text-ink">
-                  <Avatar name={assignee.name} />
+                  <Avatar name={assignee.name} src={assignee.avatar_url} />
                   {assignee.name}
                 </span>
               ) : task.missing_role ? (

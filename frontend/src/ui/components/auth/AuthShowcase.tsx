@@ -12,7 +12,12 @@ const VOICES = [
   { stage: 'backlog', quote: 'Armo el backlog con criterios de aceptación y reparto el trabajo según las horas de cada persona.' },
 ] as const
 
-const TEAM = ['Ana Gómez', 'Leo Ruiz', 'Marta Díaz']
+// The demo people, with their Pexels portraits from public/avatars/.
+const TEAM = [
+  { name: 'Ana Gómez', photo: '/avatars/ana-gomez.jpg' },
+  { name: 'Leo Ruiz', photo: '/avatars/leo-ruiz.jpg' },
+  { name: 'Marta Díaz', photo: '/avatars/marta-diaz.jpg' },
+]
 
 /** The right half of the sign in screens: what the agents do, and how the team joins. */
 export function AuthShowcase() {
@@ -26,7 +31,6 @@ export function AuthShowcase() {
       as="aside"
       aria-label="Cómo funciona"
       tone="primary-soft"
-      behind="bg"
       notch={{ width: 104, height: 84 }}
       radius={32}
       corner={<ThemeToggle />}
@@ -55,7 +59,6 @@ export function AuthShowcase() {
 
       <NotchedPanel
         tone="surface"
-        behind="primary-soft"
         notch={{ width: 96, height: 92 }}
         radius={28}
         corner={
@@ -70,7 +73,7 @@ export function AuthShowcase() {
         <p className="max-w-sm pr-16 text-body text-ink-muted">Cada persona llega con su perfil y los agentes reparten el trabajo según quién está.</p>
         <div className="mt-2 flex items-center gap-3">
           <span role="img" className="flex -space-x-1" aria-label="Ana Gómez, Leo Ruiz, Marta Díaz y 2 más">
-            {TEAM.map((name) => <Avatar key={name} name={name} className="ring-2 ring-surface" />)}
+            {TEAM.map(({ name, photo }) => <Avatar key={name} name={name} src={photo} className="ring-2 ring-surface" />)}
             <span aria-hidden="true" className="inline-flex size-7 items-center justify-center rounded-pill bg-inverse text-caption font-semibold text-on-inverse ring-2 ring-surface tabular-nums">
               +2
             </span>

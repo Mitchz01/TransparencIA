@@ -30,6 +30,7 @@ EMAIL_MAX = 254
 PASSWORD_RANGE = (8, 128)
 SESSION_DAYS = 30
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+AVATAR_URL_MAX = 500
 
 _ALLOWED: dict[Permission, frozenset[ProjectAction]] = {
     "leader": frozenset({"view", "work", "manage"}),
@@ -52,6 +53,8 @@ class Account(BaseModel):
     hours_per_week: int = 20
     skills: list[str] = []
     github_username: str | None = None
+    # A link to the photo. There is no upload: only the demo accounts have one (FR-005).
+    avatar_url: str | None = None
     created_at: datetime = Field(default_factory=_now)
     # Never serialized, so it can't leak through the API or events (FR-003).
     password_hash: str = Field(default="", exclude=True)
@@ -109,9 +112,21 @@ def signup_errors(name: str, email: str, password: str) -> list[FieldError]:
 
 def normalize_profile(account: Account) -> Account:
     role = normalize_name(account.role) if account.role is not None else None
+    avatar_url = account.avatar_url.strip() if account.avatar_url is not None else None
     return account.model_copy(
-        update={"name": normalize_name(account.name), "role": role or None, "skills": normalize_skills(account.skills)}
+        update={
+            "name": normalize_name(account.name),
+            "role": role or None,
+            "skills": normalize_skills(account.skills),
+            "avatar_url": avatar_url or None,
+        }
     )
+
+
+def _valid_avatar_url(url: str) -> bool:
+    """An https link, or a path on the app's own origin (the demo photos); never `//host`."""
+    local = url.startswith("/") and not url.startswith("//")
+    return len(url) <= AVATAR_URL_MAX and (url.startswith("https://") or local)
 
 
 def validate_profile(account: Account) -> Account:
@@ -127,6 +142,8 @@ def validate_profile(account: Account) -> Account:
     for i, skill in enumerate(account.skills):
         if len(skill) > SKILL_MAX:
             errors.append(FieldError(f"skills[{i}]", f"Max {SKILL_MAX} characters."))
+    if account.avatar_url and not _valid_avatar_url(account.avatar_url):
+        errors.append(FieldError("avatar_url", f"Must be an https:// URL or a path starting with /, max {AVATAR_URL_MAX} characters."))
     try:
         account = account.model_copy(update={"github_username": validate_github_username(account.github_username)})
     except ValidationFailed as error:
@@ -169,6 +186,7 @@ def member_from_profile(account: Account, role: str, permission: Permission, tak
         hours_per_week=account.hours_per_week,
         skills=list(account.skills),
         github_username=account.github_username,
+        avatar_url=account.avatar_url,
         account_id=account.id,
         permission=permission,
     )

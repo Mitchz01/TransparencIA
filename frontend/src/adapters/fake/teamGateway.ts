@@ -120,6 +120,7 @@ export function fakeTeamGateway(store: FakeStore): TeamGateway {
         hours_per_week: account.hours_per_week,
         skills: [...account.skills],
         github_username: account.github_username,
+        avatar_url: account.avatar_url,
         account_id: account.id,
         permission: 'member',
       }

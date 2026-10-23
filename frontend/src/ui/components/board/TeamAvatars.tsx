@@ -19,7 +19,7 @@ export function TeamAvatars({ projectId, members }: { projectId: number; members
     >
       <span className="flex -space-x-1">
         {members.slice(0, SHOWN).map((m) => (
-          <Avatar key={m.id} name={m.name} className="ring-2 ring-bg" />
+          <Avatar key={m.id} name={m.name} src={m.avatar_url} className="ring-2 ring-bg" />
         ))}
         {rest > 0 && (
           <span aria-hidden="true" className="inline-flex size-7 items-center justify-center rounded-pill bg-surface-strong text-caption font-semibold text-ink-muted ring-2 ring-bg tabular-nums">
