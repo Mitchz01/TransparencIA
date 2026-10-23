@@ -6,7 +6,7 @@ from app.domain.events import DomainEvent
 
 
 class InMemoryEventBus:
-    """Una cola por suscriptor y por proyecto. Alcanza para un solo proceso (monolito)."""
+    """One queue per subscriber and per project. Enough for a single process (monolith)."""
 
     def __init__(self) -> None:
         self._queues: dict[int, set[asyncio.Queue[DomainEvent]]] = defaultdict(set)

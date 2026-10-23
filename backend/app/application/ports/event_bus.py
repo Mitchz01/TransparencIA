@@ -8,5 +8,5 @@ class EventBus(Protocol):
     async def publish(self, event: DomainEvent) -> None: ...
 
     def subscribe(self, project_id: int) -> AsyncIterator[DomainEvent]:
-        """Eventos de un proyecto desde que se suscribe (para SSE)."""
+        """A project's events from the moment of subscribing (for SSE)."""
         ...

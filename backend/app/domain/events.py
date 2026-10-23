@@ -1,4 +1,4 @@
-"""Eventos de dominio. Se publican en el EventBus y el adaptador HTTP los manda por SSE."""
+"""Domain events. They're published on the EventBus and the HTTP adapter streams them over SSE."""
 
 from typing import Any, Literal
 

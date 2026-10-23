@@ -1,7 +1,8 @@
-"""Corre las etapas del plan en orden y emite el progreso de cada agente.
+"""Runs the plan stages in order and emits each agent's progress.
 
-Por ahora encadena todas las etapas sin pausa (comportamiento previo a la migración).
-La pausa para aprobar cada etapa como Proposal llega con la spec 005."""
+For now it chains every stage without pausing (pre-migration behavior).
+The pause to approve each stage as a Proposal comes with spec 002
+(StartPlanning + RunPlanningStep)."""
 
 from collections.abc import AsyncIterator
 from typing import Any
@@ -13,7 +14,7 @@ from app.domain.project import Project
 
 
 def _project_context(project: Project) -> dict[str, Any]:
-    """Lo que ven los agentes del proyecto: datos de entrada, sin ids ni estado."""
+    """What the agents see of the project: input data, no ids or status."""
     data = project.model_dump(
         mode="json", include={"name", "description", "duration_weeks", "requested_methodology"}
     )

@@ -1,4 +1,4 @@
-# Feature Specification: 006 · Specs y diagramas generados
+# Feature Specification: 006 · Generated specs and diagrams
 
 **Created**: 2026-10-23  
 **Status**: Draft  
@@ -8,115 +8,115 @@
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 - Spec general del producto (Priority: P1)
+### User Story 1 - General product spec (Priority: P1)
 
-Cuando se aprueba la última etapa del plan (sprints), un agente redactor arma la **spec general del producto**: problema, usuarios, objetivos, alcance, historias principales y criterios de éxito. Lo hace a partir del plan aprobado y la propone al líder como cualquier otra decisión de los agentes.
+When the last stage of the plan (sprints) is approved, a writer agent produces the **general product spec**: problem, users, goals, scope, main stories and success criteria. It builds it from the approved plan and proposes it to the leader like any other agent decision.
 
-**Why this priority**: es el documento que más valor le da al equipo para arrancar, y hace que el producto aplique la misma práctica (specs antes de código) que recomienda.
+**Why this priority**: it's the document that gives the team the most value to get started, and it makes the product apply the same practice (specs before code) that it recommends.
 
-**Independent Test**: aprobar un plan completo y verificar que aparece una propuesta de spec general que se puede leer, aprobar y luego consultar como documento del proyecto.
+**Independent Test**: approve a full plan and verify that a general spec proposal shows up that can be read, approved and later browsed as a project document.
 
 **Acceptance Scenarios**:
 
-1. **Scenario**: Generación al cerrar el plan
-   - **Given** un proyecto al que solo le falta aprobar la etapa de sprints
-   - **When** el líder la aprueba
-   - **Then** se avisa que el redactor está trabajando y aparece una propuesta de spec general
+1. **Scenario**: Generated when the plan closes
+   - **Given** a project that only needs the sprints stage approved
+   - **When** the leader approves it
+   - **Then** the UI shows that the writer is working and a general spec proposal appears
 
-2. **Scenario**: Aprobación crea el documento
-   - **Given** una propuesta de spec general pendiente
-   - **When** el líder la aprueba
-   - **Then** queda un documento "Spec general" en versión 1, visible en el proyecto
+2. **Scenario**: Approval creates the document
+   - **Given** a pending general spec proposal
+   - **When** the leader approves it
+   - **Then** a "General spec" document exists at version 1, visible in the project
 
 ---
 
-### User Story 2 - Specs por épica (Priority: P2)
+### User Story 2 - Specs per epic (Priority: P2)
 
-Además de la general, el redactor arma una spec por cada épica del roadmap. Cada una describe sus historias con criterios de aceptación, casos borde y requisitos, para que quien tome esas tareas tenga el detalle.
+Besides the general one, the writer produces one spec per roadmap epic. Each one describes its stories with acceptance criteria, edge cases and requirements, so whoever picks up those tasks has the detail.
 
-**Why this priority**: es lo que usa el equipo día a día, pero la general ya alcanza para mostrar la funcionalidad.
+**Why this priority**: it's what the team uses day to day, but the general spec is enough to show the feature.
 
-**Independent Test**: con un roadmap de 5 épicas, verificar que se proponen 5 specs y que cada una nombra las historias de su épica.
+**Independent Test**: with a 5-epic roadmap, verify that 5 specs are proposed and that each one names the stories of its epic.
 
 **Acceptance Scenarios**:
 
-1. **Scenario**: Una spec por épica
-   - **Given** un plan aprobado con 5 épicas
-   - **When** termina la generación de specs
-   - **Then** hay 5 propuestas de spec, una por épica, cada una con las historias y los criterios de aceptación de esa épica
+1. **Scenario**: One spec per epic
+   - **Given** an approved plan with 5 epics
+   - **When** spec generation finishes
+   - **Then** there are 5 spec proposals, one per epic, each with that epic's stories and acceptance criteria
 
 ---
 
-### User Story 3 - Diagramas de flujo (Priority: P2)
+### User Story 3 - Flow diagrams (Priority: P2)
 
-El redactor arma diagramas de flujo de los recorridos principales del producto (por ejemplo, alta de usuario o checkout) y un diagrama de la arquitectura aprobada. Los diagramas se ven dibujados dentro de la herramienta y también se pueden copiar a GitHub, donde se ven igual.
+The writer produces flow diagrams for the product's main journeys (for example, sign-up or checkout) and a diagram of the approved architecture. The diagrams are rendered inside the tool and can also be copied to GitHub, where they render the same.
 
-**Why this priority**: tiene mucho impacto visual en la demo, aunque no es imprescindible para trabajar.
+**Why this priority**: it has a big visual impact in the demo, although it isn't essential to work.
 
-**Independent Test**: aprobar el plan, abrir los diagramas propuestos y verificar que todos se dibujan sin errores.
+**Independent Test**: approve the plan, open the proposed diagrams and verify that all of them render without errors.
 
 **Acceptance Scenarios**:
 
-1. **Scenario**: Diagramas válidos
-   - **Given** un plan aprobado
-   - **When** termina la generación de diagramas
-   - **Then** hay al menos un diagrama de arquitectura y uno de flujo por recorrido principal, y todos se dibujan correctamente
+1. **Scenario**: Valid diagrams
+   - **Given** an approved plan
+   - **When** diagram generation finishes
+   - **Then** there's at least one architecture diagram and one flow diagram per main journey, and all of them render correctly
 
 ---
 
-### User Story 4 - Regenerar un documento (Priority: P3)
+### User Story 4 - Regenerate a document (Priority: P3)
 
-El líder puede pedir que se regenere un documento con indicaciones ("agregá el flujo de pagos", "más corto"). El resultado llega como una nueva propuesta y, al aprobarse, queda como nueva versión sin perder la anterior.
+The leader can ask to regenerate a document with instructions ("add the payments flow", "make it shorter"). The result arrives as a new proposal and, once approved, becomes a new version without losing the previous one.
 
-**Why this priority**: mejora la calidad de los documentos con el tiempo, pero no hace falta para la demo.
+**Why this priority**: it improves the documents' quality over time, but the demo doesn't need it.
 
-**Independent Test**: regenerar la spec general con una indicación, aprobarla y verificar que hay una versión 2 y que la versión 1 sigue disponible.
+**Independent Test**: regenerate the general spec with an instruction, approve it and verify that there's a version 2 and that version 1 is still available.
 
 **Acceptance Scenarios**:
 
-1. **Scenario**: Nueva versión
-   - **Given** la spec general en versión 1
-   - **When** el líder pide regenerarla con "agregá el flujo de pagos" y aprueba la propuesta
-   - **Then** la spec general pasa a versión 2 con el flujo de pagos y la versión 1 sigue consultable
+1. **Scenario**: New version
+   - **Given** the general spec at version 1
+   - **When** the leader asks to regenerate it with "add the payments flow" and approves the proposal
+   - **Then** the general spec moves to version 2 with the payments flow and version 1 can still be viewed
 
 ---
 
 ### Edge Cases
 
-- ¿Qué pasa si un diagrama generado no se puede dibujar? Se reintenta la generación una vez; si sigue fallando, no se propone ese diagrama y se avisa cuál faltó.
-- ¿Qué pasa si el roadmap tiene muchas épicas (más de 10)? Se generan igual, una propuesta por épica, y el líder las puede aprobar todas juntas.
-- ¿Qué pasa si se rechaza una spec? Se aplica la misma regla de rechazo que en la spec 002 (FR-011).
-- ¿Qué pasa si el plan cambia después de aprobar los documentos (re-planificación, spec 008)? Los documentos afectados quedan marcados como desactualizados y se ofrece regenerarlos; no se reescriben solos.
-- ¿Qué pasa si el líder edita un documento a mano? La edición se guarda como nueva versión, igual que una regeneración.
+- What if a generated diagram can't be rendered? Generation is retried once; if it still fails, that diagram isn't proposed and the UI says which one is missing.
+- What if the roadmap has many epics (more than 10)? They're generated anyway, one proposal per epic, and the leader can approve them all at once.
+- What if a spec is rejected? The same rejection rule as in spec 002 applies (FR-011).
+- What if the plan changes after the documents are approved (replan, spec 008)? The affected documents are flagged as outdated and regenerating them is offered; they aren't rewritten by themselves.
+- What if the leader edits a document by hand? The edit is saved as a new version, same as a regeneration.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: Al aprobarse la etapa de sprints, el sistema DEBE generar la spec general, las specs por épica y los diagramas, en ese orden.
-- **FR-002**: Cada documento generado DEBE llegar como propuesta y no existir como documento del proyecto hasta que se apruebe (constitución, principio 8). Con auto-aprobar, se aprueba solo.
-- **FR-003**: Los documentos DEBEN armarse solo con la versión final del plan aprobado y los datos del proyecto.
-- **FR-004**: La spec general y las specs por épica DEBEN seguir la misma estructura que las specs de este repo: historias priorizadas con escenarios Dado/Cuando/Entonces, casos borde, requisitos y criterios de éxito.
-- **FR-005**: El sistema DEBE generar una spec por cada épica del roadmap aprobado (no por caso de uso: las épicas ya existen en el plan y agrupan sus historias, así que no hace falta una etapa extra).
-- **FR-006**: Cada diagrama DEBE comprobarse antes de proponerlo; no se propone un diagrama que no se pueda dibujar.
-- **FR-007**: Los documentos DEBEN estar en un formato de texto que se vea igual en la herramienta y en GitHub.
-- **FR-008**: Al aprobar el regenerado de un documento existente, el sistema DEBE crear una nueva versión y conservar las anteriores.
-- **FR-009**: El líder DEBE poder pedir regenerar un documento con indicaciones en texto libre.
-- **FR-010**: El sistema DEBE avisar en vivo qué documento se está generando (como en la spec 002, FR-007).
-- **FR-011**: Si el plan cambia después de aprobar un documento, el sistema DEBE marcar ese documento como desactualizado.
+- **FR-001**: When the sprints stage is approved, the system MUST generate the general spec, the per-epic specs and the diagrams, in that order.
+- **FR-002**: Each generated document MUST arrive as a proposal and not exist as a project document until it's approved (constitution, principle 8). With auto-approve, it's approved by itself.
+- **FR-003**: Documents MUST be built only from the final version of the approved plan and the project data.
+- **FR-004**: The general spec and the per-epic specs MUST follow the same structure as this repo's specs: prioritized stories with Given/When/Then scenarios, edge cases, requirements and success criteria.
+- **FR-005**: The system MUST generate one spec per epic of the approved roadmap (not per use case: the epics already exist in the plan and group their stories, so no extra stage is needed).
+- **FR-006**: Each diagram MUST be checked before it's proposed; a diagram that can't be rendered isn't proposed.
+- **FR-007**: Documents MUST be in a text format that renders the same in the tool and on GitHub.
+- **FR-008**: When the regeneration of an existing document is approved, the system MUST create a new version and keep the previous ones.
+- **FR-009**: The leader MUST be able to ask to regenerate a document with free-text instructions.
+- **FR-010**: The system MUST report live which document is being generated (as in spec 002, FR-007).
+- **FR-011**: If the plan changes after a document is approved, the system MUST flag that document as outdated.
 
 ### Key Entities
 
-- **Documento**: spec general, spec de épica o diagrama de flujo de un proyecto. Tiene tipo, título, contenido, versión y si está desactualizado.
-- **Versión de documento**: cada contenido aprobado de un documento; no se borra.
-- **Propuesta de documento**: un documento (nuevo o una nueva versión) esperando aprobación. Su ciclo de vida lo define la spec 005.
+- **Document**: a project's general spec, epic spec or flow diagram. It has a kind, title, content, version and whether it's outdated.
+- **Document version**: each approved content of a document; it's never deleted.
+- **Document proposal**: a document (new, or a new version) waiting for approval. Its lifecycle is defined by spec 005.
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
-- **SC-001**: Los documentos de un plan de 5 épicas se proponen en menos de 2 minutos desde que se aprueban los sprints.
-- **SC-002**: El 100% de las épicas del roadmap tiene su spec propuesta.
-- **SC-003**: El 100% de los diagramas propuestos se dibuja sin errores en la herramienta y en GitHub.
-- **SC-004**: Regenerar un documento nunca borra una versión anterior.
-- **SC-005**: Un miembro que recién llega al equipo encuentra en la spec de su épica los criterios de aceptación de todas sus tareas, sin preguntar a nadie.
+- **SC-001**: The documents of a 5-epic plan are proposed in under 2 minutes from the moment the sprints are approved.
+- **SC-002**: 100% of the roadmap epics have their spec proposed.
+- **SC-003**: 100% of the proposed diagrams render without errors in the tool and on GitHub.
+- **SC-004**: Regenerating a document never deletes a previous version.
+- **SC-005**: A member who just joined the team finds in their epic's spec the acceptance criteria of all their tasks, without asking anyone.

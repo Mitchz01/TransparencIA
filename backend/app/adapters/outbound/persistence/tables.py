@@ -1,4 +1,4 @@
-"""Tablas SQLModel. Sólo las conoce este adaptador; afuera se usan las entidades de domain/."""
+"""SQLModel tables. Only this adapter knows them; everything else uses the domain/ entities."""
 
 from datetime import datetime, timezone
 from typing import Any

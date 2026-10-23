@@ -1,39 +1,39 @@
 COMMON = (
-    "Sos parte de un equipo de agentes que planifica proyectos de software. "
-    "Respondé en el mismo idioma que la descripción del proyecto. "
-    "Sé concreto y realista con el tamaño y la experiencia del equipo."
+    "You're part of a team of agents that plans software projects. "
+    "Answer in the same language as the project description. "
+    "Be concrete and realistic about the team's size and experience."
 )
 
-# Clave: PlanningStage.key
+# Key: PlanningStage.key
 PROMPTS: dict[str, str] = {
     "analysis": (
-        "Analizá el proyecto: objetivos, alcance (qué entra y qué no), riesgos con "
-        "mitigación, complejidad y qué roles o skills le faltan al equipo."
+        "Analyze the project: goals, scope (what's in and what's out), risks with "
+        "mitigation, complexity, and which roles or skills the team is missing."
     ),
     "methodology": (
-        "Elegí la metodología ágil. Si `requested_methodology` es distinto de 'auto', "
-        "usá esa y explicá cómo adaptarla a este equipo; si es 'auto', elegí la mejor "
-        "según tamaño del equipo, incertidumbre y plazo, y justificá por qué descartaste "
-        "las alternativas. Definí ceremonias, duración de iteración y límites WIP."
+        "Choose the agile methodology. If `requested_methodology` isn't 'auto', "
+        "use that one and explain how to adapt it to this team; if it's 'auto', pick the best "
+        "one for the team size, uncertainty and deadline, and justify why you discarded "
+        "the alternatives. Define ceremonies, iteration length and WIP limits."
     ),
     "architecture": (
-        "Proponé la arquitectura: estilo, componentes, stack por capa y decisiones "
-        "clave (tipo ADR). Priorizá tecnologías que el equipo ya conoce según sus skills."
+        "Propose the architecture: style, components, stack per layer and key "
+        "decisions (ADR-style). Prefer technologies the team already knows from their skills."
     ),
     "roadmap": (
-        "Armá el roadmap por fases (ej: descubrimiento, MVP, beta, lanzamiento) que "
-        "entre en `duration_weeks`. Cada fase tiene objetivo, semanas, entregables y "
-        "épicas con key única (EP-1, EP-2, ...)."
+        "Build the roadmap by phases (e.g. discovery, MVP, beta, launch) that fits "
+        "in `duration_weeks`. Each phase has a goal, weeks, deliverables and "
+        "epics with a unique key (EP-1, EP-2, ...)."
     ),
     "backlog": (
-        "Descomponé cada épica en historias de usuario (US-1, US-2, ...) con criterios "
-        "de aceptación, tipo, story points en Fibonacci, prioridad y el rol del equipo "
-        "más adecuado. Entre 3 y 6 historias por épica."
+        "Break each epic down into user stories (US-1, US-2, ...) with acceptance "
+        "criteria, type, story points in Fibonacci, priority and the team role best "
+        "suited for it. Between 3 and 6 stories per epic."
     ),
     "sprints": (
-        "Repartí las historias en iteraciones de `sprint_length_weeks` respetando el "
-        "orden de las fases y la capacidad del equipo (hours_per_week y seniority). "
-        "Asigná cada historia a un miembro cuyo rol encaje, usando su `name` exacto. "
-        "Toda historia del backlog debe quedar en exactamente una iteración."
+        "Distribute the stories into iterations of `sprint_length_weeks`, following the "
+        "order of the phases and the team's capacity (hours_per_week and seniority). "
+        "Assign each story to a member whose role fits, using their exact `name`. "
+        "Every backlog story must be in exactly one iteration."
     ),
 }

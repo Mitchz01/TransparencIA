@@ -4,8 +4,8 @@ from app.application.ports.repositories import ProjectRepository, SprintReposito
 
 
 class UnitOfWork(Protocol):
-    """Agrupa los repos en una transacción: aplicar un plan escribe proyecto,
-    sprints y tareas, y tiene que ser todo o nada."""
+    """Groups the repos in one transaction: applying a plan writes the project,
+    sprints and tasks, and it has to be all or nothing."""
 
     projects: ProjectRepository
     sprints: SprintRepository

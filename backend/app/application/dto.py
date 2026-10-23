@@ -1,4 +1,4 @@
-"""Entradas y salidas de los casos de uso. El adaptador HTTP las usa como body/response."""
+"""Use case inputs and outputs. The HTTP adapter uses them as body/response."""
 
 from pydantic import BaseModel
 

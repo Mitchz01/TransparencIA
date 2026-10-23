@@ -1,4 +1,4 @@
-# Feature Specification: 005 · Propuestas, aprobación y actividad en vivo
+# Feature Specification: 005 · Proposals, approval and live activity
 
 **Created**: 2026-10-23  
 **Status**: Draft  

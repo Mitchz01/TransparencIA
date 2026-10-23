@@ -1,29 +1,29 @@
-# Skills de frontend
+# Frontend skills
 
-Skills compartidas del equipo para trabajar en `frontend/`. Claude Code las carga solas desde esta carpeta. Usan el formato abierto de Agent Skills (`SKILL.md` + archivos de referencia), así que otros asistentes pueden leerlas como contexto.
+Shared team skills for working on `frontend/`. Claude Code loads them automatically from this folder. They use the open Agent Skills format (`SKILL.md` + reference files), so other assistants can read them as context.
 
-| Skill | Para qué la usamos | Se activa |
+| Skill | What we use it for | When it kicks in |
 |---|---|---|
-| [frontend-design](frontend-design/SKILL.md) | Dirección visual propia para la demo (paleta, tipografía, layout) y evitar el look genérico de IA | Al crear o rediseñar pantallas |
-| [vercel-composition-patterns](composition-patterns/SKILL.md) | API de componentes: compound components, variantes explícitas, contexto, cambios de React 19 | Al diseñar componentes reutilizables (tarjetas, columnas, formularios) |
-| [vercel-react-best-practices](react-best-practices/SKILL.md) | Rendimiento: re-renders, bundle, fetching del cliente. Clave para el kanban con dnd-kit | Al escribir o revisar componentes React |
-| [web-design-guidelines](web-design-guidelines/SKILL.md) | Auditoría de UI (accesibilidad, foco, formularios, animación) con hallazgos `archivo:línea` | A pedido: `/web-design-guidelines frontend/src/**/*.tsx` |
+| [frontend-design](frontend-design/SKILL.md) | Our own visual direction for the demo (palette, typography, layout) and avoiding the generic AI look | When creating or redesigning screens |
+| [vercel-composition-patterns](composition-patterns/SKILL.md) | Component APIs: compound components, explicit variants, context, React 19 changes | When designing reusable components (cards, columns, forms) |
+| [vercel-react-best-practices](react-best-practices/SKILL.md) | Performance: re-renders, bundle, client fetching. Key for the kanban with dnd-kit | When writing or reviewing React components |
+| [web-design-guidelines](web-design-guidelines/SKILL.md) | UI audit (accessibility, focus, forms, animation) with `file:line` findings | On demand: `/web-design-guidelines frontend/src/**/*.tsx` |
 
-## Notas de uso
+## Usage notes
 
-- **react-best-practices** también trae reglas de Next.js y SSR (`server-*`, hidratación, `next/dynamic`). Nuestro front es un SPA con Vite, así que esas no aplican.
-- **web-design-guidelines** baja las reglas en cada revisión desde `vercel-labs/web-interface-guidelines`. Necesita red, y las reglas pueden cambiar entre una corrida y otra.
-- **frontend-design** pide confirmar el tema y armar un plan de tokens (colores, tipografía, layout) antes de escribir código. Conviene guardar ese plan en la spec 003 o 004 para que todo el equipo use la misma dirección visual.
+- **react-best-practices** also includes Next.js and SSR rules (`server-*`, hydration, `next/dynamic`). Our frontend is a Vite SPA, so those don't apply.
+- **web-design-guidelines** downloads its rules from `vercel-labs/web-interface-guidelines` on every review. It needs network access, and the rules can change between runs.
+- **frontend-design** asks to confirm the theme and build a token plan (colors, typography, layout) before writing code. Save that plan in spec 003 or 004 so the whole team uses the same visual direction.
 
-## Origen y licencias
+## Origin and licenses
 
-Copiadas sin modificaciones. Para actualizarlas, se vuelven a bajar del mismo path.
+Copied without changes. To update them, download them again from the same path.
 
-| Skill | Fuente | Commit | Licencia |
+| Skill | Source | Commit | License |
 |---|---|---|---|
 | frontend-design | [anthropics/skills](https://github.com/anthropics/skills/tree/main/skills/frontend-design) | `dbd4588` | Apache 2.0 ([LICENSE.txt](frontend-design/LICENSE.txt)) |
 | composition-patterns | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills/tree/main/skills/composition-patterns) | `063bee9` | MIT |
 | react-best-practices | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills/tree/main/skills/react-best-practices) | `063bee9` | MIT |
 | web-design-guidelines | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills/tree/main/skills/web-design-guidelines) | `063bee9` | MIT |
 
-Antes de agregar otra skill de terceros: leer su `SKILL.md` y todos sus archivos, revisar si trae scripts o pide herramientas (`allowed-tools`) y confirmar la licencia.
+Before adding another third-party skill: read its `SKILL.md` and all its files, check whether it ships scripts or asks for tools (`allowed-tools`), and confirm the license.

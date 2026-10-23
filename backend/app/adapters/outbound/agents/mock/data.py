@@ -1,5 +1,5 @@
-"""Plan de ejemplo para correr sin API key (MOCK_AGENTS=1).
-Respeta los mismos esquemas que devuelven los agentes reales."""
+"""Sample plan to run without an API key (MOCK_AGENTS=1).
+It follows the same schemas the real agents return."""
 
 from app.domain import plan as schemas
 
@@ -9,8 +9,8 @@ def _story(key, epic, title, points, role, priority="medium", type_="feature"):
         "key": key,
         "epic_key": epic,
         "title": title,
-        "description": f"Como usuario quiero {title.lower()} para avanzar con el producto.",
-        "acceptance_criteria": ["Funciona en desktop y mobile", "Tiene tests básicos"],
+        "description": f"As a user I want to {title.lower()} to move the product forward.",
+        "acceptance_criteria": ["Works on desktop and mobile", "Has basic tests"],
         "type": type_,
         "points": points,
         "priority": priority,
@@ -20,129 +20,129 @@ def _story(key, epic, title, points, role, priority="medium", type_="feature"):
 
 MOCK_PLAN = {
     "analysis": {
-        "summary": "Plataforma web para gestionar proyectos con planificación asistida por IA.",
-        "goals": ["Tener un MVP demostrable", "Validar con 3 equipos reales"],
-        "in_scope": ["Alta de proyectos y equipo", "Tablero kanban", "Roadmap por fases"],
-        "out_of_scope": ["Facturación", "App mobile nativa"],
+        "summary": "Web platform to manage projects with AI-assisted planning.",
+        "goals": ["Have a demoable MVP", "Validate it with 3 real teams"],
+        "in_scope": ["Project and team setup", "Kanban board", "Phased roadmap"],
+        "out_of_scope": ["Billing", "Native mobile app"],
         "risks": [
             {
-                "description": "Respuestas del LLM inconsistentes",
+                "description": "Inconsistent LLM answers",
                 "impact": "high",
-                "mitigation": "Usar salidas estructuradas con esquema",
+                "mitigation": "Use structured outputs with a schema",
             },
             {
-                "description": "Poco tiempo para el front",
+                "description": "Little time for the frontend",
                 "impact": "medium",
-                "mitigation": "Usar componentes prearmados",
+                "mitigation": "Use ready-made components",
             },
         ],
         "complexity": "medium",
-        "team_gaps": ["Diseño UX"],
+        "team_gaps": ["UX design"],
     },
     "methodology": {
         "methodology": "scrumban",
-        "rationale": "Equipo chico con alta incertidumbre: iteraciones cortas con flujo continuo y límites WIP.",
+        "rationale": "Small team with high uncertainty: short iterations with continuous flow and WIP limits.",
         "sprint_length_weeks": 2,
         "ceremonies": [
-            {"name": "Daily", "frequency": "Diaria, 15 min", "purpose": "Sincronizar y destrabar"},
-            {"name": "Planning", "frequency": "Cada 2 semanas", "purpose": "Elegir el trabajo de la iteración"},
-            {"name": "Retro", "frequency": "Cada 2 semanas", "purpose": "Mejorar el proceso"},
+            {"name": "Daily", "frequency": "Daily, 15 min", "purpose": "Sync up and unblock"},
+            {"name": "Planning", "frequency": "Every 2 weeks", "purpose": "Pick the iteration's work"},
+            {"name": "Retro", "frequency": "Every 2 weeks", "purpose": "Improve the process"},
         ],
         "wip_limits": [
             {"column": "in_progress", "limit": 3},
             {"column": "review", "limit": 2},
         ],
         "alternatives": [
-            {"methodology": "scrum", "why_not": "Demasiadas ceremonias para un equipo de 3-4 personas."},
-            {"methodology": "kanban", "why_not": "El equipo necesita cortes de iteración para demos."},
+            {"methodology": "scrum", "why_not": "Too many ceremonies for a team of 3-4 people."},
+            {"methodology": "kanban", "why_not": "The team needs iteration cut-offs for demos."},
         ],
     },
     "architecture": {
-        "style": "Monolito modular",
-        "summary": "SPA en React que consume una API FastAPI; los agentes corren en el backend con Google ADK.",
+        "style": "Modular monolith",
+        "summary": "React SPA that consumes a FastAPI API; the agents run in the backend with Google ADK.",
         "components": [
-            {"name": "Web app", "responsibility": "UI, tablero y roadmap", "technology": "React + Vite"},
-            {"name": "API", "responsibility": "Proyectos, tareas y streaming de agentes", "technology": "FastAPI"},
-            {"name": "Agentes", "responsibility": "Generar el plan", "technology": "Google ADK + Gemini"},
-            {"name": "Base de datos", "responsibility": "Persistencia", "technology": "SQLite"},
+            {"name": "Web app", "responsibility": "UI, board and roadmap", "technology": "React + Vite"},
+            {"name": "API", "responsibility": "Projects, tasks and agent streaming", "technology": "FastAPI"},
+            {"name": "Agents", "responsibility": "Generate the plan", "technology": "Google ADK + Gemini"},
+            {"name": "Database", "responsibility": "Persistence", "technology": "SQLite"},
         ],
         "stack": [
-            {"layer": "Frontend", "technology": "React + Tailwind", "reason": "Rápido de iterar"},
-            {"layer": "Backend", "technology": "FastAPI", "reason": "Async y tipado con Pydantic"},
-            {"layer": "IA", "technology": "Gemini", "reason": "Salidas estructuradas nativas"},
+            {"layer": "Frontend", "technology": "React + Tailwind", "reason": "Fast to iterate"},
+            {"layer": "Backend", "technology": "FastAPI", "reason": "Async and typed with Pydantic"},
+            {"layer": "AI", "technology": "Gemini", "reason": "Native structured outputs"},
         ],
         "decisions": [
             {
-                "title": "Salidas estructuradas",
-                "decision": "Cada agente devuelve JSON con esquema",
-                "rationale": "Se persiste directo como tarjetas",
+                "title": "Structured outputs",
+                "decision": "Each agent returns JSON with a schema",
+                "rationale": "It's persisted directly as cards",
             }
         ],
     },
     "roadmap": {
         "phases": [
             {
-                "name": "Fundaciones",
-                "goal": "Base técnica y alta de proyectos",
+                "name": "Foundations",
+                "goal": "Technical base and project setup",
                 "start_week": 1,
                 "end_week": 2,
-                "deliverables": ["Repo y CI", "Alta de proyecto y equipo"],
+                "deliverables": ["Repo and CI", "Project and team setup"],
                 "epics": [
-                    {"key": "EP-1", "title": "Setup", "description": "Infraestructura del proyecto"},
-                    {"key": "EP-2", "title": "Proyectos y equipo", "description": "CRUD de proyectos y miembros"},
+                    {"key": "EP-1", "title": "Setup", "description": "Project infrastructure"},
+                    {"key": "EP-2", "title": "Projects and team", "description": "Project and member CRUD"},
                 ],
             },
             {
                 "name": "MVP",
-                "goal": "Generación del plan y tablero",
+                "goal": "Plan generation and board",
                 "start_week": 3,
                 "end_week": 4,
-                "deliverables": ["Pipeline de agentes", "Tablero kanban"],
+                "deliverables": ["Agent pipeline", "Kanban board"],
                 "epics": [
-                    {"key": "EP-3", "title": "Agentes", "description": "Pipeline que genera el plan"},
-                    {"key": "EP-4", "title": "Tablero", "description": "Kanban con drag & drop"},
+                    {"key": "EP-3", "title": "Agents", "description": "Pipeline that generates the plan"},
+                    {"key": "EP-4", "title": "Board", "description": "Kanban with drag & drop"},
                 ],
             },
             {
                 "name": "Beta",
-                "goal": "Pulido y feedback",
+                "goal": "Polish and feedback",
                 "start_week": 5,
                 "end_week": 6,
-                "deliverables": ["Re-planificación", "Métricas"],
-                "epics": [{"key": "EP-5", "title": "Insights", "description": "Velocidad y re-planificación"}],
+                "deliverables": ["Replanning", "Metrics"],
+                "epics": [{"key": "EP-5", "title": "Insights", "description": "Velocity and replanning"}],
             },
         ]
     },
     "backlog": {
         "stories": [
-            _story("US-1", "EP-1", "Configurar repo y CI", 2, "DevOps", "high", "chore"),
-            _story("US-2", "EP-1", "Definir modelo de datos", 3, "Backend", "high"),
-            _story("US-3", "EP-2", "Crear proyecto con descripción", 3, "Frontend", "high"),
-            _story("US-4", "EP-2", "Cargar miembros y roles", 3, "Frontend", "high"),
-            _story("US-5", "EP-3", "Investigar Google ADK", 2, "Backend", "high", "spike"),
-            _story("US-6", "EP-3", "Encadenar agentes del plan", 8, "Backend", "high"),
-            _story("US-7", "EP-3", "Mostrar progreso de agentes", 5, "Frontend"),
-            _story("US-8", "EP-4", "Ver tablero por columnas", 5, "Frontend", "high"),
-            _story("US-9", "EP-4", "Mover tarjetas con drag & drop", 3, "Frontend"),
-            _story("US-10", "EP-5", "Re-planificar sprint", 8, "Backend", "low"),
-            _story("US-11", "EP-5", "Gráfico de velocidad", 5, "Frontend", "low"),
+            _story("US-1", "EP-1", "Set up repo and CI", 2, "DevOps", "high", "chore"),
+            _story("US-2", "EP-1", "Define the data model", 3, "Backend", "high"),
+            _story("US-3", "EP-2", "Create a project with a description", 3, "Frontend", "high"),
+            _story("US-4", "EP-2", "Enter members and roles", 3, "Frontend", "high"),
+            _story("US-5", "EP-3", "Research Google ADK", 2, "Backend", "high", "spike"),
+            _story("US-6", "EP-3", "Chain the plan agents", 8, "Backend", "high"),
+            _story("US-7", "EP-3", "Show agent progress", 5, "Frontend"),
+            _story("US-8", "EP-4", "See the board by columns", 5, "Frontend", "high"),
+            _story("US-9", "EP-4", "Move cards with drag & drop", 3, "Frontend"),
+            _story("US-10", "EP-5", "Replan a sprint", 8, "Backend", "low"),
+            _story("US-11", "EP-5", "Velocity chart", 5, "Frontend", "low"),
         ]
     },
     "sprints": {
         "sprints": [
-            {"number": 1, "name": "Sprint 1", "goal": "Base lista", "phase": "Fundaciones",
+            {"number": 1, "name": "Sprint 1", "goal": "Base ready", "phase": "Foundations",
              "story_keys": ["US-1", "US-2", "US-3", "US-4"]},
-            {"number": 2, "name": "Sprint 2", "goal": "Plan generado por agentes", "phase": "MVP",
+            {"number": 2, "name": "Sprint 2", "goal": "Plan generated by agents", "phase": "MVP",
              "story_keys": ["US-5", "US-6", "US-7", "US-8", "US-9"]},
             {"number": 3, "name": "Sprint 3", "goal": "Beta", "phase": "Beta",
              "story_keys": ["US-10", "US-11"]},
         ],
-        # Los nombres no coinciden con el equipo real: persist cae al match por rol.
+        # The names don't match the real team: assignment falls back to matching by role.
         "assignments": [],
     },
 }
 
-# Falla rápido si el mock se desalinea de los esquemas.
+# Fail fast if the mock drifts from the schemas.
 schemas.Analysis.model_validate(MOCK_PLAN["analysis"])
 schemas.MethodologyDecision.model_validate(MOCK_PLAN["methodology"])
 schemas.Architecture.model_validate(MOCK_PLAN["architecture"])

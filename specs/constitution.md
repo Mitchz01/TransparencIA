@@ -1,13 +1,13 @@
-# Constitución del proyecto
+# Project constitution
 
-Principios que toda spec, plan e implementación deben respetar.
+Principles that every spec, plan and implementation must follow.
 
-1. **Demo primero**: el flujo completo proyecto → equipo → plan → kanban tiene que andar de punta a punta antes que cualquier extra.
-2. **Salidas estructuradas**: todo lo que genera un agente tiene esquema y se persiste; nada de texto libre que no se pueda mostrar.
-3. **Transparencia de agentes**: el usuario ve qué agente está trabajando y por qué decidió lo que decidió (justificaciones visibles).
-4. **El usuario manda**: si elige metodología, los agentes la respetan; todo lo generado es editable.
-5. **Simple antes que escalable**: monolito, SQLite, sin auth de usuarios hasta que haga falta (GitHub usa un token por proyecto).
-6. **Funciona sin key**: modo mock siempre disponible para desarrollar el front.
-7. **Stack Google**: Gemini + ADK para IA; deploy objetivo en Cloud Run.
-8. **Nada se aplica sin aprobación**: toda decisión de un agente es una propuesta que el usuario aprueba, ajusta o rechaza (o se aprueba sola si el proyecto tiene auto-aprobar).
-9. **Hexagonal**: el dominio no depende de frameworks ni de servicios externos; todo lo de afuera entra por un puerto.
+1. **Demo first**: the full flow project → team → plan → kanban has to work end to end before any extra.
+2. **Structured outputs**: everything an agent generates has a schema and is persisted; no free text that can't be displayed.
+3. **Agent transparency**: the user sees which agent is working and why it decided what it decided (visible rationale).
+4. **The user is in charge**: if they pick a methodology, the agents respect it; everything generated is editable.
+5. **Simple before scalable**: monolith, SQLite, no user auth until it's needed (GitHub uses one token per project).
+6. **Works without a key**: mock mode is always available to develop the frontend.
+7. **Google stack**: Gemini + ADK for AI; Cloud Run as the deployment target.
+8. **Nothing is applied without approval**: every agent decision is a proposal that the user approves, adjusts or rejects (or that is approved automatically if the project has auto-approve on).
+9. **Hexagonal**: the domain doesn't depend on frameworks or external services; everything from outside comes in through a port.

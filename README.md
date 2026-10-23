@@ -1,56 +1,56 @@
 # Agile Planner
 
-Estilo Jira, pero el plan lo arman agentes: cargás el proyecto y tu equipo (roles, seniority, horas), y un pipeline de agentes con **Google ADK + Gemini** genera la metodología (o usa la que elijas), la arquitectura, un roadmap por fases, el backlog y los sprints, todo volcado en un tablero kanban.
+Like Jira, but the plan is built by agents: you enter the project and your team (roles, seniority, hours), and a pipeline of **Google ADK + Gemini** agents generates the methodology (or uses the one you pick), the architecture, a phased roadmap, the backlog and the sprints, all loaded into a kanban board.
 
-## Pipeline de agentes
+## Agent pipeline
 
-Etapas en orden; cada una es un `LlmAgent` que devuelve JSON con un esquema ([domain/plan.py](backend/app/domain/plan.py)):
+Stages in order; each one is an `LlmAgent` that returns JSON with a schema ([domain/plan.py](backend/app/domain/plan.py)):
 
-1. **Analista**: objetivos, alcance, riesgos, gaps del equipo
-2. **Agile coach**: Scrum / Kanban / Scrumban / XP / Shape Up, con ceremonias y WIP
-3. **Arquitecto**: estilo, componentes, stack, ADRs
-4. **Product manager**: fases y épicas
-5. **Product owner**: historias con puntos y criterios de aceptación
-6. **Scrum master**: sprints y asignación por rol y capacidad
+1. **Product analyst**: goals, scope, risks, team gaps
+2. **Agile coach**: Scrum / Kanban / Scrumban / XP / Shape Up, with ceremonies and WIP limits
+3. **Software architect**: style, components, stack, ADRs
+4. **Product manager**: phases and epics
+5. **Product owner**: stories with points and acceptance criteria
+6. **Scrum master**: sprints and assignment by role and capacity
 
-## Contexto y arquitectura
+## Context and architecture
 
-- [plan/context.md](plan/context.md): qué es el producto y cómo se usa (sin detalles técnicos).
-- [plan/hexagonal-architecture.md](plan/hexagonal-architecture.md): arquitectura hexagonal (puertos y adaptadores), carpetas y decisiones.
-- [plan/use-cases.md](plan/use-cases.md): casos de uso con diagramas de cómo se implementa cada uno.
+- [plan/context.md](plan/context.md): what the product is and how it's used (no technical details).
+- [plan/hexagonal-architecture.md](plan/hexagonal-architecture.md): hexagonal architecture (ports and adapters), folders and decisions.
+- [plan/use-cases.md](plan/use-cases.md): use cases with diagrams of how each one is implemented.
 
-## Cómo trabajamos: SDD
+## How we work: SDD
 
-Spec → Plan → Tasks → Código. Cada feature vive en `specs/NNN-feature/` con `spec.md`, `plan.md` y `tasks.md` (plantillas: [spec-template.md](specs/spec-template.md) para la spec y [specs/_templates](specs/_templates/) para plan y tasks; principios en [specs/constitution.md](specs/constitution.md)). Las reglas para los asistentes de IA, la estructura y los comandos están en [AGENTS.md](AGENTS.md), que también leen [CLAUDE.md](CLAUDE.md) y [GEMINI.md](GEMINI.md).
+Spec → Plan (with tasks) → Code. Each feature lives in `specs/NNN-feature/` with `spec.md` and `plan.md` (templates: [spec-template.md](specs/spec-template.md) and [plan-template.md](specs/plan-template.md); principles in [specs/constitution.md](specs/constitution.md)). The rules for AI assistants, the structure and the commands are in [AGENTS.md](AGENTS.md), which [CLAUDE.md](CLAUDE.md) and [GEMINI.md](GEMINI.md) also load.
 
-Las 8 specs (001–008), quién escribe y revisa cada una, el orden y los contratos entre specs están en [specs/README.md](specs/README.md).
+The 8 specs (001–008), who writes and reviews each one, the order and the contracts between specs are in [specs/README.md](specs/README.md).
 
-## Correr el backend
+## Run the backend
 
 ```bash
 cd backend
 py -m venv .venv && .venv/Scripts/activate   # Linux/macOS: python3 -m venv .venv && . .venv/bin/activate
 pip install -r requirements-dev.txt
-cp .env.example .env   # poner GOOGLE_API_KEY
+cp .env.example .env   # set GOOGLE_API_KEY
 fastapi dev app/main.py
-pytest                 # tests (incluye el de capas de la arquitectura)
+pytest                 # tests (includes the architecture layer test)
 ```
 
-## Correr el frontend
+## Run the frontend
 
 ```bash
 cd frontend
 npm install
-npm i -D tailwindcss @tailwindcss/vite   # pendiente: falló por disco lleno
+npm i -D tailwindcss @tailwindcss/vite   # pending: failed because the disk was full
 npm run dev                               # :5173, proxy /api → :8000
 ```
 
 ## TODO
 
-- [ ] Routers (`adapters/inbound/http`): crear proyecto, detalle, `PATCH /tasks/{id}`, SSE del planning
-- [ ] Propuestas y aprobación por etapa (spec 005)
-- [ ] Persistir el plan aprobado como Sprint y Task
-- [ ] Specs y diagramas generados (006), GitHub (007), sincronización y re-planificación (008)
-- [ ] Frontend: alta, progreso de agentes, kanban, roadmap
-- [ ] Extra: re-planificar ("se fue un dev, ajustá el sprint")
-- [ ] Deploy en Cloud Run
+- [ ] Routers (`adapters/inbound/http`): create project, detail, `PATCH /tasks/{id}`, planning SSE
+- [ ] Proposals and per-stage approval (spec 005)
+- [ ] Persist the approved plan as Sprint and Task
+- [ ] Generated specs and diagrams (006), GitHub (007), sync and replanning (008)
+- [ ] Frontend: project setup, agent progress, kanban, roadmap
+- [ ] Extra: replan ("a dev left, adjust the sprint")
+- [ ] Deploy to Cloud Run

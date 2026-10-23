@@ -16,13 +16,13 @@ class PullRequestRef(BaseModel):
     number: int
     url: str
     state: ExternalState = "open"
-    # Issues que cierra el PR ("Closes #12").
+    # Issues the PR closes ("Closes #12").
     closes: list[int] = []
 
 
 class ExternalLink(BaseModel):
-    """Vínculo tarea ↔ issue/PR. Nuestro tablero es la fuente de verdad:
-    desde GitHub sólo entran cambios de estado."""
+    """Task ↔ issue/PR link. Our board is the source of truth:
+    only state changes come in from GitHub."""
 
     id: int | None = None
     task_id: int

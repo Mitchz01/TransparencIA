@@ -4,7 +4,7 @@ from app.domain.integrations import IssueRef, PullRequestRef
 
 
 class CodeHost(Protocol):
-    """Proveedor de código (GitHub hoy). Trabaja siempre sobre el único repo del proyecto."""
+    """Code host (GitHub today). Always works on the project's single repo."""
 
     async def create_issue(self, repository: str, title: str, body: str, labels: list[str]) -> IssueRef: ...
     async def close_issue(self, repository: str, number: int) -> None: ...

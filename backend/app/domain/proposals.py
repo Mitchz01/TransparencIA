@@ -1,5 +1,5 @@
-"""Toda decisión de un agente es una propuesta: nada se aplica sin aprobación
-(manual o por auto_approve del proyecto)."""
+"""Every agent decision is a proposal: nothing is applied without approval
+(manual, or through the project's auto_approve)."""
 
 from datetime import datetime, timezone
 from typing import Any, Literal
@@ -20,9 +20,9 @@ class Proposal(BaseModel):
     id: int | None = None
     project_id: int
     kind: ProposalKind
-    key: str  # etapa o acción, ej: "methodology", "create_issue"
-    agent: str  # quién lo propuso, ej: "Agile coach"
-    content: dict[str, Any]  # salida del agente, con su esquema
+    key: str  # stage or action, e.g. "methodology", "create_issue"
+    agent: str  # who proposed it, e.g. "Agile coach"
+    content: dict[str, Any]  # agent output, with its schema
     rationale: str = ""
     status: ProposalStatus = "pending"
     adjusted_content: dict[str, Any] | None = None

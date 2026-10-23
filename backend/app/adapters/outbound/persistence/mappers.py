@@ -1,5 +1,5 @@
-"""Tabla ↔ entidad de dominio. Los campos coinciden, así que alcanza con validar
-desde atributos; el equipo de un proyecto vive en otra tabla y se arma aparte."""
+"""Table ↔ domain entity. The fields match, so validating from attributes is
+enough; a project's team lives in another table and is assembled separately."""
 
 from app.adapters.outbound.persistence.tables import MemberTable, ProjectTable, SprintTable, TaskTable
 from app.domain.board import Sprint, Task

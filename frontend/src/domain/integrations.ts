@@ -1,4 +1,4 @@
-// Espejo de backend/app/domain/integrations.py
+// Mirrors backend/app/domain/integrations.py
 
 export type ExternalKind = 'issue' | 'pull_request'
 export type ExternalState = 'open' | 'closed' | 'merged'

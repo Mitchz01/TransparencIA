@@ -1,226 +1,229 @@
-# Casos de uso
+# Use cases
 
-Casos de uso que salen de [context.md](context.md) y cómo se implementaría cada uno sobre la [arquitectura hexagonal](hexagonal-architecture.md). Los diagramas son Mermaid (se ven en GitHub y en VS Code).
+Use cases derived from [context.md](context.md) and how each one would be implemented on the [hexagonal architecture](hexagonal-architecture.md). Diagrams are Mermaid (they render on GitHub and in VS Code).
 
-- **Estado**: Borrador
-- La primera sección (catálogo y mapa) se lee sin saber de código. De "Implementación por caso de uso" en adelante es técnico.
+- **Status**: Draft
+- The first section (catalog and map) can be read without knowing the code. From "Implementation per use case" on it's technical.
 
-## Actores
+## Actors
 
-| Actor | Quién es |
+| Actor | Who they are |
 |---|---|
-| **Líder** | Quien usa la herramienta: arma el equipo, define la meta y aprueba lo que proponen los agentes. |
-| **Miembro** | Trabaja sobre el tablero y en GitHub. |
-| **Agentes IA** | Analista, agile coach, arquitecto, product manager, product owner, scrum master, redactor de specs, revisor de código. |
-| **GitHub** | Sistema externo: issues, PRs, reviews. Avisa cambios por webhook. |
+| **Leader** | Whoever uses the tool: sets up the team, defines the goal and approves what the agents propose. |
+| **Member** | Works on the board and on GitHub. |
+| **AI agents** | Product analyst, agile coach, architect, product manager, product owner, scrum master, spec writer, code reviewer. |
+| **GitHub** | External system: issues, PRs, reviews. Reports changes by webhook. |
 
-## Catálogo
+## Catalog
 
-| ID | Caso de uso | Actor principal | Spec |
+| ID | Use case | Primary actor | Spec |
 |---|---|---|---|
-| UC-01 | Crear proyecto y equipo | Líder | 001 |
-| UC-02 | Editar proyecto y equipo | Líder | 001 |
-| UC-03 | Generar el plan por etapas | Agentes IA | 002 |
-| UC-04 | Revisar una propuesta (aprobar, ajustar, rechazar o auto-aprobar) | Líder | 005 |
-| UC-05 | Aplicar el plan aprobado al tablero | Sistema | 003 |
-| UC-06 | Trabajar en el tablero (mover, editar, checklist) | Líder / Miembro | 003 |
-| UC-07 | Ver roadmap, metodología y arquitectura | Líder / Miembro | 004 |
-| UC-08 | Generar specs y diagramas | Agentes IA | 006 |
-| UC-09 | Conectar el repo de GitHub | Líder | 007 |
-| UC-10 | Publicar tareas como issues | Agentes IA → Líder | 007 |
-| UC-11 | Pedir code review de un PR | Agentes IA → Líder | 007 |
-| UC-12 | Sincronizar el avance desde GitHub y cerrar objetivos | GitHub | 008 |
-| UC-13 | Re-planificar | Líder / Agentes IA | 008 |
-| UC-14 | Seguir la actividad en vivo | Líder / Miembro | 005 |
+| UC-01 | Create project and team | Leader | 001 |
+| UC-02 | Edit project and team | Leader | 001 |
+| UC-03 | Generate the plan by stages | AI agents | 002 |
+| UC-04 | Review a proposal (approve, adjust, reject or auto-approve) | Leader | 005 |
+| UC-05 | Apply the approved plan to the board | System | 003 |
+| UC-06 | Work on the board (move, edit, checklist) | Leader / Member | 003 |
+| UC-07 | View roadmap, methodology and architecture | Leader / Member | 004 |
+| UC-08 | Generate specs and diagrams | AI agents | 006 |
+| UC-09 | Connect the GitHub repo | Leader | 007 |
+| UC-10 | Publish tasks as issues | AI agents → Leader | 007 |
+| UC-11 | Request a code review for a PR | AI agents → Leader | 007 |
+| UC-12 | Sync progress from GitHub and close objectives | GitHub | 008 |
+| UC-13 | Replan | Leader / AI agents | 008 |
+| UC-14 | Follow the live activity | Leader / Member | 005 |
 
-## Mapa general
+## Overview map
 
-Cada actor participa en un área; cómo se encadenan los casos de uso está en el recorrido completo, más abajo.
+Each actor takes part in one area; how the use cases chain together is in the full journey below.
 
 ```mermaid
 flowchart LR
-    lider([Líder])
-    miembro([Miembro])
-    ia([Agentes IA])
+    leader([Leader])
+    member([Member])
+    ai([AI agents])
     gh([GitHub])
 
-    subgraph configurar [Configurar]
+    subgraph setup [Set up]
         direction TB
-        uc01[UC-01 Crear proyecto y equipo]
-        uc02[UC-02 Editar proyecto y equipo]
-        uc09[UC-09 Conectar repo]
+        uc01[UC-01 Create project and team]
+        uc02[UC-02 Edit project and team]
+        uc09[UC-09 Connect repo]
     end
 
-    subgraph planificar [Planificar]
+    subgraph plan [Plan]
         direction TB
-        uc03[UC-03 Generar el plan por etapas]
-        uc08[UC-08 Generar specs y diagramas]
-        uc13[UC-13 Re-planificar]
+        uc03[UC-03 Generate the plan by stages]
+        uc08[UC-08 Generate specs and diagrams]
+        uc13[UC-13 Replan]
     end
 
-    subgraph decidir [Decidir]
+    subgraph decide [Decide]
         direction TB
-        uc04[UC-04 Revisar propuesta]
+        uc04[UC-04 Review proposal]
     end
 
-    subgraph trabajar [Trabajar]
+    subgraph work [Work]
         direction TB
-        uc05[UC-05 Aplicar plan al tablero]
-        uc06[UC-06 Trabajar en el tablero]
-        uc07[UC-07 Ver roadmap y decisiones]
-        uc14[UC-14 Actividad en vivo]
+        uc05[UC-05 Apply plan to the board]
+        uc06[UC-06 Work on the board]
+        uc07[UC-07 View roadmap and decisions]
+        uc14[UC-14 Live activity]
     end
 
-    subgraph integrar [Integrar con GitHub]
+    subgraph integrate [Integrate with GitHub]
         direction TB
-        uc10[UC-10 Publicar issues]
-        uc11[UC-11 Pedir code review]
-        uc12[UC-12 Sincronizar avance]
+        uc10[UC-10 Publish issues]
+        uc11[UC-11 Request code review]
+        uc12[UC-12 Sync progress]
     end
 
-    lider --> configurar
-    lider --> decidir
-    lider --> trabajar
-    miembro --> trabajar
-    ia --> planificar
-    ia --> integrar
-    gh <--> integrar
-    planificar -- propuestas --> decidir
-    integrar -- propuestas --> decidir
+    leader --> setup
+    leader --> decide
+    leader --> work
+    member --> work
+    ai --> plan
+    ai --> integrate
+    gh <--> integrate
+    plan -- proposals --> decide
+    integrate -- proposals --> decide
 ```
 
-## Recorrido completo
+## Full journey
 
 ```mermaid
 flowchart TD
-    a[Líder crea proyecto y equipo] --> b[Agente corre la etapa]
-    b --> c{¿Auto-aprobar?}
-    c -- No --> d[Propuesta pendiente]
-    d --> e{Líder decide}
-    e -- Aprueba o ajusta --> f[Se aplica]
-    e -- Rechaza --> g[El agente rehace la etapa con el motivo]
+    a[Leader creates project and team] --> a2[Leader starts planning]
+    a2 --> b[Agent runs the stage]
+    b --> c{Auto-approve?}
+    c -- No --> d[Pending proposal]
+    d --> e{Leader decides}
+    e -- Approves or adjusts --> f[It's applied]
+    e -- Rejects --> g[The agent redoes the stage with the reason]
     g --> b
-    c -- Sí --> f
-    f --> h{¿Quedan etapas?}
-    h -- Sí --> b
-    h -- No --> i[Tablero, roadmap, specs y diagramas listos]
-    i --> j[Líder conecta GitHub]
-    j --> k[Tareas publicadas como issues]
-    k --> l[Equipo abre y mergea PRs]
-    l --> m[Tareas y objetivos avanzan solos]
-    m --> n{¿Desvío?}
-    n -- Sí --> o[Propuesta de re-planificación]
+    c -- Yes --> f
+    f --> h{Stages left?}
+    h -- Yes --> b
+    h -- No --> i[Board, roadmap, specs and diagrams ready]
+    i --> j[Leader connects GitHub]
+    j --> k[Tasks published as issues]
+    k --> l[Team opens and merges PRs]
+    l --> m[Tasks and objectives move forward by themselves]
+    m --> n{Drift?}
+    n -- Yes --> o[Replan proposal]
     o --> e
     n -- No --> l
 ```
 
-## Estados
+## States
 
-### Propuesta
+### Proposal
 
 ```mermaid
 stateDiagram-v2
-    [*] --> pending: el agente propone
-    pending --> approved: aprobar (o auto-aprobar)
-    pending --> adjusted: ajustar con cambios
-    pending --> rejected: rechazar con motivo
-    approved --> [*]: se aplica
-    adjusted --> [*]: se aplica la versión ajustada
-    rejected --> [*]: el agente puede rehacerla
+    [*] --> pending: the agent proposes
+    pending --> approved: approve (or auto-approve)
+    pending --> adjusted: adjust with changes
+    pending --> rejected: reject with a reason
+    approved --> [*]: it's applied
+    adjusted --> [*]: the adjusted version is applied
+    rejected --> [*]: the agent redoes it
 ```
 
-### Tarea
+### Task
 
 ```mermaid
 stateDiagram-v2
-    [*] --> backlog: plan aplicado
-    backlog --> todo: entra al sprint
-    todo --> in_progress: se mueve o se abre un PR
-    in_progress --> review: PR listo para review
-    review --> in_progress: cambios pedidos
-    review --> done: PR mergeado o se mueve a mano
+    [*] --> todo: plan applied (task in a sprint)
+    [*] --> backlog: plan applied (task outside every sprint)
+    backlog --> todo: enters a sprint
+    todo --> in_progress: moved, or a PR is opened
+    in_progress --> review: PR ready for review
+    review --> in_progress: changes requested
+    review --> done: PR merged or moved by hand
+    done --> todo: issue reopened
     done --> [*]
 ```
 
 ---
 
-## Implementación por caso de uso
+## Implementation per use case
 
-Convenciones de los diagramas:
+Diagram conventions:
 
-- **UI**: front (React), pasa por `adapters/http` del front.
-- **HTTP** / **Webhook**: adaptadores de entrada (`adapters/inbound`).
-- El participante del medio es el **caso de uso** (`application/use_cases`).
-- **UoW**, **Agents**, **CodeHost**, **EventBus**: puertos. En runtime los implementan SQLModel, ADK o mock, GitHub o fake, y el bus en memoria.
+- **UI**: frontend (React), goes through the frontend's `adapters/http`.
+- **HTTP** / **Webhook**: inbound adapters (`adapters/inbound`).
+- The participant in the middle is the **use case** (`application/use_cases`).
+- **UoW**, **Agents**, **CodeHost**, **EventBus**: ports. At runtime they're implemented by SQLModel, ADK or mock, GitHub or fake, and the in-memory bus.
 
-Las llamadas a los agentes tardan (segundos a minutos), así que **nunca se hacen dentro del request HTTP**: el endpoint responde `202 Accepted`, el caso de uso corre en una tarea de fondo y el progreso llega por SSE (UC-14).
+Agent calls take time (seconds to minutes), so they **never run inside the HTTP request**: the endpoint answers `202 Accepted`, the use case runs in a background task and progress arrives through SSE (UC-14).
 
-### UC-01 · Crear proyecto y equipo
+### UC-01 · Create project and team
 
-- **Disparador**: el líder completa el formulario (nombre, descripción, duración, metodología opcional, auto-aprobar, miembros con rol, seniority, horas y skills).
-- **Resultado**: proyecto en `draft` con su equipo; arranca UC-03.
-- **Caso de uso**: `projects/create_project.py`
+- **Trigger**: the leader fills in the form (name, description, duration, optional methodology, auto-approve, members with role, seniority, hours and skills).
+- **Result**: project in `draft` with its team. Planning starts with a separate request (spec 002), which the UI sends right after.
+- **Use case**: `projects/create_project.py`
 
 ```mermaid
 sequenceDiagram
-    actor L as Líder
+    actor L as Leader
     participant UI
     participant HTTP as HTTP projects
     participant UC as CreateProject
     participant UoW
     participant SP as StartPlanning
 
-    L->>UI: completa proyecto y equipo
+    L->>UI: fills in project and team
     UI->>HTTP: POST /api/projects (ProjectCreate)
     HTTP->>UC: execute(ProjectCreate)
-    UC->>UC: valida (al menos un miembro, duración > 0)
-    UC->>UoW: projects.add(Project con members)
+    UC->>UC: validates (at least one member, unique names, duration 1-52)
+    UC->>UoW: projects.add(Project with members)
     UC->>UoW: commit()
-    UC-->>HTTP: Project con ids
+    UC-->>HTTP: Project with ids
     HTTP-->>UI: 201 Project
     UI->>HTTP: POST /api/projects/{id}/planning
-    HTTP->>SP: lanza UC-03 en segundo plano
+    HTTP->>SP: launches UC-03 in the background
     HTTP-->>UI: 202 Accepted
-    UI->>UI: navega a Planning y abre el SSE (UC-14)
+    UI->>UI: navigates to Planning and opens the SSE stream (UC-14)
 ```
 
-### UC-02 · Editar proyecto y equipo
+### UC-02 · Edit project and team
 
-- **Disparador**: el líder cambia datos del proyecto, agrega o quita miembros, o cambia auto-aprobar.
-- **Resultado**: proyecto actualizado. Si cambia el equipo con un plan ya aplicado, se ofrece re-planificar (UC-13).
-- **Caso de uso**: `projects/update_team.py`
+- **Trigger**: the leader changes project data, adds or removes members, or toggles auto-approve.
+- **Result**: project updated. If the team changed, a `TeamChanged` event is published; with a plan already applied, spec 008 proposes a replan (UC-13).
+- **Use case**: `projects/update_project.py`
 
 ```mermaid
 sequenceDiagram
-    actor L as Líder
+    actor L as Leader
     participant UI
     participant HTTP as HTTP projects
-    participant UC as UpdateTeam
+    participant UC as UpdateProject
     participant UoW
     participant Bus as EventBus
 
-    L->>UI: edita el equipo
+    L->>UI: edits the team
     UI->>HTTP: PATCH /api/projects/{id}
-    HTTP->>UC: execute(id, cambios)
+    HTTP->>UC: execute(id, changes)
     UC->>UoW: projects.get(id)
-    alt no existe
+    alt doesn't exist
         UC-->>HTTP: ProjectNotFound
         HTTP-->>UI: 404
-    else existe
+    else exists
         UC->>UoW: projects.save(project)
         UC->>UoW: commit()
-        UC->>Bus: publish(TeamChanged)
+        UC->>Bus: publish(TeamChanged) if the team changed
         UC-->>HTTP: Project
-        HTTP-->>UI: 200 (+ sugerencia de re-planificar si ya hay plan)
+        HTTP-->>UI: 200
     end
 ```
 
-### UC-03 · Generar el plan por etapas
+### UC-03 · Generate the plan by stages
 
-- **Disparador**: UC-01, o la aprobación de la etapa anterior (UC-04).
-- **Resultado**: una propuesta `pending` por etapa (o `approved` con auto-aprobar).
-- **Etapas** (`PLANNING_STAGES`): analysis → methodology → architecture → roadmap → backlog → sprints. Después siguen las de documentos (UC-08).
-- **Casos de uso**: `planning/start_planning.py`, `planning/run_planning_step.py`. Reemplazan al `RunPlanning` actual, que corre todo de corrido.
+- **Trigger**: the "start planning" request, or the approval of the previous stage (UC-04).
+- **Result**: one `pending` proposal per stage (or `approved` with auto-approve).
+- **Stages** (`PLANNING_STAGES`): analysis → methodology → architecture → roadmap → backlog → sprints. The document stages follow (UC-08).
+- **Use cases**: `planning/start_planning.py`, `planning/run_planning_step.py`. They replace the current `RunPlanning`, which runs everything back to back.
 
 ```mermaid
 sequenceDiagram
@@ -232,78 +235,78 @@ sequenceDiagram
     participant AP as ApproveProposal
 
     SP->>UoW: project.status = planning
-    SP->>RS: run(project_id, primera etapa)
-    RS->>UoW: proyecto y propuestas ya resueltas
-    RS->>RS: arma el contexto con stage.inputs (final_content de lo aprobado)
+    SP->>RS: run(project_id, first stage)
+    RS->>UoW: project and already-resolved proposals
+    RS->>RS: builds the context from stage.inputs (final_content of what was approved)
     RS->>Bus: publish(AgentStarted)
     RS->>AG: run_stage(stage, context)
-    alt el agente falla
+    alt the agent fails
         AG-->>RS: error
         RS->>UoW: project.status = error
         RS->>Bus: publish(PlanFailed)
     else ok
-        AG-->>RS: salida con el esquema de la etapa
-        RS->>UoW: proposals.add(Proposal pending, kind plan_stage)
+        AG-->>RS: output with the stage's schema
+        RS->>UoW: proposals.add(pending Proposal, kind plan_stage)
         RS->>UoW: commit()
-        RS->>Bus: publish(AgentFinished y ProposalCreated)
+        RS->>Bus: publish(AgentFinished and ProposalCreated)
         opt project.auto_approve
             RS->>AP: approve(proposal, auto=true)
         end
     end
 ```
 
-### UC-04 · Revisar una propuesta
+### UC-04 · Review a proposal
 
-- **Disparador**: el líder abre una propuesta pendiente (ve qué decidió el agente y por qué) y elige.
-- **Resultado**:
-  - **Aprobar o ajustar**: se aplica `final_content` según el tipo de propuesta (ver tabla) y sigue la etapa siguiente.
-  - **Rechazar**: se guarda el motivo y el agente rehace la etapa automáticamente con ese motivo como contexto. Tras 3 rechazos seguidos de la misma etapa, espera al líder.
-- **Casos de uso**: `proposals/approve_proposal.py`, `adjust_proposal.py`, `reject_proposal.py`
+- **Trigger**: the leader opens a pending proposal (sees what the agent decided and why) and chooses.
+- **Result**:
+  - **Approve or adjust**: `final_content` is applied according to the proposal kind (see table) and the next stage starts.
+  - **Reject**: the reason is saved and the agent automatically redoes the stage with that reason as context. After 3 rejections in a row of the same stage, it waits for the leader.
+- **Use cases**: `proposals/approve_proposal.py`, `adjust_proposal.py`, `reject_proposal.py`
 
-| Tipo de propuesta | Qué hace aprobarla |
+| Proposal kind | What approving it does |
 |---|---|
-| `plan_stage` | Guarda la etapa en `project.plan`. Si es `sprints`, dispara UC-05. Lanza la etapa siguiente. |
-| `document` | Crea o versiona un `Document` (UC-08). |
-| `github_action` | Ejecuta la acción en `CodeHost` (UC-10, UC-11). |
-| `replan` | Aplica los cambios al tablero (UC-13). |
+| `plan_stage` | Saves the stage in `project.plan`. If it's `sprints`, triggers UC-05. Launches the next stage. |
+| `document` | Creates or versions a `Document` (UC-08). |
+| `github_action` | Runs the action on `CodeHost` (UC-10, UC-11). |
+| `replan` | Applies the changes to the board (UC-13). |
 
 ```mermaid
 sequenceDiagram
-    actor L as Líder
+    actor L as Leader
     participant UI
     participant HTTP as HTTP proposals
     participant UC as ApproveProposal
     participant UoW
     participant Bus as EventBus
-    participant Next as Siguiente paso
+    participant Next as Next step
 
-    L->>UI: aprueba o ajusta (con cambios)
-    UI->>HTTP: POST /api/proposals/{id}/approve o /adjust
-    HTTP->>UC: execute(id, contenido ajustado opcional)
+    L->>UI: approves or adjusts (with changes)
+    UI->>HTTP: POST /api/proposals/{id}/approve or /adjust
+    HTTP->>UC: execute(id, optional adjusted content)
     UC->>UoW: proposals.get(id)
-    UC->>UC: proposal.approve() o adjust(content)
-    alt ya estaba resuelta
+    UC->>UC: proposal.approve() or adjust(content)
+    alt already resolved
         UC-->>HTTP: ProposalAlreadyResolved
         HTTP-->>UI: 409
-    else pendiente
-        UC->>UoW: aplica según kind (tabla)
+    else pending
+        UC->>UoW: applies according to kind (table)
         UC->>UoW: proposals.save(proposal)
         UC->>UoW: commit()
         UC->>Bus: publish(ProposalResolved)
-        UC->>Next: siguiente etapa (UC-03), aplicar tablero (UC-05) o acción en GitHub
+        UC->>Next: next stage (UC-03), apply board (UC-05) or GitHub action
         HTTP-->>UI: 202 Accepted
     end
 ```
 
-Con **auto-aprobar** el flujo es el mismo, pero lo llama `RunPlanningStep` con `auto=true` en lugar de la UI. La propuesta queda registrada con `auto_approved = true`.
+With **auto-approve** the flow is the same, but `RunPlanningStep` calls it with `auto=true` instead of the UI. The proposal is recorded with `auto_approved = true`.
 
-### UC-05 · Aplicar el plan aprobado al tablero
+### UC-05 · Apply the approved plan to the board
 
-- **Disparador**: se aprueba la etapa `sprints`.
-- **Resultado**: `Sprint` y `Task` creados, con prioridad, puntos, criterios de aceptación, checklist y asignado; el proyecto pasa a `ready`.
-- **Asignación**: por `member_name` exacto del agente; si no coincide, cae al primer miembro con el mismo `role` (como hace hoy el mock).
-- **Checklist**: sale de los criterios de aceptación de cada historia. Más adelante el agente puede generar pasos propios.
-- **Caso de uso**: `planning/apply_plan.py` (lógica pura de armado en `domain/board.py`)
+- **Trigger**: the `sprints` stage is approved.
+- **Result**: `Sprint`, `Objective` and `Task` created, with priority, points, acceptance criteria, checklist and assignee; the project moves to `ready`.
+- **Assignment**: by the agent's exact `member_name`; otherwise, the member with the requested `role` and the fewest points in that sprint; if nobody has the role, unassigned and flagged with the missing role (spec 003, FR-006).
+- **Checklist**: comes from each story's acceptance criteria.
+- **Use case**: `planning/apply_plan.py` (pure building logic in `domain/board.py`)
 
 ```mermaid
 sequenceDiagram
@@ -313,79 +316,80 @@ sequenceDiagram
     participant Bus as EventBus
 
     AP->>UC: execute(project_id)
-    UC->>UoW: project con plan (backlog y sprints aprobados)
-    loop cada SprintPlan
-        UC->>UoW: sprints.add(Sprint)
-        loop cada story_key del sprint
-            UC->>UC: Story a Task (checklist desde acceptance_criteria)
-            UC->>UC: asigna por nombre, o por rol si no hay match
+    UC->>UoW: project with plan (approved backlog and sprints)
+    loop each SprintPlan
+        UC->>UoW: sprints.add(Sprint) and objectives.add(Objective)
+        loop each story_key in the sprint
+            UC->>UC: Story to Task (checklist from acceptance_criteria)
+            UC->>UC: assigns by name, then by role
             UC->>UoW: tasks.add(Task status todo)
         end
     end
+    UC->>UoW: stories outside every sprint → tasks.add(Task status backlog)
     UC->>UoW: project.status = ready
     UC->>UoW: commit()
     UC->>Bus: publish(PlanApplied)
 ```
 
-### UC-06 · Trabajar en el tablero
+### UC-06 · Work on the board
 
-- **Disparador**: alguien arrastra una tarjeta (dnd-kit), edita una tarea o tilda un ítem del checklist.
-- **Resultado**: tarea actualizada. Si se pasa el límite WIP de la metodología, se avisa pero no se bloquea ("El usuario manda").
-- **Casos de uso**: `board/move_task.py`, `board/update_task.py`, `board/toggle_checklist_item.py`
+- **Trigger**: someone drags a card (dnd-kit), edits a task or checks a checklist item.
+- **Result**: task updated. If the methodology's WIP limit is exceeded, a warning is shown but nothing is blocked ("The user is in charge").
+- **Use cases**: `board/move_task.py`, `board/update_task.py`, `board/toggle_checklist_item.py`
 
 ```mermaid
 sequenceDiagram
-    actor M as Miembro
+    actor M as Member
     participant UI
     participant HTTP as HTTP board
     participant UC as MoveTask
     participant UoW
     participant Bus as EventBus
 
-    M->>UI: arrastra la tarjeta a otra columna
-    UI->>UI: actualización optimista
+    M->>UI: drags the card to another column
+    UI->>UI: optimistic update
     UI->>HTTP: PATCH /api/tasks/{id} (status, position)
     HTTP->>UC: execute(id, TaskUpdate)
     UC->>UoW: tasks.get(id)
-    UC->>UC: aplica el cambio y reordena posiciones
-    UC->>UC: chequea el límite WIP de la columna
+    UC->>UC: applies the change and reorders positions
+    UC->>UC: checks the column's WIP limit
     UC->>UoW: tasks.save(task)
     UC->>UoW: commit()
     UC->>Bus: publish(TaskStatusChanged)
-    UC-->>HTTP: Task (+ aviso WIP si corresponde)
+    UC-->>HTTP: Task (+ WIP warning if applicable)
     HTTP-->>UI: 200
-    Note over UI: si falla, la UI revierte el movimiento
+    Note over UI: if it fails, the UI reverts the move
 ```
 
-### UC-07 · Ver roadmap, metodología y arquitectura
+### UC-07 · View roadmap, methodology and architecture
 
-- **Disparador**: el líder o un miembro abre las vistas del plan.
-- **Resultado**: roadmap gráfico por fases y semanas, metodología con ceremonias y alternativas descartadas, y arquitectura con ADRs. Cada vista muestra la justificación del agente.
-- **Caso de uso**: `projects/get_project.py` (solo lectura). El roadmap se dibuja en el front a partir de `Roadmap.phases`.
+- **Trigger**: the leader or a member opens the plan views.
+- **Result**: visual roadmap by phases and weeks, methodology with ceremonies and discarded alternatives, and architecture with ADRs. Each view shows the agent's rationale.
+- **Use case**: `projects/get_project.py` (read-only). The roadmap is drawn in the frontend from `Roadmap.phases`.
 
 ```mermaid
 sequenceDiagram
-    actor L as Líder
+    actor L as Leader
     participant UI
     participant HTTP as HTTP projects
     participant UC as GetProjectDetail
     participant UoW
 
-    L->>UI: abre Roadmap
+    L->>UI: opens Roadmap
     UI->>HTTP: GET /api/projects/{id}
     HTTP->>UC: execute(id)
-    UC->>UoW: projects.get, sprints y tasks por proyecto
+    UC->>UoW: projects.get, sprints and tasks by project
     UC-->>HTTP: ProjectDetail
     HTTP-->>UI: 200
-    UI->>UI: timeline con fases, épicas y progreso de sus tareas
+    UI->>UI: timeline with phases, epics and their tasks' progress
 ```
 
-### UC-08 · Generar specs y diagramas
+### UC-08 · Generate specs and diagrams
 
-- **Disparador**: termina de aprobarse el plan (después de `sprints`), o el líder pide regenerar un documento.
-- **Resultado**: propuestas de tipo `document`: spec general, una spec por épica del roadmap, y diagramas de flujo en Mermaid. Al aprobarse se convierten en `Document` versionados.
-- **Etapas nuevas** en `PLANNING_STAGES`: `general_spec`, `epic_specs`, `flow_diagrams`, cada una con su esquema de salida.
-- **Caso de uso**: `planning/generate_documents.py`, que reutiliza `RunPlanningStep`.
+- **Trigger**: the plan finishes being approved (after `sprints`), or the leader asks to regenerate a document.
+- **Result**: proposals of kind `document`: general spec, one spec per roadmap epic, and flow diagrams in Mermaid. Once approved they become versioned `Document`s.
+- **New stages** in `PLANNING_STAGES`: `general_spec`, `epic_specs`, `flow_diagrams`, each with its output schema.
+- **Use case**: `planning/generate_documents.py`, which reuses `RunPlanningStep`.
 
 ```mermaid
 sequenceDiagram
@@ -395,28 +399,28 @@ sequenceDiagram
     participant UoW
     participant Bus as EventBus
 
-    AP->>UC: plan completo aprobado
+    AP->>UC: full plan approved
     loop general_spec, epic_specs, flow_diagrams
         UC->>Bus: publish(AgentStarted)
-        UC->>AG: run_stage(stage, plan aprobado)
-        AG-->>UC: documentos (Markdown o Mermaid)
+        UC->>AG: run_stage(stage, approved plan)
+        AG-->>UC: documents (Markdown or Mermaid)
         UC->>UoW: proposals.add(Proposal kind document)
         UC->>UoW: commit()
         UC->>Bus: publish(ProposalCreated)
     end
-    Note over AP,Bus: al aprobar, ApproveProposal crea o versiona el Document
+    Note over AP,Bus: on approval, ApproveProposal creates or versions the Document
 ```
 
-### UC-09 · Conectar el repo de GitHub
+### UC-09 · Connect the GitHub repo
 
-- **Disparador**: el líder escribe `owner/name` en Integraciones.
-- **Resultado**: `project.repository` guardado y webhook registrado en el repo. Un solo repo por proyecto: si ya había uno, se reemplaza.
-- **Caso de uso**: `integrations/connect_repository.py`
-- **Puerto**: `CodeHost` necesita `check_access(repository)` y `register_webhook(repository, url, secret)`.
+- **Trigger**: the leader types `owner/name` in Integrations.
+- **Result**: `project.repository` saved and webhook registered on the repo. One repo per project: if there was one already, it's replaced.
+- **Use case**: `integrations/connect_repository.py`
+- **Port**: `CodeHost` needs `check_access(repository)` and `register_webhook(repository, url, secret)`.
 
 ```mermaid
 sequenceDiagram
-    actor L as Líder
+    actor L as Leader
     participant UI
     participant HTTP as HTTP integrations
     participant UC as ConnectRepository
@@ -427,7 +431,7 @@ sequenceDiagram
     UI->>HTTP: PUT /api/projects/{id}/repository
     HTTP->>UC: execute(id, repository)
     UC->>CH: check_access(repository)
-    alt sin acceso o no existe
+    alt no access or doesn't exist
         CH-->>UC: error
         UC-->>HTTP: RepositoryNotAccessible
         HTTP-->>UI: 422
@@ -440,11 +444,11 @@ sequenceDiagram
     end
 ```
 
-### UC-10 · Publicar tareas como issues
+### UC-10 · Publish tasks as issues
 
-- **Disparador**: el plan está aplicado (UC-05) y el proyecto tiene repo, o el líder lo pide para tareas nuevas.
-- **Resultado**: una propuesta `github_action` con la lista de issues a crear. Al aprobarla, se crea cada issue (título, descripción, criterios y checklist como task list de GitHub, labels de tipo y prioridad) y se guarda un `ExternalLink` tarea ↔ issue.
-- **Casos de uso**: `integrations/propose_issues.py` y la rama `github_action` de `ApproveProposal`.
+- **Trigger**: the first time the project has both a board (UC-05) and a repo, when a replan that adds tasks is approved, or when the leader asks for it (spec 007, FR-006).
+- **Result**: a `github_action` proposal with the list of issues to create. When approved, each issue is created (title, description, criteria and checklist as a GitHub task list, type and priority labels) and a task ↔ issue `ExternalLink` is saved.
+- **Use cases**: `integrations/propose_issues.py` and the `github_action` branch of `ApproveProposal`.
 
 ```mermaid
 sequenceDiagram
@@ -454,171 +458,173 @@ sequenceDiagram
     participant CH as CodeHost
     participant Bus as EventBus
 
-    UC->>UoW: tareas sin ExternalLink de tipo issue
+    UC->>UoW: tasks without an issue ExternalLink
     UC->>UoW: proposals.add(github_action create_issues)
     UC->>Bus: publish(ProposalCreated)
-    Note over UC,AP: el líder aprueba (o auto-aprobar)
-    loop cada tarea de la propuesta
-        AP->>CH: create_issue(repo, título, cuerpo, labels)
+    Note over UC,AP: the leader approves (or auto-approve)
+    loop each task in the proposal
+        AP->>CH: create_issue(repo, title, body, labels)
         CH-->>AP: IssueRef
-        AP->>UoW: links.add(ExternalLink task-issue)
+        AP->>UoW: links.add(task-issue ExternalLink)
     end
     AP->>UoW: commit()
     AP->>Bus: publish(IssuesPublished)
-    Note over AP,CH: si una falla, las ya creadas quedan vinculadas y la propuesta marca cuáles faltan
+    Note over AP,CH: if one fails, the ones already created stay linked and the proposal marks which are missing
 ```
 
-### UC-11 · Pedir code review de un PR
+### UC-11 · Request a code review for a PR
 
-- **Disparador**: llega el webhook de un PR abierto que referencia una issue del proyecto (`Closes #12`).
-- **Resultado**: propuesta `github_action` con los revisores sugeridos (miembros con el rol adecuado y menos carga) y un comentario de revisión hecho por el agente revisor. Al aprobarla se piden las reviews y se publica el comentario.
-- **Caso de uso**: `integrations/propose_review.py`
-- **Puerto**: `CodeHost` necesita `get_pull_request_diff` y `comment_on_pull_request`. Los miembros necesitan su usuario de GitHub (`Member.github_username`).
+- **Trigger**: a webhook arrives for an opened PR that references a project issue (`Closes #12`).
+- **Result**: a `github_action` proposal with the suggested reviewers (members with the right role and the lowest load) and a review comment written by the reviewer agent. When approved, the reviews are requested and the comment is posted.
+- **Use case**: `integrations/propose_review.py`
+- **Port**: `CodeHost` needs `get_pull_request_diff` and `comment_on_pull_request`. Members need their GitHub username (`Member.github_username`).
 
 ```mermaid
 sequenceDiagram
-    participant WH as Webhook github
+    participant WH as GitHub webhook
     participant UC as ProposeReview
     participant UoW
     participant CH as CodeHost
     participant AG as Agents
     participant AP as ApproveProposal
 
-    WH->>UC: PullRequestOpened(repo, número, closes)
-    UC->>UoW: tareas vinculadas a esas issues
-    UC->>CH: get_pull_request_diff(repo, número)
-    UC->>AG: run_stage(code_review, diff y criterios de la tarea)
-    AG-->>UC: comentarios y riesgos
-    UC->>UC: elige revisores por rol y carga
+    WH->>UC: PullRequestOpened(repo, number, closes)
+    UC->>UoW: tasks linked to those issues
+    UC->>CH: get_pull_request_diff(repo, number)
+    UC->>AG: run_stage(code_review, diff and the task's criteria)
+    AG-->>UC: comments and risks
+    UC->>UC: picks reviewers by role and load
     UC->>UoW: proposals.add(github_action request_review)
-    Note over UC,AP: el líder aprueba o ajusta los revisores
-    AP->>CH: request_review(repo, número, revisores)
-    AP->>CH: comment_on_pull_request(repo, número, comentario)
+    Note over UC,AP: the leader approves or adjusts the reviewers
+    AP->>CH: request_review(repo, number, reviewers)
+    AP->>CH: comment_on_pull_request(repo, number, comment)
 ```
 
-### UC-12 · Sincronizar el avance desde GitHub y cerrar objetivos
+### UC-12 · Sync progress from GitHub and close objectives
 
-- **Disparador**: webhooks de GitHub (`pull_request`, `issues`).
-- **Resultado**: el tablero refleja el avance real. Como **nuestro tablero es la fuente de verdad**, desde GitHub solo entran cambios de estado y se aplican sin propuesta.
+- **Trigger**: GitHub webhooks (`pull_request`, `issues`).
+- **Result**: the board reflects real progress. Since **our board is the source of truth**, only state changes come in from GitHub and they're applied without a proposal.
 
-| Evento de GitHub | Efecto en la tarea |
+| GitHub event | Effect on the task |
 |---|---|
-| PR abierto que cierra la issue | `in_progress` |
-| PR listo para review | `review` |
-| PR mergeado | `done` y checklist completo |
-| Issue cerrada sin PR | `done` |
-| Issue reabierta | `todo` |
+| PR opened that closes the issue | `in_progress` |
+| PR ready for review | `review` |
+| PR merged | `done` and checklist complete |
+| Issue closed as completed, without a PR | `done` |
+| Issue closed as not planned | No change; shown in the activity feed |
+| Issue reopened | `todo` |
 
-- Cuando todas las tareas de un objetivo están `done`, el `Objective` se cierra.
-- **Casos de uso**: `integrations/handle_pull_request_event.py`, `handle_issue_event.py`
+- GitHub events never move a task out of `done`, except reopening the issue. Events caused by the system's own writes are ignored (spec 008, FR-015).
+- When all the tasks of an objective are `done`, the `Objective` closes.
+- **Use cases**: `integrations/handle_pull_request_event.py`, `handle_issue_event.py`
 
 ```mermaid
 sequenceDiagram
     participant GH as GitHub
-    participant WH as Webhook github
+    participant WH as GitHub webhook
     participant UC as HandlePullRequestEvent
     participant UoW
     participant Bus as EventBus
     participant RP as Replan
 
     GH->>WH: POST /webhooks/github (pull_request merged)
-    WH->>WH: valida la firma HMAC con GITHUB_WEBHOOK_SECRET
-    alt firma inválida
+    WH->>WH: validates the HMAC signature with GITHUB_WEBHOOK_SECRET
+    alt invalid signature
         WH-->>GH: 401
-    else válida
-        WH->>UC: PullRequestMerged(repo, número, closes)
+    else valid
+        WH->>UC: PullRequestMerged(repo, number, closes)
         WH-->>GH: 202
-        UC->>UoW: proyecto por repository y tareas por ExternalLink
-        loop cada tarea vinculada
-            UC->>UC: status done y checklist completo
+        UC->>UoW: project by repository and tasks by ExternalLink
+        loop each linked task
+            UC->>UC: status done and checklist complete
             UC->>UoW: tasks.save(task)
             UC->>Bus: publish(TaskStatusChanged)
         end
-        UC->>UC: evalúa los objetivos de esas tareas
-        UC->>UoW: objective.done = true si están todas
+        UC->>UC: evaluates those tasks' objectives
+        UC->>UoW: objective.done = true if all are done
         UC->>UoW: commit()
         UC->>Bus: publish(ObjectiveClosed)
-        opt sprint cerrado con trabajo pendiente
-            UC->>RP: proponer re-planificación (UC-13)
+        opt sprint ended with pending work
+            UC->>RP: propose a replan (UC-13)
         end
     end
 ```
 
-### UC-13 · Re-planificar
+### UC-13 · Replan
 
-- **Disparador**:
-  - el líder lo pide con un motivo ("se fue un dev", "entra un cliente nuevo"),
-  - cambió el equipo (UC-02),
-  - un sprint cerró con trabajo pendiente (UC-12).
-- **Resultado**: propuesta `replan` con un diff sobre el tablero actual (tareas que se mueven de sprint, reasignaciones, tareas nuevas o descartadas) y su justificación. Al aprobarla se aplica el diff; las tareas `done` no se tocan.
-- **Caso de uso**: `planning/replan.py` (nueva etapa `replan` con su esquema de diff).
+- **Trigger**:
+  - the leader asks for it with a reason ("a dev left", "a new client came in"),
+  - the team changed (UC-02),
+  - a sprint ended with pending work (UC-12).
+- **Result**: a `replan` proposal with a diff over the current board (tasks that move between sprints, reassignments, new or discarded tasks) and its rationale. When approved, the diff is applied; `done` tasks are never touched. Automatic replans always wait for the leader, even with auto-approve (spec 008, FR-016).
+- **Use case**: `planning/replan.py` (new `replan` stage with its diff schema).
 
 ```mermaid
 sequenceDiagram
-    actor L as Líder
+    actor L as Leader
     participant HTTP as HTTP planning
     participant UC as Replan
     participant UoW
     participant AG as Agents
     participant Bus as EventBus
 
-    L->>HTTP: POST /api/projects/{id}/replan (motivo)
-    HTTP->>UC: lanza en segundo plano
+    L->>HTTP: POST /api/projects/{id}/replan (reason)
+    HTTP->>UC: launches in the background
     HTTP-->>L: 202
-    UC->>UoW: plan aprobado, equipo y tablero actual
-    UC->>AG: run_stage(replan, plan, tablero, velocidad real, motivo)
-    AG-->>UC: diff (mover, reasignar, agregar, descartar) y justificación
-    UC->>UC: valida el diff (sin tocar tareas done)
+    UC->>UoW: approved plan, team and current board
+    UC->>AG: run_stage(replan, plan, board, real velocity, reason)
+    AG-->>UC: diff (move, reassign, add, discard) and rationale
+    UC->>UC: validates the diff (no done tasks touched)
     UC->>UoW: proposals.add(Proposal kind replan)
     UC->>UoW: commit()
     UC->>Bus: publish(ProposalCreated)
-    Note over UC,Bus: al aprobar, ApproveProposal aplica el diff en una sola transacción
+    Note over UC,Bus: on approval, ApproveProposal applies the diff in a single transaction
 ```
 
-### UC-14 · Seguir la actividad en vivo
+### UC-14 · Follow the live activity
 
-- **Disparador**: cualquier pantalla del proyecto abierta.
-- **Resultado**: la UI ve en vivo qué agente está trabajando, las propuestas nuevas y los cambios del tablero, sin recargar ("Transparencia de agentes").
-- **Adaptador**: `inbound/http/planning.py` expone `GET /api/projects/{id}/events` como SSE (`sse-starlette`) y se suscribe al `EventBus`.
+- **Trigger**: any project screen is open.
+- **Result**: the UI sees live which agent is working, the new proposals and the board changes, without reloading ("Agent transparency").
+- **Adapter**: `inbound/http/planning.py` exposes `GET /api/projects/{id}/events` as SSE (`sse-starlette`) and subscribes to the `EventBus`.
 
 ```mermaid
 sequenceDiagram
     participant UI
     participant HTTP as HTTP SSE
     participant Bus as EventBus
-    participant UC as Cualquier caso de uso
+    participant UC as Any use case
 
     UI->>HTTP: GET /api/projects/{id}/events
     HTTP->>Bus: subscribe(project_id)
     UC->>Bus: publish(AgentStarted)
-    Bus-->>HTTP: evento
+    Bus-->>HTTP: event
     HTTP-->>UI: event agent_started
     UC->>Bus: publish(ProposalCreated)
-    Bus-->>HTTP: evento
+    Bus-->>HTTP: event
     HTTP-->>UI: event proposal_created
-    UI->>UI: refetch de lo que cambió
-    Note over UI,HTTP: si se corta, la UI reconecta y hace GET del estado completo
+    UI->>UI: refetches what changed
+    Note over UI,HTTP: if it drops, the UI reconnects and GETs the full state
 ```
 
 ---
 
-## Impacto en la arquitectura
+## Impact on the architecture
 
-Lo que estos casos de uso agregan a lo que ya está en `main`:
+What these use cases add to what's already on `main`:
 
-| Dónde | Qué falta |
+| Where | What's missing |
 |---|---|
-| `domain/plan.py` | Etapas `general_spec`, `epic_specs`, `flow_diagrams`, `code_review`, `replan`, con sus esquemas |
-| `domain/proposals.py` | `rejection_reason` en `Proposal` |
-| `domain/project.py` | `Member.github_username`; `Objective` vinculado a fase y tareas |
+| `domain/plan.py` | Stages `general_spec`, `epic_specs`, `flow_diagrams`, `code_review`, `replan`, with their schemas |
+| `domain/proposals.py` | `rejection_reason` in `Proposal` |
+| `domain/project.py` | `Member.github_username`; `Objective` linked to a sprint and its tasks |
 | `domain/events.py` | `TeamChanged`, `PlanApplied`, `IssuesPublished`, `ObjectiveClosed` |
-| `application/ports/code_host.py` | `check_access`, `register_webhook`, `get_pull_request_diff`, `comment_on_pull_request` |
-| `application/ports/repositories.py` | `ExternalLinkRepository`, `ObjectiveRepository`; sumar `proposals`, `documents`, `links` y `objectives` al `UnitOfWork` |
-| `application/use_cases/planning/` | `RunPlanning` (de corrido) se reemplaza por `StartPlanning` + `RunPlanningStep` |
-| Ejecución en segundo plano | Los agentes corren en `asyncio.create_task` desde el adaptador HTTP; la sesión de DB de esa tarea es propia, no la del request |
+| `application/ports/code_host.py` | `check_access`, `register_webhook`, `update_issue`, `get_pull_request_diff`, `comment_on_pull_request` |
+| `application/ports/repositories.py` | `ExternalLinkRepository`, `ObjectiveRepository`; add `proposals`, `documents`, `links` and `objectives` to the `UnitOfWork` |
+| `application/use_cases/planning/` | `RunPlanning` (back to back) is replaced by `StartPlanning` + `RunPlanningStep` |
+| Background execution | Agents run in `asyncio.create_task` from the HTTP adapter; that task has its own DB session, not the request's |
 
-## Preguntas abiertas
+## Open questions
 
-1. ~~**UC-11**: ¿el sistema también abre PRs?~~ **Resuelta en la spec 007**: no, solo pide reviews y comenta. Los PRs los abre el equipo.
-2. ~~**UC-04 rechazar**: ¿el agente rehace la etapa automáticamente con el motivo, o el líder decide cuándo?~~ **Resuelta**: la rehace automáticamente con el motivo; tras 3 rechazos seguidos de la misma etapa espera al líder ([spec 002](../specs/002-agent-planning-pipeline/spec.md), FR-011).
-3. ~~**UC-12**: ¿la detección de desvío (sprint cerrado con pendientes) propone re-planificar sola, o solo avisa?~~ **Resuelta**: propone la re-planificación sola, también ante cambios de equipo, y siempre espera la decisión del líder, aunque el proyecto tenga auto-aprobar ([spec 008](../specs/008-github-sync-replanning/spec.md), FR-010 y FR-016).
+1. ~~**UC-11**: does the system also open PRs?~~ **Resolved in spec 007**: no, it only requests reviews and comments. The team opens the PRs.
+2. ~~**UC-04 reject**: does the agent redo the stage automatically with the reason, or does the leader decide when?~~ **Resolved**: it redoes it automatically with the reason; after 3 rejections in a row of the same stage it waits for the leader ([spec 002](../specs/002-agent-planning-pipeline/spec.md), FR-011).
+3. ~~**UC-12**: does drift detection (sprint ended with pending work) propose a replan by itself, or just warn?~~ **Resolved**: it proposes the replan by itself, also on team changes, and it always waits for the leader's decision, even with auto-approve ([spec 008](../specs/008-github-sync-replanning/spec.md), FR-010 and FR-016).

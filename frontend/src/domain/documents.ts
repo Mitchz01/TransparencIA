@@ -1,4 +1,4 @@
-// Espejo de backend/app/domain/documents.py
+// Mirrors backend/app/domain/documents.py
 
 export type DocumentKind = 'general_spec' | 'use_case_spec' | 'flow_diagram'
 
@@ -7,7 +7,7 @@ export interface Document {
   project_id: number
   kind: DocumentKind
   title: string
-  // Markdown para specs, Mermaid para diagramas.
+  // Markdown for specs, Mermaid for diagrams.
   content: string
   version: number
 }

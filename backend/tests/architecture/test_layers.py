@@ -1,4 +1,4 @@
-"""Regla de dependencia de la arquitectura hexagonal: adapters → application → domain."""
+"""Hexagonal architecture dependency rule: adapters → application → domain."""
 
 import ast
 from pathlib import Path
@@ -29,7 +29,7 @@ def _imports(path: Path) -> list[str]:
 @pytest.mark.parametrize("layer", FORBIDDEN)
 def test_layer_does_not_import_outer_layers(layer: str):
     violations = [
-        f"{path.relative_to(APP)} importa {name}"
+        f"{path.relative_to(APP)} imports {name}"
         for path in (APP / layer).rglob("*.py")
         for name in _imports(path)
         if any(name == banned or name.startswith(banned + ".") for banned in FORBIDDEN[layer])

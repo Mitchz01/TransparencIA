@@ -6,9 +6,9 @@ from app.domain.plan import PlanningStage
 
 
 class PlanningAgents(Protocol):
-    """Corre el agente de una etapa del plan. El orden de las etapas y la aprobación
-    entre una y otra los decide el caso de uso, no el adaptador."""
+    """Runs the agent of one plan stage. The order of the stages and the approval
+    between them are decided by the use case, not the adapter."""
 
     async def run_stage(self, stage: PlanningStage, context: dict[str, Any]) -> BaseModel:
-        """`context` trae sólo las claves de `stage.inputs`; devuelve una instancia de `stage.schema`."""
+        """`context` only carries the keys in `stage.inputs`; returns an instance of `stage.schema`."""
         ...
