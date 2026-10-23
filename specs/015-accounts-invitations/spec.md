@@ -14,7 +14,7 @@
 - **Includes**: the screens for all of the above (sign in, sign up, profile, join, team), following spec 009 and the design system.
 - **Changes spec 001**: the leader no longer types the team. The creator is the first member (Leader) and everyone else joins with the link. The leader still edits each member's team role, seniority and hours, and removes members. "Team changed" keeps being published on joins, leaves and edits (001, FR-010).
 - **Changes the constitution, principle 5**: "no user auth until it's needed" becomes "accounts with email and password; nothing more until it's needed".
-- **Doesn't include**: signing in with Google or GitHub (the buttons are shown but only say "Próximamente"), email verification, password reset, sending emails, two-factor auth, deleting an account, organizations or workspaces, and showing who did each action in the activity feed.
+- **Doesn't include**: signing in with Google, GitHub or SSO (the buttons are shown but only say "Próximamente"), email verification, password reset, sending emails, two-factor auth, deleting an account, organizations or workspaces, and showing who did each action in the activity feed.
 - **Doesn't include**: moving projects created before this feature to accounts. The demo starts from an empty database.
 
 ## User Scenarios & Testing *(mandatory)*
@@ -54,9 +54,9 @@ A person signs up with their name, email and password and lands in the app alrea
    - **When** they open any project or the project list
    - **Then** they are sent to sign in, and after signing in they land where they were going
 
-6. **Scenario**: Google and GitHub buttons
+6. **Scenario**: Google, GitHub and SSO buttons
    - **Given** the sign in screen
-   - **When** the person presses "Continuar con Google" or "Continuar con GitHub"
+   - **When** the person presses "Continuar con Google", "Continuar con GitHub" or "Continuar con SSO"
    - **Then** a short message says it's coming soon and nothing else happens
 
 ---
@@ -266,7 +266,7 @@ On the team screen the leader sees each member with their team role, seniority, 
 - **FR-013**: The leader MUST be able to change a member's name, team role, seniority, hours, skills and permission, and remove members. Changes to member data MUST publish "team changed"; permission changes MUST NOT. Profile changes after joining MUST NOT change project data, except the name.
 - **FR-014**: A member MUST be able to leave a project. Leaving or being removed MUST unassign their pending tasks, keep their name on done tasks and end their access to the project, including its live activity.
 - **FR-015**: A project MUST always keep at least one Leader; leaving, removing or demoting the last one MUST be rejected with a clear message.
-- **FR-016**: The sign in screen MUST show "Continuar con Google" and "Continuar con GitHub", which only say the option is coming soon.
+- **FR-016**: The sign in screen MUST show "Continuar con Google", "Continuar con GitHub" and "Continuar con SSO", which only say the option is coming soon.
 - **FR-017**: The screens MUST follow spec 009 (FR-002 to FR-012): design system, Spanish text, keyboard, contrast, errors under each field. Actions a member can't do MUST be hidden for them, not just disabled.
 - **FR-018**: Everything MUST work without a Gemini key or a GitHub token (constitution, principle 6), and the app MUST keep working against the fake service.
 

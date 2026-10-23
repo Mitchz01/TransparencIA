@@ -9,7 +9,7 @@ You are implementing the **frontend** of spec 015 (accounts, invitations and pro
 ## Read first, in this order
 
 1. `AGENTS.md`: the SDD workflow, the stack, the hexagonal layers and the conventions. Everything in English except the UI text, which is in **Spanish**.
-2. `specs/015-accounts-invitations/spec.md`: the what and why. Stories 1 to 6, FR-016 (fake Google/GitHub buttons) and FR-017 (spec 009's UI rules apply).
+2. `specs/015-accounts-invitations/spec.md`: the what and why. Stories 1 to 6, FR-016 (fake Google, GitHub and SSO buttons) and FR-017 (spec 009's UI rules apply).
 3. `specs/015-accounts-invitations/plan.md`: the API Contract, the "Guards on the existing endpoints" table (which actions are leader-only) and **Phase 10**, the tasks you'll tick (`- [x]`) one by one.
 4. `frontend/docs/api-contract.md`: section 1 (auth row), section 2 (401, 403 and the new codes), section 3 (`Account`, `Permission`, `Invitation`, `InvitationPreview`, `JoinResult`, and the new `Member` and `ProjectSummary` fields), section 4 (`ProjectGateway` changed, new `AuthGateway` and `TeamGateway`).
 5. `specs/009-frontend/spec.md` FR-001 to FR-012 and `frontend/design-system/README.md`: every screen uses only the design system, its tokens and its rules. If a piece is missing, add it to the design system first.
@@ -76,7 +76,7 @@ Use the voice in `design-system/README.md`: short, direct Spanish, no emojis, no
   - Fields: email and password.
   - `invalid_credentials` shows its `detail` above the form ("Email o contraseña incorrectos.") without marking a field.
   - Link to `/signup` that keeps `next`.
-  - Below the form, separated by a short "o" label (no separator line), two secondary buttons with their icons: "Continuar con Google" and "Continuar con GitHub". They only show the toast "Próximamente" and do nothing else (FR-016). Check the icon set in `ds/icons.ts`; add the logos to the design system if they're missing.
+  - Below the form, separated by a short "o" label (no separator line), three secondary buttons with their icons: "Continuar con Google", "Continuar con GitHub" and "Continuar con SSO". They only show the toast "Próximamente" and do nothing else (FR-016). Check the icon set in `ds/icons.ts`; add the logos to the design system if they're missing.
 - **`/signup` ("Crear cuenta")**
   - Fields: name, email and password, with an 8-character hint under the password.
   - Errors show under each field; "Already registered." means "Ese email ya tiene cuenta" plus a link to sign in.
