@@ -73,6 +73,100 @@ frontend/src/
 
 **Structure Decision**: web application on the existing hexagonal layout. The document stages are declared next to `PLANNING_STAGES` as `DOCUMENT_STAGES`, so the `PlanningAgents` port and both agent adapters work unchanged; `GenerateDocuments` reuses spec 002's `RunPlanningStep` logic for agent calls, events and proposals.
 
+## API Contract
+
+Follows [plan/api-conventions.md](../../plan/api-conventions.md) (headers, error body, status codes). The API tests assert every status row below.
+
+New domain errors (Foundational): `DocumentNotFound`, `VersionNotFound`, `RegenerationInProgress`, `VersionConflict`, `InvalidDiagram`.
+
+Document proposals are approved through spec 005's proposal API; approving one creates or versions the document (T012).
+
+### Shared shapes
+
+**DocumentSummary**
+
+```json
+{ "id": 4, "kind": "epic_spec", "epic_key": "EP-2", "title": "Projects and team", "version": 2, "outdated": false, "updated_at": "2026-10-23T15:10:00Z" }
+```
+
+`kind`: `general_spec` | `epic_spec` | `flow_diagram`. `epic_key` is only set for `epic_spec`.
+
+**Document**
+
+```json
+{
+  "id": 4,
+  "project_id": 12,
+  "kind": "epic_spec",
+  "epic_key": "EP-2",
+  "title": "Projects and team",
+  "content": "# Feature Specification: …",
+  "version": 2,
+  "outdated": false,
+  "versions": [
+    { "version": 1, "created_at": "2026-10-23T14:40:00Z", "source": "agent", "proposal_id": 52 },
+    { "version": 2, "created_at": "2026-10-23T15:10:00Z", "source": "leader", "proposal_id": null }
+  ]
+}
+```
+
+`content` is Markdown for specs and Mermaid source for diagrams. `source`: `agent` (approved proposal) | `leader` (manual edit).
+
+### `GET /api/projects/{id}/documents` — list documents (US1)
+
+| Status | When | Body |
+|---|---|---|
+| `200` | Exists (empty list before the plan is completed) | `DocumentSummary[]`, general spec first, then epic specs by epic key, then diagrams |
+| `404` | Unknown project | Error `project_not_found` |
+
+### `GET /api/documents/{id}` — read a document (US1, US4)
+
+Optional query: `?version=1` returns that version's `content`; default is the latest.
+
+| Status | When | Body |
+|---|---|---|
+| `200` | Exists | `Document` |
+| `404` | Unknown document | Error `document_not_found` |
+| `404` | `version` doesn't exist for this document | Error `version_not_found` |
+| `422` | `version` isn't a positive integer | Error `validation_failed` with `errors` (`field: "version"`) |
+
+### `POST /api/documents/{id}/regenerate` — regenerate with instructions (US4)
+
+Request headers: `Content-Type: application/json`
+
+```json
+{ "instructions": "Add the edge case where the repo is disconnected." }
+```
+
+| Status | When | Body |
+|---|---|---|
+| `202` | The writer agent runs in the background; the result arrives as a `document` proposal (`proposal_created` over SSE) | `{"document_id": 4, "status": "regenerating"}` |
+| `400` | Body isn't JSON | Error `malformed_request` |
+| `404` | Unknown document | Error `document_not_found` |
+| `409` | A regeneration of this document is already running or its proposal is pending | Error `regeneration_in_progress` |
+| `422` | `instructions` missing, empty or > 2000 chars | Error `validation_failed` with `errors` |
+
+### `PUT /api/documents/{id}` — manual edit (US4)
+
+Request headers: `Content-Type: application/json`. A leader edit isn't an agent decision, so it saves a new version directly, without a proposal.
+
+```json
+{ "content": "# Feature Specification: …", "base_version": 2 }
+```
+
+`base_version` is the version the leader edited; it prevents overwriting a newer one.
+
+| Status | When | Body |
+|---|---|---|
+| `200` | Saved as a new version; clears `outdated` | `Document` |
+| `400` | Body isn't JSON | Error `malformed_request` |
+| `404` | Unknown document | Error `document_not_found` |
+| `409` | `base_version` isn't the current version (someone saved in between) | Error `version_conflict`, plus `"current_version": 3` |
+| `422` | `content` empty or > 100 000 chars; `base_version` missing | Error `validation_failed` with `errors` |
+| `422` | It's a diagram and `check_mermaid` finds issues | Error `invalid_diagram`, `errors` with one entry per issue (`field: "content"`) |
+
+---
+
 ## Phase 1: Setup (Shared Infrastructure)
 
 **Purpose**: frontend dependencies

@@ -91,6 +91,45 @@ directories captured above]
   ============================================================================
 -->
 
+## API Contract
+
+<!--
+  ACTION REQUIRED: one subsection per endpoint this feature adds or changes.
+  Follow plan/api-conventions.md (headers, error body, status codes) and only
+  write what differs from it. The API tests must assert every status row.
+  Delete this section if the feature adds no endpoints.
+-->
+
+New domain errors: [e.g., `ThingNotFound`, `ThingLocked`; add them to plan/api-conventions.md too]
+
+### Shared shapes
+
+**[Resource]**
+
+```json
+{ "id": 1, "field": "value" }
+```
+
+### `[METHOD] /api/[path]` — [what it does] ([US1])
+
+Request headers: `Content-Type: application/json` [only if it has a body; list any other required header]
+
+```json
+{ "field": "value" }
+```
+
+[Field rules: required/optional, defaults, ranges, enums; PATCH semantics if relevant]
+
+| Status | When | Body |
+|---|---|---|
+| `200` / `201` / `202` / `204` | [success case] | [`Resource`, ack, or empty] |
+| `400` | Body isn't JSON | Error `malformed_request` |
+| `404` | [unknown id] | Error `[entity]_not_found` |
+| `409` | [valid but not allowed in the current state] | Error `[code]` |
+| `422` | [which rules fail] | Error `validation_failed` with `errors` |
+
+---
+
 ## Phase 1: Setup (Shared Infrastructure)
 
 **Purpose**: Project initialization and basic structure

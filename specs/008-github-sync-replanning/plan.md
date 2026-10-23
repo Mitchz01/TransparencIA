@@ -72,6 +72,98 @@ frontend/src/
 
 **Structure Decision**: web application on the existing hexagonal layout. Webhook parsing lives in the inbound adapter and only produces domain events (`domain/sync.py`); the status rules are pure functions, so they're tested without HTTP or a DB.
 
+## API Contract
+
+Follows [plan/api-conventions.md](../../plan/api-conventions.md) (headers, error body, status codes). The API tests assert every status row below.
+
+New domain errors: `PlanNotApplied`, `SprintAlreadyClosed`, `SprintNotFound`. `replan` proposals are approved through spec 005's proposal API; approving one runs `ApplyReplan`.
+
+### `POST /webhooks/github` — GitHub events (US1)
+
+Called by GitHub, not by the frontend. Request headers (set by GitHub):
+
+| Header | Required | Use |
+|---|---|---|
+| `Content-Type` | Yes | `application/json` (the webhook is registered with this type in spec 007) |
+| `X-Hub-Signature-256` | Yes | `sha256=<hex>` HMAC of the raw body with `GITHUB_WEBHOOK_SECRET`; compared with `hmac.compare_digest` |
+| `X-GitHub-Event` | Yes | `pull_request`, `issues`, `ping`; anything else is ignored |
+| `X-GitHub-Delivery` | Yes | Delivery id, used to process each delivery once (FR-003) |
+
+Body: GitHub's payload as is. Only these are processed: `pull_request` with `opened`, `ready_for_review`, `closed` (+ `merged`); `issues` with `closed`, `reopened`.
+
+| Status | When | Body |
+|---|---|---|
+| `202` | Valid signature; queued for background processing | `{"delivery_id": "72d3…", "status": "accepted"}` |
+| `202` | Valid signature, but the delivery was already received, the event or action isn't handled, or the repo isn't connected to any project | `{"delivery_id": "72d3…", "status": "ignored", "reason": "duplicate" \| "unhandled_event" \| "unknown_repository"}` |
+| `200` | `ping` (sent when the webhook is created) | `{"status": "pong"}` |
+| `400` | Missing `X-GitHub-Event` or `X-GitHub-Delivery`, or the body isn't JSON | Error `malformed_request` |
+| `401` | Missing or wrong signature; nothing is processed | Error `invalid_signature` |
+
+The signature is checked **before** parsing the body. Processing errors after the `202` are logged and never change the response; GitHub doesn't retry on our behalf, so `202` means "received", not "applied".
+
+### `POST /api/projects/{id}/replan` — ask for a replan (US2)
+
+Request headers: `Content-Type: application/json`
+
+```json
+{ "reason": "Leo leaves the team next week." }
+```
+
+| Status | When | Body |
+|---|---|---|
+| `202` | The replan agent runs in the background; the result arrives as a `replan` proposal | `{"project_id": 12, "status": "replanning", "supersedes": 70}` — `supersedes` is the pending replan proposal this one replaces (its reason is merged, FR-014), or `null` |
+| `400` | Body isn't JSON | Error `malformed_request` |
+| `404` | Unknown project | Error `project_not_found` |
+| `409` | The plan isn't applied yet (project not `ready`) | Error `plan_not_applied` |
+| `422` | `reason` missing, empty or > 1000 chars | Error `validation_failed` with `errors` |
+
+**Replan proposal content** (shown by spec 005, adjusted by removing changes):
+
+```json
+{
+  "changes": [
+    { "kind": "move", "task_key": "US-7", "to_sprint": 3, "expected_status": "todo", "rationale": "…" },
+    { "kind": "reassign", "task_key": "US-9", "to_member": "Ana Gómez", "expected_status": "todo", "rationale": "…" },
+    { "kind": "add", "new_story": { /* Story */ }, "to_sprint": 2, "rationale": "…" },
+    { "kind": "discard", "task_key": "US-11", "expected_status": "backlog", "rationale": "…" }
+  ],
+  "rationale": "…"
+}
+```
+
+After approval, `replan_applied` reports `{"project_id", "applied": ["US-7", …], "discarded": [{"task_key", "reason": "task changed since the proposal"}]}`.
+
+### `POST /api/sprints/{id}/close` — close a sprint (US4)
+
+No body.
+
+| Status | When | Body |
+|---|---|---|
+| `200` | Closed; publishes `sprint_closed`. If tasks were pending, an automatic replan is proposed (never auto-approved, FR-016) | `{"sprint": Sprint, "pending_task_keys": ["US-7", "US-8"], "replan_proposed": true}` |
+| `404` | Unknown sprint | Error `sprint_not_found` |
+| `409` | Already closed | Error `sprint_already_closed` |
+
+`Sprint` is spec 003's sprint plus `closed: bool` and `end_date: "YYYY-MM-DD" | null`.
+
+### `POST /api/dev/github-events` — replay a fixture (dev only, T029)
+
+Only mounted when `ENV=dev`; otherwise it doesn't exist (`404`). Skips the signature on purpose.
+
+Request headers: `Content-Type: application/json`
+
+```json
+{ "fixture": "pull_request_merged", "repository": "acme/agile-app", "number": 12 }
+```
+
+`fixture`: a file name in `backend/tests/fixtures/github/` without `.json`. `repository` and `number` override the fixture's values.
+
+| Status | When | Body |
+|---|---|---|
+| `202` | Replayed through `HandleGithubEvent` | `{"delivery_id": "dev-…", "status": "accepted"}` |
+| `422` | Unknown fixture or invalid fields | Error `validation_failed` with `errors` |
+
+---
+
 ## Phase 1: Setup (Shared Infrastructure)
 
 **Purpose**: test fixtures and entity fields

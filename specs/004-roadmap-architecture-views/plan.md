@@ -146,6 +146,58 @@ class PlanViews(BaseModel):
 
 ---
 
+## API Contract
+
+Follows [plan/api-conventions.md](../../plan/api-conventions.md) (headers, error body, status codes). The API tests assert every status row below.
+
+### `GET /api/projects/{id}/plan` — the three plan views (US1–US4)
+
+No body. Read-only: it never writes anything (FR-009).
+
+| Status | When | Body |
+|---|---|---|
+| `200` | The project exists, whatever its status (views that don't exist yet come back as `not_generated`) | `PlanViews` |
+| `404` | Unknown project | Error `project_not_found` |
+
+```json
+{
+  "roadmap": {
+    "status": "approved",
+    "origin": { "agent": "Product manager", "rationale": "…", "approved_at": "2026-10-23T14:20:00Z", "decision": "auto" },
+    "content": {
+      "phases": [
+        {
+          "name": "Foundations", "goal": "Base ready", "start_week": 1, "end_week": 2,
+          "deliverables": ["Repo and CI"],
+          "epics": [
+            { "key": "EP-1", "title": "Setup", "description": "…", "has_tasks": true,
+              "progress": { "tasks": 4, "tasks_done": 1, "points": 10, "points_done": 2 } }
+          ],
+          "progress": { "tasks": 8, "tasks_done": 1, "points": 21, "points_done": 2 }
+        }
+      ],
+      "progress": { "tasks": 30, "tasks_done": 1, "points": 80, "points_done": 2 },
+      "current_week": 2,
+      "current_phase": "Foundations",
+      "overdue": false
+    }
+  },
+  "methodology": {
+    "status": "approved",
+    "origin": { "agent": "Agile coach", "rationale": "…", "approved_at": "…", "decision": "leader" },
+    "content": { "decision": { /* MethodologyDecision */ }, "chosen_by": "agents" }
+  },
+  "architecture": { "status": "pending", "origin": null, "content": null }
+}
+```
+
+- `status`: `not_generated` | `pending` | `approved`. `origin` and `content` are only set when `approved`; the content of pending or rejected proposals is never returned (FR-002, FR-003).
+- `decision`: `leader` | `adjusted` | `auto`. `chosen_by`: `leader` (methodology requested) | `agents` (`auto`).
+- `current_week` and `current_phase` are `null` until the board exists; `overdue` is `true` when today is past the last phase.
+- `architecture.content` is `Architecture` and `methodology.content.decision` is `MethodologyDecision`, both as in `domain/plan.py`.
+
+---
+
 ## Phase 1: Setup (Shared Infrastructure)
 
 - [ ] T001 Check that `backend/tests/fakes.py` (spec 001, T009) has `proposals` and `tasks` in `InMemoryUnitOfWork`; add them if missing

@@ -18,6 +18,8 @@ Stages in order; each one is an `LlmAgent` that returns JSON with a schema ([dom
 - [plan/context.md](plan/context.md): what the product is and how it's used (no technical details).
 - [plan/hexagonal-architecture.md](plan/hexagonal-architecture.md): hexagonal architecture (ports and adapters), folders and decisions.
 - [plan/use-cases.md](plan/use-cases.md): use cases with diagrams of how each one is implemented.
+- [plan/api-conventions.md](plan/api-conventions.md): HTTP API rules (headers, error body, status codes); each spec's plan has its API Contract.
+- [frontend/docs/api-contract.md](frontend/docs/api-contract.md): the whole API from the frontend's side: TypeScript shapes, endpoints by gateway, errors and SSE events.
 
 ## How we work: SDD
 

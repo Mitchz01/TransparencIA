@@ -67,6 +67,140 @@ frontend/src/
 
 **Structure Decision**: web application on the existing hexagonal layout. The board-building logic is a pure function in `domain/board.py` so it can be tested without a DB; `ApplyPlan` only orchestrates persistence.
 
+## API Contract
+
+Follows [plan/api-conventions.md](../../plan/api-conventions.md) (headers, error body, status codes). The API tests assert every status row below.
+
+New domain errors (Foundational): `CapacityNotApplicable`; `SprintClosed` once spec 008 adds closed sprints.
+
+### Shared shapes
+
+**Task**
+
+```json
+{
+  "id": 87,
+  "project_id": 12,
+  "sprint_id": 5,
+  "assignee_id": 3,
+  "key": "US-4",
+  "epic_key": "EP-2",
+  "title": "Load members and roles",
+  "description": "As a leader I want…",
+  "acceptance_criteria": ["Works on desktop and mobile"],
+  "checklist": [{ "text": "Works on desktop and mobile", "done": false }],
+  "type": "feature",
+  "points": 3,
+  "priority": "high",
+  "status": "todo",
+  "position": 0,
+  "missing_role": null
+}
+```
+
+- `status`: `backlog` | `todo` | `in_progress` | `review` | `done`. `type`: `feature` | `bug` | `chore` | `spike`. `priority`: `low` | `medium` | `high`.
+- `sprint_id: null` = in the backlog. `assignee_id: null` with `missing_role: "UX design"` = nobody covers the role.
+- Spec 007 adds `issue: {"number", "url", "state", "broken"} | null`.
+
+**Warning** (never blocks, returned next to the task)
+
+```json
+{ "code": "wip_limit_exceeded", "column": "in_progress", "limit": 3, "count": 4 }
+```
+
+`code`: `wip_limit_exceeded` | `sprint_overloaded` (`{"code", "sprint_id", "points", "capacity"}`).
+
+### `GET /api/projects/{id}/board` — board read model (Foundational, US1, US4)
+
+| Status | When | Body |
+|---|---|---|
+| `200` | Exists (empty lists until the plan is applied) | `BoardView` |
+| `404` | Unknown project | Error `project_not_found` |
+
+```json
+{
+  "project_id": 12,
+  "continuous": false,
+  "wip_limits": [{ "column": "in_progress", "limit": 3 }],
+  "capacity_override": null,
+  "sprints": [
+    {
+      "id": 5, "number": 1, "name": "Sprint 1", "goal": "Base ready", "phase": "Foundations",
+      "load": { "points": 21, "capacity": 18, "overloaded": true }
+    }
+  ],
+  "objectives": [{ "id": 9, "sprint_id": 5, "title": "Base ready", "done": false }],
+  "tasks": [ /* Task */ ]
+}
+```
+
+`continuous: true` when the methodology is Kanban: no sprint selector and `load` is `null` (spec edge case).
+
+### `PATCH /api/tasks/{id}` — move or edit a task (US2, US3, US4)
+
+Request headers: `Content-Type: application/json`. Every field is optional; at least one is required. Move fields and edit fields can be combined.
+
+```json
+{
+  "status": "in_progress",
+  "position": 0,
+  "sprint_id": 6,
+  "title": "Load members and roles",
+  "description": "…",
+  "points": 5,
+  "priority": "high",
+  "assignee_id": 3
+}
+```
+
+- **Move**: `status`, `position` (0-based index in the target column; positions are compacted), `sprint_id` (`null` = backlog). Moving to another sprint without `status` lands in `todo`.
+- **Edit**: `title`, `description`, `points`, `priority`, `assignee_id` (`null` = unassigned). Assigning someone clears `missing_role`.
+
+| Status | When | Body |
+|---|---|---|
+| `200` | Saved; publishes `task_status_changed` (move) or `task_updated` (edit) | `{"task": Task, "warnings": [Warning], "suggest_advance": false}` |
+| `400` | Body isn't JSON | Error `malformed_request` |
+| `404` | Unknown task | Error `task_not_found` |
+| `409` | Target sprint is closed (spec 008) | Error `sprint_closed` |
+| `422` | Empty body; `status` or `priority` not in the enum; `position` < 0; `points` not an integer 0–100; `title` empty or > 200 chars; `sprint_id` or `assignee_id` not from this project. Nothing is saved | Error `validation_failed` with `errors` |
+
+Going over a WIP limit or the sprint capacity returns `200` with a warning, never an error (constitution, principle 4).
+
+### `PUT /api/tasks/{id}/checklist` — replace the checklist (US3)
+
+Request headers: `Content-Type: application/json`
+
+```json
+{ "items": [{ "text": "Form validates fields", "done": true }, { "text": "Has tests", "done": false }] }
+```
+
+| Status | When | Body |
+|---|---|---|
+| `200` | Saved; publishes `task_updated` | `{"task": Task, "warnings": [], "suggest_advance": true}` — `suggest_advance` is `true` when every item is done and the task is in `in_progress` |
+| `400` | Body isn't JSON | Error `malformed_request` |
+| `404` | Unknown task | Error `task_not_found` |
+| `422` | `items` missing; an item `text` empty or > 300 chars; more than 50 items | Error `validation_failed` with `errors` (`items[2].text`) |
+
+### `PUT /api/projects/{id}/capacity` — fixed points per sprint (US4, FR-017)
+
+Request headers: `Content-Type: application/json`
+
+```json
+{ "points_per_sprint": 20 }
+```
+
+`null` removes the override and goes back to the estimate from hours and seniority.
+
+| Status | When | Body |
+|---|---|---|
+| `200` | Saved | `{"capacity_override": 20, "sprints": [{"id", "load"}]}` |
+| `400` | Body isn't JSON | Error `malformed_request` |
+| `404` | Unknown project | Error `project_not_found` |
+| `409` | Kanban project (continuous board, no sprint capacity) | Error `capacity_not_applicable` |
+| `422` | Not an integer 1–500 or `null` | Error `validation_failed` with `errors` |
+
+---
+
 ## Phase 1: Setup (Shared Infrastructure)
 
 **Purpose**: dependencies and entity fields
