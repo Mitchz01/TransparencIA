@@ -133,6 +133,11 @@ Added for the first round of screens; all of them are in [preview.html](preview.
 | Empty state | Icon on a 48px `surface-strong` square with `radius-md`, heading, one sentence, one action | Says what's missing and links to where it's made |
 | Skeleton | `surface-strong` blocks with `radius-md`, a slow opacity pulse | No pulse under reduced motion |
 | Capacity bar | Track with a `primary` fill (`coral` when overloaded) and "18 of 21 pts" next to it | Overload adds "Overloaded" with the alert icon |
+| Row list | Rows on `inset` with `radius-md`, a title, an optional detail in `ink-muted` and something on the right; a group title in `text-label` above | Rows are separated by 6px of space, never by lines. Progress tracks inside a row use the `surface` track |
+| Week strip | One 12px cell per week of the project: the phase's weeks in `ink-subtle` at 45%, the others `inset`, the current week `primary` (`primary-soft` outside the phase) | Read by screen readers as a sentence ("Weeks 3 to 4 of 6, this is week 3") |
+| Document text | Markdown in the app's type scale: `text-title`, `text-heading`, `text-body`; lists marked with a short hyphen; code on `inset` in Geist | No horizontal rules and no images; diagrams render with the theme's tokens |
+| Issue badge | GitHub icon and `#12` in `blue`; closed or merged adds the word in `teal`; a broken link says so in `coral` | Inside cards, next to the key and the points |
+| Replan change | A checkbox row on `inset`: the change in `text-label`, its reason below in `ink-muted` | Changes are grouped by kind (move, reassign, add, discard) under row-list group titles |
 
 ## Interaction and accessibility
 

@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { usePendingDocuments } from '../../application/use-cases/useDocuments'
 import { usePlanning } from '../../application/use-cases/usePlanning'
 import type { StageKey } from '../../domain/plan'
 import { isDecided } from '../../domain/proposals'
 import { focusStep, type StageStep } from '../../domain/stepper'
-import { Button, ButtonLink, Pill, SkeletonCard } from '../components/ds'
-import { AiMagicIcon, ArrowRight01Icon, PlayIcon, RefreshIcon } from '../components/ds/icons'
+import { Button, ButtonLink, Card, Icon, Pill, SkeletonCard } from '../components/ds'
+import { AiMagicIcon, ArrowRight01Icon, File01Icon, PlayIcon, RefreshIcon } from '../components/ds/icons'
 import { ProposalCard } from '../components/planning/ProposalCard'
 import { StageStepper } from '../components/planning/StageStepper'
 import { FailedCard, NotStartedCard, WorkingCard } from '../components/planning/StageStatusCards'
@@ -33,6 +34,7 @@ export function PlanningPage() {
   // From the activity feed: ?proposal=<id> opens the stage of that proposal.
   const [params] = useSearchParams()
   const linked = proposals?.find((p) => p.id === Number(params.get('proposal')) && p.kind === 'plan_stage')?.key as StageKey | undefined
+  const pendingDocuments = usePendingDocuments(loaded.id)
   const focus = steps ? focusStep(steps) : null
   const [selected, setSelected] = useState<StageKey | null>(null)
   const [followed, setFollowed] = useState(focus?.key)
@@ -58,6 +60,15 @@ export function PlanningPage() {
   return (
     <>
       <PageHeader title="Planificación" description={DESCRIPTIONS[project.status]} actions={actions} />
+      {project.status === 'ready' && pendingDocuments.length > 0 && (
+        <Card className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <span className="flex items-center gap-3 text-body">
+            <Icon icon={File01Icon} className="text-ink-muted" />
+            {pendingDocuments.length === 1 ? 'Un documento espera tu aprobación.' : `${pendingDocuments.length} documentos esperan tu aprobación.`}
+          </span>
+          <ButtonLink to={`/projects/${project.id}/documents`} icon={ArrowRight01Icon}>Ver documentos</ButtonLink>
+        </Card>
+      )}
       {!steps || !step ? (
         <div className="grid gap-3 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)]">
           <SkeletonCard lines={6} />
