@@ -261,11 +261,11 @@ Sync points:
 
 ## Phase 2: Foundational (~40 min)
 
-- [ ] T003 `domain/transparency.py`: Budget, BudgetLine, Expense, Alert, agent output schemas
+- [x] T003 `domain/transparency.py`: Budget, BudgetLine, Expense, Alert, agent output schemas
   (EvidenceReading, CitizenAnswer), errors
-- [ ] T004 `Task.done_at`, set and cleared in `move_task` and `update_task` (D5)
-- [ ] T005 Rules: `budget_summary`, `traffic_light` with reasons, `weekly_timeline`, `rule_alerts`
-- [ ] T006 Unit tests: the spec's 40%/25% case, each red and yellow trigger, no tasks, overspend, line
+- [x] T004 `Task.done_at`, set and cleared in `move_task` and `update_task` (D5)
+- [x] T005 Rules: `budget_summary`, `traffic_light` with reasons, `weekly_timeline`, `rule_alerts`
+- [x] T006 Unit tests: the spec's 40%/25% case, each red and yellow trigger, no tasks, overspend, line
   overspend, date outside the period, a week with tasks and no spending, answered alerts still counting
 - [ ] T007 Port `TransparencyAgents`
 - [ ] T008 Repository ports, UoW members, persistence (budget lines as a JSON column, expense, alert,
