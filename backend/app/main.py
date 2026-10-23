@@ -5,8 +5,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.adapters.inbound.http import activity, board, health, projects, proposals
-from app.adapters.inbound.http.dependencies import open_uow
+from app.adapters.inbound.http import activity, board, health, planning, projects, proposals
+from app.adapters.inbound.http.dependencies import open_uow, wire_planning
 from app.adapters.inbound.http.errors import register_error_handlers
 from app.adapters.outbound.code_host.fake import FakeCodeHost
 from app.adapters.outbound.events.in_memory_bus import InMemoryEventBus
@@ -15,14 +15,14 @@ from app.application.use_cases.proposals.apply_proposal import ApplierRegistry
 from app.adapters.outbound.persistence.db import create_db
 from app.application.ports.agents import PlanningAgents
 from app.application.ports.code_host import CodeHost
-from app.config import CORS_ORIGINS, GEMINI_MODEL, MOCK_AGENTS, MOCK_GITHUB, logger
+from app.config import CORS_ORIGINS, GEMINI_MODEL, MOCK_AGENTS, MOCK_AGENTS_DELAY, MOCK_GITHUB, logger
 
 
 def build_agents() -> PlanningAgents:
     if MOCK_AGENTS:
         from app.adapters.outbound.agents.mock.agents import MockPlanningAgents
 
-        return MockPlanningAgents()
+        return MockPlanningAgents(delay_seconds=MOCK_AGENTS_DELAY)
     # Deferred import: ADK is heavy and isn't needed in mock mode.
     from app.adapters.outbound.agents.adk.agents import AdkPlanningAgents
 
@@ -45,10 +45,15 @@ async def lifespan(app: FastAPI):
     # Every event is saved as activity (seq, history, SSE replay) before it's fanned out (spec 005).
     app.state.event_bus = PersistentEventBus(InMemoryEventBus(), open_uow)
     # Steps that apply each kind of proposal, registered by their owner specs (spec 005, "Applying"):
-    #   002: appliers.register("plan_stage", advance_planning.on_proposal_resolved, on=("decided", "rejected"))
+    #   002: "plan_stage" → AdvancePlanning.on_proposal_resolved (registered by wire_planning below)
     #   006: "document" → ApplyDocumentProposal · 007: "github_action" create_issues/request_review → PublishIssues/ApplyReview
     #   008: "replan" → ApplyReplan
     app.state.appliers = ApplierRegistry()
+    # Run once every stage is approved (spec 002): 003's ApplyPlan (added by wire_planning); 006 adds GenerateDocuments.
+    app.state.on_plan_completed = []
+    app.state.run_planning_step = wire_planning(
+        open_uow, app.state.event_bus, app.state.agents, app.state.appliers, app.state.on_plan_completed
+    )
     app.state.on_team_changed = []  # spec 008 registers its drift-replan handler here
     app.state.after_task_changed = []  # spec 007 registers issue sync, spec 008 objective evaluation
     yield
@@ -60,6 +65,7 @@ register_error_handlers(app)
 
 app.include_router(health.router)
 app.include_router(projects.router)
+app.include_router(planning.router)
 app.include_router(proposals.router)
 app.include_router(activity.router)
 app.include_router(board.router)
