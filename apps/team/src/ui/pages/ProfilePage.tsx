@@ -23,14 +23,14 @@ export function WelcomePage() {
   if (!me) return null
 
   return (
-    <AuthLayout title="Cuéntanos qué haces" description={`Cada proyecto al que te unas toma estos datos, así nadie los escribe por ti. ${PROFILE_HINT}`}>
+    <AuthLayout title="Tus datos como ejecutor" description={`Persona natural u organización: quien registra y ejecuta proyectos públicos. ${PROFILE_HINT}`}>
       <ProfileForm
         account={me}
         submitLabel="Guardar y seguir"
         submitIcon={ArrowRight01Icon}
         onSubmit={updateProfile}
         onDone={go}
-        secondaryAction={<Button variant="quiet" size="lg" onClick={go}>Omitir</Button>}
+        secondaryAction={<Button variant="quiet" size="lg" onClick={go}>Completar después</Button>}
       />
     </AuthLayout>
   )
@@ -59,7 +59,6 @@ function ProfileEditor({ account }: { account: Account }) {
           </div>
           <ProfileForm
             account={account}
-            withName
             layout="sections"
             submitLabel="Guardar cambios"
             submitIcon={Tick02Icon}

@@ -36,7 +36,7 @@ export function Column({ status, tasks, members, wipLimit, total, onOpen, childr
       <header className="flex min-h-control-sm flex-wrap items-center justify-between gap-2 px-1">
         <h2 className="flex items-center gap-2">
           <ColumnLabel hue={hue}>{STATUS_LABELS[status]}</ColumnLabel>
-          <span className="text-caption text-ink-muted tabular-nums" aria-label={wipLimit === null ? `${total} tareas` : `${total} de ${wipLimit} permitidas`}>
+          <span className="text-caption text-ink-muted tabular-nums" aria-label={wipLimit === null ? `${total} actividades` : `${total} de ${wipLimit} permitidas`}>
             {count}
           </span>
         </h2>
@@ -52,7 +52,7 @@ export function Column({ status, tasks, members, wipLimit, total, onOpen, childr
             <SortableTaskCard key={task.id} task={task} assignee={members.find((m) => m.id === task.assignee_id)} onOpen={() => onOpen(task)} />
           ))}
           {tasks.length === 0 && (
-            <li className="rounded-md px-4 py-6 text-center text-caption text-ink-muted">Suelta una tarea aquí</li>
+            <li className="rounded-md px-4 py-6 text-center text-caption text-ink-muted">Suelta una actividad aquí</li>
           )}
         </ul>
       </SortableContext>

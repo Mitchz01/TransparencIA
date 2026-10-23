@@ -19,7 +19,8 @@ export function timeAgo(iso: string, now = Date.now()): string {
 /** "1 miembro", "2 miembros"; pass the plural when it isn't the singular plus "s" ("decisión", "decisiones"). */
 export const plural = (count: number, one: string, many = `${one}s`) => `${count} ${count === 1 ? one : many}`
 
-export const points = (count: number) => `${count} ${count === 1 ? 'pt' : 'pts'}`
+/** An activity's weight (spec 019: points read as weight). */
+export const points = (count: number) => `Peso ${count}`
 
 /** Ends a phrase with one period, whether or not the agent wrote it: "Rápido para iterar." */
 export const sentence = (text: string) => (/[.!?]$/.test(text.trim()) ? text.trim() : `${text.trim()}.`)

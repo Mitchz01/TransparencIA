@@ -1,18 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
-import { REQUESTED_METHODOLOGIES, type RequestedMethodology } from '../../../domain/project'
 import { validateProject, type FieldErrors } from '../../../domain/rules'
-import { Button, Card, FieldError, Icon, NumberField, Segmented, Select, TextArea, TextField, type IconGlyph } from '@agile/ui'
+import { Button, Card, FieldError, Icon, NumberField, Segmented, TextArea, TextField, type IconGlyph } from '@agile/ui'
 import { Link01Icon } from '@agile/ui/icons'
 import { toProjectCreate, type ProjectDraft, type RoleField } from './projectDraft'
-
-export const METHODOLOGY_LABELS: Record<RequestedMethodology, string> = {
-  auto: 'Que elijan los agentes',
-  scrum: 'Scrum',
-  kanban: 'Kanban',
-  scrumban: 'Scrumban',
-  xp: 'XP',
-  shape_up: 'Shape Up',
-}
 
 interface ProjectFormProps {
   initial: ProjectDraft
@@ -21,8 +11,6 @@ interface ProjectFormProps {
   /** Returns the service's field errors, if any. */
   onSubmit: (draft: ProjectDraft) => Promise<FieldErrors | void>
   secondaryAction?: ReactNode
-  /** Why the methodology can't change (planning already started). */
-  methodologyLocked?: string
   /** A new project asks for your role in it (spec 015); settings leave it out. */
   roleField?: RoleField
 }
@@ -39,8 +27,9 @@ function Section({ title, description, children }: { title: string; description:
   )
 }
 
-/** The project and your part in it. Checks the service's rules before sending and keeps what was typed (FR-008). */
-export function ProjectForm({ initial, submitLabel, submitIcon, onSubmit, secondaryAction, methodologyLocked, roleField }: ProjectFormProps) {
+/** The project and your part in it. Checks the service's rules before sending and keeps what was typed (FR-008).
+ *  No methodology field: every project runs by stages (spec 019, D3); the draft keeps sending it. */
+export function ProjectForm({ initial, submitLabel, submitIcon, onSubmit, secondaryAction, roleField }: ProjectFormProps) {
   const [draft, setDraft] = useState(initial)
   const [checked, setChecked] = useState(false)
   const [serverErrors, setServerErrors] = useState<FieldErrors>({})
@@ -93,27 +82,25 @@ export function ProjectForm({ initial, submitLabel, submitIcon, onSubmit, second
           onChange={(e) => change({ description: e.target.value })}
         />
         <div className="grid gap-5 sm:grid-cols-2">
-          <NumberField label="Duración" unit="semanas" value={draft.duration} error={errors.duration_weeks} hint="Entre 1 y 52." onChange={(e) => change({ duration: e.target.value })} />
-          <Select
-            label="Metodología"
-            value={draft.methodology}
-            disabled={Boolean(methodologyLocked)}
-            hint={methodologyLocked}
-            error={errors.requested_methodology}
-            options={REQUESTED_METHODOLOGIES.map((m) => ({ value: m, label: METHODOLOGY_LABELS[m] }))}
-            onChange={(e) => change({ methodology: e.target.value as RequestedMethodology })}
+          <NumberField
+            label="Duración"
+            unit="semanas"
+            value={draft.duration}
+            error={errors.duration_weeks}
+            hint="Entre 1 y 52. Seis meses son 26 semanas."
+            onChange={(e) => change({ duration: e.target.value })}
           />
         </div>
       </Section>
 
       {roleField && (
-        <Section title="Tu parte" description="Entras como líder del proyecto. Los agentes también te asignan trabajo.">
+        <Section title="Tu parte" description="Entras como líder del proyecto. Los agentes también te asignan actividades.">
           <TextField
-            label="Tu rol en este proyecto"
+            label="Tu cargo en este proyecto"
             value={draft.role}
             error={errors.role}
-            placeholder="Backend"
-            hint={roleField === 'optional' ? 'Viene de tu perfil. Cámbialo si aquí haces otra cosa.' : 'Tu perfil todavía no tiene rol: dinos qué vas a hacer aquí.'}
+            placeholder="Coordinadora del proyecto"
+            hint={roleField === 'optional' ? 'Viene de tu perfil. Cámbialo si aquí haces otra cosa.' : 'Tu perfil todavía no tiene cargo: dinos qué vas a hacer aquí.'}
             onChange={(e) => change({ role: e.target.value })}
           />
           <p className="flex items-start gap-3 rounded-md bg-inset p-4 text-body text-ink-muted">

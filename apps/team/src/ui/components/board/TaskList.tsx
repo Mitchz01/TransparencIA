@@ -46,7 +46,7 @@ function TaskRow({ task, assignee, onOpen }: { task: Task; assignee?: Member; on
           {priority.label}
         </StateLabel>
         <span className="hidden text-caption text-ink-muted tabular-nums sm:block">{points(task.points)}</span>
-        <span className={cn('hidden items-center gap-1 text-caption text-ink-muted tabular-nums sm:inline-flex', progress.total === 0 && 'invisible')} aria-label={`Checklist ${progress.done} de ${progress.total}`}>
+        <span className={cn('hidden items-center gap-1 text-caption text-ink-muted tabular-nums sm:inline-flex', progress.total === 0 && 'invisible')} aria-label={`Pasos ${progress.done} de ${progress.total}`}>
           <Icon icon={CheckListIcon} size={16} />
           {progress.done}/{progress.total}
         </span>
@@ -59,7 +59,7 @@ function TaskRow({ task, assignee, onOpen }: { task: Task; assignee?: Member; on
 export function TaskList({ columns, tasks, sprintId, members, onOpen }: TaskListProps) {
   const groups = columns.map((status) => ({ status, tasks: columnTasks(tasks, status, sprintId) })).filter((g) => g.tasks.length > 0)
   if (groups.length === 0) {
-    return <p className="rounded-lg bg-lane px-4 py-10 text-center text-caption text-ink-muted">Ninguna tarea con estos filtros.</p>
+    return <p className="rounded-lg bg-lane px-4 py-10 text-center text-caption text-ink-muted">Ninguna actividad con estos filtros.</p>
   }
   return (
     <div className="grid gap-3 pb-4">
@@ -67,7 +67,7 @@ export function TaskList({ columns, tasks, sprintId, members, onOpen }: TaskList
         <section key={status} aria-label={STATUS_LABELS[status]} className={cn('grid gap-2 rounded-lg p-2', laneFill(STATUS_HUE[status]))}>
           <h2 className="flex items-center gap-2 px-1">
             <ColumnLabel hue={STATUS_HUE[status]}>{STATUS_LABELS[status]}</ColumnLabel>
-            <span className="text-caption text-ink-muted tabular-nums" aria-label={`${rows.length} tareas`}>{rows.length}</span>
+            <span className="text-caption text-ink-muted tabular-nums" aria-label={`${rows.length} actividades`}>{rows.length}</span>
           </h2>
           <ul className="grid gap-1.5">
             {rows.map((task) => (

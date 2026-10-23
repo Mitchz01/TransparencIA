@@ -17,6 +17,7 @@ import type { Proposal, ProposalStatus } from '../domain/proposals'
 import type {
   Alert, Budget, BudgetInput, Expense, ExpenseConfirmation, Publication, TeamPortal,
 } from '@agile/domain'
+import type { ContractReading } from '../domain/contracts'
 import type { ApiErrorBody } from './errors'
 
 // ---------- spec 001 (+ getPlanViews, spec 004; accounts, spec 015) ----------
@@ -192,6 +193,14 @@ export interface TransparencyGateway {
   answerAlert(projectId: number, alertId: number, answer: string): Promise<Alert>
 }
 
+// ---------- spec 017, US7: start a project from its contract (structure; the AI reading is integrated in the backend) ----------
+
+export interface ContractGateway {
+  /** POST /api/contracts/read (multipart, field `file`, a PDF up to 10 MB) → what the AI read. Nothing is saved.
+   *  Errors: 422 unsupported_file, 502 agent_unavailable. */
+  read(file: File): Promise<ContractReading>
+}
+
 export interface Gateways {
   auth: AuthGateway
   team: TeamGateway
@@ -204,4 +213,5 @@ export interface Gateways {
   documents: DocumentGateway
   integrations: IntegrationGateway
   transparency: TransparencyGateway // spec 017
+  contracts: ContractGateway // spec 017, US7
 }

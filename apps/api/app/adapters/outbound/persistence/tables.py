@@ -216,6 +216,20 @@ class AccountTable(SQLModel, table=True):
     skills: list[str] = Field(default_factory=list, sa_column=Column(JSON))
     github_username: str | None = None
     avatar_url: str | None = None  # FR-005 amended
+    # Spec 020: a natural or legal person's identification (domain/accounts.py).
+    person_type: str | None = None
+    document_type: str | None = None
+    document_number: str | None = None
+    verification_digit: str | None = None
+    entity_nature: str | None = None
+    legal_rep_name: str | None = None
+    legal_rep_document_type: str | None = None
+    legal_rep_document_number: str | None = None
+    phone: str | None = None
+    address: str | None = None
+    municipality: str | None = None
+    department: str | None = None
+    data_consent_at: datetime | None = None
     created_at: datetime = Field(default_factory=_now)
 
 

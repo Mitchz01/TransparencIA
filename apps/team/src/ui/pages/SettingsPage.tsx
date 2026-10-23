@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useCanManage } from '../../application/use-cases/useSession'
 import { useUpdateProject } from '../../application/use-cases/useUpdateProject'
-import { canChangeMethodology } from '../../domain/project'
 import { ButtonLink, EmptyState } from '@agile/ui'
 import { Settings01Icon, Tick02Icon, UserGroupIcon } from '@agile/ui/icons'
 import { ProjectForm } from '../components/project/ProjectForm'
@@ -37,7 +36,6 @@ export function SettingsPage() {
         initial={initial}
         submitLabel="Guardar cambios"
         submitIcon={Tick02Icon}
-        methodologyLocked={canChangeMethodology(project) ? undefined : 'La planificación ya empezó, así que la metodología no se puede cambiar.'}
         onSubmit={(draft) => save(toProjectUpdate(project, draft))}
       />
     </div>

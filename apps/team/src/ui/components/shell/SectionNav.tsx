@@ -2,7 +2,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { Menu } from '@agile/ui'
 import { SECTIONS } from './sections'
 
-/** Under 768px the rail hides and the sections live in a menu that names the current one. */
+/** Under 1024px the side menu hides and the sections live in a menu that names the current one. */
 export function SectionMenu({ projectId }: { projectId: number }) {
   const navigate = useNavigate()
   const { pathname } = useLocation()

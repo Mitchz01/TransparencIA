@@ -37,13 +37,13 @@ def test_task_lands_at_the_end_of_its_column_with_the_next_key():
     result, bus = _create(uow, saved.id, handlers=[handler], title="  Fix checkout copy ", sprint_id=sprint.id)
 
     task = result.task
-    assert (task.key, task.title, task.sprint_id, task.status, task.position) == ("US-4", "Fix checkout copy", sprint.id, "todo", 2)
+    assert (task.key, task.title, task.sprint_id, task.status, task.position) == ("A-1", "Fix checkout copy", sprint.id, "todo", 2)
     assert (task.priority, task.points, task.type, task.epic_key, task.checklist, task.assignee_id) == ("medium", 1, "feature", "", [], None)
     assert uow.tasks.get(task.id) is not None
     [event] = bus.events
-    assert (event.type, event.task_id, event.key, event.status, event.sprint_id, event.actor) == ("task_created", task.id, "US-4", "todo", sprint.id, "person")
-    assert event.summary == "US-4 created"
-    assert received == [("US-4", "task_created")]
+    assert (event.type, event.task_id, event.key, event.status, event.sprint_id, event.actor) == ("task_created", task.id, "A-1", "todo", sprint.id, "person")
+    assert event.summary == "A-1 created"
+    assert received == [("A-1", "task_created")]
 
 
 def test_sent_fields_are_kept():

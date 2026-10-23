@@ -20,7 +20,7 @@ from app.domain.integrations import IssueRef
 from app.domain.documents import Document, DocumentKind, DocumentVersion, VersionSource
 from app.domain.plan import WipLimit
 from app.domain.proposals import ProposalOrigin
-from app.domain.accounts import Account
+from app.domain.accounts import Account, DocumentType, EntityNature, PersonDocument, PersonType
 from app.domain.project import (
     Member,
     Permission,
@@ -418,6 +418,21 @@ class ProfileUpdate(BaseModel):
     skills: list[str] | None = None
     github_username: str | None = None
     avatar_url: str | None = None
+    # Spec 020: who registers projects, a natural or a legal person. null clears a field.
+    person_type: PersonType | None = None
+    document_type: DocumentType | None = None
+    document_number: str | None = None
+    verification_digit: str | None = None
+    entity_nature: EntityNature | None = None
+    legal_rep_name: str | None = None
+    legal_rep_document_type: PersonDocument | None = None
+    legal_rep_document_number: str | None = None
+    phone: str | None = None
+    address: str | None = None
+    municipality: str | None = None
+    department: str | None = None
+    # true stamps the authorization date (kept if already given); false withdraws it (Ley 1581 de 2012).
+    data_consent: bool | None = None
 
 
 class MemberUpdate(BaseModel):

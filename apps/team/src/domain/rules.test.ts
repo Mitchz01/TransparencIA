@@ -49,8 +49,8 @@ describe('validateProject (project form)', () => {
     expect(validateProject({ name: '' })).toEqual({ name: 'Obligatorio.' })
   })
 
-  it('fills the same defaults as the service', () => {
-    expect(PROJECT_DEFAULTS).toEqual({ duration_weeks: 8, requested_methodology: 'auto', auto_approve: false })
+  it('fills the defaults of a public project: six months, always by stages (spec 019, D3)', () => {
+    expect(PROJECT_DEFAULTS).toEqual({ duration_weeks: 26, requested_methodology: 'scrum', auto_approve: false })
   })
 })
 
@@ -138,8 +138,8 @@ describe('defaultSprint', () => {
 
 describe('new tasks (spec 014)', () => {
   it('take the key after the highest US-N, ignoring other shapes', () => {
-    expect(nextTaskKey([{ key: 'US-1' }, { key: 'US-12' }, { key: 'BUG-40' }])).toBe('US-13')
-    expect(nextTaskKey([{ key: 'BUG-3' }])).toBe('US-1')
+    expect(nextTaskKey([{ key: 'A-1' }, { key: 'A-12' }, { key: 'BUG-40' }, { key: 'US-99' }])).toBe('A-13')
+    expect(nextTaskKey([{ key: 'BUG-3' }])).toBe('A-1')
   })
 
   it('take the active filters, never "Sin asignar"', () => {

@@ -209,7 +209,7 @@ def test_create_task_at_the_end_of_its_column(client):
     pid, board = _with_board(client)
     sprint = board["sprints"][0]
     todo = [t for t in board["tasks"] if t["sprint_id"] == sprint["id"] and t["status"] == "todo"]
-    highest = max(int(t["key"].removeprefix("US-")) for t in board["tasks"])
+    highest = max((int(t["key"].removeprefix("A-")) for t in board["tasks"] if t["key"].startswith("A-")), default=0)
 
     response = client.post(f"/api/projects/{pid}/tasks", json={"title": "Fix checkout copy", "sprint_id": sprint["id"], "priority": "high"})
 
@@ -218,7 +218,7 @@ def test_create_task_at_the_end_of_its_column(client):
     task = body["task"]
     assert response.headers["Location"] == f"/api/tasks/{task['id']}"
     assert (task["key"], task["title"], task["status"], task["position"], task["priority"], task["points"]) == (
-        f"US-{highest + 1}", "Fix checkout copy", "todo", len(todo), "high", 1,
+        f"A-{highest + 1}", "Fix checkout copy", "todo", len(todo), "high", 1,
     )
     assert body["suggest_advance"] is False
     assert _task(client.get(f"/api/projects/{pid}/board").json(), task["key"])["id"] == task["id"]

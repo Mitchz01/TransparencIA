@@ -41,10 +41,10 @@ export function ArchitectureView({ architecture }: { architecture: Architecture 
         <p className="text-body text-ink-muted">{architecture.summary}</p>
       </header>
 
-      <Block title="Mapa del sistema">
+      <Block title="Cómo se ejecuta">
         <div className="grid gap-2">
           {groups.map(({ layer, components }) => {
-            const name = layer?.layer ?? (noStack ? 'Componentes' : 'Otras piezas')
+            const name = layer?.layer ?? (noStack ? 'Componentes' : 'Otros componentes')
             return (
               <section key={name} aria-label={name} className="grid gap-3 rounded-md bg-inset p-4 md:grid-cols-[11rem_minmax(0,1fr)]">
                 <div className="grid content-start gap-0.5">

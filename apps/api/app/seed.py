@@ -27,27 +27,47 @@ PASSWORD = "agile-demo"
 
 # Ana leads the demo project; Leo joins it with the link, so he sees the member view.
 # Their photos are Pexels portraits that the frontend serves (apps/team/public/avatars/).
+# Spec 020: Ana's account is the foundation (a legal person, Ana its legal representative); Leo is a
+# field technician (a natural person). The NIT's check digit is DIAN's (900123456 -> 8).
 ACCOUNTS = [
     {
-        "name": "Ana Gómez",
-        "email": "ana@team.dev",
+        "name": "Fundación Manglares Vivos",
+        "email": "ana@manglaresvivos.org",
         "profile": {
-            "role": "Bióloga marina",
+            "role": "Representante legal",
             "seniority": "senior",
             "hours_per_week": 30,
-            "skills": ["Restauración de manglar", "Monitoreo"],
             "avatar_url": "/avatars/ana-gomez.jpg",
+            "person_type": "juridica",
+            "document_number": "900123456",
+            "verification_digit": "8",
+            "entity_nature": "esal",
+            "legal_rep_name": "Ana Gómez",
+            "legal_rep_document_type": "CC",
+            "legal_rep_document_number": "52123456",
+            "phone": "3001234567",
+            "address": "Calle 22 # 3-45",
+            "municipality": "Santa Marta",
+            "department": "Magdalena",
+            "data_consent": True,
         },
     },
     {
         "name": "Leo Ruiz",
-        "email": "leo@team.dev",
+        "email": "leo@manglaresvivos.org",
         "profile": {
-            "role": "Coordinador de campo",
+            "role": "Técnico de campo",
             "seniority": "mid",
             "hours_per_week": 20,
-            "skills": ["Logística fluvial", "Talleres comunitarios"],
             "avatar_url": "/avatars/leo-ruiz.jpg",
+            "person_type": "natural",
+            "document_type": "CC",
+            "document_number": "1082345678",
+            "phone": "3019876543",
+            "address": "Corregimiento Tasajera, sector El Muelle",
+            "municipality": "Pueblo Viejo",
+            "department": "Magdalena",
+            "data_consent": True,
         },
     },
 ]

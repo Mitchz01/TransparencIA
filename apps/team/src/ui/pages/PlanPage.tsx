@@ -14,9 +14,9 @@ import { useCurrentProject } from './ProjectLayout'
 type PlanPart = 'roadmap' | 'methodology' | 'architecture'
 
 const PARTS: { value: PlanPart; label: string; description: string }[] = [
-  { value: 'roadmap', label: 'Roadmap', description: 'Las fases en el tiempo y el avance de cada épica.' },
-  { value: 'methodology', label: 'Metodología', description: 'Cómo trabaja el equipo y por qué.' },
-  { value: 'architecture', label: 'Arquitectura', description: 'Cómo se arma el sistema y qué se decidió.' },
+  { value: 'roadmap', label: 'Cronograma', description: 'Las fases en el tiempo y el avance de cada componente.' },
+  { value: 'methodology', label: 'Forma de trabajo', description: 'Cómo se organiza el trabajo por etapas y cómo se le hace seguimiento.' },
+  { value: 'architecture', label: 'Componentes y recursos', description: 'Qué partes tiene el proyecto, qué recursos necesita y qué se decidió.' },
 ]
 
 export function PlanPage() {

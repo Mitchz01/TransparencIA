@@ -136,12 +136,12 @@ def test_task_change_errors_lists_every_failing_field():
 # ---------- New tasks (spec 014) ----------
 
 
-def test_next_key_follows_the_highest_us_number():
-    tasks = [_task(1), _task(12), _task(3)]
-    assert next_task_key(tasks) == "US-13"
-    other = Task(project_id=1, key="BUG-40", title="t")
-    assert next_task_key([*tasks, other]) == "US-13"  # other key shapes are ignored
-    assert next_task_key([other]) == next_task_key([]) == "US-1"
+def test_next_key_follows_the_highest_activity_number():
+    tasks = [Task(project_id=1, key=f"A-{n}", title="t") for n in (1, 12, 3)]
+    assert next_task_key(tasks) == "A-13"
+    others = [Task(project_id=1, key="BUG-40", title="t"), Task(project_id=1, key="US-99", title="t")]
+    assert next_task_key([*tasks, *others]) == "A-13"  # other key shapes are ignored (spec 019)
+    assert next_task_key(others) == next_task_key([]) == "A-1"
 
 
 def test_new_task_needs_a_title_and_follows_the_edit_rules():

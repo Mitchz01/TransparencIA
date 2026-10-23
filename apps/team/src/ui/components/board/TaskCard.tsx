@@ -5,7 +5,6 @@ import { checklistProgress } from '../../../domain/rules'
 import { points } from '../../format'
 import { Avatar, cn, Icon, ProgressTrack, StateLabel } from '@agile/ui'
 import { CheckListIcon, Flag02Icon, UserWarning01Icon } from '@agile/ui/icons'
-import { IssueBadge } from '../integrations/IssueBadge'
 import { PRIORITY_LOOK } from './boardLabels'
 
 interface TaskCardProps {
@@ -32,19 +31,18 @@ export function TaskCard({ task, assignee, overlay = false, onOpen }: TaskCardPr
     >
       <h3 className="line-clamp-2 text-label font-semibold break-words" title={task.title}>{task.title}</h3>
       {progress.total > 0 && progress.done > 0 && !progress.complete && (
-        <ProgressTrack value={progress.done} max={progress.total} label={`Checklist ${progress.done} de ${progress.total}`} className="bg-card-inset!" />
+        <ProgressTrack value={progress.done} max={progress.total} label={`Pasos ${progress.done} de ${progress.total}`} className="bg-card-inset!" />
       )}
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-ink-muted tabular-nums">
           <span className="text-key">{task.key}</span>
           {progress.total > 0 && (
-            <span className="inline-flex items-center gap-1" aria-label={`Checklist ${progress.done} de ${progress.total}`}>
+            <span className="inline-flex items-center gap-1" aria-label={`Pasos ${progress.done} de ${progress.total}`}>
               <Icon icon={CheckListIcon} size={16} />
               {progress.done}/{progress.total}
             </span>
           )}
           <span>{points(task.points)}</span>
-          {task.issue && <IssueBadge issue={task.issue} />}
           <StateLabel hue={priority.hue} icon={Flag02Icon} className="text-caption">
             <span className="sr-only">Prioridad </span>
             {priority.label}
@@ -78,7 +76,7 @@ export function SortableTaskCard({ task, assignee, onOpen }: Omit<TaskCardProps,
       className={cn('touch-none rounded-md', isDragging && 'bg-primary-soft')}
       {...attributes}
       {...listeners}
-      aria-roledescription="tarea arrastrable"
+      aria-roledescription="actividad arrastrable"
       aria-label={`${task.key} ${task.title}`}
       onKeyDown={(event) => {
         listeners?.onKeyDown?.(event)
