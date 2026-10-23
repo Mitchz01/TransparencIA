@@ -6,6 +6,7 @@ import { httpPublicPortalGateway } from '../adapters/http/publicPortalGateway'
 import { GatewayProvider } from '../application/gateway'
 import { isApiError } from '../application/errors'
 import { createRouter } from './routes'
+import { ThemeProvider } from './theme'
 
 // VITE_USE_FAKE=true runs the portal on the demo project, without a backend (spec 017, D14).
 const gateway = import.meta.env.VITE_USE_FAKE === 'true' ? fakePublicPortalGateway() : httpPublicPortalGateway
@@ -28,7 +29,9 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <GatewayProvider gateway={gateway}>
-        <RouterProvider router={router} />
+        <ThemeProvider>
+          <RouterProvider router={router} />
+        </ThemeProvider>
       </GatewayProvider>
     </QueryClientProvider>
   )

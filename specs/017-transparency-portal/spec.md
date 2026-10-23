@@ -225,6 +225,31 @@ budget, and plan it: the epics follow the contract's deliverables.
 
 ---
 
+### User Story 8 - Find a public project (Priority: P2)
+
+Anyone opens the portal's home, with no account, and searches the published projects by name, contracting
+entity, contractor or what they're about. Each result shows its traffic light, the money used against the
+work done, and its open alerts, and opens the project's portal.
+
+**Why this priority**: a citizen who doesn't have the QR still has to find the project; it's the portal's
+front door.
+
+**Independent Test**: publish two projects, search "Corpamag" and "manglar", and open a result.
+
+**Acceptance Scenarios**:
+
+1. **Scenario**: Search
+   - **When** someone types "manglar" on the portal's home
+   - **Then** they see the published projects that mention it, each with its traffic light, money used,
+     work done and open alerts, and opening one shows its portal
+2. **Scenario**: Only published
+   - **Then** projects that aren't published never appear
+3. **Scenario**: Nothing found
+   - **When** nothing matches
+   - **Then** they see that no public project matches, and can clear the search
+
+---
+
 ### Edge Cases
 
 - A file that isn't a PDF or an image, or is larger than 10 MB: rejected with a clear message.
@@ -294,6 +319,9 @@ budget, and plan it: the epics follow the contract's deliverables.
   duration in weeks from the dates) and its budget; if any part fails, nothing is created.
 - **FR-021**: The planning agents MUST see the contract's purpose, obligations and milestones with their
   dates, and plan the milestones before their dates.
+- **FR-022**: The portal's home MUST list the published projects, searchable by name, description,
+  contracting entity and contractor (ignoring case and accents), with each one's traffic light, money used,
+  work done and open alerts, computed by the same rules as its portal.
 
 ### Key Entities
 
