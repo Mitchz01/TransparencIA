@@ -56,7 +56,7 @@ export function TaskCard({ task, assignee, overlay = false, onOpen }: TaskCardPr
             <span className="truncate">Falta {task.missing_role}</span>
           </StateLabel>
         ) : (
-          <span className="text-caption text-ink-subtle">Sin asignar</span>
+          <span className="text-caption text-ink-muted">Sin asignar</span>
         )}
         <Pill hue={priority.hue} icon={Flag02Icon}>{priority.label}</Pill>
       </div>

@@ -125,7 +125,7 @@ Added for the first round of screens; all of them are in [preview.html](preview.
 | Text area | Same as a text field with `radius-md` | For descriptions and reasons |
 | Checkbox | 20px square with 6px corners: `surface-strong` when empty, `primary` with a tick when checked | The label is always next to it; used by the checklist |
 | On / off choice | A segmented control with two options ("Off", "On") | Instead of a switch, so the state is always a word |
-| Stage stepper | One row per stage: stage name, agent name below in `ink-muted`, the state on the right as icon + word in its hue. The current stage sits on `surface-strong` | No numbers in circles and no lines between steps |
+| Stage stepper | One row per stage: stage name, agent name below in `ink-muted`, the state on the right as icon + word in its hue. The current stage sits on `inset`, so every state color keeps 4.5:1 | No numbers in circles and no lines between steps |
 | Menu | `surface` panel, `radius-lg`, `shadow-float`, pill rows that turn `surface-strong` on hover; the chosen row has a tick | Opened from a secondary button with a chevron (project switcher, sprint selector, sections on mobile) |
 | Dialog | Centered `surface` panel, `radius-xl`, `shadow-float`, on `scrim` | Title in `text-heading`, actions bottom right, Escape closes |
 | Drawer | Right panel with a `space-3` margin, `radius-xl`, `shadow-float`, on `scrim` | Task details and activity |

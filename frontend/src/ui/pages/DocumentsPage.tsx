@@ -47,7 +47,7 @@ function DocumentList({ documents, selected, onSelect, phases }: {
                   onClick={() => onSelect(doc.id)}
                   className={cn(
                     'grid w-full gap-0.5 rounded-md px-3 py-2.5 text-left transition-[background-color] duration-150',
-                    doc.id === selected ? 'bg-surface-strong' : 'hover:bg-inset',
+                    doc.id === selected ? 'bg-inset' : 'hover:bg-inset/60',
                   )}
                 >
                   <span className="text-label">{doc.title}</span>
