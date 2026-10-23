@@ -38,6 +38,7 @@ MOCK_PLAN = {
         ],
         "complexity": "medium",
         "team_gaps": ["UX design"],
+        "rationale": "The scope is clear for an MVP, but the agents are new to the team. The main risk is the LLM output, so the plan leans on structured schemas.",
     },
     "methodology": {
         "methodology": "scrumban",
@@ -78,6 +79,7 @@ MOCK_PLAN = {
                 "rationale": "It's persisted directly as cards",
             }
         ],
+        "rationale": "A modular monolith is the simplest thing a small team can run and change fast. The stack follows the team's skills.",
     },
     "roadmap": {
         "phases": [
@@ -111,7 +113,8 @@ MOCK_PLAN = {
                 "deliverables": ["Replanning", "Metrics"],
                 "epics": [{"key": "EP-5", "title": "Insights", "description": "Velocity and replanning"}],
             },
-        ]
+        ],
+        "rationale": "Foundations first so the MVP has a base; the beta is kept small to fit the deadline.",
     },
     "backlog": {
         "stories": [
@@ -126,7 +129,8 @@ MOCK_PLAN = {
             _story("US-9", "EP-4", "Move cards with drag & drop", 3, "Frontend"),
             _story("US-10", "EP-5", "Replan a sprint", 8, "Backend", "low"),
             _story("US-11", "EP-5", "Velocity chart", 5, "Frontend", "low"),
-        ]
+        ],
+        "rationale": "Each epic is split into small stories the team can finish in one iteration; the riskiest ones (agents) are high priority.",
     },
     "sprints": {
         "sprints": [
@@ -139,6 +143,7 @@ MOCK_PLAN = {
         ],
         # The names don't match the real team: assignment falls back to matching by role.
         "assignments": [],
+        "rationale": "The iterations follow the roadmap phases and stay within the team's capacity.",
     },
 }
 

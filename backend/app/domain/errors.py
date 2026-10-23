@@ -24,7 +24,7 @@ class DomainError(Exception):
 
 
 class NotFound(DomainError):
-    def __init__(self, entity: str, id: int | None):
+    def __init__(self, entity: str, id: int | str | None):
         super().__init__(f"{entity} {id} does not exist.")
         self.entity = entity
         self.id = id
@@ -49,6 +49,13 @@ class ProposalNotFound(NotFound):
         super().__init__("Proposal", id)
 
 
+class StageNotFound(NotFound):
+    """`key` isn't one of the six planning stages (spec 002)."""
+
+    def __init__(self, key: str):
+        super().__init__("Stage", key)
+
+
 class ValidationFailed(DomainError):
     code = "validation_failed"
 
@@ -66,6 +73,37 @@ class MethodologyLocked(DomainError):
 
     def __init__(self) -> None:
         super().__init__("The methodology can't change once planning has started.")
+
+
+class PlanningAlreadyRunning(DomainError):
+    """There's a single active planning run per project (spec 002, FR-013)."""
+
+    code = "planning_already_running"
+
+    def __init__(self, project_id: int | None):
+        super().__init__(f"Project {project_id} is already planning.")
+        self.project_id = project_id
+
+
+class PlanningNotStartable(DomainError):
+    """Planning starts from draft or error; a ready project replans instead (spec 008)."""
+
+    code = "planning_not_startable"
+
+    def __init__(self, project_id: int | None, status: str):
+        super().__init__(f"Project {project_id} is {status}: its plan is already complete.")
+        self.project_id = project_id
+        self.status = status
+
+
+class StageNotRetryable(DomainError):
+    """Only a stage capped after consecutive rejections waits for the leader to retry it."""
+
+    code = "stage_not_retryable"
+
+    def __init__(self, key: str):
+        super().__init__(f"Stage '{key}' isn't waiting for the leader.")
+        self.key = key
 
 
 class ProposalAlreadyResolved(DomainError):

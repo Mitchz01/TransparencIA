@@ -241,7 +241,7 @@ Request headers: `Content-Type: application/json`
 
 - [x] T010 [US1] Implement `build_board(project_id, members, backlog, sprint_planning) -> BuiltBoard` with `assign()` and `checklist_from_criteria()` in `backend/app/domain/board.py`
 - [x] T011 [US1] Implement `ApplyPlan` in `backend/app/application/use_cases/planning/apply_plan.py`: skip if the project already has sprints, persist the built board, set `ready`, commit, publish `PlanApplied` (with the skipped story keys)
-- [ ] T012 [US1] Register `ApplyPlan` as an `on_plan_completed` handler of spec 002's `AdvancePlanning` in `backend/app/adapters/inbound/http/dependencies.py` — not done: spec 002's `AdvancePlanning` doesn't exist yet; `get_apply_plan` and a TODO are in `dependencies.py`
+- [x] T012 [US1] Register `ApplyPlan` as an `on_plan_completed` handler of spec 002's `AdvancePlanning` in `backend/app/adapters/inbound/http/dependencies.py` — done by spec 002: `wire_planning()` in `dependencies.py` appends `ApplyPlan.execute` to `app.state.on_plan_completed` (the unused `get_apply_plan` provider was removed)
 - [ ] T013 [US1] Create `BoardPage` (route `/projects/:id/board`), `KanbanBoard`, `Column` and `TaskCard` (key, title, priority, points, assignee or "missing role", checklist progress) in `frontend/src/ui/` — handed off to spec 009 (frontend)
 
 **Checkpoint**: after approving the plan, the board shows up with its cards

@@ -30,6 +30,7 @@ def _planning(*sprints: list[str], assignments: dict[str, str] | None = None) ->
     return SprintPlanning(
         sprints=[SprintPlan(number=i, name=f"Sprint {i}", goal=f"Goal {i}", phase="MVP", story_keys=keys) for i, keys in enumerate(sprints, 1)],
         assignments=[Assignment(story_key=k, member_name=n) for k, n in (assignments or {}).items()],
+        rationale="Fits the capacity.",
     )
 
 
@@ -48,7 +49,7 @@ def test_mock_plan_builds_one_sprint_per_iteration_and_every_story_once():
 
 
 def test_stories_land_in_todo_in_order_and_keep_their_data():
-    board = build_board(1, TEAM, Backlog(stories=[_story("US-1"), _story("US-2", points=5)]), _planning(["US-2", "US-1"]))
+    board = build_board(1, TEAM, Backlog(rationale="", stories=[_story("US-1"), _story("US-2", points=5)]), _planning(["US-2", "US-1"]))
     [sprint] = board.sprints
     assert [(t.key, t.status, t.position) for t in sprint.tasks] == [("US-2", "todo", 0), ("US-1", "todo", 1)]
     task = sprint.tasks[0]
@@ -59,7 +60,7 @@ def test_stories_land_in_todo_in_order_and_keep_their_data():
 
 
 def test_unsprinted_stories_go_to_the_backlog():
-    board = build_board(1, TEAM, Backlog(stories=[_story("US-1"), _story("US-2"), _story("US-3")]), _planning(["US-2"]))
+    board = build_board(1, TEAM, Backlog(rationale="", stories=[_story("US-1"), _story("US-2"), _story("US-3")]), _planning(["US-2"]))
     assert [(t.key, t.status, t.position, t.sprint_id) for t in board.backlog] == [
         ("US-1", "backlog", 0, None),
         ("US-3", "backlog", 1, None),
@@ -67,18 +68,18 @@ def test_unsprinted_stories_go_to_the_backlog():
 
 
 def test_unknown_story_keys_are_skipped_and_reported():
-    board = build_board(1, TEAM, Backlog(stories=[_story("US-1")]), _planning(["US-1", "US-9"], ["US-9", "US-8"]))
+    board = build_board(1, TEAM, Backlog(rationale="", stories=[_story("US-1")]), _planning(["US-1", "US-9"], ["US-9", "US-8"]))
     assert [t.key for t in board.tasks] == ["US-1"]
     assert board.skipped == ["US-9", "US-8"]
 
 
 def test_a_story_in_two_iterations_stays_in_the_first():
-    board = build_board(1, TEAM, Backlog(stories=[_story("US-1")]), _planning(["US-1"], ["US-1"]))
+    board = build_board(1, TEAM, Backlog(rationale="", stories=[_story("US-1")]), _planning(["US-1"], ["US-1"]))
     assert [[t.key for t in s.tasks] for s in board.sprints] == [["US-1"], []]
 
 
 def test_checklist_has_one_unchecked_item_per_criterion():
-    board = build_board(1, TEAM, Backlog(stories=[_story("US-1"), _story("US-2", criteria=[])]), _planning(["US-1", "US-2"]))
+    board = build_board(1, TEAM, Backlog(rationale="", stories=[_story("US-1"), _story("US-2", criteria=[])]), _planning(["US-1", "US-2"]))
     first, second = board.sprints[0].tasks
     assert first.checklist == [ChecklistItem(text="Works"), ChecklistItem(text="Has tests"), ChecklistItem(text="Is documented")]
     assert second.checklist == []
@@ -86,14 +87,14 @@ def test_checklist_has_one_unchecked_item_per_criterion():
 
 
 def test_assignment_by_exact_name():
-    board = build_board(1, TEAM, Backlog(stories=[_story("US-1", role="Frontend")]), _planning(["US-1"], assignments={"US-1": "Ana"}))
+    board = build_board(1, TEAM, Backlog(rationale="", stories=[_story("US-1", role="Frontend")]), _planning(["US-1"], assignments={"US-1": "Ana"}))
     task = board.tasks[0]
     assert (task.assignee_id, task.missing_role) == (1, None)
 
 
 def test_unknown_name_falls_back_to_the_role_with_fewest_points_in_the_sprint():
     stories = [_story("US-1", "Frontend", 5), _story("US-2", "Frontend", 3), _story("US-3", "Frontend", 1), _story("US-4", "Frontend", 2)]
-    board = build_board(1, TEAM, Backlog(stories=stories), _planning(["US-1", "US-2", "US-3"], ["US-4"], assignments={"US-1": "Nobody"}))
+    board = build_board(1, TEAM, Backlog(rationale="", stories=stories), _planning(["US-1", "US-2", "US-3"], ["US-4"], assignments={"US-1": "Nobody"}))
     sprint_1, sprint_2 = board.sprints
     # Leo (0) → US-1; Sofía (0) → US-2; Sofía (3) has fewer than Leo (5) → US-3
     assert [t.assignee_id for t in sprint_1.tasks] == [2, 3, 3]
@@ -102,12 +103,12 @@ def test_unknown_name_falls_back_to_the_role_with_fewest_points_in_the_sprint():
 
 
 def test_nobody_with_the_role_leaves_the_task_flagged():
-    board = build_board(1, TEAM, Backlog(stories=[_story("US-1", role="UX Design")]), _planning(["US-1"]))
+    board = build_board(1, TEAM, Backlog(rationale="", stories=[_story("US-1", role="UX Design")]), _planning(["US-1"]))
     task = board.tasks[0]
     assert (task.assignee_id, task.missing_role) == (None, "UX Design")
 
 
 def test_duplicate_member_names_assign_by_role():
     team = [Member(id=1, name="Ana", role="Backend"), Member(id=2, name="Ana", role="Frontend")]
-    board = build_board(1, team, Backlog(stories=[_story("US-1", role="Frontend")]), _planning(["US-1"], assignments={"US-1": "Ana"}))
+    board = build_board(1, team, Backlog(rationale="", stories=[_story("US-1", role="Frontend")]), _planning(["US-1"], assignments={"US-1": "Ana"}))
     assert board.tasks[0].assignee_id == 2
