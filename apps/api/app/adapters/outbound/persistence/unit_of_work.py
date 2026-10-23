@@ -4,6 +4,9 @@ from sqlmodel import Session
 
 from app.adapters.outbound.persistence.repositories import (
     SqlAccountRepository,
+    SqlBudgetRepository,
+    SqlExpenseRepository,
+    SqlStoredFileRepository,
     SqlActivityRepository,
     SqlExternalLinkRepository,
     SqlDocumentRepository,
@@ -34,6 +37,9 @@ class SqlUnitOfWork:
         self.documents = SqlDocumentRepository(session)
         self.accounts = SqlAccountRepository(session)  # spec 015
         self.sessions = SqlSessionRepository(session)  # spec 015
+        self.budgets = SqlBudgetRepository(session)  # spec 017
+        self.expenses = SqlExpenseRepository(session)  # spec 017
+        self.files = SqlStoredFileRepository(session)  # spec 017
 
     def __enter__(self) -> Self:
         return self

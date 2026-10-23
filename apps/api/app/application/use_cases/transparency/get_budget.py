@@ -9,4 +9,4 @@ class GetBudget:
         self._uow = uow
 
     def execute(self, project_id: int) -> Budget | None:
-        raise NotImplementedError
+        return self._uow.budgets.get(project_id)

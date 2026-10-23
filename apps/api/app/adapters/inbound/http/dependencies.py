@@ -10,11 +10,12 @@ from app.adapters.inbound.http.background import spawn
 from app.adapters.inbound.http.session_cookie import read_token
 from app.adapters.outbound.persistence.db import engine, get_session
 from app.adapters.outbound.persistence.unit_of_work import SqlUnitOfWork
-from app.config import DOCUMENTS_CONCURRENCY, GITHUB_WEBHOOK_SECRET, GITHUB_WEBHOOK_URL, PUBLIC_BASE_URL
+from app.config import DOCUMENTS_CONCURRENCY, GITHUB_WEBHOOK_SECRET, GITHUB_WEBHOOK_URL, PUBLIC_APP_URL, PUBLIC_BASE_URL
 from app.application.ports.agents import PlanningAgents
 from app.application.ports.code_host import CodeHost, CodeHostFactory
 from app.application.ports.event_bus import EventBus
 from app.application.ports.security import PasswordHasher
+from app.application.ports.transparency_agents import TransparencyAgents
 from app.application.ports.unit_of_work import UnitOfWork, UnitOfWorkFactory
 from app.application.use_cases.accounts.authenticate import Authenticate
 from app.application.use_cases.accounts.authorize import AuthorizeAccess, Resource
@@ -64,6 +65,16 @@ from app.application.use_cases.integrations.propose_issues import AfterCreated, 
 from app.application.use_cases.integrations.propose_review import ProposeReview
 from app.application.use_cases.integrations.set_github_username import SetGithubUsername
 from app.application.use_cases.integrations.sync_task_issue import SyncTaskIssue
+from app.application.use_cases.transparency.answer_alert import AnswerAlert
+from app.application.use_cases.transparency.ask_citizen import AskCitizen
+from app.application.use_cases.transparency.confirm_expense import ConfirmExpense
+from app.application.use_cases.transparency.discard_expense import DiscardExpense
+from app.application.use_cases.transparency.draft_expense import DraftExpense
+from app.application.use_cases.transparency.get_budget import GetBudget
+from app.application.use_cases.transparency.get_file import GetFile
+from app.application.use_cases.transparency.get_portal import GetPortal
+from app.application.use_cases.transparency.set_budget import SetBudget
+from app.application.use_cases.transparency.set_publication import SetPublication
 from app.application.use_cases.proposals.apply_proposal import (
     ApplierRegistry,
     ApplyProposal,
@@ -598,3 +609,59 @@ def get_mark_documents_outdated(
 ) -> MarkDocumentsOutdated:
     """For spec 008: call execute(project_id) after a replan is applied (FR-011)."""
     return MarkDocumentsOutdated(uow_factory, bus)
+
+
+# ---------- Transparency portal (spec 017) ----------
+
+
+def get_transparency_agents(request: Request) -> TransparencyAgents:
+    return request.app.state.transparency_agents
+
+
+def today() -> date:
+    """The portal's "today". A dependency of its own so tests can pin the date."""
+    return datetime.now(timezone.utc).date()
+
+
+def get_get_budget(uow: UnitOfWork = Depends(get_uow)) -> GetBudget:
+    return GetBudget(uow)
+
+
+def get_set_budget(uow: UnitOfWork = Depends(get_uow)) -> SetBudget:
+    return SetBudget(uow)
+
+
+def get_draft_expense(
+    uow: UnitOfWork = Depends(get_uow), agents: TransparencyAgents = Depends(get_transparency_agents)
+) -> DraftExpense:
+    return DraftExpense(uow, agents)
+
+
+def get_confirm_expense(uow: UnitOfWork = Depends(get_uow)) -> ConfirmExpense:
+    return ConfirmExpense(uow)
+
+
+def get_discard_expense(uow: UnitOfWork = Depends(get_uow)) -> DiscardExpense:
+    return DiscardExpense(uow)
+
+
+def get_set_publication(uow: UnitOfWork = Depends(get_uow)) -> SetPublication:
+    return SetPublication(uow, PUBLIC_APP_URL)
+
+
+def get_get_portal(uow: UnitOfWork = Depends(get_uow), today_: date = Depends(today)) -> GetPortal:
+    return GetPortal(uow, PUBLIC_APP_URL, lambda: today_)
+
+
+def get_answer_alert(uow: UnitOfWork = Depends(get_uow)) -> AnswerAlert:
+    return AnswerAlert(uow)
+
+
+def get_ask_citizen(
+    portal: GetPortal = Depends(get_get_portal), agents: TransparencyAgents = Depends(get_transparency_agents)
+) -> AskCitizen:
+    return AskCitizen(portal, agents)
+
+
+def get_get_file(uow: UnitOfWork = Depends(get_uow)) -> GetFile:
+    return GetFile(uow)
