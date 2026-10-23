@@ -94,9 +94,9 @@ function JoinForm({ token, invitation, alreadyMember, profileRole }: { token: st
       {invitation}
       <form noValidate onSubmit={submit} className="grid gap-5">
         <TextField
-          label="Tu rol en este proyecto"
+          label="Tu cargo en este proyecto"
           fill="surface"
-          placeholder="Frontend"
+          placeholder="Técnico de campo"
           value={role}
           error={errors.role}
           hint={profileRole ? 'Viene de tu perfil. Cámbialo si aquí haces otra cosa.' : undefined}

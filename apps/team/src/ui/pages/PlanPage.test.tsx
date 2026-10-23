@@ -26,7 +26,7 @@ describe('Plan', () => {
     const view = await screen.findByRole('article')
     expect(within(view).getByRole('heading', { name: 'Scrumban, iteraciones de 2 semanas' })).toBeInTheDocument()
     expect(screen.getByText('Elegida por los agentes')).toBeInTheDocument()
-    expect(screen.getByText('Coach ágil')).toBeInTheDocument()
+    expect(screen.getByText('Asesor de planeación')).toBeInTheDocument()
     expect(screen.getByText('Aprobado por ti')).toBeInTheDocument()
   })
 })
@@ -75,9 +75,9 @@ describe('Visual plan views (spec 012)', () => {
     const board = within(screen.getByRole('list', { name: 'Columnas del tablero con su límite' }))
     expect(board.getAllByRole('listitem').map((li) => li.textContent)).toEqual([
       'Por hacerSin límite',
-      'En cursoMáximo 3 a la vez',
-      'En revisiónMáximo 2 a la vez',
-      'HechoSin límite',
+      'En ejecuciónMáximo 3 a la vez',
+      'En verificaciónMáximo 2 a la vez',
+      'TerminadaSin límite',
     ])
   })
 

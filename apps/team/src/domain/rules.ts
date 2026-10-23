@@ -27,7 +27,9 @@ export function validateProject(body: ProjectCreate | ProjectUpdate): FieldError
   return toFieldErrors(issues)
 }
 
-export const PROJECT_DEFAULTS = { duration_weeks: 8, requested_methodology: 'auto' as const, auto_approve: false }
+// Spec 019 (D3): public projects run by stages, so the app always asks for Scrum (its sprints are the stages)
+// and never shows a methodology choice. Six months is a typical public contract.
+export const PROJECT_DEFAULTS = { duration_weeks: 26, requested_methodology: 'scrum' as const, auto_approve: false }
 
 // ---------- Capacity (spec 002, domain/capacity.py: the single rule, spec 003 FR-017) ----------
 

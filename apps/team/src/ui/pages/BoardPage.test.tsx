@@ -37,8 +37,8 @@ describe('Add a task (spec 014, US1)', () => {
     renderApp(`/projects/${PROJECT}/board?sprint=${sprint.id}`, backend)
     const column = await screen.findByRole('region', { name: 'Por hacer' })
 
-    await user.click(within(column).getByRole('button', { name: 'Agregar tarea' }))
-    const field = within(column).getByRole('textbox', { name: 'Nueva tarea en Por hacer' })
+    await user.click(within(column).getByRole('button', { name: 'Agregar actividad' }))
+    const field = within(column).getByRole('textbox', { name: 'Nueva actividad en Por hacer' })
     await user.type(field, 'Revisar textos del checkout{Enter}')
     await within(column).findByRole('button', { name: /Revisar textos del checkout/ })
     await user.type(field, 'Corregir el botón de pago{Enter}')
@@ -57,10 +57,10 @@ describe('Add a task (spec 014, US1)', () => {
     const { backend, board, project, sprint, user } = seeded()
     const member = project.members[1]
     renderApp(`/projects/${PROJECT}/board?sprint=${sprint.id}&assignee=${member.id}&priority=low`, backend)
-    const column = await screen.findByRole('region', { name: 'En curso' })
+    const column = await screen.findByRole('region', { name: 'En ejecución' })
 
-    await user.click(within(column).getByRole('button', { name: 'Agregar tarea' }))
-    const field = within(column).getByRole('textbox', { name: 'Nueva tarea en En curso' })
+    await user.click(within(column).getByRole('button', { name: 'Agregar actividad' }))
+    const field = within(column).getByRole('textbox', { name: 'Nueva actividad en En ejecución' })
     await user.click(field)
     await user.paste('x'.repeat(201))
     await user.keyboard('{Enter}')
@@ -78,7 +78,7 @@ describe('Add a task (spec 014, US1)', () => {
     sprint.closed = true
     renderApp(`/projects/${PROJECT}/board?sprint=${sprint.id}`, backend)
     await screen.findByRole('region', { name: 'Por hacer' })
-    expect(screen.queryByRole('button', { name: 'Agregar tarea' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Agregar actividad' })).not.toBeInTheDocument()
   })
 })
 

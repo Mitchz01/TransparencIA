@@ -6,10 +6,10 @@ import { ThemeToggle } from '../shell/TopBar'
 
 // What each agent says it does, in its own voice: the sign in screens show the product, not a form alone.
 const VOICES = [
-  { stage: 'analysis', quote: 'Leo tu descripción y separo lo esencial de lo deseable, con las dudas que conviene resolver antes de empezar.' },
-  { stage: 'methodology', quote: 'Elijo la metodología según tu equipo y la duración, y te explico por qué. Si prefieres otra, la cambias.' },
-  { stage: 'architecture', quote: 'Propongo la arquitectura y los diagramas. Nada queda decidido hasta que lo apruebes.' },
-  { stage: 'backlog', quote: 'Armo el backlog con criterios de aceptación y reparto el trabajo según las horas de cada persona.' },
+  { stage: 'analysis', quote: 'Leo la descripción del proyecto, separo lo esencial y te digo qué riesgos conviene atender antes de empezar.' },
+  { stage: 'methodology', quote: 'Organizo el proyecto por etapas y propongo las reuniones de seguimiento con la entidad contratante.' },
+  { stage: 'architecture', quote: 'Identifico los componentes del proyecto y los recursos que necesita. Nada queda decidido hasta que lo apruebes.' },
+  { stage: 'backlog', quote: 'Armo las actividades con sus criterios de cumplimiento y las reparto según el tiempo de cada persona.' },
 ] as const
 
 // The demo people, with their Pexels portraits from public/avatars/.
@@ -38,7 +38,7 @@ export function AuthShowcase() {
     >
       <AgentSpark variant="line" size={340} className="pointer-events-none absolute top-40 -right-16 opacity-25" />
 
-      <h2 className="relative max-w-[19ch] pr-24 text-display text-ink">Describe la idea. Los agentes la planifican.</h2>
+      <h2 className="relative max-w-[19ch] pr-24 text-display text-ink">Describe el proyecto. Los agentes arman el plan de trabajo.</h2>
 
       <figure className="relative mt-10 grid max-w-lg gap-6">
         <Icon icon={QuoteDownIcon} size={24} />
@@ -70,7 +70,7 @@ export function AuthShowcase() {
       >
         {/* Text keeps clear of the cut on the right; the team row sits under it, on the left. */}
         <h3 className="pr-24 text-heading">Tu equipo entra con un link</h3>
-        <p className="max-w-sm pr-16 text-body text-ink-muted">Cada persona llega con su perfil y los agentes reparten el trabajo según quién está.</p>
+        <p className="max-w-sm pr-16 text-body text-ink-muted">Cada persona llega con su perfil y los agentes reparten las actividades según quién está.</p>
         <div className="mt-2 flex items-center gap-3">
           <span role="img" className="flex -space-x-1" aria-label="Ana Gómez, Leo Ruiz, Marta Díaz y 2 más">
             {TEAM.map(({ name, photo }) => <Avatar key={name} name={name} src={photo} className="ring-2 ring-surface" />)}

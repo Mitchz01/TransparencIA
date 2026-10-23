@@ -21,8 +21,8 @@ export function TeamPage() {
         title="Equipo"
         description={
           manage
-            ? 'Invita con un link. Cada persona entra con su perfil y tú ajustas su rol en este proyecto.'
-            : 'Quién trabaja en el proyecto. Los líderes deciden los roles y las invitaciones.'
+            ? 'Invita con un link. Cada persona entra con su perfil y tú ajustas su cargo en este proyecto.'
+            : 'Quién trabaja en el proyecto. Los líderes deciden los cargos y las invitaciones.'
         }
       />
       {manage && <InvitationCard projectId={project.id} />}

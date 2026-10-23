@@ -49,8 +49,8 @@ describe('validateProject (project form)', () => {
     expect(validateProject({ name: '' })).toEqual({ name: 'Obligatorio.' })
   })
 
-  it('fills the same defaults as the service', () => {
-    expect(PROJECT_DEFAULTS).toEqual({ duration_weeks: 8, requested_methodology: 'auto', auto_approve: false })
+  it('fills the defaults of a public project: six months, always by stages (spec 019, D3)', () => {
+    expect(PROJECT_DEFAULTS).toEqual({ duration_weeks: 26, requested_methodology: 'scrum', auto_approve: false })
   })
 })
 

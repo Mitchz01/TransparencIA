@@ -23,9 +23,9 @@ describe('Task panel (spec 011)', () => {
   it('reads like a page: properties as rows and no save button', async () => {
     const { panel } = await openTask(() => ({ priority: 'high', points: 2, status: 'in_progress' }))
 
-    expect(within(panel).getByRole('button', { name: 'Estado: En curso' })).toBeInTheDocument()
+    expect(within(panel).getByRole('button', { name: 'Estado: En ejecución' })).toBeInTheDocument()
     expect(within(panel).getByRole('button', { name: 'Prioridad: Alta' })).toBeInTheDocument()
-    expect(within(panel).getByRole('textbox', { name: 'Puntos' })).toHaveValue('2')
+    expect(within(panel).getByRole('textbox', { name: 'Peso' })).toHaveValue('2')
     expect(within(panel).queryByRole('combobox')).not.toBeInTheDocument()
     expect(within(panel).queryByRole('button', { name: 'Guardar cambios' })).not.toBeInTheDocument()
   })
@@ -68,7 +68,7 @@ describe('Task panel (spec 011)', () => {
 
   it("doesn't send points out of range and says why under the field", async () => {
     const { panel, stored, user } = await openTask(() => ({ points: 3 }))
-    const points = within(panel).getByRole('textbox', { name: 'Puntos' })
+    const points = within(panel).getByRole('textbox', { name: 'Peso' })
 
     await user.clear(points)
     await user.type(points, '150{Enter}')

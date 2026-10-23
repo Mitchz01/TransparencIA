@@ -122,7 +122,7 @@ export function TransparencyPage() {
   return (
     <>
       <PageHeader
-        title="Transparencia"
+        title="Evidencias y gastos"
         description="El dinero del contrato al lado del trabajo hecho. Lo que confirmes aquí lo ve cualquiera en el portal público."
       />
       {budget.isPending || (hasBudget && portal.isPending) ? (

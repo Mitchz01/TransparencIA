@@ -83,11 +83,11 @@ export function BoardPage() {
   if (!board || board.tasks.length === 0) {
     return (
       <>
-        <PageHeader title="Tablero" />
+        <PageHeader title="Actividades" />
         <EmptyState
           icon={DashboardSquare01Icon}
-          title="Todavía no hay tablero"
-          action={<ButtonLink to={`/projects/${project.id}/planning`} variant="primary" icon={AiMagicIcon}>Ir a la planificación</ButtonLink>}
+          title="Todavía no hay actividades"
+          action={<ButtonLink to={`/projects/${project.id}/planning`} variant="primary" icon={AiMagicIcon}>Ir a la planeación</ButtonLink>}
         >
           Aparece cuando apruebes los sprints. Las tareas salen del backlog que propone el agente.
         </EmptyState>
@@ -116,7 +116,7 @@ export function BoardPage() {
       {!continuous && board.sprints.length > 0 && (
         <TopBarViews>
           <Segmented
-            label="Sprint"
+            label="Etapa"
             value={String(sprintId)}
             options={[...board.sprints].sort((a, b) => a.number - b.number).map((s) => ({ value: String(s.id), label: s.name }))}
             onChange={(id) => { clearTask(); setSprint(Number(id)) }}
@@ -125,13 +125,13 @@ export function BoardPage() {
       )}
       <PageHeader
         compact
-        title={sprint?.name ?? 'Tablero'}
-        description={sprint ? `${sprint.goal}. Fase ${sprint.phase}${sprint.end_date ? `, termina el ${formatDate(sprint.end_date)}` : ''}.` : 'Kanban: todas las tareas en un flujo continuo.'}
+        title={sprint?.name ?? 'Actividades'}
+        description={sprint ? `${sprint.goal}. Fase ${sprint.phase}${sprint.end_date ? `, termina el ${formatDate(sprint.end_date)}` : ''}.` : 'Todas las actividades en un solo flujo, sin etapas.'}
         actions={
           <>
             <TeamAvatars projectId={project.id} members={project.members} />
             {load && sprint && <CapacityBar projectId={project.id} load={load} override={board.capacity_override} editable={manage} />}
-            {manage && <Button icon={AiMagicIcon} disabled={Boolean(pendingReplan)} onClick={() => setReplanning(true)}>Replanificar</Button>}
+            {manage && <Button icon={AiMagicIcon} disabled={Boolean(pendingReplan)} onClick={() => setReplanning(true)}>Ajustar el plan</Button>}
             {sprint && <CloseSprintButton projectId={project.id} sprint={sprint} tasks={board.tasks} canClose={manage} />}
           </>
         }
@@ -146,7 +146,7 @@ export function BoardPage() {
           label="Vista"
           size="sm"
           value={view}
-          options={[{ value: 'board', label: 'Tablero', icon: DashboardSquare01Icon }, { value: 'list', label: 'Lista', icon: ListViewIcon }]}
+          options={[{ value: 'board', label: 'Columnas', icon: DashboardSquare01Icon }, { value: 'list', label: 'Lista', icon: ListViewIcon }]}
           onChange={setView}
         />
         <BoardFilters filters={filters} members={project.members} epics={epics} onChange={setFilters} />

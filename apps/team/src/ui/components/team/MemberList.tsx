@@ -112,8 +112,8 @@ export function MemberList({ project, me, manage, onLeft }: MemberListProps) {
           title={confirm.kind === 'leave' ? `Salir de ${project.name}` : `Quitar a ${confirm.member.name}`}
           description={
             confirm.kind === 'leave'
-              ? 'Dejas de ver el proyecto. Tus tareas pendientes quedan sin asignar y las terminadas conservan tu nombre.'
-              : 'Deja de ver el proyecto. Sus tareas pendientes quedan sin asignar y las terminadas conservan su nombre.'
+              ? 'Dejas de ver el proyecto. Tus actividades pendientes quedan sin asignar y las terminadas conservan tu nombre.'
+              : 'Deja de ver el proyecto. Sus actividades pendientes quedan sin asignar y las terminadas conservan su nombre.'
           }
           onClose={() => setConfirm(null)}
           actions={

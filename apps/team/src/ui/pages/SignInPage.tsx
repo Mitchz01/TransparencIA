@@ -6,11 +6,10 @@ import { useSession } from '../../application/use-cases/useSession'
 import type { FieldErrors } from '../../domain/rules'
 import { AuthLayout } from '../components/auth/AuthLayout'
 import { Button, FieldError, PasswordField, TextField, type IconGlyph } from '@agile/ui'
-import { GithubIcon, GoogleIcon, Key01Icon, Login01Icon } from '@agile/ui/icons'
+import { GoogleIcon, Key01Icon, Login01Icon } from '@agile/ui/icons'
 
 const PROVIDERS: { name: string; short: string; icon: IconGlyph }[] = [
   { name: 'Google', short: 'Google', icon: GoogleIcon },
-  { name: 'GitHub', short: 'GitHub', icon: GithubIcon },
   { name: 'SSO', short: 'SSO', icon: Key01Icon },
 ]
 
@@ -20,7 +19,7 @@ export function ProviderButtons() {
   return (
     <div className="grid gap-4">
       <span className="text-center text-label font-normal text-ink-muted">o</span>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         {PROVIDERS.map((p) => (
           <Button key={p.name} icon={p.icon} size="lg" aria-label={`Continuar con ${p.name}`} className="px-3" onClick={() => push({ tone: 'info', message: 'Próximamente' })}>
             {p.short}

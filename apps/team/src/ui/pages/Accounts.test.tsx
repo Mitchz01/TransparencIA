@@ -32,12 +32,13 @@ describe('Sign in (spec 015, US1)', () => {
     expect(password).not.toHaveAttribute('aria-invalid')
   })
 
-  it('only says "Próximamente" for Google, GitHub and SSO', async () => {
+  it('only says "Próximamente" for Google and SSO, and never offers GitHub', async () => {
     const user = userEvent.setup()
     const backend = signedOut()
     const { router } = renderApp('/login', backend)
 
-    for (const provider of ['Google', 'GitHub', 'SSO']) {
+    expect(screen.queryByRole('button', { name: 'Continuar con GitHub' })).not.toBeInTheDocument()
+    for (const provider of ['Google', 'SSO']) {
       await user.click(await screen.findByRole('button', { name: `Continuar con ${provider}` }))
       expect(await screen.findByText('Próximamente')).toBeInTheDocument()
     }
@@ -100,7 +101,7 @@ describe('Sign up and profile (spec 015, US1 and US2)', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/'))
     const account = [...backend.store.accounts.values()].find((a) => a.email === 'carla@team.dev')!
     expect(account).toMatchObject({ name: 'Carla Pérez', role: 'Backend', seniority: 'senior', hours_per_week: 30 })
-    expect(await screen.findByText('Todavía no hay proyectos')).toBeInTheDocument()
+    expect(await screen.findByText('Todavía no tienes proyectos')).toBeInTheDocument()
   })
 
   it('says an email is taken under the field, with a way to sign in', async () => {

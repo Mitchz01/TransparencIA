@@ -32,7 +32,7 @@ describe('Join with the link (spec 015, US4)', () => {
     await user.click(await screen.findByRole('button', { name: 'Omitir' }))
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/join/demo-1'))
-    const role = await screen.findByRole('textbox', { name: 'Tu rol en este proyecto' })
+    const role = await screen.findByRole('textbox', { name: 'Tu cargo en este proyecto' })
     await user.click(screen.getByRole('button', { name: 'Unirme' }))
     expect(role).toHaveAccessibleDescription('Dinos qué vas a hacer en este proyecto.')
     await user.type(role, 'Diseño')
@@ -90,7 +90,7 @@ describe('Team screen (spec 015, US4 and US6)', () => {
     await user.click(await screen.findByRole('button', { name: 'Opciones de Leo Ruiz' }))
     await user.click(screen.getByRole('menuitem', { name: 'Editar' }))
     const dialog = screen.getByRole('dialog', { name: 'Editar a Leo Ruiz' })
-    const role = within(dialog).getByRole('textbox', { name: 'Rol' })
+    const role = within(dialog).getByRole('textbox', { name: 'Cargo' })
     await user.clear(role)
     await user.type(role, 'Fullstack')
     await user.click(within(dialog).getByRole('button', { name: 'Guardar' }))
@@ -135,12 +135,12 @@ describe('A member’s view (spec 015, US5)', () => {
     const task = board.tasks.find((t) => t.status === 'todo')!
     renderApp(`/projects/2/board?task=${task.id}`, backend)
     const panel = await screen.findByRole('dialog', { name: task.title })
-    expect(screen.queryByRole('button', { name: 'Replanificar' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Cerrar sprint' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Ajustar el plan' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Cerrar etapa' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Ajustar la capacidad' })).not.toBeInTheDocument()
 
     await user.click(within(panel).getByRole('button', { name: 'Estado: Por hacer' }))
-    await user.click(screen.getByRole('menuitemradio', { name: 'En curso' }))
+    await user.click(screen.getByRole('menuitemradio', { name: 'En ejecución' }))
     await waitFor(() => expect(backend.store.boards.get(2)!.tasks.find((t) => t.id === task.id)!.status).toBe('in_progress'))
   })
 

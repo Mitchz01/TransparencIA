@@ -53,7 +53,7 @@ export function MemberDialog({ member, onSave, onClose }: { member: Member; onSa
       <form noValidate onSubmit={submit} className="grid gap-5">
         {errors[''] && <FieldError>{errors['']}</FieldError>}
         <TextField label="Nombre" size="md" value={name} error={errors.name} onChange={(e) => edited(setName)(e.target.value)} />
-        <TextField label="Rol" size="md" value={role} error={errors.role} onChange={(e) => edited(setRole)(e.target.value)} />
+        <TextField label="Cargo" size="md" value={role} error={errors.role} onChange={(e) => edited(setRole)(e.target.value)} />
         <div className="grid gap-5 sm:grid-cols-2">
           <Select
             label="Seniority"

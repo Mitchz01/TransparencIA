@@ -2,13 +2,14 @@ import { useId, useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { recentProjects } from '../../../domain/launchpad'
 import { useProjects } from '../../../application/use-cases/useProjects'
-import { AgentSpark, cn, Drawer, Icon, IconButton, type IconGlyph } from '@agile/ui'
-import { Add01Icon, Folder01Icon, Menu01Icon, Search01Icon, DashboardSquare01Icon } from '@agile/ui/icons'
+import { cn, Drawer, Icon, IconButton, type IconGlyph } from '@agile/ui'
+import { Add01Icon, Folder01Icon, Menu01Icon, Search01Icon, DashboardSquare01Icon, UserAdd01Icon } from '@agile/ui/icons'
 import { AccountMenu } from './AccountMenu'
 import { Brand, ThemeToggle } from './TopBar'
 
-/** What the sidebar asks the home for; outside the home it goes there with it in the location state. */
-export type HomeIntent = 'composer' | 'search' | 'projects'
+/** What the sidebar asks the home for; outside the home it goes there with it in the location state.
+ *  "new" opens the project form (spec 019: the home is a follow-up panel, no composer). */
+export type HomeIntent = 'new' | 'search' | 'projects'
 
 const ROW = 'flex h-control-md w-full min-w-0 items-center gap-3 rounded-pill px-3 text-label transition-[color,background-color] duration-150'
 const IDLE = 'text-ink-muted hover:bg-surface-strong hover:text-ink'
@@ -35,10 +36,10 @@ function Sidebar({ active, onIntent }: SidebarProps) {
 
   const invite = (
     <>
-      <AgentSpark size={24} />
+      <Icon icon={UserAdd01Icon} size={24} className="shrink-0" />
       <span className="grid gap-1">
-        <span className="text-label font-semibold">Invita a tu equipo</span>
-        <span className="text-caption">Comparte el link de tu proyecto y planifiquen juntos.</span>
+        <span className="text-label font-semibold">Suma a tu equipo</span>
+        <span className="text-caption">Comparte el link del proyecto con quienes ejecutan las actividades y reportan avances.</span>
       </span>
     </>
   )
@@ -47,9 +48,9 @@ function Sidebar({ active, onIntent }: SidebarProps) {
     <div className="flex min-h-full flex-col gap-8">
       <Brand withName className="self-start" />
       <nav aria-label="Inicio" className="grid gap-1">
-        <NavButton icon={Add01Icon} label="Nuevo proyecto" active={active === 'new'} onClick={() => onIntent('composer')} />
+        <NavButton icon={DashboardSquare01Icon} label="Mis proyectos" active={active === 'projects'} onClick={() => onIntent('projects')} />
+        <NavButton icon={Add01Icon} label="Nuevo proyecto" active={active === 'new'} onClick={() => onIntent('new')} />
         <NavButton icon={Search01Icon} label="Buscar" onClick={() => onIntent('search')} />
-        <NavButton icon={DashboardSquare01Icon} label="Proyectos" active={active === 'projects'} onClick={() => onIntent('projects')} />
       </nav>
       {recent.length > 0 && (
         <section aria-labelledby={recentsId} className="grid gap-1">
@@ -90,7 +91,7 @@ interface HomeShellProps {
   children: ReactNode
 }
 
-/** The frame outside a project (spec 016): a sidebar with the brand, actions, recent projects and the account,
+/** The frame outside a project (spec 016, spec 019): a sidebar with the brand, actions, recent projects and the account,
  *  and the screen in a panel next to it. Under 1024px the sidebar is a drawer opened from a minimal top bar. */
 export function HomeShell({ active, onIntent, children }: HomeShellProps) {
   const navigate = useNavigate()
@@ -98,7 +99,8 @@ export function HomeShell({ active, onIntent, children }: HomeShellProps) {
 
   const intent = (next: HomeIntent) => {
     setMenuOpen(false)
-    if (onIntent) onIntent(next)
+    if (next === 'new') navigate('/projects/new')
+    else if (onIntent) onIntent(next)
     else navigate('/', { state: { focus: next } })
   }
 

@@ -21,10 +21,9 @@ describe('Settings', () => {
     expect(await screen.findByText('Cambios guardados.')).toBeInTheDocument()
   })
 
-  it('locks the methodology once planning started, and says why', async () => {
+  it('never asks for a methodology: every project runs by stages (spec 019, D3)', async () => {
     renderApp('/projects/1/settings')
-    const methodology = await screen.findByRole('combobox', { name: 'Metodología' })
-    expect(methodology).toBeDisabled()
-    expect(methodology).toHaveAccessibleDescription('La planificación ya empezó, así que la metodología no se puede cambiar.')
+    expect(await screen.findByRole('textbox', { name: 'Nombre del proyecto' })).toBeInTheDocument()
+    expect(screen.queryByRole('combobox', { name: 'Metodología' })).not.toBeInTheDocument()
   })
 })

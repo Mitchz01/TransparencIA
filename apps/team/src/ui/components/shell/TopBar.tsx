@@ -9,11 +9,11 @@ import { SectionMenu } from './SectionNav'
 
 export function Brand({ withName = false, className }: { withName?: boolean; className?: string }) {
   return (
-    <Link to="/" className={`inline-flex shrink-0 items-center gap-2.5 rounded-pill ${className ?? ''}`} aria-label="Agile Planner, todos los proyectos">
+    <Link to="/" className={`inline-flex shrink-0 items-center gap-2.5 rounded-pill ${className ?? ''}`} aria-label="TransparencIA, todos los proyectos">
       <span className="inline-flex size-9 items-center justify-center rounded-sm bg-primary text-on-primary">
         <Icon icon={Tick02Icon} />
       </span>
-      {withName && <span className="text-label font-semibold">Agile Planner</span>}
+      {withName && <span className="text-label font-semibold">TransparencIA</span>}
     </Link>
   )
 }
@@ -66,26 +66,26 @@ interface ProjectTopBarProps {
 }
 
 /** Inside a project: the project on the left, the section's views in the center, activity and the account on the right.
- *  The sections live in the rail; under 768px they move into a menu here. */
+ *  The sections live in the side menu; under 1024px they move into a menu here. */
 export function ProjectTopBar({ projectId, projectName, onOpenActivity, viewsRef, canManage }: ProjectTopBarProps) {
   const navigate = useNavigate()
   return (
     <Bar>
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
         <div className="col-start-1 row-start-1 flex min-w-0 items-center gap-1">
-          <Brand className="md:hidden" />
+          <Brand className="lg:hidden" />
           <ProjectSwitcher projectId={projectId} name={projectName} />
         </div>
-        <div ref={viewsRef} className="col-span-2 row-start-3 flex min-w-0 justify-start overflow-x-auto empty:hidden md:row-start-2 lg:col-span-1 lg:col-start-2 lg:row-start-1 lg:justify-center" />
+        <div ref={viewsRef} className="col-span-2 row-start-3 flex min-w-0 justify-start overflow-x-auto empty:hidden lg:col-span-1 lg:col-start-2 lg:row-start-1 lg:justify-center" />
         <div className="col-start-2 row-start-1 flex items-center justify-end gap-2 lg:col-start-3">
           <IconButton icon={Notification01Icon} label="Actividad" tooltipAlign="end" onClick={onOpenActivity} />
-          <span className="contents md:hidden">
+          <span className="contents lg:hidden">
             <ThemeToggle />
             {canManage && <IconButton icon={Settings01Icon} label="Ajustes" tooltipAlign="end" onClick={() => navigate(`/projects/${projectId}/settings`)} />}
           </span>
           <AccountMenu />
         </div>
-        <div className="col-span-2 md:hidden">
+        <div className="col-span-2 row-start-2 lg:hidden">
           <SectionMenu projectId={projectId} />
         </div>
       </div>

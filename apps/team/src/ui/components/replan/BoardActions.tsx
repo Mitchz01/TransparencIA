@@ -25,7 +25,7 @@ export function ReplanDialog({ projectId, onClose }: { projectId: number; onClos
   }
 
   return (
-    <Dialog title="Replanificar" description="El agente revisa el tablero con tu motivo y te propone cambios. Nada cambia hasta que los apruebes." onClose={onClose}>
+    <Dialog title="Ajustar el plan de trabajo" description="El agente revisa las actividades con tu motivo y te propone cambios. Nada cambia hasta que los apruebes." onClose={onClose}>
       <form noValidate className="grid gap-5" onSubmit={submit}>
         <TextArea
           label="Motivo"
@@ -55,12 +55,12 @@ export function CloseSprintButton({ projectId, sprint, tasks, canClose = true }:
   const pending = tasks.filter((t) => t.sprint_id === sprint.id && t.status !== 'done')
   const past = sprint.end_date !== null && sprint.end_date < new Date().toISOString().slice(0, 10)
 
-  if (sprint.closed) return <StateLabel hue="teal" icon={Tick02Icon}>Sprint cerrado</StateLabel>
+  if (sprint.closed) return <StateLabel hue="teal" icon={Tick02Icon}>Etapa cerrada</StateLabel>
   if (!canClose) return null
 
   return (
     <>
-      <Button variant="quiet" onClick={() => setOpen(true)}>Cerrar sprint</Button>
+      <Button variant="quiet" onClick={() => setOpen(true)}>Cerrar etapa</Button>
       {open && (
         <Dialog
           title={`Cerrar ${sprint.name}`}
@@ -78,7 +78,7 @@ export function CloseSprintButton({ projectId, sprint, tasks, canClose = true }:
                   setClosing(false)
                 }}
               >
-                Cerrar sprint
+                Cerrar etapa
               </Button>
             </>
           }
@@ -87,8 +87,8 @@ export function CloseSprintButton({ projectId, sprint, tasks, canClose = true }:
             {past && <StateLabel hue="amber" icon={Alert02Icon}>La fecha de fin ya pasó</StateLabel>}
             <p className="text-body">
               {pending.length
-                ? `Quedan ${plural(pending.length, 'tarea')} sin terminar: ${pending.map((t) => t.key).join(', ')}. Al cerrar, el agente propone a dónde llevarlas.`
-                : 'Todas las tareas están terminadas.'}
+                ? `Quedan ${plural(pending.length, 'actividad', 'actividades')} sin terminar: ${pending.map((t) => t.key).join(', ')}. Al cerrar, el agente propone a dónde llevarlas.`
+                : 'Todas las actividades están terminadas.'}
             </p>
           </div>
         </Dialog>
