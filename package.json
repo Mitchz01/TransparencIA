@@ -1,0 +1,17 @@
+{
+  "name": "agile-planner",
+  "private": true,
+  "workspaces": [
+    "apps/team",
+    "apps/portal",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:team": "npm run dev -w @agile/team",
+    "dev:portal": "npm run dev -w @agile/portal",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  }
+}

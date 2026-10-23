@@ -4,7 +4,7 @@ Like Jira, but the plan is built by agents: you enter the project and your team 
 
 ## Agent pipeline
 
-Stages in order; each one is an `LlmAgent` that returns JSON with a schema ([domain/plan.py](backend/app/domain/plan.py)):
+Stages in order; each one is an `LlmAgent` that returns JSON with a schema ([domain/plan.py](apps/api/app/domain/plan.py)):
 
 1. **Product analyst**: goals, scope, risks, team gaps
 2. **Agile coach**: Scrum / Kanban / Scrumban / XP / Shape Up, with ceremonies and WIP limits
@@ -19,7 +19,7 @@ Stages in order; each one is an `LlmAgent` that returns JSON with a schema ([dom
 - [plan/hexagonal-architecture.md](plan/hexagonal-architecture.md): hexagonal architecture (ports and adapters), folders and decisions.
 - [plan/use-cases.md](plan/use-cases.md): use cases with diagrams of how each one is implemented.
 - [plan/api-conventions.md](plan/api-conventions.md): HTTP API rules (headers, error body, status codes); each spec's plan has its API Contract.
-- [frontend/docs/api-contract.md](frontend/docs/api-contract.md): the whole API from the frontend's side: TypeScript shapes, endpoints by gateway, errors and SSE events.
+- [apps/team/docs/api-contract.md](apps/team/docs/api-contract.md): the whole API from the frontend's side: TypeScript shapes, endpoints by gateway, errors and SSE events.
 
 ## How we work: SDD
 
@@ -30,7 +30,7 @@ The 8 specs (001–008), who writes and reviews each one, the order and the cont
 ## Run the backend
 
 ```bash
-cd backend
+cd apps/api
 py -m venv .venv && .venv/Scripts/activate   # Linux/macOS: python3 -m venv .venv && . .venv/bin/activate
 pip install -r requirements-dev.txt
 cp .env.example .env   # set GOOGLE_API_KEY
@@ -57,17 +57,16 @@ With both `PUBLIC_BASE_URL` and `GITHUB_WEBHOOK_URL` empty, repos connect withou
 ## Run the frontend
 
 ```bash
-cd frontend
-npm install
-npm run dev                      # :5173, proxy /api → :8000
-VITE_USE_FAKE=true npm run dev   # whole demo without a backend (fake agents)
+npm install                      # from the root: every workspace (spec 018)
+npm run dev:team                 # team app :5173, proxy /api → :8000
+npm run dev:portal               # public portal :5174, proxy /api → :8000
 ```
 
-Scripts, the fake backend and the checks: [frontend/README.md](frontend/README.md).
+Scripts, the fake backend and the checks: [apps/team/README.md](apps/team/README.md).
 
 ## TODO
 
-> The `member.active`, `proposal` and `activity` columns/tables are new and `create_db()` doesn't migrate: delete any local `backend/agile.db` before running. Spec 007 adds `project.github_token`, `project.webhook_id`, `member.github_username`, `proposal.result` and the `external_link` and `own_write` tables. Spec 006 adds the `document` and `document_version` tables. Spec 008 adds `sprint.closed`, `sprint.end_date` and the `webhook_delivery` table.
+> The `member.active`, `proposal` and `activity` columns/tables are new and `create_db()` doesn't migrate: delete any local `apps/api/agile.db` before running. Spec 007 adds `project.github_token`, `project.webhook_id`, `member.github_username`, `proposal.result` and the `external_link` and `own_write` tables. Spec 006 adds the `document` and `document_version` tables. Spec 008 adds `sprint.closed`, `sprint.end_date` and the `webhook_delivery` table.
 
 
 - [x] Projects and team API (spec 001): `POST/GET/PATCH /api/projects`

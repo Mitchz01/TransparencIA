@@ -9,7 +9,7 @@ The what and why is in [../spec.md](../spec.md), the endpoints in [../plan.md](.
 1. **You only edit the files listed in your brief.** If you need a change in someone else's file, tell
    them; don't do it yourself.
 2. **The skeleton commit (T000) creates every shared file first**: `main.py`, `unit_of_work.py`,
-   `ports.ts`, `routes.tsx`, nav, public paths, plus every new file with the signatures below and
+   `ports.ts`, `routes.tsx`, nav, plus every new file with the signatures below and
    `NotImplementedError` / placeholder bodies. After it, nobody touches the shared files again (except
    their owner, for bug fixes). So everyone can start at 0:10 without waiting for anyone.
 3. **Code against the interfaces below, not against someone's implementation.** If an interface is wrong,
@@ -17,7 +17,11 @@ The what and why is in [../spec.md](../spec.md), the endpoints in [../plan.md](.
 4. **Git**: everyone on `feat/transparency`. Small commits, `git pull --rebase` before each push. Since
    files don't overlap, rebases don't conflict. Never `--force`.
 5. **Mock mode is the default** (`MOCK_AGENTS=1`). Only P2 needs the Gemini key until 1:30.
-6. **Done = it works + its tests pass**: `cd backend && pytest` and `cd frontend && npm run typecheck`.
+6. **Done = it works + its tests pass**: `cd apps/api && pytest` and `npm run typecheck` (from the root).
+
+The repository is a monorepo (spec 018): `apps/api` (backend), `apps/team` (team app, `:5173`),
+`apps/portal` (public portal, `:5174`), `packages/ui` (`@agile/ui`, design system) and `packages/domain`
+(`@agile/domain`, shared types). The portal never imports from `apps/team`.
 
 ## Timeline
 
@@ -54,7 +58,7 @@ P2's mock agents, P3's seed and P4's fake gateway all use these values, so every
   2. Field photo, planting of the first hectare, no amount, `2026-09-15`, R2, task "Sembrar lote 1 (1 ha)". No alerts.
   3. Invoice, "Restaurante El Muelle", almuerzos, `2400000`, `2026-10-02`, charged to R1. AI alert
      `medium`: "El concepto (alimentación) no corresponde al rubro Plántulas de mangle. Requiere revisión."
-- **Live demo files** (`backend/demo/`, P2): `factura-vivero.pdf` (fits R1), `factura-restaurante.jpg`
+- **Live demo files** (`apps/api/demo/`, P2): `factura-vivero.pdf` (fits R1), `factura-restaurante.jpg`
   (the mismatch), `foto-siembra.jpg` (field photo). The mock agent picks its answer by filename.
 
 ## Shared interfaces
@@ -186,14 +190,16 @@ class StoredFileRepository(Protocol):
 
 `today` is a `Callable[[], date]` injected from `main.py`, so tests fix the date.
 
-### Frontend — `src/domain/transparency.ts` (owner: P4)
+### Frontend — `packages/domain/src/transparency.ts` (`@agile/domain`, owner: P4)
+
+Already written by spec 018. The demo fixture goes next to it, in `src/fixtures/` (`@agile/domain/fixtures`).
 
 The same shapes as the Python models above and the API Contract, in camelCase-free snake_case like the
 rest of `src/domain` (`budget_line_id`, `spent_pct`…). Types: `Budget`, `BudgetInput`, `BudgetLine`,
 `Alert`, `Expense`, `ExpenseConfirmation`, `LineStatus`, `Summary`, `WeekEntry`, `SprintProgress`,
 `Portal`, `TeamPortal`, `Publication = { public: boolean; public_url: string | null }`, `CitizenAnswer`.
 
-### Frontend — `src/application/ports.ts` (owner: P4)
+### Frontend — ports (owner: P4 in `apps/team`, P5 in `apps/portal`)
 
 ```ts
 export interface TransparencyGateway {
@@ -206,16 +212,17 @@ export interface TransparencyGateway {
   setPublication(projectId: number, isPublic: boolean): Promise<Publication>
   answerAlert(projectId: number, alertId: number, answer: string): Promise<Alert>
 }
+// apps/portal/src/application/ports.ts (already there, spec 018)
 export interface PublicPortalGateway {
   getPortal(slug: string): Promise<Portal>
   ask(slug: string, question: string): Promise<CitizenAnswer>
 }
-// Gateways gains: transparency: TransparencyGateway; publicPortal: PublicPortalGateway
+// apps/team Gateways gains: transparency: TransparencyGateway
 ```
 
-### Frontend — read-only components (`src/ui/components/transparency/`, owner: P5)
+### Frontend — read-only components (`packages/ui/src/transparency/`, owner: P5)
 
-P4 reuses them in the team tab. Props are fixed by the skeleton:
+Exported as `@agile/ui/transparency`; P4 reuses them in the team tab. Props are fixed by the skeleton:
 
 ```ts
 TrafficLight({ summary }: { summary: Summary })
@@ -227,5 +234,5 @@ AlertList({ alerts, onAnswer }: { alerts: Alert[]; onAnswer?: (alertId: number, 
 CitizenChat({ slug }: { slug: string })
 ```
 
-Routes (skeleton): `/projects/:projectId/transparency` → `TransparencyPage` (P4), `/p/:slug` →
-`PublicPortalPage` (P5, public path, no session).
+Routes: `/projects/:projectId/transparency` → `TransparencyPage` in `apps/team` (P4, skeleton);
+`/p/:slug` → `PublicPortalPage` in `apps/portal` (P5, already there, no session).

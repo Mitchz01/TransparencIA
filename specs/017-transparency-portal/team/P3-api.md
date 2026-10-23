@@ -6,16 +6,16 @@ two frontends. Plan tasks: T008, T011–T013, T015, T018, T019, T023. Endpoints 
 
 ## Your files (only these)
 
-- `backend/app/application/ports/repositories.py`, `ports/unit_of_work.py`
-- `backend/app/adapters/outbound/persistence/` (tables, mappers, repositories, unit_of_work)
-- `backend/app/domain/project.py` (only `public`, `public_slug`)
-- `backend/app/application/use_cases/transparency/`: `get_budget.py`, `set_budget.py`,
+- `apps/api/app/application/ports/repositories.py`, `ports/unit_of_work.py`
+- `apps/api/app/adapters/outbound/persistence/` (tables, mappers, repositories, unit_of_work)
+- `apps/api/app/domain/project.py` (only `public`, `public_slug`)
+- `apps/api/app/application/use_cases/transparency/`: `get_budget.py`, `set_budget.py`,
   `draft_expense.py`, `discard_expense.py`, `set_publication.py`, `get_portal.py`, `answer_alert.py`
   (not `confirm_expense.py` → P1, not `ask_citizen.py` → P2)
-- `backend/app/adapters/inbound/http/transparency.py`, `http/public.py`, `http/errors.py` (new error
+- `apps/api/app/adapters/inbound/http/transparency.py`, `http/public.py`, `http/errors.py` (new error
   mappings), `http/dependencies.py` (providers)
-- `backend/app/main.py`, `backend/app/config.py`, `backend/app/seed.py`
-- `backend/tests/integration/adapters/test_transparency_api.py`, `test_transparency_persistence.py`
+- `apps/api/app/main.py`, `apps/api/app/config.py`, `apps/api/app/seed.py`
+- `apps/api/tests/integration/adapters/test_transparency_api.py`, `test_transparency_persistence.py`
 
 ## Phase 1 (0:10–0:50): storage and endpoints in mock mode
 

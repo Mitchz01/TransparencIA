@@ -77,7 +77,7 @@ Some errors add context fields next to these (documented in the plan of the endp
 
 ## Error codes
 
-Domain errors live in `backend/app/domain/errors.py`; `adapters/inbound/http/errors.py` maps them. New codes are added here and in the plan that introduces them.
+Domain errors live in `apps/api/app/domain/errors.py`; `adapters/inbound/http/errors.py` maps them. New codes are added here and in the plan that introduces them.
 
 | Domain error | Status | `code` | Spec |
 |---|---|---|---|

@@ -6,14 +6,14 @@ T009, T010, T021. You're the only one who needs `GOOGLE_API_KEY` before 1:30.
 
 ## Your files (only these)
 
-- `backend/app/application/ports/transparency_agents.py` (signature in the [README](README.md#backend--ports-appapplicationports))
-- `backend/app/adapters/outbound/agents/mock/transparency_agents.py`, `mock/transparency_data.py`
-- `backend/app/adapters/outbound/agents/adk/transparency_agents.py`, `adk/transparency_prompts.py`
-- `backend/app/adapters/outbound/agents/adk/prompts.py` (only the generalization, US6)
-- `backend/app/application/use_cases/transparency/ask_citizen.py`
-- `backend/demo/` (demo files)
-- `backend/tests/integration/adapters/test_mock_transparency_agents.py`,
-  `backend/tests/unit/application/test_ask_citizen.py`
+- `apps/api/app/application/ports/transparency_agents.py` (signature in the [README](README.md#backend--ports-appapplicationports))
+- `apps/api/app/adapters/outbound/agents/mock/transparency_agents.py`, `mock/transparency_data.py`
+- `apps/api/app/adapters/outbound/agents/adk/transparency_agents.py`, `adk/transparency_prompts.py`
+- `apps/api/app/adapters/outbound/agents/adk/prompts.py` (only the generalization, US6)
+- `apps/api/app/application/use_cases/transparency/ask_citizen.py`
+- `apps/api/demo/` (demo files)
+- `apps/api/tests/integration/adapters/test_mock_transparency_agents.py`,
+  `apps/api/tests/unit/application/test_ask_citizen.py`
 
 `main.py` already wires your adapters (skeleton): `MockTransparencyAgents()` without a key,
 `AdkTransparencyAgents(model=GEMINI_MODEL)` with one.
@@ -44,7 +44,7 @@ T009, T010, T021. You're the only one who needs `GOOGLE_API_KEY` before 1:30.
      reported yet."
    - Rules don't go in prompts: the traffic light and percentages are computed in code (P1). Never ask
      Gemini for a percentage.
-3. **Demo files** in `backend/demo/`:
+3. **Demo files** in `apps/api/demo/`:
    - `factura-vivero.pdf`: an invoice for 20.000 plántulas (a Docs/Word document exported to PDF is fine).
    - `factura-restaurante.jpg`: a photo of a real restaurant receipt.
    - `foto-siembra.jpg`: any photo of mangrove planting.

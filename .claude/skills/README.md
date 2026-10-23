@@ -1,6 +1,6 @@
 # Frontend skills
 
-Shared team skills for working on `frontend/`. Claude Code loads them automatically from this folder. They use the open Agent Skills format (`SKILL.md` + reference files), so other assistants can read them as context.
+Shared team skills for working on `apps/team`, `apps/portal` and `packages/ui`. Claude Code loads them automatically from this folder. They use the open Agent Skills format (`SKILL.md` + reference files), so other assistants can read them as context.
 
 | Skill | What we use it for | When it kicks in |
 |---|---|---|

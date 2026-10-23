@@ -9,24 +9,25 @@ You also own the frontend's shared types and gateway, and the cuts in the naviga
 (frontend), T016, T017, T024, and the "Responder" part of US5.
 
 UI text in Spanish (spec 009). Follow [.claude/skills/](../../../.claude/skills/README.md) and reuse
-`ui/components/ds`.
+`@agile/ui`. You work in the team app (`apps/team`, spec 018).
 
 ## Your files (only these)
 
-- `frontend/src/domain/transparency.ts` and `frontend/src/application/ports.ts` (skeleton; you own
-  later changes; announce them, since P5 depends on them)
-- `frontend/src/adapters/http/transparencyGateway.ts`, `adapters/http/client.ts` (multipart upload)
-- `frontend/src/adapters/fake/transparencyGateway.ts`, `adapters/fake/demoTransparency.ts` (the fixture;
-  P5 imports it read-only)
-- `frontend/src/application/use-cases/useTransparency.ts`
-- `frontend/src/ui/pages/TransparencyPage.tsx`
-- `frontend/src/ui/components/transparency/`: `BudgetEditor.tsx`, `EvidenceUpload.tsx`,
+- `packages/domain/src/transparency.ts` (`@agile/domain`, already written from the README; you own
+  changes; announce them, since P5 depends on them) and `apps/team/src/application/ports.ts`
+- `apps/team/src/adapters/http/transparencyGateway.ts`, `adapters/http/client.ts` (multipart upload)
+- `apps/team/src/adapters/fake/transparencyGateway.ts`; the fixture in
+  `packages/domain/src/fixtures/demoTransparency.ts`, exported as `@agile/domain/fixtures` (P5 imports it
+  read-only; the portal can't import from `apps/team`)
+- `apps/team/src/application/use-cases/useTransparency.ts`
+- `apps/team/src/ui/pages/TransparencyPage.tsx`
+- `apps/team/src/ui/components/transparency/`: `BudgetEditor.tsx`, `EvidenceUpload.tsx`,
   `ExpenseReviewForm.tsx`, `QrCard.tsx` (the read-only ones are P5's: import them, don't edit them)
-- `frontend/src/ui/components/shell/sections.ts`, `frontend/src/app/routes.tsx` (skeleton; you own later changes)
+- `apps/team/src/ui/components/shell/sections.ts`, `apps/team/src/app/routes.tsx` (skeleton; you own later changes)
 
 ## Phase 1 (0:10–0:50), on the fake backend (`VITE_USE_FAKE=true`)
 
-1. **Fixture** `demoTransparency.ts`: the README's demo project as a `TeamPortal`, with:
+1. **Fixture** `@agile/domain/fixtures` (`demoTransparency.ts`): the README's demo project as a `TeamPortal`, with:
    - the numbers of the [README](README.md#the-demo-project-same-numbers-everywhere);
    - a `summary` that's yellow, with reasons;
    - about 11 weeks of `timeline`;
@@ -69,7 +70,7 @@ UI text in Spanish (spec 009). Follow [.claude/skills/](../../../.claude/skills/
    - A "Publicar portal" / "Despublicar" switch (leaders).
    - When public: the link and a copy button, the QR (`qrcode` → `toDataURL`, 256 px), "Abrir portal",
      and "Descargar QR" (PNG).
-   - The URL is `public_url`; when it starts with `/`, prefix `VITE_PUBLIC_APP_URL` or `window.location.origin`.
+   - The URL is `public_url`; when it starts with `/`, prefix `VITE_PUBLIC_APP_URL` (the portal app, `http://localhost:5174` when unset; never the team app's own origin).
 3. **Cuts in navigation** (`sections.ts`): remove Documentos and Integraciones; Transparencia comes
    right after Tablero. Routes stay (D13). Check that no screen in the demo's path links to them (the
    planning screen's "documents" step, the home launchpad cards) and hide those links too. Tell the

@@ -53,7 +53,7 @@ Dependency rule: `adapters → application → domain`. Never the other way arou
 ### Structure
 
 ```
-backend/app/
+apps/api/app/
   main.py                           composition root
   config.py                         env vars (+ GITHUB_TOKEN, GITHUB_WEBHOOK_SECRET, MOCK_GITHUB)
 
@@ -125,7 +125,7 @@ backend/app/
       events/
         in_memory_bus.py            InMemoryEventBus (one asyncio.Queue per subscriber)
 
-backend/tests/
+apps/api/tests/
   unit/domain/                      rules (Proposal transitions, checklist, objectives)
   unit/application/                 use cases with in-memory fakes
   integration/adapters/             repos on in-memory SQLite, routers and webhook with TestClient
@@ -190,13 +190,13 @@ Actions that **write** to GitHub go through a proposal (they're visible to third
 Same pattern, lighter version: the UI doesn't call `fetch` directly but goes through ports, so the backend can be replaced by a fake in demos and tests.
 
 ```
-frontend/src/
+apps/team/src/
   main.tsx
   app/
     App.tsx, routes.tsx             router + layout
     container.tsx                   composition root: context with the concrete gateways
 
-  domain/                           plain TS: types mirroring backend/app/domain/*.py
+  domain/                           plain TS: types mirroring apps/api/app/domain/*.py
     project.ts, board.ts, plan.ts, proposals.ts, documents.ts, integrations.ts, events.ts
     rules.ts                        pure rules (WIP limits, capacity, checklist progress)
 

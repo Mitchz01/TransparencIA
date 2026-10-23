@@ -25,7 +25,7 @@ Each person **owns an area end to end** (spec → plan → code) and **reviews**
 - **sandredev: Set up and decide.** The leader sets up the project, approves or rejects what the agents propose and follows the live activity. Also the read-only plan views.
 - **Mitchz01: Agents.** Everything that runs on Gemini/ADK: the plan stages, generated specs and diagrams, replanning.
 - **codigotpx: Work and integrate.** The board where work moves and the GitHub connection (issues, code review).
-- **Frontend (spec 009).** Specs 001 to 008 own the behavior and the API; spec 009 owns every screen, built on [frontend/docs/api-contract.md](../frontend/docs/api-contract.md) and the [design system](../frontend/design-system/README.md). Its stories follow the same rounds: P1 stories with round 1, and so on.
+- **Frontend (spec 009).** Specs 001 to 008 own the behavior and the API; spec 009 owns every screen, built on [apps/team/docs/api-contract.md](../apps/team/docs/api-contract.md) and the [design system](../frontend/design-system/README.md). Its stories follow the same rounds: P1 stories with round 1, and so on.
 
 ## Order
 

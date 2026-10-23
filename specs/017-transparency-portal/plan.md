@@ -50,7 +50,7 @@ images); new on the frontend: `qrcode`
 - **D9 — Publication**: `Project.public_slug` (`secrets.token_urlsafe(8)`, generated on first publish,
   kept on unpublish) and `Project.public: bool`. The QR encodes `{PUBLIC_APP_URL}/p/{slug}` (env var,
   falls back to the current origin).
-- **D10 — Public exposure**: `cloudflared tunnel --url http://localhost:5173` (quick tunnel, no account),
+- **D10 — Public exposure**: `cloudflared tunnel --url http://localhost:5174` (the portal app, spec 018) (quick tunnel, no account),
   Vite `server.allowedHosts` for the tunnel domain. Cloud Run stays the real target, not tonight.
 - **D11 — The seed builds the demo project directly** (planned mangrove board with tasks done across
   past weeks, budget, 3 confirmed expenses, portal published), without running the agents.
@@ -67,7 +67,7 @@ images); new on the frontend: `qrcode`
 ## Project Structure
 
 ```text
-backend/app/
+apps/api/app/
   domain/transparency.py                     entities, agent output schemas, rules (D6), errors
   domain/board.py                            + Task.done_at (D5)
   domain/project.py                          + public, public_slug (D9)
@@ -85,19 +85,24 @@ backend/app/
   adapters/inbound/http/public.py            public endpoints
   main.py, config.py                         wiring, GENERATE_DOCUMENTS, PUBLIC_APP_URL (D13, D9)
   seed.py                                    the mangrove project (D11)
-backend/demo/                                invoices and a field photo for the live demo
-backend/tests/unit/domain/test_transparency.py
-backend/tests/integration/adapters/test_transparency_api.py
+apps/api/demo/                                invoices and a field photo for the live demo
+apps/api/tests/unit/domain/test_transparency.py
+apps/api/tests/integration/adapters/test_transparency_api.py
 
-frontend/src/
-  domain/transparency.ts                     types mirroring domain/transparency.py
+packages/domain/src/                       (@agile/domain, spec 018)
+  transparency.ts                            types mirroring domain/transparency.py
+  fixtures/demoTransparency.ts               the mangrove fixture (D14), shared by both apps
+packages/ui/src/transparency/                (@agile/ui/transparency) TrafficLight, ProgressBars,
+                                             WeeklyTimeline, BudgetLines, EvidenceList, AlertList, CitizenChat
+apps/portal/src/                             the public portal app, :5174 (spec 018)
+  ui/pages/PublicPortalPage.tsx              /p/:slug, phone first
+  application/ports.ts, adapters/            PublicPortalGateway (http + fake)
+apps/team/src/
   application/ports.ts                       + TransparencyGateway
   application/use-cases/useTransparency.ts
   adapters/http/transparencyGateway.ts, adapters/fake/transparencyGateway.ts (D14)
   ui/pages/TransparencyPage.tsx              project tab "Transparencia": budget, expenses, alerts, publish + QR
-  ui/pages/PublicPortalPage.tsx              /p/:slug, phone first
-  ui/components/transparency/                TrafficLight, ProgressBars, WeeklyTimeline, BudgetLines,
-                                             EvidenceList, AlertList, CitizenChat, QrCard
+  ui/components/transparency/                QrCard and the forms
 ```
 
 **Structure Decision**: same hexagonal layout as every other feature; `tests/architecture/test_layers.py`
@@ -236,13 +241,13 @@ it says so out loud first.
 | Who | Owns | Tasks | Files |
 |---|---|---|---|
 | **P1 — Rules** | Every number, the traffic light and the timeline | T003, T004, T005, T006, T014 | `domain/transparency.py`, `domain/board.py` (done_at), `board/move_task.py`, `board/update_task.py`, `test_transparency.py`, `transparency/confirm_expense.py` |
-| **P2 — AI** | The evidence and chat prompts and adapters; generalized planning prompts; demo files | T002, T007, T009, T010, T021 | `ports/transparency_agents.py`, `agents/adk/*`, `agents/mock/transparency_*`, `transparency/ask_citizen.py`, `backend/demo/` |
+| **P2 — AI** | The evidence and chat prompts and adapters; generalized planning prompts; demo files | T002, T007, T009, T010, T021 | `ports/transparency_agents.py`, `agents/adk/*`, `agents/mock/transparency_*`, `transparency/ask_citizen.py`, `apps/api/demo/` |
 | **P3 — API** | Persistence, use cases, endpoints, cuts in the backend, seed | T008, T011–T013, T015, T018, T019, T023 | `ports/repositories.py`, `ports/unit_of_work.py`, `persistence/*`, `domain/project.py`, the other `transparency/*`, `http/transparency.py`, `http/public.py`, `main.py`, `config.py`, `seed.py` |
-| **P4 — Team UI** | The "Transparencia" tab and the cuts in navigation | T001 (frontend), T016, T017, T024 | `domain/transparency.ts`, `ports.ts`, `adapters/*/transparencyGateway.ts`, `useTransparency.ts`, `TransparencyPage`, `QrCard`, `routes.tsx`, project nav |
-| **P5 — Portal + demo** | What the jury sees on their phone; tunnel, pitch | T020, T022, T025–T027, pitch + backup video | `PublicPortalPage`, the other `ui/components/transparency/*`, `session.ts` (public path), `vite.config.ts`, docs |
+| **P4 — Team UI** | The "Transparencia" tab and the cuts in navigation | T001 (frontend), T016, T017, T024 | `@agile/domain` (types, fixture), `ports.ts`, `adapters/*/transparencyGateway.ts`, `useTransparency.ts`, `TransparencyPage`, `QrCard`, `routes.tsx`, project nav |
+| **P5 — Portal + demo** | What the jury sees on their phone; tunnel, pitch | T020, T022, T025–T027, pitch + backup video | `apps/portal/*`, `packages/ui/src/transparency/*`, docs |
 
-P4 and P5 share `ui/components/transparency/`: P4 owns `QrCard` and the forms, P5 the read-only ones
-(the team tab reuses P5's `TrafficLight`, `ProgressBars`, `BudgetLines`).
+P4 owns `QrCard` and the forms in `apps/team`; P5 owns `apps/portal` and the read-only components in
+`packages/ui/src/transparency/` (the team tab reuses P5's `TrafficLight`, `ProgressBars`, `BudgetLines`).
 
 Sync points:
 
@@ -257,7 +262,7 @@ Sync points:
 
 - [ ] T000 Skeleton commit: every shared file and every new file with the team README's signatures (team/README.md)
 - [ ] T001 `qrcode` on the frontend; `PUBLIC_APP_URL` (backend) and `VITE_PUBLIC_APP_URL` (frontend)
-- [ ] T002 Demo files in `backend/demo/`: a seedlings invoice, a restaurant invoice, a field photo of planting
+- [ ] T002 Demo files in `apps/api/demo/`: a seedlings invoice, a restaurant invoice, a field photo of planting
 
 ## Phase 2: Foundational (~40 min)
 
@@ -300,7 +305,7 @@ Sync points:
 - [ ] T015 [US3] Use cases `get_portal`, `set_publication` + `transparency.py` and `public.py` endpoints + tests
 - [ ] T018 [US3] Seed the mangrove project (D11): planned board, tasks done across past weeks, budget,
   3 confirmed expenses (one with the restaurant alert), portal published
-- [ ] T020 [US3] `PublicPortalPage` at `/p/:slug` (public path): parties, traffic light + reasons, three
+- [ ] T020 [US3] `PublicPortalPage` at `/p/:slug` in `apps/portal`: parties, traffic light + reasons, three
   bars, weekly timeline (activities and money per week, accumulated lines), budget lines, evidence with
   photos, alerts with answers; phone first
 - [ ] T024 [US3] Publish toggle + `QrCard` on the Transparencia tab
@@ -321,7 +326,7 @@ Sync points:
 
 - [ ] T023 Cuts in the backend (D13): `GENERATE_DOCUMENTS` flag, skip issue proposals; hide GitHub and
   Documents from the nav (P4)
-- [ ] T025 plan/api-conventions.md (D2, D3 and new errors), frontend/docs/api-contract.md, plan/context.md
+- [ ] T025 plan/api-conventions.md (D2, D3 and new errors), apps/team/docs/api-contract.md, plan/context.md
   and README updated to the transparency module
 - [ ] T026 Tunnel + `allowedHosts`; QR tested from a real phone on mobile data
 - [ ] T027 Full demo with the real key and in mock mode; `pytest`, `npm run typecheck`, `npm run lint`

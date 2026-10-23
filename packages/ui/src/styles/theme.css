@@ -1,0 +1,163 @@
+/* Tailwind mapped to the design tokens (tokens.css). Utilities only exist for tokens:
+   the default palette, radii, shadows and type scale are cleared on purpose.
+   `inline` makes each utility read the token variable, so both themes switch at runtime.
+   Each app imports Tailwind first, then this file. */
+
+@import "@fontsource-variable/geist/wght.css";
+@import "./tokens.css";
+
+/* The apps import this file; scan this package so its components get their utilities. */
+@source "../";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme inline {
+  --color-*: initial;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-soft-ink: var(--primary-soft-ink);
+  --color-accent-ink: var(--accent-ink);
+  --color-inverse: var(--inverse);
+  --color-on-inverse: var(--on-inverse);
+  --color-focus: var(--focus);
+  --color-inset: var(--inset);
+  --color-lane: var(--lane);
+  --color-card: var(--card);
+  --color-card-hover: var(--card-hover);
+  --color-card-inset: var(--card-inset);
+  --color-lane-blue: var(--lane-blue);
+  --color-lane-amber: var(--lane-amber);
+  --color-lane-teal: var(--lane-teal);
+  --color-scrim: var(--scrim);
+  --color-blue: var(--blue);
+  --color-blue-soft: var(--blue-soft);
+  --color-violet: var(--violet);
+  --color-violet-soft: var(--violet-soft);
+  --color-amber: var(--amber);
+  --color-amber-soft: var(--amber-soft);
+  --color-coral: var(--coral);
+  --color-coral-soft: var(--coral-soft);
+  --color-teal: var(--teal);
+  --color-teal-soft: var(--teal-soft);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-mesh-1: var(--mesh-1);
+  --color-mesh-2: var(--mesh-2);
+  --color-mesh-3: var(--mesh-3);
+  --color-mesh-4: var(--mesh-4);
+  --color-mesh-5: var(--mesh-5);
+  --color-mesh-6: var(--mesh-6);
+  --color-on-mesh: var(--on-mesh);
+
+  --font-*: initial;
+  --font-sans: "Geist Variable", "Geist", "Segoe UI", system-ui, sans-serif;
+
+  --radius-*: initial;
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-pill: 999px;
+
+  --shadow-*: initial;
+
+  --text-*: initial;
+  --text-display: 2.25rem;
+  --text-display--line-height: 1.15;
+  --text-display--font-weight: 600;
+  --text-display--letter-spacing: -0.02em;
+  --text-title: 1.5rem;
+  --text-title--line-height: 1.25;
+  --text-title--font-weight: 600;
+  --text-title--letter-spacing: -0.01em;
+  --text-heading: 1.125rem;
+  --text-heading--line-height: 1.35;
+  --text-heading--font-weight: 600;
+  --text-heading--letter-spacing: -0.01em;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.55;
+  --text-label: 0.875rem;
+  --text-label--line-height: 1.4;
+  --text-label--font-weight: 500;
+  --text-caption: 0.8125rem;
+  --text-caption--line-height: 1.4;
+  --text-number: 2rem;
+  --text-number--line-height: 1.1;
+  --text-number--font-weight: 600;
+
+  --spacing-control-sm: 32px;
+  --spacing-control-md: 40px;
+  --spacing-control-lg: 48px;
+}
+
+/* Only what floats has a shadow: drawers, dialogs, menus, toasts, the dragged card. */
+@utility shadow-float {
+  box-shadow: var(--shadow-float);
+}
+
+/* Task keys and points: the same family, with tabular figures. */
+@utility text-key {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The one soft light behind the page header (dark theme only; transparent in light). */
+@utility bg-glow {
+  background-image: var(--glow);
+}
+
+@layer base {
+  html {
+    background: var(--bg);
+  }
+
+  body {
+    margin: 0;
+    min-height: 100svh;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  ::placeholder {
+    color: var(--ink-subtle);
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+}

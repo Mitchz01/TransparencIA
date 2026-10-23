@@ -6,12 +6,12 @@ must be right and tested. Plan tasks: T003–T006, T014.
 
 ## Your files (only these)
 
-- `backend/app/domain/transparency.py` — the skeleton has the models and signatures from the
+- `apps/api/app/domain/transparency.py` — the skeleton has the models and signatures from the
   [README](README.md#shared-interfaces); you write the bodies. Don't rename anything without telling P3.
-- `backend/app/domain/board.py` — only `Task.done_at` and `reorder`.
-- `backend/app/application/use_cases/transparency/confirm_expense.py`
-- `backend/tests/unit/domain/test_transparency.py`
-- `backend/tests/unit/application/test_confirm_expense.py`
+- `apps/api/app/domain/board.py` — only `Task.done_at` and `reorder`.
+- `apps/api/app/application/use_cases/transparency/confirm_expense.py`
+- `apps/api/tests/unit/domain/test_transparency.py`
+- `apps/api/tests/unit/application/test_confirm_expense.py`
 
 Not yours: persistence (P3 adds the `done_at` column), endpoints (P3), agents (P2).
 
