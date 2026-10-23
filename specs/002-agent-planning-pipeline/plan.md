@@ -2,7 +2,7 @@
 
 **Date**: 2026-10-23  
 **Spec**: [spec.md](spec.md)  
-**Status**: Draft
+**Status**: Approved
 
 ## Summary
 
@@ -163,8 +163,8 @@ data: {"seq":1520,"type":"agent_started","project_id":12,"agent":"analysis","tit
 
 **Purpose**: wiring for background work and per-task DB sessions
 
-- [ ] T001 Create `backend/app/adapters/inbound/http/background.py` with `spawn(coro)`: `asyncio.create_task`, keeps a reference in a module-level set until done, logs unhandled exceptions
-- [ ] T002 Add `get_uow_factory()` to `backend/app/adapters/inbound/http/dependencies.py`: returns a callable that opens `SqlUnitOfWork(Session(engine))`, so background use cases never reuse the request's session
+- [x] T001 Create `backend/app/adapters/inbound/http/background.py` with `spawn(coro)`: `asyncio.create_task`, keeps a reference in a module-level set until done, logs unhandled exceptions — already done by spec 005
+- [x] T002 Add `get_uow_factory()` to `backend/app/adapters/inbound/http/dependencies.py`: returns a callable that opens `SqlUnitOfWork(Session(engine))`, so background use cases never reuse the request's session — already done by spec 005
 
 ---
 
@@ -174,13 +174,13 @@ data: {"seq":1520,"type":"agent_started","project_id":12,"agent":"analysis","tit
 
 **⚠️ CRITICAL**: no user story work can begin until this phase is complete
 
-- [ ] T003 Add `rejection_reason: str | None` and `reject(reason: str)` to `backend/app/domain/proposals.py`; update `backend/tests/unit/domain/test_proposals.py`
-- [ ] T004 Add `ProposalTable` to `backend/app/adapters/outbound/persistence/tables.py`, its mappers, `SqlProposalRepository` (get, list_by_project, add, save) and `proposals` on `SqlUnitOfWork` and the `UnitOfWork` port
-- [ ] T005 [P] Add a required `rationale: str` field (2–3 sentences, "why you decided this") to `Analysis`, `Architecture`, `Roadmap`, `Backlog` and `SprintPlanning` in `backend/app/domain/plan.py`; add it to `backend/app/adapters/outbound/agents/mock/data.py` and to `frontend/src/domain/plan.ts`
-- [ ] T006 [P] Create `backend/app/domain/capacity.py`: `HOURS_PER_POINT = {"junior": 8, "mid": 6, "senior": 4}`, `member_capacity(member, sprint_weeks)` and `team_capacity(members, sprint_weeks)` in points; mirror it in `frontend/src/domain/rules.ts`. This is the single capacity rule (spec 003, FR-017)
-- [ ] T007 [P] Add `stage_by_key()`, `next_stage()` and `first_pending_stage(approved_keys)` to `backend/app/domain/plan.py`
-- [ ] T008 Add `PlanningAlreadyRunning` and `PlanningNotStartable` (409) to `backend/app/domain/errors.py` and the HTTP error mapping; add `StageNeedsLeader(stage, rejections)` and `PlanCompleted` to `backend/app/domain/events.py`
-- [ ] T009 Create `backend/app/adapters/inbound/http/planning.py` with `GET /api/projects/{id}/events`: SSE (`sse-starlette`) over `EventBus.subscribe`, one `event:` per `DomainEvent.type`. It's the UC-14 transport; spec 005 builds the activity UI on top of it
+- [x] T003 Add `rejection_reason: str | None` and `reject(reason: str)` to `backend/app/domain/proposals.py`; update `backend/tests/unit/domain/test_proposals.py` — already done by spec 005
+- [x] T004 Add `ProposalTable` to `backend/app/adapters/outbound/persistence/tables.py`, its mappers, `SqlProposalRepository` (get, list_by_project, add, save) and `proposals` on `SqlUnitOfWork` and the `UnitOfWork` port — already done by spec 005
+- [x] T005 [P] Add a required `rationale: str` field (2–3 sentences, "why you decided this") to `Analysis`, `Architecture`, `Roadmap`, `Backlog` and `SprintPlanning` in `backend/app/domain/plan.py`; add it to `backend/app/adapters/outbound/agents/mock/data.py` and to `frontend/src/domain/plan.ts` — backend done; `frontend/src/domain/plan.ts` handed off to spec 009 (frontend)
+- [x] T006 [P] Create `backend/app/domain/capacity.py`: `HOURS_PER_POINT = {"junior": 8, "mid": 6, "senior": 4}`, `member_capacity(member, sprint_weeks)` and `team_capacity(members, sprint_weeks)` in points; mirror it in `frontend/src/domain/rules.ts`. This is the single capacity rule (spec 003, FR-017) — backend already done by spec 003 (tests in `test_board_rules.py`); the `rules.ts` mirror is handed off to spec 009 (frontend)
+- [x] T007 [P] Add `stage_by_key()`, `next_stage()` and `first_pending_stage(approved_keys)` to `backend/app/domain/plan.py`
+- [x] T008 Add `PlanningAlreadyRunning` and `PlanningNotStartable` (409) to `backend/app/domain/errors.py` and the HTTP error mapping; add `StageNeedsLeader(stage, rejections)` and `PlanCompleted` to `backend/app/domain/events.py`
+- [x] T009 Create `backend/app/adapters/inbound/http/planning.py` with `GET /api/projects/{id}/events`: SSE (`sse-starlette`) over `EventBus.subscribe`, one `event:` per `DomainEvent.type`. It's the UC-14 transport; spec 005 builds the activity UI on top of it — already done by spec 005 (in `adapters/inbound/http/activity.py`, with replay)
 
 **Checkpoint**: proposals persist, and every stage output carries a rationale
 

@@ -16,8 +16,11 @@ from app.domain.errors import (
     DomainError,
     MethodologyLocked,
     NotFound,
+    PlanningAlreadyRunning,
+    PlanningNotStartable,
     ProposalAlreadyResolved,
     ProposalNotRetryable,
+    StageNotRetryable,
     ValidationFailed,
 )
 
@@ -30,6 +33,9 @@ _STATUS: dict[type[DomainError], int] = {
     ProposalAlreadyResolved: 409,
     ProposalNotRetryable: 409,
     CapacityNotApplicable: 409,
+    PlanningAlreadyRunning: 409,
+    PlanningNotStartable: 409,
+    StageNotRetryable: 409,
 }
 
 
