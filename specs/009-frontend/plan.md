@@ -259,7 +259,7 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 ### Implementation for User Story 6
 
 - [x] T046 [US6] Create `ProjectsPage` at `/`: project cards (name, status pill, duration, member count) and "New project"
-- [ ] T047 [US6] Create `SettingsPage` at `/projects/:id/settings` reusing `ProjectForm` in edit mode (`PATCH` with only the changed fields; methodology disabled with a short reason when not in draft; `methodology_locked` handled)
+- [x] T047 [US6] Create `SettingsPage` at `/projects/:id/settings` reusing `ProjectForm` in edit mode (`PATCH` with only the changed fields; methodology disabled with a short reason when not in draft; `methodology_locked` handled)
 
 **Checkpoint**: User Stories 1–6 work independently
 

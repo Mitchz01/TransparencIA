@@ -1,7 +1,7 @@
 // What the project form holds while the leader types: numbers stay as typed text so nothing is lost,
 // and they're parsed only when the form is checked or sent.
 
-import type { MemberInput, Project, ProjectCreate, RequestedMethodology, Seniority } from '../../../domain/project'
+import type { MemberInput, Project, ProjectCreate, ProjectUpdate, RequestedMethodology, Seniority } from '../../../domain/project'
 import { MEMBER_DEFAULTS, PROJECT_DEFAULTS } from '../../../domain/rules'
 
 export interface MemberDraft {
@@ -72,3 +72,17 @@ export const toProjectCreate = (draft: ProjectDraft): ProjectCreate => ({
   auto_approve: draft.autoApprove,
   members: memberInputs(draft.members),
 })
+
+/** Only what changed, as PATCH asks; `members` goes whole when any member changed (contract, ProjectGateway). */
+export function toProjectUpdate(project: Project, draft: ProjectDraft): ProjectUpdate {
+  const next = toProjectCreate(draft)
+  const update: ProjectUpdate = {}
+  if (next.name.trim() !== project.name) update.name = next.name
+  if (next.description.trim() !== project.description) update.description = next.description
+  if (next.duration_weeks !== project.duration_weeks) update.duration_weeks = next.duration_weeks
+  if (next.requested_methodology !== project.requested_methodology) update.requested_methodology = next.requested_methodology
+  if (next.auto_approve !== project.auto_approve) update.auto_approve = next.auto_approve
+  const current = project.members.map((m) => ({ id: m.id, name: m.name, role: m.role, seniority: m.seniority, hours_per_week: m.hours_per_week, skills: m.skills }))
+  if (JSON.stringify(next.members) !== JSON.stringify(current)) update.members = next.members
+  return update
+}

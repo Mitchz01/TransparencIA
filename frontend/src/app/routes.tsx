@@ -1,5 +1,5 @@
 import { createBrowserRouter, type RouteObject } from 'react-router-dom'
-import { File01Icon, Plug01Icon, Settings01Icon } from '../ui/components/ds/icons'
+import { File01Icon, Plug01Icon } from '../ui/components/ds/icons'
 import { BoardPage } from '../ui/pages/BoardPage'
 import { ErrorPage } from '../ui/pages/ErrorPage'
 import { NewProjectPage } from '../ui/pages/NewProjectPage'
@@ -8,6 +8,7 @@ import { PlanPage } from '../ui/pages/PlanPage'
 import { PlanningPage } from '../ui/pages/PlanningPage'
 import { ProjectIndex, ProjectLayout } from '../ui/pages/ProjectLayout'
 import { ProjectsPage } from '../ui/pages/ProjectsPage'
+import { SettingsPage } from '../ui/pages/SettingsPage'
 import { UpcomingPage } from '../ui/pages/UpcomingPage'
 
 /** Every screen of the screen map (spec 009). */
@@ -33,10 +34,7 @@ export const routes: RouteObject[] = [
             path: 'integrations',
             element: <UpcomingPage title="Integraciones" icon={Plug01Icon}>Conecta un repo de GitHub y publica las tareas como issues.</UpcomingPage>,
           },
-          {
-            path: 'settings',
-            element: <UpcomingPage title="Ajustes" icon={Settings01Icon}>Edita el proyecto, su equipo y la aprobación automática.</UpcomingPage>,
-          },
+          { path: 'settings', element: <SettingsPage /> },
           { path: '*', element: <NotFoundPage /> },
         ],
       },
