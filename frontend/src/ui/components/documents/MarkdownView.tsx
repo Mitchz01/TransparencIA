@@ -4,7 +4,7 @@ import Markdown, { type Components } from 'react-markdown'
 const text = (children: ReactNode): string =>
   Array.isArray(children) ? children.map(text).join('') : typeof children === 'string' || typeof children === 'number' ? String(children) : ''
 
-/** A spec in the app's typography. No rules between sections (design system rule 2), no monospace face. */
+/** A spec in the app's typography: one family, no rules between sections (design system rule 2). */
 export function MarkdownView({ source, title }: { source: string; title?: string }) {
   const components: Components = {
     // The document's own title is already in the header.
