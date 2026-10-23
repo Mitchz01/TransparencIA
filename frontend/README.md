@@ -1,32 +1,46 @@
-# React + TypeScript + Vite
+# Agile Planner, frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React SPA for every screen of the product (spec 009). It talks to the backend only through the API contract ([docs/api-contract.md](docs/api-contract.md)) and is built only with the design system ([design-system/README.md](design-system/README.md)). The interface is in Spanish; code and docs are in English.
 
-Currently, two official plugins are available:
+## Run it
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev                      # :5173, /api goes to the backend on :8000
+VITE_USE_FAKE=true npm run dev   # no backend: in-memory service with fake agents
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+With `VITE_USE_FAKE=true` the whole demo works without the API: two seeded projects (one waiting for the backlog approval, one with its plan complete, board in use and documents), agents that "work" for a moment and propose each stage, the board built when the sprints are approved, documents, test-mode GitHub and replanning. The state survives a reload. From the browser console:
+
+| Command | What it does |
+|---|---|
+| `fakeBackend.reset()` | Back to the seeded demo |
+| `fakeBackend.setOffline(true)` | Every call fails like an unreachable server (try a card move) |
+| `fakeBackend.planning.failNextStage(id)` | The next stage of that project fails, to show the retry |
+
+In the integrations screen, a repo name with `privado` or `no-existe` answers like GitHub would without access.
+
+## Scripts
+
+| Script | What it does |
+|---|---|
+| `npm run dev` | Dev server |
+| `npm run build` | Type check and production build |
+| `npm run typecheck` | `tsc -b` |
+| `npm run lint` | Lint plus `scripts/check-design-rules.mjs`, which fails on what breaks the design rules (em dashes, dot separators, emojis, one-sided borders, dividers, uppercase labels, monospace, round dots) |
+| `npm test` | Unit and flow tests (jsdom) on the fake backend |
+
+## Structure
+
+Hexagonal, like the backend: `ui → application → domain`, and only `app/container.tsx` imports `adapters/`.
+
+| Folder | What lives there |
+|---|---|
+| `src/domain` | Shapes that mirror the backend, and pure rules: form validation, capacity, WIP, moves, the planning stepper |
+| `src/application` | Ports (gateways), hooks per use case, live updates from the event stream, error handling per error code |
+| `src/adapters/http` | The real API client and gateways |
+| `src/adapters/fake` | The in-memory service: store, fake agents, demo data |
+| `src/ui` | Design system components (`components/ds`), feature components and pages |
+| `src/app` | Composition root: providers, routes, theme |
+
+Screens load with their route; only the documents screen brings the markdown renderer, and diagrams load their renderer when one is opened.

@@ -4,7 +4,8 @@ import type { Member } from '../../../domain/project'
 import { checklistProgress } from '../../../domain/rules'
 import { points } from '../../format'
 import { Avatar, cn, Icon, Pill, ProgressTrack, StateLabel } from '../ds'
-import { CheckListIcon, Flag02Icon, GithubIcon, UserWarning01Icon } from '../ds/icons'
+import { CheckListIcon, Flag02Icon, UserWarning01Icon } from '../ds/icons'
+import { IssueBadge } from '../integrations/IssueBadge'
 import { firstName, PRIORITY_LOOK } from './boardLabels'
 
 interface TaskCardProps {
@@ -28,7 +29,7 @@ export function TaskCard({ task, assignee, overlay = false, onOpen }: TaskCardPr
       )}
       onClick={onOpen}
     >
-      <h3 className="text-[0.9375rem] leading-snug font-semibold break-words">{task.title}</h3>
+      <h3 className="line-clamp-3 text-[0.9375rem] leading-snug font-semibold break-words" title={task.title}>{task.title}</h3>
       {task.description && <p className="line-clamp-2 text-caption text-ink-muted">{task.description}</p>}
       {progress.total > 0 && progress.done > 0 && !progress.complete && (
         <ProgressTrack value={progress.done} max={progress.total} label={`Checklist ${progress.done} de ${progress.total}`} />
@@ -42,11 +43,7 @@ export function TaskCard({ task, assignee, overlay = false, onOpen }: TaskCardPr
           </span>
         )}
         <span>{points(task.points)}</span>
-        {task.issue && (
-          <a href={task.issue.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 text-blue">
-            <Icon icon={GithubIcon} size={16} />#{task.issue.number}
-          </a>
-        )}
+        {task.issue && <IssueBadge issue={task.issue} />}
       </div>
       <div className="flex items-center justify-between gap-2">
         {assignee ? (
@@ -59,7 +56,7 @@ export function TaskCard({ task, assignee, overlay = false, onOpen }: TaskCardPr
             <span className="truncate">Falta {task.missing_role}</span>
           </StateLabel>
         ) : (
-          <span className="text-caption text-ink-subtle">Sin asignar</span>
+          <span className="text-caption text-ink-muted">Sin asignar</span>
         )}
         <Pill hue={priority.hue} icon={Flag02Icon}>{priority.label}</Pill>
       </div>
@@ -81,7 +78,11 @@ export function SortableTaskCard({ task, assignee, onOpen }: Omit<TaskCardProps,
       aria-label={`${task.key} ${task.title}`}
       onKeyDown={(event) => {
         listeners?.onKeyDown?.(event)
-        if (event.key === 'Enter' && !event.defaultPrevented && onOpen) onOpen()
+        if (event.key === 'Enter' && !isDragging && onOpen) {
+          // Keep the same key press from reaching the drawer's first button once it opens.
+          event.preventDefault()
+          onOpen()
+        }
       }}
     >
       <TaskCard task={task} assignee={assignee} onOpen={onOpen} />

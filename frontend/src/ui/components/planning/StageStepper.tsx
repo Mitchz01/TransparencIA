@@ -26,7 +26,7 @@ export function StageStepper({ steps, selected, onSelect }: StageStepperProps) {
                 onClick={() => onSelect(step.key)}
                 className={cn(
                   'flex w-full items-center justify-between gap-3 rounded-md px-4 py-3 text-left transition-[background-color] duration-150',
-                  isSelected ? 'bg-surface-strong' : 'hover:bg-inset',
+                  isSelected ? 'bg-inset' : 'hover:bg-inset/60',
                 )}
               >
                 <span className="grid min-w-0">

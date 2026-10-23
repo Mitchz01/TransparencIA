@@ -8,7 +8,8 @@ import type { DomainEvent } from '../../domain/events'
 import type { Connection } from '../../domain/integrations'
 import type { Project } from '../../domain/project'
 import type { Proposal } from '../../domain/proposals'
-import { demoBoard, demoBoardProject, demoBoardProposals, demoProject, demoProposals } from './demoData'
+import { boardCreatedAt, seedDocuments } from './seedDocuments'
+import { demoBoard, demoBoardProject, demoBoardProposals, demoHistory, demoProject, demoProposals } from './demoData'
 
 type Listener = (event: DomainEvent) => void
 
@@ -17,6 +18,7 @@ export type NewEvent = DomainEvent extends infer E ? (E extends DomainEvent ? Om
 
 /** A stored document keeps the content of every version; the API only returns one at a time. */
 export interface StoredDocument extends Omit<ProjectDocument, 'content'> {
+  key: string // the proposal key that creates and updates it
   contents: Record<number, string>
   updated_at: string
 }
@@ -40,6 +42,13 @@ export class FakeStore {
     for (const project of [demoBoardProject, demoProject]) this.projects.set(project.id, structuredClone(project))
     for (const proposal of [...demoBoardProposals, ...demoProposals]) this.proposals.set(proposal.id, structuredClone(proposal))
     this.boards.set(demoBoardProject.id, demoBoard(() => this.id()))
+    seedDocuments(this, demoBoardProject, boardCreatedAt)
+    for (const [event, at] of demoHistory(this.boards.get(demoBoardProject.id)!)) this.record(event, at)
+  }
+
+  /** Stores a past event (demo history) without notifying anyone. */
+  private record(event: NewEvent, at: string): void {
+    this.events.push({ ...event, seq: this.nextSeq++, occurred_at: at } as DomainEvent)
   }
 
   id(): number {
@@ -153,7 +162,7 @@ export function fail(status: number, body: ApiErrorBody): never {
 type Entity = 'project' | 'proposal' | 'task' | 'sprint' | 'member' | 'document' | 'stage' | 'version'
 
 export const notFound = (entity: Entity, id: number | string): never =>
-  fail(404, { code: `${entity}_not_found`, detail: `${entity[0].toUpperCase()}${entity.slice(1)} ${id} does not exist.` })
+  fail(404, { code: `${entity}_not_found`, detail: `No existe (${entity} ${id}).` })
 
-export const invalid = (errors: FieldError[], detail = 'The request has invalid fields.'): never =>
+export const invalid = (errors: FieldError[], detail = 'La solicitud tiene campos con errores.'): never =>
   fail(422, { code: 'validation_failed', detail, errors })

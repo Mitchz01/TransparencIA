@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import type { Level, Methodology, StageKey, StageOutputs } from '../../../domain/plan'
-import { plural, points } from '../../format'
-import { Button, Pill, StateLabel } from '../ds'
+import { plural, points, sentences } from '../../format'
+import { Block, Button, Pill, Row, Rows, StateLabel } from '../ds'
 import { Flag02Icon } from '../ds/icons'
 
 export interface Fact {
@@ -20,31 +20,6 @@ export const LEVELS: Record<Level, string> = { low: 'Baja', medium: 'Media', hig
 const PRIORITY_HUE = { high: 'coral', medium: 'amber', low: 'teal' } as const
 
 const listText = (items: string[]) => (items.length <= 3 ? items.join(', ') : `${items.slice(0, 3).join(', ')} y ${items.length - 3} más`)
-
-function Block({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="grid gap-2">
-      <h3 className="text-label text-ink">{title}</h3>
-      {children}
-    </section>
-  )
-}
-
-function Rows({ children }: { children: ReactNode }) {
-  return <ul className="grid gap-1.5">{children}</ul>
-}
-
-function Row({ title, detail, aside }: { title: ReactNode; detail?: ReactNode; aside?: ReactNode }) {
-  return (
-    <li className="flex items-start justify-between gap-4 rounded-md bg-inset px-4 py-3">
-      <span className="grid min-w-0 gap-0.5">
-        <span className="text-label">{title}</span>
-        {detail && <span className="text-caption text-ink-muted">{detail}</span>}
-      </span>
-      {aside}
-    </li>
-  )
-}
 
 const SHORT = 5
 
@@ -117,7 +92,7 @@ function methodology(c: StageOutputs['methodology']): StageSummary {
       <>
         <Block title="Ceremonias">
           <Rows>
-            {c.ceremonies.map((x) => <Row key={x.name} title={x.name} detail={`${x.frequency}. ${x.purpose}.`} />)}
+            {c.ceremonies.map((x) => <Row key={x.name} title={x.name} detail={sentences(x.frequency, x.purpose)} />)}
           </Rows>
         </Block>
         {c.alternatives.length > 0 && (
@@ -175,7 +150,7 @@ function roadmap(c: StageOutputs['roadmap']): StageSummary {
             <Row
               key={p.name}
               title={p.name}
-              detail={`${p.goal}. ${p.epics.map((e) => `${e.key} ${e.title}`).join(', ')}.`}
+              detail={sentences(p.goal, p.epics.map((e) => `${e.key} ${e.title}`).join(', '))}
               aside={<span className="text-caption whitespace-nowrap text-ink-muted tabular-nums">{p.start_week === p.end_week ? `Semana ${p.start_week}` : `Semanas ${p.start_week} a ${p.end_week}`}</span>}
             />
           ))}
@@ -203,7 +178,7 @@ function backlog(c: StageOutputs['backlog']): StageSummary {
           render={(s) => (
             <Row
               key={s.key}
-              title={<span className="flex gap-2"><span className="text-key text-ink-muted">{s.key}</span>{s.title}</span>}
+              title={<span className="flex gap-2"><span className="shrink-0 text-key whitespace-nowrap text-ink-muted">{s.key}</span>{s.title}</span>}
               detail={`${s.epic_key}, ${s.role}`}
               aside={
                 <span className="flex shrink-0 items-center gap-3">
@@ -231,7 +206,7 @@ function sprints(c: StageOutputs['sprints']): StageSummary {
     body: (
       <Block title="Sprints">
         <Rows>
-          {c.sprints.map((s) => <Row key={s.number} title={s.name} detail={`${s.goal}. ${s.story_keys.join(', ')}.`} aside={<span className="text-caption text-ink-muted">{s.phase}</span>} />)}
+          {c.sprints.map((s) => <Row key={s.number} title={s.name} detail={sentences(s.goal, s.story_keys.join(', '))} aside={<span className="text-caption text-ink-muted">{s.phase}</span>} />)}
         </Rows>
       </Block>
     ),

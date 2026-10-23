@@ -21,7 +21,7 @@ const TEXT: Record<Hue, string> = {
   coral: 'text-coral',
   violet: 'text-violet',
   lime: 'text-accent-ink',
-  neutral: 'text-ink-subtle',
+  neutral: 'text-ink-muted',
 }
 
 interface PillProps {

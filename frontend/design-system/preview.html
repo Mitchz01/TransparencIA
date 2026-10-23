@@ -121,7 +121,7 @@
   .box .icon { width: 16px; height: 16px; }
   .stepper { display: grid; gap: var(--space-1); background: var(--surface); border-radius: var(--radius-lg); padding: var(--space-3); }
   .step { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); }
-  .step.current { background: var(--surface-strong); }
+  .step.current { background: var(--inset); }
   .step > div { display: grid; }
   .state { font: var(--text-label); display: inline-flex; align-items: center; gap: 6px; }
   .tx-teal { color: var(--teal); } .tx-amber { color: var(--amber); } .tx-blue { color: var(--blue); } .tx-coral { color: var(--coral); } .tx-subtle { color: var(--ink-subtle); }
@@ -470,6 +470,20 @@
         <span class="t-heading">Online store</span>
         <nav class="nav segmented" aria-label="Sprint"><a href="#" aria-current="true">Sprint 1</a><a href="#">Sprint 2</a><a href="#">Sprint 3</a></nav>
         <button class="btn btn-icon" aria-label="Activity"><i data-icon="Notification01Icon"></i></button>
+      </div>
+    </div>
+  </section>
+  <section>
+    <h3>Rows, week strip and issue badge</h3>
+    <div class="stepper" style="gap:6px;padding:var(--space-5)">
+      <span class="t-label">Phases</span>
+      <div class="step" style="background:var(--inset)"><div><span class="t-label">EP-1 Setup</span><span class="t-caption">Project infrastructure</span></div><span class="t-caption">2 of 5 pts</span></div>
+      <div class="step" style="background:var(--inset)"><div><span class="t-label">EP-2 Projects and team</span><span class="t-caption">Project and member management</span></div><span class="meta"><span><i data-icon="GithubIcon"></i>#12</span></span></div>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:var(--space-2)">
+        <i style="height:12px;border-radius:4px;background:color-mix(in srgb, var(--ink-subtle) 45%, transparent)"></i>
+        <i style="height:12px;border-radius:4px;background:var(--primary)"></i>
+        <i style="height:12px;border-radius:4px;background:var(--inset)"></i><i style="height:12px;border-radius:4px;background:var(--inset)"></i>
+        <i style="height:12px;border-radius:4px;background:var(--inset)"></i><i style="height:12px;border-radius:4px;background:var(--inset)"></i>
       </div>
     </div>
   </section>

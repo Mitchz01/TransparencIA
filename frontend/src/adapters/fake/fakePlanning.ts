@@ -8,8 +8,12 @@ import type { Project } from '../../domain/project'
 import { STAGE_AGENTS, STAGE_KEYS, isStageKey } from '../../domain/proposalContent'
 import { REASON_MAX, finalContent, isDecided, type Proposal } from '../../domain/proposals'
 import { rejectedInARow, stageProposals } from '../../domain/stepper'
+import type { ReplanContent } from '../../domain/proposalContent'
 import { buildBoard } from './demoBoard'
+import { applyReplan, proposeReplan } from './fakeReplan'
+import { epicSpecs, flowDiagram, generalSpec } from './demoDocuments'
 import { DEMO_RATIONALES, DEMO_STAGES, demoStage } from './demoPlan'
+import { applyDocumentProposal, documentProposal, regenerated } from './fakeDocuments'
 import { type FakeStore, fail, invalid, notFound } from './store'
 
 export interface FakePlanningOptions {
@@ -136,43 +140,89 @@ export function createFakePlanning(store: FakeStore, { stageDelayMs = 1200 }: Fa
       type: 'plan_applied', project_id: project.id, actor: 'system', ref: { kind: 'project', id: project.id },
       summary: `El tablero está listo con ${board.tasks.length} tareas`, skipped_story_keys: [],
     })
-    proposeGeneralSpec(project.id)
+    proposeDocuments(project.id)
   }
 
-  function proposeGeneralSpec(projectId: number) {
+  function proposeDocuments(projectId: number) {
     const project = projectOf(projectId)
-    const proposal: Proposal = {
-      id: store.id(), project_id: projectId, kind: 'document', key: 'general_spec', agent: 'Spec writer',
-      content: {
-        title: 'Spec general',
-        markdown: `# ${project.name}\n\n${project.description}\n\n## Objetivos\n\n${DEMO_STAGES.analysis.goals.map((g) => `- ${g}`).join('\n')}\n`,
-        rationale: 'Armada con el análisis, la arquitectura, el roadmap y el backlog aprobados.',
-      },
-      rationale: 'Armada con el análisis, la arquitectura, el roadmap y el backlog aprobados.',
-      status: 'pending', adjusted_content: null, rejection_reason: null, auto_approved: false, origin: 'leader',
-      apply_failed: false, apply_error: null, created_at: store.now(), resolved_at: null,
-    }
-    store.proposals.set(proposal.id, proposal)
-    store.publish({
-      type: 'proposal_created', project_id: projectId, actor: 'agent', ref: { kind: 'proposal', id: proposal.id },
-      summary: 'El redactor de specs propuso la spec general', proposal_id: proposal.id, kind: 'document', key: 'general_spec', agent: 'Spec writer',
-    })
-    if (project.auto_approve) approveAutomatically(proposal)
+    const plan = project.plan ?? {}
+    const proposals = [
+      documentProposal(store, projectId, 'general_spec', generalSpec(project, plan), 'Armada con el análisis, la arquitectura, el roadmap y el backlog aprobados.', 'El redactor de specs propuso la spec general'),
+      ...epicSpecs(plan).map((spec) =>
+        documentProposal(store, projectId, `epic_spec:${spec.epic_key}`, spec, spec.rationale, `El redactor de specs propuso la spec de ${spec.epic_key}`),
+      ),
+      documentProposal(store, projectId, 'flow_diagram:1', flowDiagram(project), 'El recorrido del líder, de la idea al tablero.', 'El redactor de specs propuso el diagrama de flujo'),
+    ]
+    if (project.auto_approve) proposals.forEach(approveAutomatically)
   }
 
   function onDocumentResolved(proposal: Proposal) {
     if (!isDecided(proposal)) return
-    const content = finalContent(proposal) as { title: string; markdown: string }
-    const id = store.id()
-    const now = store.now()
-    store.documents.set(id, {
-      id, project_id: proposal.project_id, kind: 'general_spec', epic_key: null, title: content.title, version: 1,
-      outdated: false, updated_at: now, contents: { 1: content.markdown },
-      versions: [{ version: 1, created_at: now, source: 'agent', proposal_id: proposal.id }],
+    const doc = applyDocumentProposal(store, proposal)
+    store.publish({
+      type: 'documents_generated', project_id: proposal.project_id, actor: 'agent', ref: { kind: 'document', id: doc.id },
+      summary: doc.version === 1 ? `Se creó ${doc.title}` : `${doc.title} tiene la versión ${doc.version}`, missing: [],
+    })
+  }
+
+  /** In test mode nothing reaches GitHub: each task just gets the next issue number. */
+  function onIssuesApproved(proposal: Proposal) {
+    if (!isDecided(proposal)) return
+    const board = store.boards.get(proposal.project_id)
+    const repository = store.connections.get(proposal.project_id)?.repository
+    if (!board || !repository) return
+    const wanted = new Set((finalContent(proposal) as { tasks: { task_id: number }[] }).tasks.map((t) => t.task_id))
+    let next = Math.max(0, ...board.tasks.map((t) => t.issue?.number ?? 0)) + 1
+    const created: { task_id: number; number: number }[] = []
+    board.tasks = board.tasks.map((t) => {
+      if (!wanted.has(t.id) || t.issue) return t
+      const number = next++
+      created.push({ task_id: t.id, number })
+      return { ...t, issue: { number, url: `https://github.com/${repository}/issues/${number}`, state: 'open', broken: false } }
     })
     store.publish({
-      type: 'documents_generated', project_id: proposal.project_id, actor: 'agent', ref: { kind: 'document', id },
-      summary: 'La spec general está lista', missing: [],
+      type: 'issues_published', project_id: proposal.project_id, actor: 'github', ref: { kind: 'proposal', id: proposal.id },
+      summary: `Se publicaron ${created.length} issues en ${repository}`, proposal_id: proposal.id, created, failed: [],
+    })
+  }
+
+  function requestReplan(projectId: number, reason: string, origin: Proposal['origin']) {
+    store.publish({
+      type: 'agent_started', project_id: projectId, actor: 'agent', ref: { kind: 'project', id: projectId },
+      summary: 'El replanificador está revisando el tablero', agent: 'replan', title: 'Replanner',
+    })
+    later(() => {
+      const project = store.projects.get(projectId)
+      const board = store.boards.get(projectId)
+      if (!project || !board) return
+      const content = proposeReplan(project, board, reason)
+      const proposal: Proposal = {
+        id: store.id(), project_id: projectId, kind: 'replan', key: 'replan', agent: 'Replanner',
+        content: content as unknown as Record<string, unknown>, rationale: content.rationale, status: 'pending',
+        adjusted_content: null, rejection_reason: null, auto_approved: false, origin, apply_failed: false, apply_error: null,
+        created_at: store.now(), resolved_at: null,
+      }
+      store.proposals.set(proposal.id, proposal)
+      store.publish({
+        type: 'proposal_created', project_id: projectId, actor: 'agent', ref: { kind: 'proposal', id: proposal.id },
+        summary: `El replanificador propuso ${content.changes.length} cambios`, proposal_id: proposal.id, kind: 'replan', key: 'replan', agent: 'Replanner',
+      })
+      // Automatic replans always wait for the leader (spec 008, FR-016).
+      if (origin === 'leader' && project.auto_approve) approveAutomatically(proposal)
+    })
+  }
+
+  function onReplanResolved(proposal: Proposal) {
+    if (!isDecided(proposal)) return
+    const project = store.projects.get(proposal.project_id)
+    const board = store.boards.get(proposal.project_id)
+    if (!project || !board) return
+    const { board: next, applied, discarded } = applyReplan(project, board, finalContent(proposal) as unknown as ReplanContent, () => store.id())
+    store.boards.set(project.id, next)
+    for (const doc of store.documents.values()) if (doc.project_id === project.id) store.documents.set(doc.id, { ...doc, outdated: true })
+    store.publish({
+      type: 'replan_applied', project_id: project.id, actor: 'system', ref: { kind: 'proposal', id: proposal.id },
+      summary: `Se aplicaron ${applied.length} cambios del replan`, applied, discarded,
     })
   }
 
@@ -181,6 +231,8 @@ export function createFakePlanning(store: FakeStore, { stageDelayMs = 1200 }: Fa
     const proposal = store.proposals.get(event.proposal_id)
     if (proposal?.kind === 'plan_stage') onStageResolved(proposal)
     if (proposal?.kind === 'document') onDocumentResolved(proposal)
+    if (proposal?.kind === 'replan') onReplanResolved(proposal)
+    if (proposal?.kind === 'github_action' && proposal.key === 'create_issues') onIssuesApproved(proposal)
   })
 
   return {
@@ -218,7 +270,26 @@ export function createFakePlanning(store: FakeStore, { stageDelayMs = 1200 }: Fa
       if (project.status !== 'ready') fail(409, { code: 'plan_not_applied', detail: 'Primero tiene que existir el tablero.' })
       const pending = proposalsOf(projectId).find((p) => p.kind === 'replan' && p.status === 'pending')
       if (pending) store.proposals.set(pending.id, { ...pending, status: 'discarded', resolved_at: store.now() })
+      requestReplan(projectId, clean, 'leader')
       return { project_id: projectId, status: 'replanning' as const, supersedes: pending?.id ?? null }
+    },
+
+    /** Closing a sprint with unfinished work proposes a replan by itself (never auto-approved). */
+    replanAfterClosing(projectId: number, sprintName: string, pendingKeys: string[]) {
+      requestReplan(projectId, `Al cerrar ${sprintName} quedaron sin terminar ${pendingKeys.join(', ')}.`, 'automatic')
+    },
+
+    /** The spec writer rewrites a document with the leader's instructions; the result is a proposal. */
+    regenerateDocument(documentId: number, instructions: string) {
+      const doc = store.documents.get(documentId)
+      if (!doc) return
+      later(() => {
+        const current = store.documents.get(documentId)
+        if (!current) return
+        const content = regenerated(current, instructions)
+        const proposal = documentProposal(store, current.project_id, current.key, content, `Regenerada con tus instrucciones: "${instructions}".`, `El redactor de specs propuso una versión nueva de ${current.title}`)
+        if (store.projects.get(current.project_id)?.auto_approve) approveAutomatically(proposal)
+      })
     },
 
     /** Picks up the stages that were running when the page was reloaded. */

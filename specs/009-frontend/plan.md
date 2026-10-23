@@ -225,10 +225,10 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ### Implementation for User Story 4
 
-- [ ] T039 [P] [US4] Create `ViewOrigin` (agent, rationale, approval date in words, how it was approved) and the "not generated yet" / "waiting for approval" states linking to the proposal, in `frontend/src/ui/components/plan/`
-- [ ] T040 [US4] Create `RoadmapTimeline`: phases as blocks across a week grid, epics inside with their progress track, the current week highlighted with a fill (no lines)
-- [ ] T041 [US4] Create `MethodologyView` (decision, iteration, ceremonies, WIP limits, discarded alternatives, chosen by leader or agents) and `ArchitectureView` (style, components, stack, decisions)
-- [ ] T042 [US4] Create `PlanPage` at `/projects/:id/plan` with a segmented control for Roadmap, Methodology and Architecture, fed by `usePlanViews`
+- [x] T039 [P] [US4] Create `ViewOrigin` (agent, rationale, approval date in words, how it was approved) and the "not generated yet" / "waiting for approval" states linking to the proposal, in `frontend/src/ui/components/plan/`
+- [x] T040 [US4] Create `RoadmapTimeline`: phases as blocks across a week grid, epics inside with their progress track, the current week highlighted with a fill (no lines)
+- [x] T041 [US4] Create `MethodologyView` (decision, iteration, ceremonies, WIP limits, discarded alternatives, chosen by leader or agents) and `ArchitectureView` (style, components, stack, decisions)
+- [x] T042 [US4] Create `PlanPage` at `/projects/:id/plan` with a segmented control for Roadmap, Methodology and Architecture, fed by `usePlanViews`
 
 **Checkpoint**: User Stories 1–4 work independently
 
@@ -242,9 +242,9 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ### Implementation for User Story 5
 
-- [ ] T043 [US5] Create `useActivity` (infinite query with `before`, prepends live events from `useLiveUpdates`)
-- [ ] T044 [US5] Create `ActivityItem` (actor icon, `summary`, time in words, link from `ref`) and `ActivityDrawer` (opened from the top bar on every project screen)
-- [ ] T045 [P] [US5] Test reconnection with `after` and `resync` against the fake stream in `frontend/src/application/liveUpdates.test.ts`
+- [x] T043 [US5] Create `useActivity` (infinite query with `before`, prepends live events from `useLiveUpdates`)
+- [x] T044 [US5] Create `ActivityItem` (actor icon, `summary`, time in words, link from `ref`) and `ActivityDrawer` (opened from the top bar on every project screen)
+- [x] T045 [P] [US5] Test reconnection with `after` and `resync` against the fake stream in `frontend/src/application/liveUpdates.test.ts`
 
 **Checkpoint**: User Stories 1–5 work independently
 
@@ -259,7 +259,7 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 ### Implementation for User Story 6
 
 - [x] T046 [US6] Create `ProjectsPage` at `/`: project cards (name, status pill, duration, member count) and "New project"
-- [ ] T047 [US6] Create `SettingsPage` at `/projects/:id/settings` reusing `ProjectForm` in edit mode (`PATCH` with only the changed fields; methodology disabled with a short reason when not in draft; `methodology_locked` handled)
+- [x] T047 [US6] Create `SettingsPage` at `/projects/:id/settings` reusing `ProjectForm` in edit mode (`PATCH` with only the changed fields; methodology disabled with a short reason when not in draft; `methodology_locked` handled)
 
 **Checkpoint**: User Stories 1–6 work independently
 
@@ -273,9 +273,9 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ### Implementation for User Story 7
 
-- [ ] T048 [P] [US7] Install `react-markdown` and `mermaid`; create `MarkdownView` (themed typography) and `MermaidView` (themed render; shows the source with a message when it can't be drawn)
-- [ ] T049 [US7] Create `VersionHistory`, `RegenerateDialog` and `DocumentEditor` (sends `base_version`; `version_conflict` offers reload or copy)
-- [ ] T050 [US7] Create `DocumentsPage` at `/projects/:id/documents`: general spec, epic specs grouped by phase, diagrams, outdated badge with a regenerate shortcut
+- [x] T048 [P] [US7] Install `react-markdown` and `mermaid`; create `MarkdownView` (themed typography) and `MermaidView` (themed render; shows the source with a message when it can't be drawn)
+- [x] T049 [US7] Create `VersionHistory`, `RegenerateDialog` and `DocumentEditor` (sends `base_version`; `version_conflict` offers reload or copy)
+- [x] T050 [US7] Create `DocumentsPage` at `/projects/:id/documents`: general spec, epic specs grouped by phase, diagrams, outdated badge with a regenerate shortcut
 
 **Checkpoint**: User Stories 1–7 work independently
 
@@ -289,9 +289,9 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ### Implementation for User Story 8
 
-- [ ] T051 [P] [US8] Create `RepositoryForm` (`owner/name` pattern from the contract, write-only token field showing only "Token saved", replace confirmation, `repository_not_accessible` reasons in plain words) and `TestModeBanner`
-- [ ] T052 [US8] Create `MemberGithubUsers` (with the "can't see the repo yet" warning) and the `create_issues` and `request_review` proposal bodies
-- [ ] T053 [US8] Create `IntegrationsPage` at `/projects/:id/integrations` with "Publish pending tasks", and add `IssueBadge` to `TaskCard`
+- [x] T051 [P] [US8] Create `RepositoryForm` (`owner/name` pattern from the contract, write-only token field showing only "Token saved", replace confirmation, `repository_not_accessible` reasons in plain words) and `TestModeBanner`
+- [x] T052 [US8] Create `MemberGithubUsers` (with the "can't see the repo yet" warning) and the `create_issues` and `request_review` proposal bodies
+- [x] T053 [US8] Create `IntegrationsPage` at `/projects/:id/integrations` with "Publish pending tasks", and add `IssueBadge` to `TaskCard`
 
 **Checkpoint**: User Stories 1–8 work independently
 
@@ -305,9 +305,9 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ### Implementation for User Story 9
 
-- [ ] T054 [P] [US9] Create `ReplanDialog` (reason 1–1000 chars) and `CloseSprintButton` (end date in words, warning when it's past)
-- [ ] T055 [US9] Create `ReplanDiff`: changes grouped by kind, each with its rationale and a toggle to drop it; approving with dropped changes sends `adjust` with the remaining ones
-- [ ] T056 [US9] Add both actions to the board header and the `replan` body to `ProposalCard`; extend `fakePlanning.ts` with a sample replan
+- [x] T054 [P] [US9] Create `ReplanDialog` (reason 1–1000 chars) and `CloseSprintButton` (end date in words, warning when it's past)
+- [x] T055 [US9] Create `ReplanDiff`: changes grouped by kind, each with its rationale and a toggle to drop it; approving with dropped changes sends `adjust` with the remaining ones
+- [x] T056 [US9] Add both actions to the board header and show the pending replan (`ReplanDiff`) on the board, where its changes apply; extend `fakePlanning.ts` with a sample replan and the automatic one after closing a sprint
 
 **Checkpoint**: all user stories work independently
 
@@ -315,11 +315,11 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ## Phase 12: Polish & Cross-Cutting Concerns
 
-- [ ] T057 [P] Review every screen in both themes against the design rules (SC-004) with `check-design-rules.mjs` plus a manual pass; fix findings
-- [ ] T058 [P] Accessibility pass: keyboard-only run of the demo flow, focus order in drawers and dialogs, accessible names, contrast spot checks
-- [ ] T059 [P] Responsive pass at 360, 768 and 1440 px
-- [ ] T060 Time the demo on the fake service (SC-001) and the first content per screen (SC-005); fix the slow ones
-- [ ] T061 Document `VITE_USE_FAKE` and the frontend scripts in `README.md`
+- [x] T057 [P] Review every screen in both themes against the design rules (SC-004) with `check-design-rules.mjs` plus a manual pass; fix findings
+- [x] T058 [P] Accessibility pass: keyboard-only run of the demo flow, focus order in drawers and dialogs, accessible names, contrast spot checks
+- [x] T059 [P] Responsive pass at 360, 768 and 1440 px
+- [x] T060 Time the demo on the fake service (SC-001) and the first content per screen (SC-005); fix the slow ones
+- [x] T061 Document `VITE_USE_FAKE` and the frontend scripts in `README.md`
 
 ---
 

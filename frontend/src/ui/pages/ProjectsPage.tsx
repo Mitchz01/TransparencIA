@@ -17,7 +17,7 @@ function ProjectCard({ project }: { project: ProjectSummary }) {
       className="grid content-between gap-6 rounded-lg bg-surface p-5 transition-[background-color] duration-150 hover:bg-surface-strong sm:p-6"
     >
       <div className="flex items-start justify-between gap-3">
-        <h2 className="min-w-0 text-heading break-words">{project.name}</h2>
+        <h2 className="line-clamp-2 min-w-0 text-heading break-words" title={project.name}>{project.name}</h2>
         <Pill hue={status.hue} icon={status.icon}>{status.label}</Pill>
       </div>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-caption text-ink-muted tabular-nums">

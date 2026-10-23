@@ -3,7 +3,7 @@ import {
   type Announcements, type DragEndEvent, type DragStartEvent,
 } from '@dnd-kit/core'
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Task, TaskStatus, WipLimit } from '../../../domain/board'
 import type { Member } from '../../../domain/project'
 import { columnTasks, wipLimitOf } from '../../../domain/rules'
@@ -39,6 +39,16 @@ function target(event: DragEndEvent, tasks: Task[], sprintId: number | null): { 
 
 export function KanbanBoard({ columns, tasks, visible, sprintId, members, wipLimits, onMove, onOpen }: KanbanBoardProps) {
   const [dragging, setDragging] = useState<Task | null>(null)
+  const scroller = useRef<HTMLDivElement>(null)
+  const firstWithCards = columns.findIndex((status) => columnTasks(visible, status, sprintId).length > 0)
+
+  // On narrow screens the columns scroll sideways: open on the first one with cards, not on an empty one.
+  useEffect(() => {
+    const node = scroller.current
+    if (!node || node.scrollWidth <= node.clientWidth || firstWithCards <= 0) return
+    const column = node.children[firstWithCards] as HTMLElement | undefined
+    if (column) node.scrollLeft = column.offsetLeft - node.offsetLeft - 16
+  }, [sprintId, firstWithCards])
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, {
@@ -85,6 +95,7 @@ export function KanbanBoard({ columns, tasks, visible, sprintId, members, wipLim
       }}
     >
       <div
+        ref={scroller}
         className="-mx-4 flex snap-x scroll-px-4 gap-4 overflow-x-auto px-4 pb-4 md:mx-0 md:scroll-px-0 md:px-0 lg:grid lg:overflow-visible"
         style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))` }}
       >

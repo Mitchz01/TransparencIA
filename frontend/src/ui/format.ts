@@ -20,3 +20,9 @@ export function timeAgo(iso: string, now = Date.now()): string {
 export const plural = (count: number, one: string, many = `${one}s`) => `${count} ${count === 1 ? one : many}`
 
 export const points = (count: number) => `${count} ${count === 1 ? 'pt' : 'pts'}`
+
+/** Ends a phrase with one period, whether or not the agent wrote it: "Rápido para iterar." */
+export const sentence = (text: string) => (/[.!?]$/.test(text.trim()) ? text.trim() : `${text.trim()}.`)
+
+/** Joins phrases into sentences: "Diaria, 15 min. Destrabar." */
+export const sentences = (...parts: string[]) => parts.filter((p) => p.trim()).map(sentence).join(' ')

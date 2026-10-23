@@ -1,7 +1,7 @@
 import type { ProjectGateway } from '../../application/ports'
 import type { Member, MemberInput, Project, ProjectSummary } from '../../domain/project'
 import { canChangeMethodology, validateMembers, validateProjectCreate } from '../../domain/project'
-import { demoPlanViews } from './demoData'
+import { buildPlanViews } from './planViews'
 import { type FakeStore, fail, invalid, notFound, reply } from './store'
 
 const tidy = (value: string) => value.trim().replace(/\s+/g, ' ')
@@ -23,7 +23,7 @@ export function fakeProjectGateway(store: FakeStore): ProjectGateway {
   return {
     async create(body) {
       const issues = validateProjectCreate(body)
-      if (issues.length) invalid(issues, 'The project has invalid fields.')
+      if (issues.length) invalid(issues, 'El proyecto tiene campos con errores.')
       const project: Project = {
         id: store.id(),
         name: tidy(body.name),
@@ -60,7 +60,7 @@ export function fakeProjectGateway(store: FakeStore): ProjectGateway {
         const unknown = body.members.findIndex((m) => m.id !== undefined && !project.members.some((x) => x.id === m.id))
         if (unknown >= 0) invalid([{ field: `members[${unknown}].id`, message: 'Unknown member.' }])
         const issues = validateMembers(body.members.map((m) => toMember(store, m, project.members.find((x) => x.id === m.id))))
-        if (issues.length) invalid(issues, 'The project has invalid fields.')
+        if (issues.length) invalid(issues, 'El proyecto tiene campos con errores.')
         members = body.members.map((m) => toMember(store, m, project.members.find((x) => x.id === m.id)))
       }
       if (body.requested_methodology && body.requested_methodology !== project.requested_methodology && !canChangeMethodology(project)) {
@@ -86,7 +86,7 @@ export function fakeProjectGateway(store: FakeStore): ProjectGateway {
 
     async getPlanViews(id) {
       const project = find(id)
-      return reply(demoPlanViews(project, [...store.proposals.values()].filter((p) => p.project_id === id)))
+      return reply(buildPlanViews(project, [...store.proposals.values()].filter((p) => p.project_id === id), store.boards.get(id)?.tasks ?? []))
     },
   }
 }
