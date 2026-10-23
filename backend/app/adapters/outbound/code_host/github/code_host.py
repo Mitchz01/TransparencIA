@@ -3,7 +3,7 @@
 from typing import Literal
 
 from app.adapters.outbound.code_host.github.client import GitHubClient, GitHubError
-from app.domain.integrations import IssueRef, RepoAccess
+from app.domain.integrations import IssueRef, PullRequestRef, RepoAccess, closing_refs
 
 # GitHub roles that can create issues with labels/assignees, comment and request reviews.
 WRITE_ROLES = ("push", "maintain", "admin")
@@ -96,3 +96,37 @@ class GitHubCodeHost:
                 return False
             raise
         return True
+
+    # ---------- GitHub usernames (US3) ----------
+
+    async def user_has_access(self, repository: str, username: str) -> bool:
+        """204 = collaborator; 404 = no access (or the user doesn't exist)."""
+        try:
+            await self._client.request("GET", f"/repos/{repository}/collaborators/{username}")
+        except GitHubError as error:
+            if error.status == 404:
+                return False
+            raise
+        return True
+
+    # ---------- Pull requests (US4) ----------
+
+    async def get_pull_request(self, repository: str, number: int) -> PullRequestRef:
+        data = (await self._client.request("GET", f"/repos/{repository}/pulls/{number}")).json()
+        state = "merged" if data.get("merged") else data.get("state", "open")
+        return PullRequestRef(number=number, url=data["html_url"], state=state, closes=closing_refs(data.get("body")))
+
+    async def get_pull_request_diff(self, repository: str, number: int) -> str:
+        response = await self._client.request(
+            "GET", f"/repos/{repository}/pulls/{number}", accept="application/vnd.github.diff"
+        )
+        return response.text
+
+    async def request_review(self, repository: str, number: int, reviewers: list[str]) -> None:
+        await self._client.request(
+            "POST", f"/repos/{repository}/pulls/{number}/requested_reviewers", json={"reviewers": reviewers}
+        )
+
+    async def comment_on_pull_request(self, repository: str, number: int, body: str) -> None:
+        # PR conversation comments go through the issues API (PRs are issues on GitHub).
+        await self._client.request("POST", f"/repos/{repository}/issues/{number}/comments", json={"body": body})

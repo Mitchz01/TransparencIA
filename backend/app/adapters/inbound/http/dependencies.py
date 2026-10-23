@@ -25,6 +25,7 @@ from app.application.use_cases.integrations.close_discarded_issue import CloseDi
 from app.application.use_cases.integrations.connect_repository import ConnectRepository
 from app.application.use_cases.integrations.disconnect_repository import DisconnectRepository
 from app.application.use_cases.integrations.propose_issues import AfterCreated, ProposeIssues
+from app.application.use_cases.integrations.propose_review import ProposeReview
 from app.application.use_cases.integrations.set_github_username import SetGithubUsername
 from app.application.use_cases.integrations.sync_task_issue import SyncTaskIssue
 from app.application.use_cases.proposals.apply_proposal import ApplyProposal, ProposalAppliers, RetryApply
@@ -236,3 +237,15 @@ def get_close_discarded_issue(
 ) -> CloseDiscardedIssue:
     """For specs 003 (task deleted) and 008 (task discarded in a replan)."""
     return CloseDiscardedIssue(uow_factory, bus, code_hosts)
+
+
+def get_propose_review(
+    uow_factory: UnitOfWorkFactory = Depends(get_uow_factory),
+    bus: EventBus = Depends(get_event_bus),
+    agents: PlanningAgents = Depends(get_agents),
+    code_hosts: CodeHostFactory = Depends(get_code_host_factory),
+    auto_approve: AutoApprove = Depends(get_auto_approve),
+) -> ProposeReview:
+    """For spec 008's webhook router: run `.execute(...)` on pull_request.opened, in the background
+    (it calls the reviewer agent). Auto-approve then applies the review in that same background job."""
+    return ProposeReview(uow_factory, bus, agents, code_hosts, auto_approve.after_created)

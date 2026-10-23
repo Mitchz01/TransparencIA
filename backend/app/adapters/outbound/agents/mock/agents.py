@@ -3,7 +3,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from app.adapters.outbound.agents.mock.data import MOCK_PLAN
+from app.adapters.outbound.agents.mock.data import MOCK_OUTPUTS
 from app.domain.plan import PlanningStage
 
 
@@ -15,4 +15,4 @@ class MockPlanningAgents:
 
     async def run_stage(self, stage: PlanningStage, context: dict[str, Any]) -> BaseModel:
         await asyncio.sleep(self._delay)
-        return stage.schema.model_validate(MOCK_PLAN[stage.key])
+        return stage.schema.model_validate(MOCK_OUTPUTS[stage.key])

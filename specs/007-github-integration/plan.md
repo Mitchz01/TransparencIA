@@ -282,16 +282,16 @@ Not part of our API, but they define our error mapping (`client.py`, T011):
 
 ### Tests for User Story 4
 
-- [ ] T027 [P] [US4] Domain tests for `closing_refs()` (`closes/fixes/resolves #n`, case-insensitive) and `pick_reviewers()` (right role, fewest pending reviews, never the author, fallback to another role with a reason, none when nobody has a username) in `backend/tests/unit/domain/test_integrations.py`
-- [ ] T028 [P] [US4] `ProposeReview` / `ApplyReview` tests (PR without project issues → nothing; proposal with reviewers + comment; approval → `request_review` + comment marked as agent-generated; `OwnWrite` recorded) in `backend/tests/unit/application/test_propose_review.py`
+- [x] T027 [P] [US4] Domain tests for `closing_refs()` (`closes/fixes/resolves #n`, case-insensitive) and `pick_reviewers()` (right role, fewest pending reviews, never the author, fallback to another role with a reason, none when nobody has a username) in `backend/tests/unit/domain/test_integrations.py`
+- [x] T028 [P] [US4] `ProposeReview` / `ApplyReview` tests (PR without project issues → nothing; proposal with reviewers + comment; approval → `request_review` + comment marked as agent-generated; `OwnWrite` recorded) in `backend/tests/unit/application/test_propose_review.py`
 
 ### Implementation for User Story 4
 
-- [ ] T029 [US4] Add `CodeReview(summary, findings: [{criterion, status, comment}], risks, reviewed_fully, rationale)` and `CODE_REVIEW_STAGE` (inputs: task, diff) to `backend/app/domain/plan.py`, with its prompt and mock output
-- [ ] T030 [US4] Implement `closing_refs()` and `pick_reviewers()` in `backend/app/domain/integrations.py`
-- [ ] T031 [US4] Implement `ProposeReview(repository, pr_number, author, body)` (fetch the diff, truncate it and set `reviewed_fully=false` when too big, run the stage, pick reviewers, create the `request_review` proposal) and `ApplyReview(proposal_id)`
-- [ ] T032 [US4] Add `get_pull_request_diff`, `request_review` and `comment_on_pull_request` to `GitHubCodeHost`
-- [ ] T033 [US4] Call `ProposeReview` from the `pull_request.opened` branch of spec 008's webhook router
+- [x] T029 [US4] Add `CodeReview(summary, findings: [{criterion, status, comment}], risks, reviewed_fully, rationale)` and `CODE_REVIEW_STAGE` (inputs: task, diff) to `backend/app/domain/plan.py`, with its prompt and mock output
+- [x] T030 [US4] Implement `closing_refs()` and `pick_reviewers()` in `backend/app/domain/integrations.py`
+- [x] T031 [US4] Implement `ProposeReview(repository, pr_number, author, body)` (fetch the diff, truncate it and set `reviewed_fully=false` when too big, run the stage, pick reviewers, create the `request_review` proposal) and `ApplyReview(proposal_id)`
+- [x] T032 [US4] Add `get_pull_request_diff`, `request_review` and `comment_on_pull_request` to `GitHubCodeHost`
+- [ ] T033 [US4] Call `ProposeReview` from the `pull_request.opened` branch of spec 008's webhook router — needs spec 008 (the webhook router doesn't exist yet); `ProposeReview` is ready to call through `deps.get_propose_review`
 
 **Checkpoint**: all user stories work independently
 

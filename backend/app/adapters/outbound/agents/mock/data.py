@@ -149,3 +149,20 @@ schemas.Architecture.model_validate(MOCK_PLAN["architecture"])
 schemas.Roadmap.model_validate(MOCK_PLAN["roadmap"])
 schemas.Backlog.model_validate(MOCK_PLAN["backlog"])
 schemas.SprintPlanning.model_validate(MOCK_PLAN["sprints"])
+
+
+# Spec 007: the code reviewer isn't a plan stage, so its sample output lives apart from MOCK_PLAN.
+MOCK_CODE_REVIEW = {
+    "summary": "Adds the requested behavior and wires it into the existing flow.",
+    "findings": [
+        {"criterion": "Works on desktop and mobile", "status": "partial", "comment": "The layout changes cover desktop; no mobile breakpoint is touched."},
+        {"criterion": "Has basic tests", "status": "met", "comment": "A test covers the main path."},
+    ],
+    "risks": ["No test for the error path."],
+    "reviewed_fully": True,
+    "rationale": "Close to done: check the mobile layout before merging.",
+}
+schemas.CodeReview.model_validate(MOCK_CODE_REVIEW)
+
+# What MockPlanningAgents returns per stage key.
+MOCK_OUTPUTS = {**MOCK_PLAN, "code_review": MOCK_CODE_REVIEW}

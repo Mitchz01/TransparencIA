@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from pydantic import ValidationError as PydanticValidationError
 
 from app.domain.errors import FieldError, ValidationFailed
-from app.domain.integrations import IssuesToPublish
+from app.domain.integrations import IssuesToPublish, ReviewToRequest
 from app.domain.plan import PLANNING_STAGES
 
 # (kind, key) -> schema. Specs 006, 007 and 008 add their subjects with register_schema();
@@ -22,6 +22,7 @@ def register_schema(kind: str, key: str, schema: type[BaseModel]) -> None:
 
 # Spec 007: what will be written to GitHub.
 register_schema("github_action", "create_issues", IssuesToPublish)
+register_schema("github_action", "request_review", ReviewToRequest)
 
 
 def content_schema(kind: str, key: str) -> type[BaseModel]:

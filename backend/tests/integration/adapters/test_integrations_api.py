@@ -5,9 +5,10 @@ import time
 import pytest
 from sqlmodel import Session
 
+from app.adapters.outbound.agents.mock.data import MOCK_CODE_REVIEW
 from app.adapters.outbound.code_host.fake import FakeCodeHost
 from app.adapters.outbound.persistence.db import engine
-from app.adapters.outbound.persistence.tables import TaskTable
+from app.adapters.outbound.persistence.tables import ProposalTable, TaskTable
 from app.domain.errors import CodeHostUnavailable
 from app.domain.integrations import RepoAccess
 
@@ -295,3 +296,45 @@ def test_set_username_422_invalid(client, github):
         assert response.json()["errors"][0]["field"] == "github_username"
     missing = client.put(f"/api/members/{member_id}/github-username", json={})
     assert missing.status_code == 422 and missing.json()["errors"] == [{"field": "github_username", "message": "Required."}]
+
+
+# ---------- request_review proposals through spec 005's API ----------
+
+
+def _review_proposal(project_id: int) -> int:
+    """What ProposeReview saves (spec 008's webhook triggers it; not merged here)."""
+    content = {
+        "repository": "acme/agile-app",
+        "pr_number": 30,
+        "pr_url": "https://github.com/acme/agile-app/pull/30",
+        "author": "ana",
+        "task_ids": [1],
+        "reviewers": [{"github_username": "bruno", "member_id": 2, "name": "Bruno", "reason": "Backend"}],
+        "comment": "Agent review.",
+        "review": MOCK_CODE_REVIEW,
+    }
+    with Session(engine) as session:
+        row = ProposalTable(project_id=project_id, kind="github_action", key="request_review", agent="Code reviewer", content=content)
+        session.add(row)
+        session.commit()
+        return row.id
+
+
+def test_adjusted_review_is_applied_on_github(client, github):
+    pid = _project(client)["id"]
+    _connect(client, pid)
+    proposal_id = _review_proposal(pid)
+
+    bad = client.post(f"/api/proposals/{proposal_id}/adjust", json={"content": {"reviewers": [], "comment": ""}})
+    assert bad.status_code == 422 and {e["field"] for e in bad.json()["errors"]} >= {"content.comment", "content.pr_number"}
+
+    proposal = client.get(f"/api/proposals/{proposal_id}").json()
+    edited = {**proposal["content"], "reviewers": [{"github_username": "leo"}], "comment": "Edited by the leader."}
+    assert client.post(f"/api/proposals/{proposal_id}/adjust", json={"content": edited}).status_code == 200
+    _wait_for(lambda: github.called("comment_on_pull_request"))
+    assert github.called("request_review") == [{"repository": "acme/agile-app", "number": 30, "reviewers": ["leo"]}]
+    assert github.called("comment_on_pull_request")[0]["body"].startswith("Edited by the leader.")
+    activity = _wait_for(
+        lambda: [e for e in client.get(f"/api/projects/{pid}/activity").json() if e["type"] == "review_requested"]
+    )
+    assert activity[0]["proposal_id"] == proposal_id and activity[0]["reviewers"] == ["leo"]

@@ -167,3 +167,24 @@ PLANNING_STAGES: tuple[PlanningStage, ...] = (
     PlanningStage("backlog", "Product owner", Backlog, ("project", "architecture", "roadmap")),
     PlanningStage("sprints", "Scrum master", SprintPlanning, ("project", "methodology", "roadmap", "backlog")),
 )
+
+
+# ---------- Code reviewer (spec 007, US4) ----------
+# Not a planning stage: it runs on its own when a PR that closes a project issue is opened.
+
+
+class ReviewFinding(BaseModel):
+    criterion: str = Field(description="The acceptance criterion this remark is about")
+    status: Literal["met", "partial", "not_met", "unclear"]
+    comment: str = Field(description="Why: what in the diff supports the status")
+
+
+class CodeReview(BaseModel):
+    summary: str = Field(description="What the PR does, in 2-3 sentences")
+    findings: list[ReviewFinding]
+    risks: list[str] = Field(description="Bugs, missing tests or side effects worth checking")
+    reviewed_fully: bool = Field(description="False if part of the diff wasn't reviewed (e.g. too big)")
+    rationale: str = Field(description="Overall assessment and what the reviewers should focus on")
+
+
+CODE_REVIEW_STAGE = PlanningStage("code_review", "Code reviewer", CodeReview, ("task", "diff"))

@@ -198,3 +198,57 @@ def test_close_issue_comments_then_closes_as_not_planned():
     assert github.body(1) == {"state": "closed", "state_reason": "not_planned"}
 
     assert run(FakeGitHub(answer(410, {"message": "Gone"})).host().close_issue(REPO, 12, "not_planned", "x")) is False
+
+
+# ---------- usernames ----------
+
+
+def test_user_has_access():
+    github = FakeGitHub(lambda _: httpx.Response(204))
+    assert run(github.host().user_has_access(REPO, "ana")) is True
+    assert github.calls() == [("GET", "/repos/acme/app/collaborators/ana")]
+    assert run(FakeGitHub(answer(404, {"message": "Not Found"})).host().user_has_access(REPO, "stranger")) is False
+
+
+# ---------- pull requests ----------
+
+
+def test_get_pull_request_reads_state_and_closing_refs():
+    github = FakeGitHub(answer(200, {"html_url": "https://github.com/acme/app/pull/30", "state": "closed", "merged": True, "body": "Closes #12"}))
+    pr = run(github.host().get_pull_request(REPO, 30))
+    assert (pr.number, pr.url, pr.state, pr.closes) == (30, "https://github.com/acme/app/pull/30", "merged", [12])
+
+
+def test_get_pull_request_diff_asks_for_the_diff_media_type():
+    github = FakeGitHub(lambda _: httpx.Response(200, text="diff --git a/x b/x\n+1\n"))
+    assert run(github.host().get_pull_request_diff(REPO, 30)) == "diff --git a/x b/x\n+1\n"
+    request = github.requests[0]
+    assert (request.method, request.url.path) == ("GET", "/repos/acme/app/pulls/30")
+    assert request.headers["Accept"] == "application/vnd.github.diff"
+
+
+def test_request_review_and_comment():
+    github = FakeGitHub(answer(201, {}))
+    host = github.host()
+    run(host.request_review(REPO, 30, ["bruno", "carla"]))
+    run(host.comment_on_pull_request(REPO, 30, "Looks good."))
+    assert github.calls() == [("POST", "/repos/acme/app/pulls/30/requested_reviewers"), ("POST", "/repos/acme/app/issues/30/comments")]
+    assert github.body(0) == {"reviewers": ["bruno", "carla"]} and github.body(1) == {"body": "Looks good."}
+
+
+def test_both_code_hosts_implement_the_whole_port():
+    from app.adapters.outbound.code_host.fake import FakeCodeHost
+    from app.application.ports.code_host import CodeHost
+
+    port = {name for name, value in vars(CodeHost).items() if callable(value) and not name.startswith("_")}
+    assert "open_pull_request" not in port and len(port) == 11
+    for host in (GitHubCodeHost, FakeCodeHost):
+        assert port <= set(dir(host)), host
+    assert (GitHubCodeHost.mode, FakeCodeHost().mode) == ("github", "test")
+
+
+def test_request_review_of_a_non_collaborator_raises():
+    github = FakeGitHub(answer(422, {"message": "Reviews may only be requested from collaborators."}))
+    with pytest.raises(GitHubError) as info:
+        run(github.host().request_review(REPO, 30, ["stranger"]))
+    assert info.value.status == 422

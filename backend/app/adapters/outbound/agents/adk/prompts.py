@@ -36,4 +36,12 @@ PROMPTS: dict[str, str] = {
         "Assign each story to a member whose role fits, using their exact `name`. "
         "Every backlog story must be in exactly one iteration."
     ),
+    # Spec 007: not a planning stage, it reviews a PR against the task(s) it closes.
+    "code_review": (
+        "Review the pull request in `diff` against the acceptance criteria of the task(s) in `task`. "
+        "Give one finding per acceptance criterion with its status (met, partial, not_met, unclear) and "
+        "justify each one with what you see in the diff. List risks (bugs, missing tests, side effects). "
+        "If the diff says it was truncated or you couldn't review all of it, set `reviewed_fully` to false "
+        "and say so in the rationale. Be specific and constructive: the comment is posted on the PR."
+    ),
 }

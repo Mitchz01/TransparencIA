@@ -11,6 +11,7 @@ from app.adapters.inbound.http.errors import register_error_handlers
 from app.adapters.outbound.code_host.fake import FakeCodeHost
 from app.adapters.outbound.events.in_memory_bus import InMemoryEventBus
 from app.adapters.outbound.events.persistent_bus import PersistentEventBus
+from app.application.use_cases.integrations.apply_review import ApplyReview
 from app.application.use_cases.integrations.publish_issues import PublishIssues
 from app.application.use_cases.proposals.apply_proposal import ApplierRegistry
 from app.adapters.outbound.persistence.db import create_db
@@ -62,6 +63,8 @@ async def lifespan(app: FastAPI):
     # Spec 007: approving a github_action proposal writes to GitHub.
     publish_issues = PublishIssues(open_uow, app.state.event_bus, app.state.code_host_factory)
     app.state.appliers.register("github_action", publish_issues.execute, key="create_issues")
+    apply_review = ApplyReview(open_uow, app.state.event_bus, app.state.code_host_factory)
+    app.state.appliers.register("github_action", apply_review.execute, key="request_review")
     app.state.on_team_changed = []  # spec 008 registers its drift-replan handler here
     yield
 
