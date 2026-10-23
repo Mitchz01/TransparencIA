@@ -2,7 +2,7 @@
 
 **Date**: 2026-10-23  
 **Spec**: [spec.md](spec.md)  
-**Status**: Draft
+**Status**: Approved
 
 ## Summary
 
@@ -88,6 +88,8 @@ New domain errors (with T007): `RepositoryNotAccessible`, `RepositoryNotConnecte
 - `Project` (001) adds `has_token: bool`. `github_token` is **never** returned.
 - `Member` (001) adds `github_username: string | null`.
 - `Task` (003) adds `issue`: `{"number": 12, "url": "https://github.com/acme/app/issues/12", "state": "open", "broken": false}` or `null`. `state`: `open` | `closed` | `merged`; `broken: true` when the issue was deleted on GitHub.
+- `Proposal` (005) adds `result: object | null`: what applying produced. `create_issues` → `{"created": [{"task_id", "number"}], "failed": [{"task_id", "error"}]}`; `request_review` → `{"review_requested": true, "commented": true}` (the steps done, so a retry doesn't post twice). If some issues fail, the application fails too (`apply_failed`), so spec 005's `POST /api/proposals/{id}/apply` retries only the missing ones.
+- Activity events (005) add `repository_connected`, `repository_disconnected`, `issues_published`, `issue_updated` (`broken` when deleted on GitHub), `issue_closed` and `review_requested` (FR-020), and `github_action_delayed` `{"proposal_id", "attempt", "retry_in_seconds"}` (T034): GitHub failed (5xx, timeout, rate limit) while a `github_action` proposal was being applied and the call is retried after `retry_in_seconds` (`attempt` 1 = first retry). The UI shows the proposal "delayed" until its `issues_published`, `review_requested` or `proposal_apply_failed`; nothing is added to `Proposal`.
 
 **Connection**
 
@@ -186,8 +188,8 @@ Not part of our API, but they define our error mapping (`client.py`, T011):
 
 **Purpose**: dependencies and configuration
 
-- [ ] T001 Move `httpx` from `backend/requirements-dev.txt` to `backend/requirements.txt`
-- [ ] T002 Add `PUBLIC_BASE_URL` to `backend/app/config.py` and `backend/.env.example` (used to build the webhook URL `{PUBLIC_BASE_URL}/webhooks/github`)
+- [x] T001 Move `httpx` from `backend/requirements-dev.txt` to `backend/requirements.txt`
+- [x] T002 Add `PUBLIC_BASE_URL` to `backend/app/config.py` and `backend/.env.example` (used to build the webhook URL `{PUBLIC_BASE_URL}/webhooks/github`)
 
 ---
 
@@ -197,12 +199,12 @@ Not part of our API, but they define our error mapping (`client.py`, T011):
 
 **⚠️ CRITICAL**: no user story work can begin until this phase is complete
 
-- [ ] T003 Extend `CodeHost` in `backend/app/application/ports/code_host.py`: `check_access(repo) -> RepoAccess`, `register_webhook(repo, url, secret) -> int`, `delete_webhook(repo, hook_id)`, `create_issue(..., assignees)`, `update_issue(repo, number, title, body, labels, assignees)`, `close_issue(repo, number, reason, comment)`, `user_has_access(repo, username)`, `get_pull_request_diff(repo, number)`, `request_review(repo, number, reviewers)`, `comment_on_pull_request(repo, number, body)`; remove `open_pull_request` (out of scope)
-- [ ] T004 Update `FakeCodeHost` in `backend/app/adapters/outbound/code_host/fake.py` to implement the full port and record every call
-- [ ] T005 Add `Member.github_username`, `Project.github_token` (excluded from every API response) and `Project.webhook_id` to `backend/app/domain/project.py`; add `OwnWrite(repository, number, action, created_at)` and `RepoAccess` to `backend/app/domain/integrations.py`
-- [ ] T006 Add `ExternalLinkTable`, `OwnWriteTable` and the new columns to `backend/app/adapters/outbound/persistence/tables.py`, with mappers, `SqlExternalLinkRepository` (by task, by issue number, add, save), `SqlOwnWriteRepository` (add, consume_matching) and `links` / `own_writes` on the `UnitOfWork` port, `SqlUnitOfWork` and `backend/tests/fakes.py`
-- [ ] T007 Add `RepositoryNotAccessible` (422) and `RepositoryNotConnected` (409) to `backend/app/domain/errors.py` and the HTTP error mapping
-- [ ] T008 Pick the code host per project in `dependencies.py`: `GitHubCodeHost(project.github_token or GITHUB_TOKEN)` when there's a token, `FakeCodeHost` otherwise (FR-004, FR-005)
+- [x] T003 Extend `CodeHost` in `backend/app/application/ports/code_host.py`: `check_access(repo) -> RepoAccess`, `register_webhook(repo, url, secret) -> int`, `delete_webhook(repo, hook_id)`, `create_issue(..., assignees)`, `update_issue(repo, number, title, body, labels, assignees)`, `close_issue(repo, number, reason, comment)`, `user_has_access(repo, username)`, `get_pull_request_diff(repo, number)`, `request_review(repo, number, reviewers)`, `comment_on_pull_request(repo, number, body)`; remove `open_pull_request` (out of scope)
+- [x] T004 Update `FakeCodeHost` in `backend/app/adapters/outbound/code_host/fake.py` to implement the full port and record every call
+- [x] T005 Add `Member.github_username`, `Project.github_token` (excluded from every API response) and `Project.webhook_id` to `backend/app/domain/project.py`; add `OwnWrite(repository, number, action, created_at)` and `RepoAccess` to `backend/app/domain/integrations.py`
+- [x] T006 Add `ExternalLinkTable`, `OwnWriteTable` and the new columns to `backend/app/adapters/outbound/persistence/tables.py`, with mappers, `SqlExternalLinkRepository` (by task, by issue number, add, save), `SqlOwnWriteRepository` (add, consume_matching) and `links` / `own_writes` on the `UnitOfWork` port, `SqlUnitOfWork` and `backend/tests/fakes.py`
+- [x] T007 Add `RepositoryNotAccessible` (422) and `RepositoryNotConnected` (409) to `backend/app/domain/errors.py` and the HTTP error mapping
+- [x] T008 Pick the code host per project in `dependencies.py`: `GitHubCodeHost(project.github_token or GITHUB_TOKEN)` when there's a token, `FakeCodeHost` otherwise (FR-004, FR-005)
 
 **Checkpoint**: the port, persistence and code host selection are ready
 
@@ -216,15 +218,15 @@ Not part of our API, but they define our error mapping (`client.py`, T011):
 
 ### Tests for User Story 1
 
-- [ ] T009 [P] [US1] `ConnectRepository` / `DisconnectRepository` tests (no access → error and nothing saved; replace → old webhook deleted; disconnect keeps links) in `backend/tests/unit/application/test_connect_repository.py`
-- [ ] T010 [P] [US1] `GitHubCodeHost` tests for `check_access`, `register_webhook` and `delete_webhook` with `httpx.MockTransport` in `backend/tests/integration/adapters/test_github_code_host.py`
+- [x] T009 [P] [US1] `ConnectRepository` / `DisconnectRepository` tests (no access → error and nothing saved; replace → old webhook deleted; disconnect keeps links) in `backend/tests/unit/application/test_connect_repository.py`
+- [x] T010 [P] [US1] `GitHubCodeHost` tests for `check_access`, `register_webhook` and `delete_webhook` with `httpx.MockTransport` in `backend/tests/integration/adapters/test_github_code_host.py`
 
 ### Implementation for User Story 1
 
-- [ ] T011 [US1] Implement the REST client in `backend/app/adapters/outbound/code_host/github/client.py` (base URL, auth header, error mapping) and `GitHubCodeHost` in `code_host.py` with the connection methods
-- [ ] T012 [US1] Implement `ConnectRepository` and `DisconnectRepository` in `backend/app/application/use_cases/integrations/`
-- [ ] T013 [US1] Create `backend/app/adapters/inbound/http/integrations.py` with `PUT /api/projects/{id}/repository` (`{repository, token?}`) and `DELETE /api/projects/{id}/repository`; include it in `main.py`
-- [ ] T014 [US1] Add `IntegrationGateway` (ports, http, fake), `useIntegrations`, `IntegrationsPage` and `RepositoryForm` (replace confirmation, write-only token field); route `/projects/:id/integrations`
+- [x] T011 [US1] Implement the REST client in `backend/app/adapters/outbound/code_host/github/client.py` (base URL, auth header, error mapping) and `GitHubCodeHost` in `code_host.py` with the connection methods
+- [x] T012 [US1] Implement `ConnectRepository` and `DisconnectRepository` in `backend/app/application/use_cases/integrations/`
+- [x] T013 [US1] Create `backend/app/adapters/inbound/http/integrations.py` with `PUT /api/projects/{id}/repository` (`{repository, token?}`) and `DELETE /api/projects/{id}/repository`; include it in `main.py`
+- [ ] T014 [US1] Add `IntegrationGateway` (ports, http, fake), `useIntegrations`, `IntegrationsPage` and `RepositoryForm` (replace confirmation, write-only token field); route `/projects/:id/integrations` — handed off to spec 009 (frontend)
 
 **Checkpoint**: a repo can be connected from the UI
 
@@ -238,18 +240,18 @@ Not part of our API, but they define our error mapping (`client.py`, T011):
 
 ### Tests for User Story 2
 
-- [ ] T015 [P] [US2] Domain tests for `issue_body()` (description, criteria, checklist as `- [ ]` task list), `issue_labels()` (`type:*`, `priority:*`) in `backend/tests/unit/domain/test_integrations.py`
-- [ ] T016 [P] [US2] `ProposeIssues` / `PublishIssues` tests (only tasks without a link; removed tasks not published; partial failure keeps created links and lists failed ones; every write recorded as `OwnWrite`) in `backend/tests/unit/application/test_publish_issues.py`
-- [ ] T017 [P] [US2] `SyncTaskIssue` / `CloseDiscardedIssue` tests (no proposal; issue updated; closed as `not_planned` with a comment; `OwnWrite` recorded) in `backend/tests/unit/application/test_sync_task_issue.py`
+- [x] T015 [P] [US2] Domain tests for `issue_body()` (description, criteria, checklist as `- [ ]` task list), `issue_labels()` (`type:*`, `priority:*`) in `backend/tests/unit/domain/test_integrations.py`
+- [x] T016 [P] [US2] `ProposeIssues` / `PublishIssues` tests (only tasks without a link; removed tasks not published; partial failure keeps created links and lists failed ones; every write recorded as `OwnWrite`) in `backend/tests/unit/application/test_publish_issues.py`
+- [x] T017 [P] [US2] `SyncTaskIssue` / `CloseDiscardedIssue` tests (no proposal; issue updated; closed as `not_planned` with a comment; `OwnWrite` recorded) in `backend/tests/unit/application/test_sync_task_issue.py`
 
 ### Implementation for User Story 2
 
-- [ ] T018 [US2] Implement `issue_body()` and `issue_labels()` in `backend/app/domain/integrations.py`
-- [ ] T019 [US2] Implement `ProposeIssues` (`github_action` proposal, key `create_issues`, content = task ids and titles) in `backend/app/application/use_cases/integrations/propose_issues.py`; trigger it when both board and repo exist for the first time (end of `ConnectRepository`, and as an `ApplyPlan` follow-up), and from `POST /api/projects/{id}/issues/propose`
-- [ ] T020 [US2] Implement `PublishIssues(proposal_id)` in `publish_issues.py`: create each issue, save the `ExternalLink`, record an `OwnWrite`, collect failures into the proposal result; publish `IssuesPublished`
-- [ ] T021 [US2] Implement `SyncTaskIssue` and register it as an `after_task_changed` handler of spec 003's `UpdateTask`; implement `CloseDiscardedIssue(task_id, reason)` for spec 008's replan
-- [ ] T022 [US2] Add the `create_issues`, `update_issue` and `close_issue` methods to `GitHubCodeHost`
-- [ ] T023 [US2] Include the issue links in spec 003's board read model and show `IssueBadge` (`#number` link, broken-link state) on `TaskCard`; add "Publish pending tasks" to `IntegrationsPage`
+- [x] T018 [US2] Implement `issue_body()` and `issue_labels()` in `backend/app/domain/integrations.py`
+- [x] T019 [US2] Implement `ProposeIssues` (`github_action` proposal, key `create_issues`, content = task ids and titles) in `backend/app/application/use_cases/integrations/propose_issues.py`; trigger it when both board and repo exist for the first time (end of `ConnectRepository`, and as an `ApplyPlan` follow-up), and from `POST /api/projects/{id}/issues/propose` — `ApplyPlan` takes a list of follow-ups (project id) run after a new board is saved; `wire_planning()` (spec 002) builds that `ApplyPlan` with `ProposePendingIssues` as its follow-up (own UnitOfWork, auto-approve in the same background job), which proposes only when a repo is connected
+- [x] T020 [US2] Implement `PublishIssues(proposal_id)` in `publish_issues.py`: create each issue, save the `ExternalLink`, record an `OwnWrite`, collect failures into the proposal result; publish `IssuesPublished`
+- [x] T021 [US2] Implement `SyncTaskIssue` and register it as an `after_task_changed` handler of spec 003's `UpdateTask`; implement `CloseDiscardedIssue(task_id, reason)` for spec 008's replan — `SyncTaskIssue.on_task_changed` is registered in `app.state.after_task_changed` (main.py) and runs in the background; it syncs on `task_updated` (data or checklist edits) and ignores pure moves (`task_status_changed`). `CloseDiscardedIssue` is ready for spec 008 (`deps.get_close_discarded_issue`)
+- [x] T022 [US2] Add the `create_issues`, `update_issue` and `close_issue` methods to `GitHubCodeHost`
+- [ ] T023 [US2] Include the issue links in spec 003's board read model and show `IssueBadge` (`#number` link, broken-link state) on `TaskCard`; add "Publish pending tasks" to `IntegrationsPage` — backend part done: every task in `GET /api/projects/{id}/board` (and in the `TaskResult` of `PATCH /api/tasks/{id}` and `PUT /api/tasks/{id}/checklist`) carries `issue: {number, url, state, broken} | null` (`TaskView`; the newest link wins). UI part (`IssueBadge`, "Publish pending tasks") handed off to spec 009 (frontend)
 
 **Checkpoint**: User Stories 1 and 2 work independently
 
@@ -263,12 +265,12 @@ Not part of our API, but they define our error mapping (`client.py`, T011):
 
 ### Tests for User Story 3
 
-- [ ] T024 [P] [US3] `SetGithubUsername` tests (saved; warning when the user has no repo access) in `backend/tests/unit/application/test_connect_repository.py`
+- [x] T024 [P] [US3] `SetGithubUsername` tests (saved; warning when the user has no repo access) in `backend/tests/unit/application/test_connect_repository.py`
 
 ### Implementation for User Story 3
 
-- [ ] T025 [US3] Implement `SetGithubUsername` and `PUT /api/members/{id}/github-username` (returns `{member, has_access}`)
-- [ ] T026 [US3] Create `MemberGithubUsers` in `IntegrationsPage` with the access warning
+- [x] T025 [US3] Implement `SetGithubUsername` and `PUT /api/members/{id}/github-username` (returns `{member, has_access}`)
+- [ ] T026 [US3] Create `MemberGithubUsers` in `IntegrationsPage` with the access warning — handed off to spec 009 (frontend)
 
 **Checkpoint**: User Stories 1–3 work independently
 
@@ -282,16 +284,16 @@ Not part of our API, but they define our error mapping (`client.py`, T011):
 
 ### Tests for User Story 4
 
-- [ ] T027 [P] [US4] Domain tests for `closing_refs()` (`closes/fixes/resolves #n`, case-insensitive) and `pick_reviewers()` (right role, fewest pending reviews, never the author, fallback to another role with a reason, none when nobody has a username) in `backend/tests/unit/domain/test_integrations.py`
-- [ ] T028 [P] [US4] `ProposeReview` / `ApplyReview` tests (PR without project issues → nothing; proposal with reviewers + comment; approval → `request_review` + comment marked as agent-generated; `OwnWrite` recorded) in `backend/tests/unit/application/test_propose_review.py`
+- [x] T027 [P] [US4] Domain tests for `closing_refs()` (`closes/fixes/resolves #n`, case-insensitive) and `pick_reviewers()` (right role, fewest pending reviews, never the author, fallback to another role with a reason, none when nobody has a username) in `backend/tests/unit/domain/test_integrations.py`
+- [x] T028 [P] [US4] `ProposeReview` / `ApplyReview` tests (PR without project issues → nothing; proposal with reviewers + comment; approval → `request_review` + comment marked as agent-generated; `OwnWrite` recorded) in `backend/tests/unit/application/test_propose_review.py`
 
 ### Implementation for User Story 4
 
-- [ ] T029 [US4] Add `CodeReview(summary, findings: [{criterion, status, comment}], risks, reviewed_fully, rationale)` and `CODE_REVIEW_STAGE` (inputs: task, diff) to `backend/app/domain/plan.py`, with its prompt and mock output
-- [ ] T030 [US4] Implement `closing_refs()` and `pick_reviewers()` in `backend/app/domain/integrations.py`
-- [ ] T031 [US4] Implement `ProposeReview(repository, pr_number, author, body)` (fetch the diff, truncate it and set `reviewed_fully=false` when too big, run the stage, pick reviewers, create the `request_review` proposal) and `ApplyReview(proposal_id)`
-- [ ] T032 [US4] Add `get_pull_request_diff`, `request_review` and `comment_on_pull_request` to `GitHubCodeHost`
-- [ ] T033 [US4] Call `ProposeReview` from the `pull_request.opened` branch of spec 008's webhook router
+- [x] T029 [US4] Add `CodeReview(summary, findings: [{criterion, status, comment}], risks, reviewed_fully, rationale)` and `CODE_REVIEW_STAGE` (inputs: task, diff) to `backend/app/domain/plan.py`, with its prompt and mock output
+- [x] T030 [US4] Implement `closing_refs()` and `pick_reviewers()` in `backend/app/domain/integrations.py`
+- [x] T031 [US4] Implement `ProposeReview(repository, pr_number, author, body)` (fetch the diff, truncate it and set `reviewed_fully=false` when too big, run the stage, pick reviewers, create the `request_review` proposal) and `ApplyReview(proposal_id)`
+- [x] T032 [US4] Add `get_pull_request_diff`, `request_review` and `comment_on_pull_request` to `GitHubCodeHost`
+- [x] T033 [US4] Call `ProposeReview` from the `pull_request.opened` branch of spec 008's webhook router — done by spec 008: `deps.get_handle_github_event` passes `ProposeReview.execute` as `HandleGithubEvent`'s `on_pull_request_opened`, which runs in the webhook's background job after the board is updated
 
 **Checkpoint**: all user stories work independently
 
@@ -299,9 +301,9 @@ Not part of our API, but they define our error mapping (`client.py`, T011):
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T034 [P] Retry with backoff on 5xx and secondary rate limits in the client; show "delayed" on the proposal while retrying
-- [ ] T035 [P] Encrypt `github_token` at rest with a `SECRET_KEY` env var (Fernet) if time allows; otherwise document that it's stored in plain text in SQLite
-- [ ] T036 Document the local webhook setup (smee.io tunnel + `PUBLIC_BASE_URL`) in `README.md`
+- [x] T034 [P] Retry with backoff on 5xx and secondary rate limits in the client; show "delayed" on the proposal while retrying — retry with backoff in `client.py` (5xx, 429, secondary rate limits, timeouts); "delayed": the `CodeHostFactory` port takes an optional `on_retry(attempt, wait_seconds)` that `GitHubClient` awaits before each wait, and `PublishIssues` / `ApplyReview` pass one (`integrations/delays.py`) that publishes `GithubActionDelayed(proposal_id, attempt, retry_in_seconds)`; the proposal stops being delayed when its application's outcome event arrives (no new proposal field). Its UI belongs to spec 009
+- [x] T035 [P] Encrypt `github_token` at rest with a `SECRET_KEY` env var (Fernet) if time allows; otherwise document that it's stored in plain text in SQLite — done: `persistence/token_cipher.py` encrypts with Fernet when `SECRET_KEY` is set; without it tokens are stored in plain text (documented in `README.md`)
+- [x] T036 Document the local webhook setup (smee.io tunnel + `PUBLIC_BASE_URL`) in `README.md` — done; adds an optional `GITHUB_WEBHOOK_URL` override because smee.io only forwards the channel URL itself, not `{PUBLIC_BASE_URL}/webhooks/github`
 
 ---
 

@@ -71,7 +71,7 @@ frontend/src/
 
 Follows [plan/api-conventions.md](../../plan/api-conventions.md) (headers, error body, status codes). The API tests assert every status row below.
 
-New domain errors (Foundational): `CapacityNotApplicable`; `SprintClosed` once spec 008 adds closed sprints.
+New domain errors (Foundational): `CapacityNotApplicable`; `SprintClosed` (added by spec 008 with closed sprints).
 
 ### Shared shapes
 
@@ -241,7 +241,7 @@ Request headers: `Content-Type: application/json`
 
 - [x] T010 [US1] Implement `build_board(project_id, members, backlog, sprint_planning) -> BuiltBoard` with `assign()` and `checklist_from_criteria()` in `backend/app/domain/board.py`
 - [x] T011 [US1] Implement `ApplyPlan` in `backend/app/application/use_cases/planning/apply_plan.py`: skip if the project already has sprints, persist the built board, set `ready`, commit, publish `PlanApplied` (with the skipped story keys)
-- [ ] T012 [US1] Register `ApplyPlan` as an `on_plan_completed` handler of spec 002's `AdvancePlanning` in `backend/app/adapters/inbound/http/dependencies.py` — not done: spec 002's `AdvancePlanning` doesn't exist yet; `get_apply_plan` and a TODO are in `dependencies.py`
+- [x] T012 [US1] Register `ApplyPlan` as an `on_plan_completed` handler of spec 002's `AdvancePlanning` in `backend/app/adapters/inbound/http/dependencies.py` — done by spec 002: `wire_planning()` in `dependencies.py` appends `ApplyPlan.execute` to `app.state.on_plan_completed` (the unused `get_apply_plan` provider was removed)
 - [ ] T013 [US1] Create `BoardPage` (route `/projects/:id/board`), `KanbanBoard`, `Column` and `TaskCard` (key, title, priority, points, assignee or "missing role", checklist progress) in `frontend/src/ui/` — handed off to spec 009 (frontend)
 
 **Checkpoint**: after approving the plan, the board shows up with its cards
@@ -371,7 +371,7 @@ Request headers: `Content-Type: application/json`
 
 ### Implementation notes (backend)
 
-- `409 sprint_closed` on `PATCH /api/tasks/{id}` isn't implemented: sprints can't be closed until spec 008 adds it (TODO in `domain/errors.py`).
+- `409 sprint_closed` on `PATCH /api/tasks/{id}` was added by spec 008 once sprints could close (`check_target_sprint` in `board/common.py`, used by `MoveTask` and `UpdateTask`): it rejects moving a task into a closed sprint from another one; tasks already in a closed sprint can still change column. Tested in `test_sprint_close_api.py`.
 - `domain/capacity.py` (spec 002, T006) was created here; member capacity is rounded down to whole points.
 - `MoveTask`, `UpdateTask` and `UpdateChecklist` share one `after_task_changed` handler list (`app.state.after_task_changed`); each handler gets the saved task and the event, so specs 007 and 008 can filter by event type. A PATCH that combines edit and move fields is saved in one commit by `UpdateTask` and publishes both `task_updated` and `task_status_changed`.
 - `sprint_id: null` without `status` lands in the `backlog` column (another sprint without `status` lands in `todo`).

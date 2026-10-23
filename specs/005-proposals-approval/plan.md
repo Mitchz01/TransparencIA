@@ -205,7 +205,7 @@ Errors: `ProposalAlreadyResolved` → `409` (already mapped), `ValidationFailed`
 - **Lost tasks on restart**: `spawn` doesn't survive a server restart. An approved proposal that was never applied stays without `apply_failed`; for the demo that's acceptable, and the retry endpoint covers it once the flag is set.
 - **Single process**: the in-memory bus doesn't fan out across Cloud Run instances; the `EventBus` port allows replacing it later.
 - **SSE tests**: TestClient with endless streams is brittle; the replay generator is tested on its own and HTTP only checks a short replay.
-- **Document rejections**: the step spec 006 runs on a rejected document isn't named in its plan yet.
+- **Document rejections**: spec 006 registers `GenerateDocuments.on_proposal_resolved` for rejected `document` proposals; it follows spec 002's redo rule (see plan 006, Implementation notes).
 
 ---
 

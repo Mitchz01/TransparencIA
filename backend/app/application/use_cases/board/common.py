@@ -4,6 +4,7 @@ returned next to the saved task."""
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+from app.application.dto import TaskView
 from app.application.ports.unit_of_work import UnitOfWork
 from app.domain.board import (
     BoardWarning,
@@ -16,7 +17,7 @@ from app.domain.board import (
     wip_limits,
     wip_warnings,
 )
-from app.domain.errors import ProjectNotFound, TaskNotFound, ValidationFailed
+from app.domain.errors import ProjectNotFound, SprintClosed, TaskNotFound, ValidationFailed
 from app.domain.events import DomainEvent
 from app.domain.project import Project
 
@@ -35,6 +36,12 @@ def load_task(uow: UnitOfWork, task_id: int) -> tuple[Task, Project]:
     return task, project
 
 
+def task_view(uow: UnitOfWork, task: Task) -> TaskView:
+    """The saved task with its GitHub issue (spec 007), as the board returns it."""
+    link = uow.links.get_issue(task.id) if task.id is not None else None
+    return TaskView(**task.model_dump(), issue=link.issue_ref() if link else None)
+
+
 def check_task_change(uow: UnitOfWork, project: Project, values: dict[str, Any]) -> None:
     """Raises ValidationFailed with every failing field; nothing has been written yet."""
     sprint_ids = {s.id for s in uow.sprints.list_by_project(project.id) if s.id is not None}  # type: ignore[arg-type]
@@ -42,6 +49,17 @@ def check_task_change(uow: UnitOfWork, project: Project, values: dict[str, Any])
     errors = task_change_errors(values, sprint_ids, member_ids)
     if errors:
         raise ValidationFailed(errors, "The task has invalid fields.")
+
+
+def check_target_sprint(uow: UnitOfWork, task: Task, values: dict[str, Any]) -> None:
+    """Raises SprintClosed when the change moves the task into a closed sprint (spec 008 closes
+    sprints). Work already in a closed sprint can still change status."""
+    target = values.get("sprint_id")
+    if target is None or target == task.sprint_id:
+        return
+    sprint = uow.sprints.get(target)
+    if sprint is not None and sprint.closed:
+        raise SprintClosed(target)
 
 
 def board_warnings(project: Project, tasks: list[Task], task: Task) -> list[BoardWarning]:

@@ -225,10 +225,11 @@ sequenceDiagram
 
 ### UC-03 · Generate the plan by stages
 
-- **Trigger**: the "start planning" request, or the approval of the previous stage (UC-04).
-- **Result**: one `pending` proposal per stage (or `approved` with auto-approve).
+- **Trigger**: the "start planning" request (`POST /api/projects/{id}/planning`, 202), the resolution of the previous stage's proposal (UC-04), or the retry of a capped stage (`POST .../planning/stages/{key}/retry`).
+- **Result**: one `pending` proposal per stage (or `approved` with auto-approve); after `sprints`, `PlanCompleted` and the board (UC-05).
 - **Stages** (`PLANNING_STAGES`): analysis → methodology → architecture → roadmap → backlog → sprints. The document stages follow (UC-08).
-- **Use cases**: `planning/start_planning.py`, `planning/run_planning_step.py`. They replace the current `RunPlanning`, which runs everything back to back.
+- **Use cases**: `planning/start_planning.py` (from `draft` or `error`, resumes at the first stage without an approved proposal), `planning/run_planning_step.py` (one stage, in the background), `planning/advance_planning.py` (spec 005's `plan_stage` applier: next stage, redo with the rejection reason, or plan completed) and `planning/retry_stage.py`. Context building lives in `planning/context.py`.
+- **Validation**: the output's schema, then `validate_stage_output` (requested methodology, stories in roadmap epics, each story in exactly one iteration, real members, capacity). An invalid output or an agent failure is retried once, with the issues as `feedback`.
 
 ```mermaid
 sequenceDiagram
@@ -237,26 +238,31 @@ sequenceDiagram
     participant UoW
     participant AG as Agents
     participant Bus as EventBus
-    participant AP as ApproveProposal
+    participant AA as AutoApprove
+    participant AV as AdvancePlanning
 
     SP->>UoW: project.status = planning
-    SP->>RS: run(project_id, first stage)
-    RS->>UoW: project and already-resolved proposals
-    RS->>RS: builds the context from stage.inputs (final_content of what was approved)
+    SP->>RS: spawn(project_id, first pending stage)
+    RS->>UoW: project and proposals
+    RS->>RS: builds the context from stage.inputs (final_content of what was approved, capacity, feedback)
     RS->>Bus: publish(AgentStarted)
-    RS->>AG: run_stage(stage, context)
-    alt the agent fails
-        AG-->>RS: error
+    RS->>AG: run_stage(stage, context), retried once if it fails or breaks a rule
+    alt it fails twice
         RS->>UoW: project.status = error
         RS->>Bus: publish(PlanFailed)
     else ok
-        AG-->>RS: output with the stage's schema
-        RS->>UoW: proposals.add(pending Proposal, kind plan_stage)
-        RS->>UoW: commit()
+        RS->>UoW: proposals.add(pending Proposal, kind plan_stage) + commit()
         RS->>Bus: publish(AgentFinished and ProposalCreated)
-        opt project.auto_approve
-            RS->>AP: approve(proposal, auto=true)
-        end
+        RS->>AA: after_created(proposal) (approves it if auto-approve is on)
+    end
+    Note over AV: spec 005's ApplyProposal calls it for every plan_stage resolution
+    alt approved or adjusted
+        AV->>UoW: project.plan[stage] = final_content
+        AV->>RS: next stage, or PlanCompleted + on_plan_completed (ApplyPlan)
+    else rejected, fewer than 3 in a row
+        AV->>RS: same stage with feedback {reason, rejected_content}
+    else rejected 3 times in a row
+        AV->>Bus: publish(StageNeedsLeader)
     end
 ```
 
@@ -271,7 +277,7 @@ sequenceDiagram
 | Proposal kind | What applying it does | Registered step |
 |---|---|---|
 | `plan_stage` | Saves the stage in `project.plan` and launches the next one; after `sprints`, triggers UC-05. On rejection, redoes the stage | `AdvancePlanning.on_proposal_resolved` (002) |
-| `document` | Creates or versions a `Document` (UC-08) | `ApplyDocumentProposal` (006) |
+| `document` | Creates or versions a `Document` (UC-08). On rejection, rewrites it with the reason (same 3-in-a-row cap) | `ApplyDocumentProposal`; rejections: `GenerateDocuments.on_proposal_resolved` (006) |
 | `github_action` | Runs the action on `CodeHost` (UC-10, UC-11) | `PublishIssues` / `ApplyReview` (007) |
 | `replan` | Applies the changes to the board (UC-13) | `ApplyReplan` (008) |
 
@@ -397,29 +403,31 @@ sequenceDiagram
 
 ### UC-08 · Generate specs and diagrams
 
-- **Trigger**: the plan finishes being approved (after `sprints`), or the leader asks to regenerate a document.
-- **Result**: proposals of kind `document`: general spec, one spec per roadmap epic, and flow diagrams in Mermaid. Once approved they become versioned `Document`s.
-- **New stages** in `PLANNING_STAGES`: `general_spec`, `epic_specs`, `flow_diagrams`, each with its output schema.
-- **Use case**: `planning/generate_documents.py`, which reuses `RunPlanningStep`.
+- **Trigger**: the plan finishes being approved (after `sprints`, as an `on_plan_completed` handler after UC-05), a document proposal is rejected, or the leader asks to regenerate a document.
+- **Result**: proposals of kind `document`, in order: the general spec (`general_spec`), one spec per roadmap epic (`epic_spec:EP-n`) and the flow and architecture diagrams in Mermaid (`flow_diagram:n`, one proposal each). Once approved they become versioned `Document`s; the proposal key names the document, so approving a regeneration adds the next version. A diagram that still fails `check_mermaid` after one retry isn't proposed and `DocumentsGenerated.missing` names it. The leader's manual edit (`PUT /api/documents/{id}`) saves a version directly, without a proposal. A replan (UC-13) flags the documents as outdated (`MarkDocumentsOutdated`).
+- **New stages** in `DOCUMENT_STAGES` (next to `PLANNING_STAGES`, same `PlanningAgents` port): `general_spec`, `epic_spec` (one call per epic, with only that epic and its stories) and `flow_diagrams`, each with its output schema.
+- **Use cases**: `planning/generate_documents.py` (reuses `RunPlanningStep`'s agent call and retry, `run_agent`), `documents/apply_document.py`, `documents/regenerate_document.py`, `documents/edit_document.py`, `documents/list_documents.py`, `documents/mark_outdated.py`
 
 ```mermaid
 sequenceDiagram
-    participant AP as ApproveProposal
+    participant AP as AdvancePlanning
     participant UC as GenerateDocuments
     participant AG as Agents
     participant UoW
     participant Bus as EventBus
+    participant AD as ApplyDocumentProposal
 
-    AP->>UC: full plan approved
-    loop general_spec, epic_specs, flow_diagrams
+    AP->>UC: on_plan_completed(project_id), after ApplyPlan
+    loop general_spec, epic_spec per epic, flow_diagrams
         UC->>Bus: publish(AgentStarted)
-        UC->>AG: run_stage(stage, approved plan)
-        AG-->>UC: documents (Markdown or Mermaid)
+        UC->>AG: run_stage(stage, approved finals)
+        AG-->>UC: Markdown or Mermaid (one retry if invalid)
         UC->>UoW: proposals.add(Proposal kind document)
         UC->>UoW: commit()
         UC->>Bus: publish(ProposalCreated)
     end
-    Note over AP,Bus: on approval, ApproveProposal creates or versions the Document
+    UC->>Bus: publish(DocumentsGenerated(missing))
+    Note over AD: on approval (spec 005), ApplyDocumentProposal creates the Document or its next version
 ```
 
 ### UC-09 · Connect the GitHub repo
@@ -525,39 +533,40 @@ sequenceDiagram
 | Issue closed as not planned | No change; shown in the activity feed |
 | Issue reopened | `todo` |
 
-- GitHub events never move a task out of `done`, except reopening the issue. Events caused by the system's own writes are ignored (spec 008, FR-015).
-- When all the tasks of an objective are `done`, the `Objective` closes.
-- **Use cases**: `integrations/handle_pull_request_event.py`, `handle_issue_event.py`
+- GitHub events only move a task forward, and never out of `done` except reopening the issue. Events caused by the system's own writes are ignored (spec 008, FR-015). Each delivery is processed once (`X-GitHub-Delivery`).
+- When all the tasks of an objective are `done`, the `Objective` closes (from GitHub or by hand); if one leaves `done`, it reopens.
+- A `pull_request.opened` also goes to spec 007's `ProposeReview` (UC-11).
+- Closing a sprint is the leader's action (`POST /api/sprints/{id}/close`); with unfinished tasks it proposes a replan (UC-13).
+- **Use cases**: `integrations/handle_github_event.py` (one for PR and issue events), `board/evaluate_objectives.py`, `board/close_sprint.py`
 
 ```mermaid
 sequenceDiagram
     participant GH as GitHub
     participant WH as GitHub webhook
-    participant UC as HandlePullRequestEvent
+    participant UC as HandleGithubEvent
     participant UoW
     participant Bus as EventBus
-    participant RP as Replan
+    participant EO as EvaluateObjectives
 
     GH->>WH: POST /webhooks/github (pull_request merged)
     WH->>WH: validates the HMAC signature with GITHUB_WEBHOOK_SECRET
     alt invalid signature
         WH-->>GH: 401
     else valid
-        WH->>UC: PullRequestMerged(repo, number, closes)
+        WH->>UC: receive(delivery id, PullRequestMerged(repo, number, closes))
+        UC->>UoW: deliveries.add (a repeated delivery is ignored)
         WH-->>GH: 202
+        WH->>UC: execute() in the background
         UC->>UoW: project by repository and tasks by ExternalLink
         loop each linked task
-            UC->>UC: status done and checklist complete
+            UC->>UC: next_status → done, checklist complete
             UC->>UoW: tasks.save(task)
-            UC->>Bus: publish(TaskStatusChanged)
         end
-        UC->>UC: evaluates those tasks' objectives
-        UC->>UoW: objective.done = true if all are done
         UC->>UoW: commit()
-        UC->>Bus: publish(ObjectiveClosed)
-        opt sprint ended with pending work
-            UC->>RP: propose a replan (UC-13)
-        end
+        UC->>Bus: publish(TaskUpdated, TaskStatusChanged)
+        UC->>EO: after_task_changed handlers (shared with the board)
+        EO->>UoW: objective.done = true if all its tasks are done
+        EO->>Bus: publish(ObjectiveClosed)
     end
 ```
 
@@ -566,9 +575,9 @@ sequenceDiagram
 - **Trigger**:
   - the leader asks for it with a reason ("a dev left", "a new client came in"),
   - the team changed (UC-02),
-  - a sprint ended with pending work (UC-12).
-- **Result**: a `replan` proposal with a diff over the current board (tasks that move between sprints, reassignments, new or discarded tasks) and its rationale. When approved, the diff is applied; `done` tasks are never touched. Automatic replans always wait for the leader, even with auto-approve (spec 008, FR-016).
-- **Use case**: `planning/replan.py` (new `replan` stage with its diff schema).
+  - a sprint was closed with pending work (UC-12).
+- **Result**: a `replan` proposal with a diff over the current board (tasks that move between sprints, reassignments, new or discarded tasks) and its rationale. A new request replaces the pending replan (`discarded`) and merges both reasons. When approved, `ApplyReplan` applies the diff in one transaction, skipping and reporting changes whose task changed meanwhile; `done` tasks are never touched. Then spec 007 proposes the added tasks as issues and closes the discarded ones' issues. Automatic replans always wait for the leader, even with auto-approve (spec 008, FR-016).
+- **Use cases**: `planning/replan.py` (the `replan` stage with its diff schema), `planning/apply_replan.py`, `planning/propose_replan_on_drift.py`.
 
 ```mermaid
 sequenceDiagram
@@ -580,16 +589,17 @@ sequenceDiagram
     participant Bus as EventBus
 
     L->>HTTP: POST /api/projects/{id}/replan (reason)
-    HTTP->>UC: launches in the background
-    HTTP-->>L: 202
+    HTTP->>UC: prepare (plan applied? pending replan to supersede?)
+    HTTP->>UC: execute in the background
+    HTTP-->>L: 202 (supersedes)
     UC->>UoW: approved plan, team and current board
     UC->>AG: run_stage(replan, plan, board, real velocity, reason)
     AG-->>UC: diff (move, reassign, add, discard) and rationale
-    UC->>UC: validates the diff (no done tasks touched)
-    UC->>UoW: proposals.add(Proposal kind replan)
+    UC->>UC: validates the diff (no done tasks touched), one retry
+    UC->>UoW: discard the pending replan, proposals.add(Proposal kind replan)
     UC->>UoW: commit()
     UC->>Bus: publish(ProposalCreated)
-    Note over UC,Bus: on approval, ApproveProposal applies the diff in a single transaction
+    Note over UC,Bus: on approval, spec 005 runs ApplyReplan: the diff in a single transaction, then its follow-ups
 ```
 
 ### UC-14 · Follow the live activity
@@ -633,7 +643,7 @@ What these use cases add to what's already on `main`:
 | `domain/events.py` | `TeamChanged`, `PlanApplied`, `IssuesPublished`, `ObjectiveClosed` |
 | `application/ports/code_host.py` | `check_access`, `register_webhook`, `update_issue`, `get_pull_request_diff`, `comment_on_pull_request` |
 | `application/ports/repositories.py` | `ExternalLinkRepository`, `ObjectiveRepository`; add `proposals`, `documents`, `links` and `objectives` to the `UnitOfWork` |
-| `application/use_cases/planning/` | `RunPlanning` (back to back) is replaced by `StartPlanning` + `RunPlanningStep` |
+| `application/use_cases/planning/` | `RunPlanning` (back to back) is replaced by `StartPlanning` + `RunPlanningStep` + `AdvancePlanning` (done, spec 002) |
 | Background execution | Agents run in `asyncio.create_task` from the HTTP adapter; that task has its own DB session, not the request's |
 
 ## Open questions

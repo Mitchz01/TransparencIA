@@ -24,7 +24,7 @@ class DomainError(Exception):
 
 
 class NotFound(DomainError):
-    def __init__(self, entity: str, id: int | None):
+    def __init__(self, entity: str, id: int | str | None):
         super().__init__(f"{entity} {id} does not exist.")
         self.entity = entity
         self.id = id
@@ -49,6 +49,13 @@ class ProposalNotFound(NotFound):
         super().__init__("Proposal", id)
 
 
+class StageNotFound(NotFound):
+    """`key` isn't one of the six planning stages (spec 002)."""
+
+    def __init__(self, key: str):
+        super().__init__("Stage", key)
+
+
 class ValidationFailed(DomainError):
     code = "validation_failed"
 
@@ -66,6 +73,37 @@ class MethodologyLocked(DomainError):
 
     def __init__(self) -> None:
         super().__init__("The methodology can't change once planning has started.")
+
+
+class PlanningAlreadyRunning(DomainError):
+    """There's a single active planning run per project (spec 002, FR-013)."""
+
+    code = "planning_already_running"
+
+    def __init__(self, project_id: int | None):
+        super().__init__(f"Project {project_id} is already planning.")
+        self.project_id = project_id
+
+
+class PlanningNotStartable(DomainError):
+    """Planning starts from draft or error; a ready project replans instead (spec 008)."""
+
+    code = "planning_not_startable"
+
+    def __init__(self, project_id: int | None, status: str):
+        super().__init__(f"Project {project_id} is {status}: its plan is already complete.")
+        self.project_id = project_id
+        self.status = status
+
+
+class StageNotRetryable(DomainError):
+    """Only a stage capped after consecutive rejections waits for the leader to retry it."""
+
+    code = "stage_not_retryable"
+
+    def __init__(self, key: str):
+        super().__init__(f"Stage '{key}' isn't waiting for the leader.")
+        self.key = key
 
 
 class ProposalAlreadyResolved(DomainError):
@@ -98,8 +136,83 @@ class CapacityNotApplicable(DomainError):
         self.project_id = project_id
 
 
-# TODO(spec 008): SprintClosed (409 sprint_closed) once sprints can be closed; PATCH /tasks/{id}
-# then rejects moving a task into a closed sprint (plan 003, API Contract).
+class SprintNotFound(NotFound):
+    def __init__(self, id: int | None):
+        super().__init__("Sprint", id)
+
+
+class SprintClosed(DomainError):
+    """PATCH /tasks/{id} can't move a task into a closed sprint (spec 003, closed by spec 008)."""
+
+    code = "sprint_closed"
+
+    def __init__(self, sprint_id: int | None):
+        super().__init__(f"Sprint {sprint_id} is closed: it takes no more tasks.")
+        self.sprint_id = sprint_id
+
+
+class SprintAlreadyClosed(DomainError):
+    code = "sprint_already_closed"
+
+    def __init__(self, sprint_id: int | None):
+        super().__init__(f"Sprint {sprint_id} is already closed.")
+        self.sprint_id = sprint_id
+
+
+class PlanNotApplied(DomainError):
+    """A replan needs a board: the project must be `ready` (spec 008)."""
+
+    code = "plan_not_applied"
+
+    def __init__(self, project_id: int | None):
+        super().__init__(f"Project {project_id} has no applied plan yet: finish planning before replanning.")
+        self.project_id = project_id
+
+
+class DocumentNotFound(NotFound):
+    def __init__(self, id: int | None):
+        super().__init__("Document", id)
+
+
+class VersionNotFound(NotFound):
+    """The document exists but has no such version (spec 006, `?version=`)."""
+
+    def __init__(self, document_id: int | None, version: int):
+        super().__init__("Version", version)
+        self.detail = f"Document {document_id} has no version {version}."
+        self.args = (self.detail,)
+
+
+class RegenerationInProgress(DomainError):
+    """The writer is already rewriting this document, or its proposal waits for the leader."""
+
+    code = "regeneration_in_progress"
+
+    def __init__(self, document_id: int | None):
+        super().__init__(f"Document {document_id} is already being regenerated or has a pending proposal.")
+        self.document_id = document_id
+
+
+class VersionConflict(DomainError):
+    """The leader edited an old version: someone saved a newer one in between (spec 006, US4)."""
+
+    code = "version_conflict"
+
+    def __init__(self, document_id: int | None, base_version: int, current_version: int):
+        super().__init__(f"Document {document_id} is at version {current_version}, not {base_version}: reload it.")
+        self.current_version = current_version
+
+    def extra(self) -> dict[str, Any]:
+        return {"current_version": self.current_version}
+
+
+class InvalidDiagram(ValidationFailed):
+    """A diagram that wouldn't render (check_mermaid): one error per issue, on `content`."""
+
+    code = "invalid_diagram"
+
+    def __init__(self, issues: list[str], field: str = "content"):
+        super().__init__([FieldError(field, issue) for issue in issues], "The diagram can't be rendered.")
 
 
 class NoApplierForProposal(DomainError):
@@ -110,3 +223,65 @@ class NoApplierForProposal(DomainError):
 
     def __init__(self, kind: str, key: str):
         super().__init__(f"Nothing applies {kind} proposals ('{key}') yet.")
+
+
+# ---------- GitHub integration (spec 007) ----------
+
+
+class MemberNotFound(NotFound):
+    def __init__(self, id: int | None):
+        super().__init__("Member", id)
+
+
+class RepositoryNotAccessible(DomainError):
+    """The repo doesn't exist, the token can't see it, or it lacks permissions. Nothing is saved."""
+
+    code = "repository_not_accessible"
+    _DETAILS = {
+        "not_found": "The repository {repo} doesn't exist or the token can't see it.",
+        "forbidden": "The token has no access to {repo}.",
+        "missing_permissions": "The token can't create issues, comment or manage webhooks in {repo}.",
+    }
+
+    def __init__(self, repository: str, reason: str):
+        super().__init__(self._DETAILS.get(reason, "The repository {repo} isn't accessible.").format(repo=repository))
+        self.repository = repository
+        self.reason = reason  # "not_found" | "forbidden" | "missing_permissions"
+
+    def extra(self) -> dict[str, Any]:
+        return {"reason": self.reason}
+
+
+class RepositoryNotConnected(DomainError):
+    code = "repository_not_connected"
+
+    def __init__(self, project_id: int | None):
+        super().__init__(f"Project {project_id} has no connected repository.")
+        self.project_id = project_id
+
+
+class NothingToPublish(DomainError):
+    code = "nothing_to_publish"
+
+    def __init__(self) -> None:
+        super().__init__("Every task already has an issue.")
+
+
+class PublicationPending(DomainError):
+    code = "publication_pending"
+
+    def __init__(self, proposal_id: int | None):
+        super().__init__(f"Proposal {proposal_id} to publish issues is still pending.")
+        self.proposal_id = proposal_id
+
+    def extra(self) -> dict[str, Any]:
+        return {"proposal_id": self.proposal_id}
+
+
+class CodeHostUnavailable(DomainError):
+    """GitHub failed or timed out (5xx, timeout, rate limit), after the client's retries."""
+
+    code = "code_host_unavailable"
+
+    def __init__(self, detail: str = "GitHub didn't answer. Try again in a moment."):
+        super().__init__(detail)

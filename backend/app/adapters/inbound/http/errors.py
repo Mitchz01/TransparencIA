@@ -12,13 +12,24 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from app.config import logger
 from app.domain.errors import (
+    CodeHostUnavailable,
     CapacityNotApplicable,
     DomainError,
+    InvalidDiagram,
     MethodologyLocked,
     NotFound,
+    PlanningAlreadyRunning,
+    PlanningNotStartable,
     ProposalAlreadyResolved,
     ProposalNotRetryable,
+    PlanNotApplied,
+    RepositoryNotAccessible,
+    SprintAlreadyClosed,
+    SprintClosed,
+    RegenerationInProgress,
+    StageNotRetryable,
     ValidationFailed,
+    VersionConflict,
 )
 
 REQUEST_ID_HEADER = "X-Request-Id"
@@ -29,7 +40,18 @@ _STATUS: dict[type[DomainError], int] = {
     MethodologyLocked: 409,
     ProposalAlreadyResolved: 409,
     ProposalNotRetryable: 409,
+    RepositoryNotAccessible: 422,  # spec 007
+    CodeHostUnavailable: 502,  # spec 007
     CapacityNotApplicable: 409,
+    PlanningAlreadyRunning: 409,
+    PlanningNotStartable: 409,
+    StageNotRetryable: 409,
+    PlanNotApplied: 409,  # spec 008
+    SprintAlreadyClosed: 409,  # spec 008
+    SprintClosed: 409,  # spec 003, once spec 008 closes sprints
+    InvalidDiagram: 422,
+    RegenerationInProgress: 409,
+    VersionConflict: 409,
 }
 
 

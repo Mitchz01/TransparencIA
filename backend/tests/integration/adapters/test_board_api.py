@@ -105,7 +105,9 @@ def test_board_after_applying_the_plan(client):
     assert set(task) == {
         "id", "project_id", "sprint_id", "assignee_id", "key", "epic_key", "title", "description",
         "acceptance_criteria", "checklist", "type", "points", "priority", "status", "position", "missing_role",
+        "issue",  # spec 007: null until the task is published
     }
+    assert task["issue"] is None
     assert (task["status"], task["assignee_id"], task["missing_role"]) == ("todo", None, "DevOps")
     assert task["checklist"] == [{"text": "Works on desktop and mobile", "done": False}, {"text": "Has basic tests", "done": False}]
 

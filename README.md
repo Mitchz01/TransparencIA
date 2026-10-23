@@ -38,6 +38,22 @@ fastapi dev app/main.py
 pytest                 # tests (includes the architecture layer test)
 ```
 
+### GitHub integration (spec 007)
+
+Without any token the backend runs in **test mode**: `FakeCodeHost` records what would be written to GitHub and nothing leaves the machine. To use a real repo:
+
+1. Create a fine-grained token with access to the repo: *Issues*, *Pull requests* and *Contents* read/write, plus *Webhooks* read/write (admin) so the repo's events reach us. Set it as `GITHUB_TOKEN` in `.env` (installation token), or paste it in Integrations when connecting a project (project token, never shown again).
+2. Let GitHub reach the backend. Webhooks are registered at `{PUBLIC_BASE_URL}/webhooks/github`, or at `GITHUB_WEBHOOK_URL` when it's set.
+   - With [smee.io](https://smee.io) (local dev): create a channel on the site, set `GITHUB_WEBHOOK_URL=https://smee.io/<channel>` (smee only forwards the channel URL itself) and run
+     ```bash
+     npx smee-client --url https://smee.io/<channel> --target http://localhost:8000/webhooks/github
+     ```
+   - With a tunnel that keeps paths (`cloudflared tunnel --url http://localhost:8000`, `ngrok http 8000`) or a deployment: set `PUBLIC_BASE_URL` to its public URL.
+3. Set `GITHUB_WEBHOOK_SECRET` to any random string: it signs the webhook deliveries (checked by spec 008).
+4. Optional: set `SECRET_KEY` to encrypt project tokens in the database. Without it they're stored **in plain text** in SQLite, which is fine for a local demo only.
+
+With both `PUBLIC_BASE_URL` and `GITHUB_WEBHOOK_URL` empty, repos connect without a webhook (`webhook_registered: false`): issues and reviews still work, but nothing comes back from GitHub.
+
 ## Run the frontend
 
 ```bash
@@ -51,15 +67,17 @@ Scripts, the fake backend and the checks: [frontend/README.md](frontend/README.m
 
 ## TODO
 
-> The `member.active`, `proposal` and `activity` columns/tables are new and `create_db()` doesn't migrate: delete any local `backend/agile.db` before running.
+> The `member.active`, `proposal` and `activity` columns/tables are new and `create_db()` doesn't migrate: delete any local `backend/agile.db` before running. Spec 007 adds `project.github_token`, `project.webhook_id`, `member.github_username`, `proposal.result` and the `external_link` and `own_write` tables. Spec 006 adds the `document` and `document_version` tables. Spec 008 adds `sprint.closed`, `sprint.end_date` and the `webhook_delivery` table.
 
 
 - [x] Projects and team API (spec 001): `POST/GET/PATCH /api/projects`
 - [x] Proposals, approval and live activity (spec 005): `/api/proposals/...`, `/activity`, SSE `/events` with replay
 - [x] Plan views (spec 004): `GET /api/projects/{id}/plan`
-- [ ] Per-stage planning pipeline (spec 002) and its `plan_stage` applier, `PATCH /tasks/{id}` (spec 003)
-- [ ] Persist the approved plan as Sprint and Task
-- [ ] Generated specs and diagrams (006), GitHub (007), sync and replanning (008)
+- [x] Per-stage planning pipeline (spec 002): `POST /api/projects/{id}/planning`, stage retry, the `plan_stage` applier
+- [x] Persist the approved plan as Sprint and Task (spec 003's `ApplyPlan`, run when the plan completes)
+- [x] GitHub integration backend (spec 007): `PUT/DELETE /api/projects/{id}/repository`, `POST /api/projects/{id}/issues/propose`, `PUT /api/members/{id}/github-username`, `github_action` appliers
+- [x] Generated specs and diagrams backend (spec 006): `GenerateDocuments` after the plan completes, `/api/documents/...` (versions, edit, regenerate)
+- [x] GitHub sync and replanning backend (spec 008): `POST /webhooks/github`, `POST /api/projects/{id}/replan`, `POST /api/sprints/{id}/close`, objectives that close by themselves, drift replans; `ENV=dev` adds `POST /api/dev/github-events`
 - [x] Frontend (spec 009): every screen, on the API contract or on the fake backend
 - [x] Extra: replan ("a dev left, adjust the sprint"), on the frontend and its fake backend
 - [ ] Deploy to Cloud Run

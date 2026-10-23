@@ -1,10 +1,11 @@
 """Use case inputs and outputs. The HTTP adapter uses them as body/response."""
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from app.application.ports.code_host import CodeHostMode
 from app.domain.board import (
     BoardWarning,
     ChecklistItem,
@@ -15,8 +16,12 @@ from app.domain.board import (
     Task,
     TaskStatus,
 )
+from app.domain.integrations import IssueRef
+from app.domain.documents import Document, DocumentKind, DocumentVersion, VersionSource
 from app.domain.plan import WipLimit
+from app.domain.proposals import ProposalOrigin
 from app.domain.project import (
+    Member,
     MemberPatch,
     Project,
     ProjectChanges,
@@ -110,6 +115,12 @@ class SprintView(Sprint):
     load: SprintLoad | None  # None on a continuous (Kanban) board
 
 
+class TaskView(Task):
+    """A task as the API returns it (board and task results)."""
+
+    issue: IssueRef | None = None  # spec 007: the task's GitHub issue, None until published
+
+
 class BoardView(BaseModel):
     project_id: int
     continuous: bool
@@ -117,7 +128,7 @@ class BoardView(BaseModel):
     capacity_override: int | None
     sprints: list[SprintView]
     objectives: list[Objective]
-    tasks: list[Task]
+    tasks: list[TaskView]
 
 
 class _SentFields(BaseModel):
@@ -170,7 +181,7 @@ class ChecklistUpdate(BaseModel):
 
 
 class TaskResult(BaseModel):
-    task: Task
+    task: TaskView
     warnings: list[BoardWarning] = []  # never block (constitution, principle 4)
     suggest_advance: bool = False  # the checklist is complete: offer to move it forward (FR-015)
 
@@ -208,3 +219,175 @@ class BulkResult(BaseModel):
     id: int
     ok: bool
     error: dict[str, Any] | None = None
+
+
+# ---------- GitHub integration (spec 007) ----------
+
+
+class RepositoryConnect(BaseModel):
+    repository: str
+    # Write-only. Missing (or null) = keep the project's token; "" = delete it (FR-004).
+    token: str | None = None
+
+
+class Connection(BaseModel):
+    repository: str
+    has_token: bool
+    mode: CodeHostMode
+    webhook_registered: bool
+    replaced: str | None = None
+
+
+class IssuesProposed(BaseModel):
+    proposal_id: int
+    task_count: int
+
+
+class GithubUsernameSet(BaseModel):
+    github_username: str | None  # required; null removes it
+
+
+class MemberGithubAccess(BaseModel):
+    member: Member
+    # False = the user can't access the repo (saved with a warning); None = no repo or GitHub unreachable.
+    has_access: bool | None
+
+
+# ---------- Planning (spec 002) ----------
+
+
+class StageRun(BaseModel):
+    """A stage to run in the background after the request: StartPlanning and RetryStage
+    decide it, the router spawns RunPlanningStep with it."""
+
+    project_id: int
+    stage: str
+    feedback: dict[str, Any] | None = None  # {reason, rejected_content} when redoing a rejection
+    run: bool = True  # False when the stage already has a proposal waiting for the leader
+
+
+class PlanningAccepted(BaseModel):
+    """202 body of POST /planning and POST /planning/stages/{key}/retry."""
+
+    project_id: int
+    status: ProjectStatus = "planning"
+    stage: str
+
+
+# ---------- Sync and replanning (spec 008) ----------
+
+IgnoredReason = Literal["duplicate", "unhandled_event", "unknown_repository"]
+
+
+class WebhookReceipt(BaseModel):
+    """202 body of POST /webhooks/github: received, not necessarily applied."""
+
+    delivery_id: str
+    status: Literal["accepted", "ignored"]
+    reason: IgnoredReason | None = None
+
+
+class ReplanRequest(BaseModel):
+    reason: str
+
+
+class ReplanRun(BaseModel):
+    """A replan to run in the background: Replan.prepare decides it, the router spawns it."""
+
+    project_id: int
+    reason: str  # merged with the reason of the pending replan it supersedes (FR-014)
+    origin: ProposalOrigin = "leader"
+    supersedes: int | None = None
+
+
+class ReplanAccepted(BaseModel):
+    """202 body of POST /api/projects/{id}/replan."""
+
+    project_id: int
+    status: Literal["replanning"] = "replanning"
+    supersedes: int | None = None
+
+
+class SprintCloseResult(BaseModel):
+    sprint: Sprint
+    pending_task_keys: list[str]
+    replan_proposed: bool
+
+
+class DevGithubEvent(BaseModel):
+    """Body of the dev-only POST /api/dev/github-events (T029)."""
+
+    fixture: str
+    repository: str | None = None
+    number: int | None = Field(default=None, ge=1)
+
+
+# ---------- Documents (spec 006) ----------
+
+
+class DocumentSummary(BaseModel):
+    id: int
+    kind: DocumentKind
+    epic_key: str | None
+    title: str
+    version: int
+    outdated: bool
+    updated_at: datetime
+
+    @classmethod
+    def of(cls, document: Document) -> "DocumentSummary":
+        return cls.model_validate(document.model_dump(include=set(cls.model_fields)))
+
+
+class DocumentVersionView(BaseModel):
+    version: int
+    created_at: datetime
+    source: VersionSource
+    proposal_id: int | None
+
+
+class DocumentView(BaseModel):
+    """`content` and `version` are the requested version's (the latest by default)."""
+
+    id: int
+    project_id: int
+    kind: DocumentKind
+    epic_key: str | None
+    title: str
+    content: str
+    version: int
+    outdated: bool
+    versions: list[DocumentVersionView]
+
+    @classmethod
+    def of(cls, document: Document, versions: list[DocumentVersion], shown: DocumentVersion | None = None) -> "DocumentView":
+        data = document.model_dump(include=set(cls.model_fields) - {"versions"})
+        if shown is not None:
+            data.update(content=shown.content, version=shown.version)
+        views = [DocumentVersionView.model_validate(v.model_dump(include=set(DocumentVersionView.model_fields))) for v in versions]
+        return cls(**data, versions=views)
+
+
+class DocumentRegenerate(BaseModel):
+    instructions: str
+
+
+class DocumentEdit(BaseModel):
+    content: str
+    base_version: int
+
+
+class DocumentRun(BaseModel):
+    """A document to rewrite in the background: RegenerateDocument decides it, the router spawns it."""
+
+    project_id: int
+    document_id: int
+    key: str
+    feedback: dict[str, Any]
+
+
+class RegenerationAccepted(BaseModel):
+    """202 body of POST /api/documents/{id}/regenerate."""
+
+    document_id: int
+    status: str = "regenerating"

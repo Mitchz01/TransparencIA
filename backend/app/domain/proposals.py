@@ -41,6 +41,8 @@ class Proposal(BaseModel):
     # Deciding and applying are separate steps: an approved proposal can fail to apply and be retried.
     apply_failed: bool = False
     apply_error: str | None = None
+    # What applying produced, when the owner spec reports it (spec 007: created and failed issues).
+    result: dict[str, Any] | None = None
     created_at: datetime = Field(default_factory=_now)
     resolved_at: datetime | None = None
 
