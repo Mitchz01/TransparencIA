@@ -14,14 +14,17 @@ from app.config import logger
 from app.domain.errors import (
     CapacityNotApplicable,
     DomainError,
+    InvalidDiagram,
     MethodologyLocked,
     NotFound,
     PlanningAlreadyRunning,
     PlanningNotStartable,
     ProposalAlreadyResolved,
     ProposalNotRetryable,
+    RegenerationInProgress,
     StageNotRetryable,
     ValidationFailed,
+    VersionConflict,
 )
 
 REQUEST_ID_HEADER = "X-Request-Id"
@@ -36,6 +39,9 @@ _STATUS: dict[type[DomainError], int] = {
     PlanningAlreadyRunning: 409,
     PlanningNotStartable: 409,
     StageNotRetryable: 409,
+    InvalidDiagram: 422,
+    RegenerationInProgress: 409,
+    VersionConflict: 409,
 }
 
 

@@ -4,6 +4,7 @@ import asyncio
 
 import pytest
 
+from app.application.use_cases.documents.mark_outdated import MarkDocumentsOutdated
 from app.domain.errors import InvalidDiagram
 from tests.unit.application.document_fixtures import GENERAL, writer
 
@@ -76,6 +77,44 @@ def test_a_diagram_that_would_not_render_is_never_saved():
 
 def test_a_pending_or_rejected_proposal_creates_nothing():
     w = writer()
-    proposal = w.seed("document", "general_spec", GENERAL, status="pending")
-    asyncio.run(w.apply_document.execute(proposal.id))
+    for status in ("pending", "rejected"):
+        proposal = w.seed("document", "general_spec", GENERAL, status=status)
+        asyncio.run(w.apply_document.execute(proposal.id))
     assert w.documents() == []
+
+
+# ---------- MarkDocumentsOutdated (spec 008 calls it after a replan) ----------
+
+
+def _mark(w) -> list[int]:
+    return asyncio.run(MarkDocumentsOutdated(w.uow.factory(), w.bus).execute(w.project.id))
+
+
+def test_a_replan_flags_every_document_as_outdated():
+    w = writer()
+    w.approve(w.seed("document", "general_spec", GENERAL, status="pending"))
+    w.approve(w.seed("document", "flow_diagram:1", DIAGRAM, status="pending"))
+
+    ids = _mark(w)
+    assert sorted(ids) == sorted(d.id for d in w.documents())
+    assert all(d.outdated for d in w.documents())
+    assert all(d.version == 1 for d in w.documents())  # flagged, never rewritten by itself
+    [event] = w.bus.of_type("documents_outdated")
+    assert sorted(event.document_ids) == sorted(ids)
+
+    assert _mark(w) == [] and len(w.bus.of_type("documents_outdated")) == 1  # already outdated: nothing new
+
+
+def test_a_new_version_clears_the_flag():
+    w = writer()
+    w.approve(w.seed("document", "general_spec", GENERAL, status="pending"))
+    _mark(w)
+    w.approve(w.seed("document", "general_spec", {**GENERAL, "markdown": "# regenerated"}, status="pending"))
+
+    [document] = w.documents()
+    assert document.version == 2 and not document.outdated
+
+
+def test_no_documents_no_event():
+    w = writer()
+    assert _mark(w) == [] and w.bus.of_type("documents_outdated") == []

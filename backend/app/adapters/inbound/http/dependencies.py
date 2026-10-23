@@ -19,7 +19,10 @@ from app.application.use_cases.board.set_capacity import SetCapacity
 from app.application.use_cases.board.update_checklist import UpdateChecklist
 from app.application.use_cases.board.update_task import UpdateTask
 from app.application.use_cases.documents.apply_document import ApplyDocumentProposal
+from app.application.use_cases.documents.edit_document import EditDocument
 from app.application.use_cases.documents.list_documents import GetDocument, ListDocuments
+from app.application.use_cases.documents.mark_outdated import MarkDocumentsOutdated
+from app.application.use_cases.documents.regenerate_document import RegenerateDocument
 from app.application.use_cases.planning.advance_planning import AdvancePlanning, PlanCompletedHandler
 from app.application.use_cases.planning.apply_plan import ApplyPlan
 from app.application.use_cases.planning.generate_documents import GenerateDocuments
@@ -279,3 +282,20 @@ def get_list_documents(uow: UnitOfWork = Depends(get_uow)) -> ListDocuments:
 
 def get_get_document(uow: UnitOfWork = Depends(get_uow)) -> GetDocument:
     return GetDocument(uow)
+
+
+def get_regenerate_document(
+    uow: UnitOfWork = Depends(get_uow), generate: GenerateDocuments = Depends(get_generate_documents)
+) -> RegenerateDocument:
+    return RegenerateDocument(uow, generate)
+
+
+def get_edit_document(uow: UnitOfWork = Depends(get_uow), bus: EventBus = Depends(get_event_bus)) -> EditDocument:
+    return EditDocument(uow, bus)
+
+
+def get_mark_documents_outdated(
+    uow_factory: UnitOfWorkFactory = Depends(get_uow_factory), bus: EventBus = Depends(get_event_bus)
+) -> MarkDocumentsOutdated:
+    """For spec 008: call execute(project_id) after a replan is applied (FR-011)."""
+    return MarkDocumentsOutdated(uow_factory, bus)

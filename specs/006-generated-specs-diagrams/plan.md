@@ -264,15 +264,15 @@ Request headers: `Content-Type: application/json`. A leader edit isn't an agent 
 
 ### Tests for User Story 4
 
-- [ ] T023 [P] [US4] `RegenerateDocument` and `EditDocument` tests (proposal with `feedback = instructions`; approved → v2; manual edit → new version without a proposal; v1 kept) in `backend/tests/unit/application/test_regenerate_document.py`
-- [ ] T024 [P] [US4] `MarkDocumentsOutdated` test in `backend/tests/unit/application/test_apply_document.py`
+- [x] T023 [P] [US4] `RegenerateDocument` and `EditDocument` tests (proposal with `feedback = instructions`; approved → v2; manual edit → new version without a proposal; v1 kept) in `backend/tests/unit/application/test_regenerate_document.py`
+- [x] T024 [P] [US4] `MarkDocumentsOutdated` test in `backend/tests/unit/application/test_apply_document.py`
 
 ### Implementation for User Story 4
 
-- [ ] T025 [US4] Implement `RegenerateDocument` (background, reuses the stage run with `feedback`) and `EditDocument` (the leader's own edit is not an agent decision, so it saves a version directly) in `backend/app/application/use_cases/documents/`
-- [ ] T026 [US4] Add `POST /api/documents/{id}/regenerate` (202) and `PUT /api/documents/{id}` to `backend/app/adapters/inbound/http/documents.py`
-- [ ] T027 [US4] Implement `MarkDocumentsOutdated(project_id)` in `backend/app/application/use_cases/documents/mark_outdated.py`; spec 008 calls it after a replan is applied; regenerating or editing clears the flag
-- [ ] T028 [US4] Create `VersionHistory`, `RegenerateDialog` and `DocumentEditor`; show an "outdated" badge with a regenerate shortcut
+- [x] T025 [US4] Implement `RegenerateDocument` (background, reuses the stage run with `feedback`) and `EditDocument` (the leader's own edit is not an agent decision, so it saves a version directly) in `backend/app/application/use_cases/documents/`
+- [x] T026 [US4] Add `POST /api/documents/{id}/regenerate` (202) and `PUT /api/documents/{id}` to `backend/app/adapters/inbound/http/documents.py`
+- [x] T027 [US4] Implement `MarkDocumentsOutdated(project_id)` in `backend/app/application/use_cases/documents/mark_outdated.py`; spec 008 calls it after a replan is applied; regenerating or editing clears the flag
+- [ ] T028 [US4] Create `VersionHistory`, `RegenerateDialog` and `DocumentEditor`; show an "outdated" badge with a regenerate shortcut — handed off to spec 009 (frontend)
 
 **Checkpoint**: all user stories work independently
 
