@@ -13,7 +13,7 @@ import { Section } from '../components/Section'
 import { SectionNav, type NavSection } from '../components/SectionNav'
 
 function Page({ children }: { children: ReactNode }) {
-  return <main className="mx-auto grid max-w-2xl grid-cols-[minmax(0,1fr)] gap-8 px-4 py-6">{children}</main>
+  return <div className="mx-auto grid max-w-2xl grid-cols-[minmax(0,1fr)] gap-8 px-4 py-6">{children}</div>
 }
 
 /** A link that doesn't exist or isn't published (spec 017, US3 scenario 5). */
@@ -83,10 +83,7 @@ function PortalContent({ slug, portal }: { slug: string; portal: Portal }) {
       <Section id="preguntar" title="Pregúntale al proyecto" hint="Responde con los datos de esta página.">
         <CitizenChat slug={slug} />
       </Section>
-      <footer className="grid gap-3">
-        <HowToRead />
-        <p className="px-1 text-caption text-ink-muted">Datos reportados por el ejecutor y verificados por reglas automáticas. Ley 1712 de 2014.</p>
-      </footer>
+      <HowToRead />
     </Page>
   )
 }

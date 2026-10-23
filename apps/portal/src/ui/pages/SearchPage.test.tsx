@@ -1,14 +1,9 @@
 import type { PublicProjectCard } from '@agile/domain'
-import { QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
-import { createQueryClient } from '../../app/App'
-import { routes } from '../../app/routes'
-import { ApiError } from '../../application/errors'
-import { GatewayProvider } from '../../application/gateway'
 import type { PublicPortalGateway } from '../../application/ports'
+import { renderPortal } from '../../test/renderPortal'
 
 const card = (overrides: Partial<PublicProjectCard>): PublicProjectCard => ({
   slug: 'demo', name: 'Restauración de manglar en la Ciénaga Grande', description: 'Manglar.',
@@ -18,23 +13,13 @@ const card = (overrides: Partial<PublicProjectCard>): PublicProjectCard => ({
 })
 const CARDS = [card({}), card({ slug: 'via', name: 'Vía terciaria en Aracataca', light: 'red', open_alerts: 0 })]
 
-function renderHome(searchProjects: PublicPortalGateway['searchProjects'], path = '/') {
-  const router = createMemoryRouter(routes, { initialEntries: [path] })
-  const reject = () => Promise.reject(new ApiError(404, { code: 'project_not_found', detail: 'Not found.' }))
-  render(
-    <QueryClientProvider client={createQueryClient()}>
-      <GatewayProvider gateway={{ searchProjects, getPortal: reject, ask: reject }}>
-        <RouterProvider router={router} />
-      </GatewayProvider>
-    </QueryClientProvider>,
-  )
-  return router
-}
+const renderHome = (searchProjects: PublicPortalGateway['searchProjects'], path = '/') => renderPortal(path, { searchProjects })
 
 describe('SearchPage', () => {
   it('lists the published projects with their state, money and work', async () => {
     renderHome(() => Promise.resolve(CARDS))
     const link = await screen.findByRole('link', { name: /Restauración de manglar/ })
+    expect(screen.getByText(/2 proyectos publicados por \$ 360 millones en contratos, con 1 alerta en revisión/)).toBeVisible()
     expect(link).toHaveAttribute('href', '/p/demo')
     expect(link).toHaveTextContent('En amarillo')
     expect(link).toHaveTextContent('1 alerta en revisión')
@@ -63,5 +48,15 @@ describe('SearchPage', () => {
     expect(await screen.findByText('Ningún proyecto público coincide')).toBeVisible()
     await userEvent.click(screen.getByRole('button', { name: 'Ver todos los proyectos' }))
     expect(await screen.findByText('2 proyectos públicos')).toBeVisible()
+  })
+})
+
+describe('PortalLayout', () => {
+  it('navigates to how it works and sends the executing entity to the team app', async () => {
+    renderPortal('/')
+    const nav = screen.getAllByRole('navigation', { name: 'Principal' })[0]
+    expect(screen.getAllByRole('link', { name: 'Soy ejecutor' })[0]).toHaveAttribute('href', 'http://localhost:5173/login')
+    await userEvent.click(within(nav).getByRole('link', { name: 'Cómo funciona' }))
+    expect(await screen.findByRole('heading', { name: 'Cómo funciona', level: 1 })).toBeVisible()
   })
 })

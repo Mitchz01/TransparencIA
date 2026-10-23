@@ -406,6 +406,8 @@ Sync points:
 
 - [x] T028 [US8] Use case `search_public_projects` (reuses `GetPortal.for_public`) + `GET /api/public/projects` + test
 - [x] T029 [US8] Portal home `/`: search, light filter, result cards opening `/p/:slug`
+- [x] T030 [US8] Portal frame like the team app: top bar (brand, Proyectos, Cómo funciona, theme, "Soy ejecutor" to the
+  team app's sign in via `VITE_TEAM_APP_URL`), footer with the legal frame, and a `/como-funciona` page
 
 ## Phase 9: Polish & demo (~20 min)
 

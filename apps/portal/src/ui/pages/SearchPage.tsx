@@ -6,7 +6,6 @@ import { copShort, day, pct } from '@agile/ui/transparency'
 import { useDeferredValue } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useProjectSearch } from '../../application/useProjectSearch'
-import { HowToRead } from '../components/HowToRead'
 
 const LIGHTS: Record<Light, { word: string; hue: Hue; icon: typeof Tick02Icon }> = {
   red: { word: 'En rojo', hue: 'coral', icon: Alert02Icon },
@@ -23,8 +22,10 @@ export function SearchPage() {
 
   const update = (next: { q?: string; estado?: Light | null }) => {
     const merged = new URLSearchParams(params)
-    if (next.q !== undefined) (next.q ? merged.set('q', next.q) : merged.delete('q'))
-    if (next.estado !== undefined) (next.estado ? merged.set('estado', next.estado) : merged.delete('estado'))
+    if (next.q) merged.set('q', next.q)
+    else if (next.q !== undefined) merged.delete('q')
+    if (next.estado) merged.set('estado', next.estado)
+    else if (next.estado !== undefined) merged.delete('estado')
     setParams(merged, { replace: true })
   }
 
@@ -32,13 +33,13 @@ export function SearchPage() {
   const shown = light ? all.filter((card) => card.light === light) : all
 
   return (
-    <main className="mx-auto grid max-w-3xl grid-cols-[minmax(0,1fr)] gap-8 px-4 py-10 sm:py-16">
+    <div className="mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)] gap-8 px-4 py-8 md:px-8 md:py-14">
       <header className="grid gap-3">
-        <p className="text-label text-accent-ink">Portal de transparencia</p>
-        <h1 className="text-display">Sigue la plata de los proyectos públicos</h1>
+        <h1 className="max-w-2xl text-display">Sigue la plata de los proyectos públicos</h1>
         <p className="max-w-xl text-body text-ink-muted">
           Busca un proyecto y mira en qué se ha usado el dinero, cuánto trabajo se ha hecho y qué alertas tiene. Sin cuenta.
         </p>
+        {!query && all.length > 0 && <Totals cards={all} />}
       </header>
 
       <section aria-label="Buscar proyectos" className="grid gap-4">
@@ -75,11 +76,19 @@ export function SearchPage() {
         onRetry={() => void search.refetch()}
       />
 
-      <footer className="grid gap-3">
-        <HowToRead />
-        <p className="px-1 text-caption text-ink-muted">Datos reportados por cada ejecutor y verificados por reglas automáticas. Ley 1712 de 2014.</p>
-      </footer>
-    </main>
+    </div>
+  )
+}
+
+/** What's published, in one sentence: how many projects, how much money and how many open alerts. */
+function Totals({ cards }: { cards: PublicProjectCard[] }) {
+  const value = cards.reduce((sum, card) => sum + card.contract_value, 0)
+  const alerts = cards.reduce((sum, card) => sum + card.open_alerts, 0)
+  return (
+    <p className="text-label">
+      {cards.length === 1 ? '1 proyecto publicado' : `${cards.length} proyectos publicados`} por {copShort(value)} en contratos
+      {alerts > 0 ? `, con ${alerts === 1 ? '1 alerta' : `${alerts} alertas`} en revisión.` : '.'}
+    </p>
   )
 }
 
@@ -95,7 +104,7 @@ interface ResultsProps {
 function Results({ loading, failed, cards, filtered, onClear, onRetry }: ResultsProps) {
   if (loading) {
     return (
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <SkeletonCard lines={4} />
         <SkeletonCard lines={4} />
       </div>
@@ -122,7 +131,7 @@ function Results({ loading, failed, cards, filtered, onClear, onRetry }: Results
       <p className="px-1 text-caption text-ink-muted" aria-live="polite">
         {cards.length === 1 ? '1 proyecto público' : `${cards.length} proyectos públicos`}
       </p>
-      <ul className="grid gap-3 sm:grid-cols-2">
+      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((card) => (
           <li key={card.slug} className="grid">
             <ProjectCard card={card} />
