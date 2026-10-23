@@ -9,7 +9,7 @@
 ## Scope
 
 - **Includes**: the service (backend) to create, read and edit a project with its team, validate the data and leave the project ready for the agents to start (UC-03).
-- **Includes**: the screens to create, view and edit the project and its team. They're the first step of the demo (constitution, principle 1), and each owner builds their area end to end ([specs/README.md](../README.md)). The stories can also be tested directly against the service.
+- **Doesn't include**: the screens to create, view and edit the project and its team. This spec covers the service only and its stories are tested directly against it; who builds the screens is still to be decided in [specs/README.md](../README.md).
 - **Doesn't include**: generating the plan (spec 002), the request to start planning (spec 002) or replanning (spec 008). This spec leaves the project ready and reports when the team changes.
 
 ## User Scenarios & Testing *(mandatory)*
