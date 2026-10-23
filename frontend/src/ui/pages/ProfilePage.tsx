@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { safeNext } from '../../application/session'
 import { useSession } from '../../application/use-cases/useSession'
-import { ProfileForm } from '../components/account/ProfileForm'
+import type { Account } from '../../domain/account'
+import { ProfileCard } from '../components/account/ProfileCard'
+import { ProfileForm, type ProfilePreview } from '../components/account/ProfileForm'
 import { PROFILE_HINT } from '../components/account/profileLabels'
 import { AuthLayout } from '../components/auth/AuthLayout'
 import { Button, ButtonLink } from '../components/ds'
@@ -33,26 +36,39 @@ export function WelcomePage() {
   )
 }
 
-/** The same profile, later, from the account menu. Changes don't touch the projects you already joined, except the name. */
+/** The same profile, later, from the account menu: how the team sees you on the left, following
+ *  the form on the right as you type. Changes don't touch the projects you already joined, except the name and the photo. */
 export function ProfilePage() {
-  const navigate = useNavigate()
-  const { me, updateProfile } = useSession()
+  const { me } = useSession()
   if (!me) return null
+  return <ProfileEditor key={me.id} account={me} />
+}
+
+function ProfileEditor({ account }: { account: Account }) {
+  const navigate = useNavigate()
+  const { updateProfile } = useSession()
+  const [preview, setPreview] = useState<ProfilePreview>(account)
 
   return (
     <AppLayout topBar={<HomeTopBar />}>
-      <div className="mx-auto max-w-2xl">
-        <PageHeader title="Mi perfil" description="Lo que llevas a cada proyecto nuevo. En los proyectos donde ya estás, tu rol y tus horas los decide el líder." />
-        <ProfileForm
-          key={me.id}
-          account={me}
-          withName
-          submitLabel="Guardar cambios"
-          submitIcon={Tick02Icon}
-          onSubmit={updateProfile}
-          onDone={() => navigate('/')}
-          secondaryAction={<ButtonLink to="/" variant="quiet" size="lg">Cancelar</ButtonLink>}
-        />
+      <div className="mx-auto max-w-5xl">
+        <PageHeader title="Mi perfil" />
+        <div className="grid gap-3 pb-10 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] lg:items-start">
+          <div className="lg:sticky lg:top-6">
+            <ProfileCard profile={preview} email={account.email} />
+          </div>
+          <ProfileForm
+            account={account}
+            withName
+            layout="sections"
+            submitLabel="Guardar cambios"
+            submitIcon={Tick02Icon}
+            onSubmit={updateProfile}
+            onPreview={setPreview}
+            onDone={() => navigate('/')}
+            secondaryAction={<ButtonLink to="/" variant="quiet" size="lg">Cancelar</ButtonLink>}
+          />
+        </div>
       </div>
     </AppLayout>
   )

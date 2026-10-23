@@ -29,7 +29,7 @@ function MemberRow({ member, onSave }: { member: Member; onSave: NonNullable<Pro
   return (
     <li className="grid items-start gap-3 rounded-md bg-inset p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_auto]">
       <span className="flex min-w-0 items-center gap-3 sm:min-h-control-md">
-        <Avatar name={member.name} className="bg-surface" />
+        <Avatar name={member.name} src={member.avatar_url} className="bg-surface" />
         <span className="grid min-w-0">
           <span className="truncate text-label">{member.name}</span>
           <span className="text-caption text-ink-muted">{member.role}</span>
@@ -76,7 +76,7 @@ export function MemberGithubUsers({ members, onSave }: Props) {
           ) : (
             <li key={m.id} className="flex items-center justify-between gap-3 rounded-md bg-inset p-4">
               <span className="flex min-w-0 items-center gap-3">
-                <Avatar name={m.name} className="bg-surface" />
+                <Avatar name={m.name} src={m.avatar_url} className="bg-surface" />
                 <span className="grid min-w-0">
                   <span className="truncate text-label">{m.name}</span>
                   <span className="text-caption text-ink-muted">{m.role}</span>

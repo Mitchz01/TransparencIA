@@ -23,21 +23,22 @@ export interface FakeAccount extends Account {
   password: string // in memory only, like everything in the fake backend
 }
 
+// The demo people's photos are Pexels portraits in public/avatars/ (free to use, no attribution required).
 export const demoAccounts: FakeAccount[] = [
   {
     id: 1, email: 'ana@team.dev', name: 'Ana Gómez', role: 'Backend', seniority: 'senior', hours_per_week: 30,
-    skills: ['python', 'fastapi'], github_username: null, created_at: '2026-10-01T10:00:00Z', password: DEMO_PASSWORD,
+    skills: ['python', 'fastapi'], github_username: null, avatar_url: '/avatars/ana-gomez.jpg', created_at: '2026-10-01T10:00:00Z', password: DEMO_PASSWORD,
   },
   {
     id: 2, email: 'leo@team.dev', name: 'Leo Ruiz', role: 'Frontend', seniority: 'mid', hours_per_week: 20,
-    skills: ['react'], github_username: null, created_at: '2026-10-02T10:00:00Z', password: DEMO_PASSWORD,
+    skills: ['react'], github_username: null, avatar_url: '/avatars/leo-ruiz.jpg', created_at: '2026-10-02T10:00:00Z', password: DEMO_PASSWORD,
   },
 ]
 
 const [ana, leo] = demoAccounts
 const fromAccount = (id: number, account: FakeAccount, permission: Member['permission']): Member => ({
   id, name: account.name, role: account.role ?? '', seniority: account.seniority, hours_per_week: account.hours_per_week,
-  skills: [...account.skills], account_id: account.id, permission,
+  skills: [...account.skills], avatar_url: account.avatar_url, account_id: account.id, permission,
 })
 /** People who never signed up (the demo board's team): members without an account. */
 const guest = (member: Omit<Member, 'account_id' | 'permission'>): Member => ({ ...member, account_id: null, permission: 'member' })
@@ -83,9 +84,9 @@ const boardCreated = '2026-10-09T09:30:00Z'
 
 /** Who the board's tasks were planned for; Ana and Leo joined the project too. */
 const boardTeam: Member[] = [
-  guest({ id: 21, name: 'Marta Díaz', role: 'Backend', seniority: 'senior', hours_per_week: 30, skills: ['python', 'payments'] }),
-  guest({ id: 22, name: 'Pablo Ortiz', role: 'Frontend', seniority: 'mid', hours_per_week: 30, skills: ['react', 'css'] }),
-  guest({ id: 23, name: 'Sara Vidal', role: 'Frontend', seniority: 'junior', hours_per_week: 20, skills: ['react'] }),
+  guest({ id: 21, name: 'Marta Díaz', role: 'Backend', seniority: 'senior', hours_per_week: 30, skills: ['python', 'payments'], avatar_url: '/avatars/marta-diaz.jpg' }),
+  guest({ id: 22, name: 'Pablo Ortiz', role: 'Frontend', seniority: 'mid', hours_per_week: 30, skills: ['react', 'css'], avatar_url: '/avatars/pablo-ortiz.jpg' }),
+  guest({ id: 23, name: 'Sara Vidal', role: 'Frontend', seniority: 'junior', hours_per_week: 20, skills: ['react'], avatar_url: '/avatars/sara-vidal.jpg' }),
 ]
 
 export const demoBoardProject: Project = {

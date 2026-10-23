@@ -130,3 +130,33 @@ def test_a_new_name_renames_me_in_every_project_but_nothing_else_changes():
     assert [(m.name, m.role) for m in uow.projects.get(p2.id).members] == [("Ana López 2", "QA"), ("Ana López", "PM")]
     assert [(e.type, e.project_id) for e in bus.events] == [("team_changed", p1.id), ("team_changed", p2.id)]
     assert bus.events[0].changed[0].fields == ["name"]
+
+
+def test_a_new_photo_follows_me_into_my_projects_without_a_team_change():
+    uow = InMemoryUnitOfWork()
+    account = _sign_up(uow).account
+    project = uow.projects.add(
+        Project(name="P1", description="d", members=[Member(name="Ana Gómez", role="Backend", account_id=account.id), Member(name="Leo", role="QA")])
+    )
+    uow.commit()
+    bus = RecordingEventBus()
+
+    updated = _profile(uow, account, bus, avatar_url=" /avatars/ana-gomez.jpg ")
+
+    assert updated.avatar_url == "/avatars/ana-gomez.jpg"
+    assert [m.avatar_url for m in uow.projects.get(project.id).members] == ["/avatars/ana-gomez.jpg", None]
+    assert bus.events == []
+
+    both = _profile(uow, updated, bus, avatar_url=None, name="Ana López")
+    assert [(m.name, m.avatar_url) for m in uow.projects.get(project.id).members] == [("Ana López", None), ("Leo", None)]
+    assert both.avatar_url is None
+    assert [e.changed[0].fields for e in bus.events] == [["name"]]
+
+
+@pytest.mark.parametrize("url", ["http://x.dev/a.jpg", "//evil.dev/a.jpg", "javascript:alert(1)", "https://x.dev/" + "a" * 500])
+def test_a_photo_must_be_an_https_link_or_a_local_path(url):
+    uow = InMemoryUnitOfWork()
+    account = _sign_up(uow).account
+    with pytest.raises(ValidationFailed) as error:
+        _profile(uow, account, avatar_url=url)
+    assert [e.field for e in error.value.errors] == ["avatar_url"]

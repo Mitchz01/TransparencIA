@@ -159,6 +159,7 @@ export interface Member {
   github_username?: string | null // new, spec 007 (not returned until 007 lands)
   account_id: number | null // spec 015: the account this member is (null only for pre-015 data)
   permission: Permission // spec 015
+  avatar_url?: string | null // spec 015 (FR-005 amended): the account's photo, kept in sync with the profile
 }
 
 export interface Project {
@@ -196,6 +197,7 @@ export interface Account {
   hours_per_week: number
   skills: string[]
   github_username: string | null
+  avatar_url: string | null // photo; null = initials. No upload yet: only the demo accounts have one
   created_at: string
 }
 
@@ -503,8 +505,8 @@ Validation (`422`, `errors[].field` → message). Mirror these rules in the form
 | `updateProfile(body)` | `PATCH /api/me` | `ProfileUpdate` | `200` `Account` | `422 validation_failed` |
 
 ```ts
-// Partial; null clears role and github_username. A new name renames you in every project.
-export type ProfileUpdate = Partial<Pick<Account, 'name' | 'role' | 'seniority' | 'hours_per_week' | 'skills' | 'github_username'>>
+// Partial; null clears role, github_username and avatar_url. A new name renames you in every project; a new photo changes it there too.
+export type ProfileUpdate = Partial<Pick<Account, 'name' | 'role' | 'seniority' | 'hours_per_week' | 'skills' | 'github_username' | 'avatar_url'>>
 ```
 
 | Field | Rule |
@@ -516,6 +518,7 @@ export type ProfileUpdate = Partial<Pick<Account, 'name' | 'role' | 'seniority' 
 | `hours_per_week` | Integer 1–60 |
 | `skills[j]` | Max 40 chars, duplicates dropped |
 | `github_username` | GitHub's rule (letters, digits, single hyphens, max 39); a leading `@` is dropped |
+| `avatar_url` | Optional; an `https://` URL or a path starting with `/`, max 500 |
 
 ### TeamGateway (spec 015)
 

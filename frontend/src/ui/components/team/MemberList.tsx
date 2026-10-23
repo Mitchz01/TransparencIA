@@ -65,7 +65,7 @@ export function MemberList({ project, me, manage, onLeft }: MemberListProps) {
           return (
             <li key={member.id} className="grid gap-3 rounded-md bg-inset p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
               <div className="flex min-w-0 items-start gap-3">
-                <Avatar name={member.name} className="mt-0.5 bg-surface" />
+                <Avatar name={member.name} src={member.avatar_url} className="mt-0.5 bg-surface" />
                 <div className="grid min-w-0 gap-1.5">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-label">{member.name}</span>

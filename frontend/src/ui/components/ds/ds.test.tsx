@@ -1,6 +1,7 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
+import { Avatar } from './Avatar'
 import { Button } from './Button'
 import { TextField } from './Field'
 import { IconButton } from './IconButton'
@@ -67,5 +68,23 @@ describe('Segmented', () => {
     off.focus()
     await userEvent.keyboard('{ArrowRight}')
     expect(onChange).toHaveBeenCalledWith('on')
+  })
+})
+
+describe('Avatar', () => {
+  it('shows the photo, and the initials when there is none or it fails to load', () => {
+    const { container, rerender } = render(<Avatar name="Ana Gómez" src="/avatars/ana-gomez.jpg" />)
+    const photo = container.querySelector('img')!
+    expect(photo).toHaveAttribute('src', '/avatars/ana-gomez.jpg')
+    expect(photo).toHaveAttribute('alt', '')
+
+    fireEvent.error(photo)
+    expect(container.querySelector('img')).toBeNull()
+    expect(container).toHaveTextContent('AG')
+
+    rerender(<Avatar name="Ana Gómez" src="/avatars/ana-2.jpg" />)
+    expect(container.querySelector('img')).toHaveAttribute('src', '/avatars/ana-2.jpg')
+    rerender(<Avatar name="Leo Ruiz" src={null} />)
+    expect(container).toHaveTextContent('LR')
   })
 })

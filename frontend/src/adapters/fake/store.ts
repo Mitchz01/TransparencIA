@@ -158,9 +158,26 @@ export class FakeStore {
       this.events = s.events
       this.nextId = s.nextId
       this.nextSeq = s.nextSeq
+      this.backfillPhotos()
       return true
     } catch {
       return false
+    }
+  }
+
+  /** A demo saved before the profile photos: the demo people get theirs. A photo that was set
+   *  or cleared (null) since is kept; only a missing one is filled. */
+  private backfillPhotos(): void {
+    const byEmail = new Map(demoAccounts.map((a) => [a.email, a.avatar_url]))
+    const guests = new Map(demoBoardProject.members.filter((m) => m.account_id === null).map((m) => [m.name, m.avatar_url]))
+    for (const account of this.accounts.values()) {
+      if (account.avatar_url === undefined) account.avatar_url = byEmail.get(account.email) ?? null
+    }
+    for (const project of this.projects.values()) {
+      for (const member of project.members) {
+        if (member.avatar_url !== undefined) continue
+        member.avatar_url = member.account_id !== null ? this.accounts.get(member.account_id)?.avatar_url : guests.get(member.name)
+      }
     }
   }
 

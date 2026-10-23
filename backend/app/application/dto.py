@@ -409,7 +409,7 @@ class SignedIn(BaseModel):
 
 
 class ProfileUpdate(BaseModel):
-    """Partial: missing fields are left as they are; null clears `role` and `github_username`."""
+    """Partial: missing fields are left as they are; null clears `role`, `github_username` and `avatar_url`."""
 
     name: str | None = None
     role: str | None = None
@@ -417,6 +417,7 @@ class ProfileUpdate(BaseModel):
     hours_per_week: int | None = None
     skills: list[str] | None = None
     github_username: str | None = None
+    avatar_url: str | None = None
 
 
 class MemberUpdate(BaseModel):

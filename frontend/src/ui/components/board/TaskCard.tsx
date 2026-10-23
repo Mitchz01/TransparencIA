@@ -52,7 +52,7 @@ export function TaskCard({ task, assignee, overlay = false, onOpen }: TaskCardPr
         </div>
         {assignee ? (
           <span className="ml-auto inline-flex" title={assignee.name}>
-            <Avatar name={assignee.name} className="bg-card-inset!" />
+            <Avatar name={assignee.name} src={assignee.avatar_url} className="bg-card-inset!" />
             <span className="sr-only">{assignee.name}</span>
           </span>
         ) : task.missing_role ? (

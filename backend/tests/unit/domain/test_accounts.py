@@ -68,7 +68,7 @@ def test_unique_name_adds_a_number():
 
 
 def test_member_from_profile_copies_the_profile():
-    account = Account(id=7, email="a@b.co", name="Ana", seniority="senior", hours_per_week=30, skills=["SQL"], github_username="ana")
+    account = Account(id=7, email="a@b.co", name="Ana", seniority="senior", hours_per_week=30, skills=["SQL"], github_username="ana", avatar_url="/avatars/ana.jpg")
     member = member_from_profile(account, "Backend", "member", ["Ana"])
     assert member.model_dump(exclude={"id"}) == {
         "name": "Ana 2",
@@ -79,6 +79,7 @@ def test_member_from_profile_copies_the_profile():
         "github_username": "ana",
         "account_id": 7,
         "permission": "member",
+        "avatar_url": "/avatars/ana.jpg",
     }
 
 

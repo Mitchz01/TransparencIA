@@ -105,12 +105,12 @@ Every endpoint under `/api` answers `401 not_authenticated` without a valid sess
 {
   "id": 1, "email": "ana@team.dev", "name": "Ana Gómez",
   "role": "Backend", "seniority": "senior", "hours_per_week": 30,
-  "skills": ["Python"], "github_username": null,
+  "skills": ["Python"], "github_username": null, "avatar_url": "/avatars/ana-gomez.jpg",
   "created_at": "2026-10-23T14:05:00Z"
 }
 ```
 
-**Member** (inside `Project.members`): spec 001's fields plus `"account_id": 1` and `"permission": "leader"`.
+**Member** (inside `Project.members`): spec 001's fields plus `"account_id": 1`, `"permission": "leader"` and `"avatar_url"` (the account's photo, or `null`).
 
 **ProjectSummary**: spec 001's fields plus `"permission": "leader" | "member"` (the caller's).
 
@@ -137,16 +137,16 @@ Every endpoint under `/api` answers `401 not_authenticated` without a valid sess
 
 ### `GET /api/me` / `PATCH /api/me` — my account and profile (US1, US2)
 
-`PATCH` body (partial; `null` clears `role` and `github_username`):
+`PATCH` body (partial; `null` clears `role`, `github_username` and `avatar_url`):
 
 ```json
-{ "name": "Ana Gómez", "role": "Backend", "seniority": "senior", "hours_per_week": 30, "skills": ["Python"], "github_username": "ana-g" }
+{ "name": "Ana Gómez", "role": "Backend", "seniority": "senior", "hours_per_week": 30, "skills": ["Python"], "github_username": "ana-g", "avatar_url": "/avatars/ana-gomez.jpg" }
 ```
 
 | Status | When | Body |
 |---|---|---|
-| `200` | Saved. A new name renames the member in each of the account's projects (`team_changed` per project) | `Account` |
-| `422` | Empty body; spec 001's member limits; bad GitHub username | `validation_failed` |
+| `200` | Saved. A new name renames the member in each of the account's projects (`team_changed` per project); a new `avatar_url` is copied to those members without an event | `Account` |
+| `422` | Empty body; spec 001's member limits; bad GitHub username; `avatar_url` not an `https://` URL or a path starting with `/`, or > 500 | `validation_failed` |
 
 ### `POST /api/projects` — create (changes spec 001, US3)
 
@@ -274,6 +274,17 @@ Follow [frontend-prompt.md](frontend-prompt.md); it has the detail for each task
 - [x] T032 Account menu (profile, sign out) in the top bar
 - [x] T033 Tests (Vitest + Testing Library on the fake gateways), `npm run lint`, `npm run typecheck`, `npm test`
 - [x] T034 `python -m app.seed` (`backend/app/seed.py`): the demo accounts Ana (leader) and Leo (member), password `agile-demo`, and a project they share, created through the API so every rule applies; idempotent
+
+## Phase 11: Profile photo (FR-005, amended)
+
+No upload: the app shows a photo when the profile has a link to one. The demo accounts use Pexels portraits saved in `frontend/public/avatars/` (free to use, no attribution required).
+
+- [x] T035 `avatar_url` on `Account` and `Member` (domain, tables, mappers); `create_db` adds the column to an existing database; validation; copied when creating or joining a project; `UpdateProfile` copies a new photo to the account's members without `team_changed`
+- [x] T036 Tests: validation, propagation without event, `PATCH /api/me`
+- [x] T037 Seed: Ana and Leo get their photo, also when the accounts already exist
+- [x] T038 Frontend: `avatar_url` in the domain types and fakes (demo accounts and guests with photo); `Avatar` shows the photo and falls back to initials; every avatar passes it
+- [x] T039 Profile page: an identity card (photo in the notch, name, role, seniority, hours, skills, as the team sees you) next to the form: one card for my information, GitHub apart (later it becomes connecting the account). `NotchedPanel` clips its shape instead of painting the cut, so the dark glow shows through
+- [x] T040 `frontend/docs/api-contract.md`; lint, typecheck and tests
 
 ## Dependencies & Execution Order
 

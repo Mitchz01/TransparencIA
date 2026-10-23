@@ -13,7 +13,8 @@ export function AccountMenu() {
       label={`Cuenta: ${me.name}`}
       align="end"
       chevron={false}
-      buttonClassName="size-control-md px-0"
+      // `!`: the button's own size class sets px-5, which would leave the avatar no room.
+      buttonClassName="size-control-md px-0! overflow-hidden"
       header={
         <>
           <span className="truncate text-label">{me.name}</span>
@@ -30,7 +31,7 @@ export function AccountMenu() {
         },
       ]}
     >
-      <Avatar name={me.name} className="bg-transparent" />
+      <Avatar name={me.name} src={me.avatar_url} size="md" className="bg-transparent" />
     </Menu>
   )
 }

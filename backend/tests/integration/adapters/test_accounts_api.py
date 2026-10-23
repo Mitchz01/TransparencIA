@@ -18,7 +18,7 @@ def test_sign_up_sets_an_http_only_cookie_and_never_returns_the_hash(anonymous):
     cookie = response.headers["set-cookie"]
     assert cookie.startswith(f"{SESSION_COOKIE}=") and "HttpOnly" in cookie and "samesite=lax" in cookie.lower()
     account = response.json()
-    assert set(account) == {"id", "email", "name", "role", "seniority", "hours_per_week", "skills", "github_username", "created_at"}
+    assert set(account) == {"id", "email", "name", "role", "seniority", "hours_per_week", "skills", "github_username", "avatar_url", "created_at"}
     assert (account["email"], account["name"], account["role"]) == ("leo@team.dev", "Leo Ruiz", None)
     assert PASSWORD not in response.text and "scrypt" not in response.text
     assert anonymous.get("/api/me").json() == account
@@ -65,6 +65,8 @@ def test_patch_me(client):
     me = response.json()
     assert (me["role"], me["seniority"], me["hours_per_week"], me["skills"], me["github_username"]) == ("Backend", "senior", 30, ["Python"], "ana")
     assert client.patch("/api/me", json={"role": None}).json()["role"] is None
+    assert client.patch("/api/me", json={"avatar_url": "/avatars/ana-gomez.jpg"}).json()["avatar_url"] == "/avatars/ana-gomez.jpg"
+    assert client.get("/api/me").json()["avatar_url"] == "/avatars/ana-gomez.jpg"
 
     _error(client.patch("/api/me", json={}), 422, "validation_failed")
     body = _error(client.patch("/api/me", json={"name": None, "hours_per_week": 70}), 422, "validation_failed")

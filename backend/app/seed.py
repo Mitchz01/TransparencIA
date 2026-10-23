@@ -14,16 +14,29 @@ from app.main import app
 PASSWORD = "agile-demo"
 
 # Ana leads the demo project; Leo joins it with the link, so he sees the member view.
+# Their photos are Pexels portraits that the frontend serves (frontend/public/avatars/).
 ACCOUNTS = [
     {
         "name": "Ana Gómez",
         "email": "ana@team.dev",
-        "profile": {"role": "Backend", "seniority": "senior", "hours_per_week": 30, "skills": ["Python", "FastAPI"]},
+        "profile": {
+            "role": "Backend",
+            "seniority": "senior",
+            "hours_per_week": 30,
+            "skills": ["Python", "FastAPI"],
+            "avatar_url": "/avatars/ana-gomez.jpg",
+        },
     },
     {
         "name": "Leo Ruiz",
         "email": "leo@team.dev",
-        "profile": {"role": "Frontend", "seniority": "mid", "hours_per_week": 20, "skills": ["React", "CSS"]},
+        "profile": {
+            "role": "Frontend",
+            "seniority": "mid",
+            "hours_per_week": 20,
+            "skills": ["React", "CSS"],
+            "avatar_url": "/avatars/leo-ruiz.jpg",
+        },
     },
 ]
 
@@ -45,6 +58,11 @@ def sign_in_or_up(client: TestClient, account: dict) -> str:
     client.cookies.clear()
     response = client.post("/api/auth/signin", json={"email": account["email"], "password": PASSWORD})
     if response.status_code == 200:
+        # Accounts seeded before the photos existed get theirs; a photo already set is kept.
+        if response.json().get("avatar_url") is None:
+            photo = {"avatar_url": account["profile"]["avatar_url"]}
+            _check(client.patch("/api/me", json=photo), f"Saving {account['email']}'s photo")
+            return "existing, photo added"
         return "existing"
     if response.json().get("code") != "invalid_credentials":
         _check(response, f"Signing in as {account['email']}")

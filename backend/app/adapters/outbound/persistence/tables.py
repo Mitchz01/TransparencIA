@@ -46,6 +46,7 @@ class MemberTable(SQLModel, table=True):
     github_username: str | None = None  # spec 007
     account_id: int | None = Field(default=None, foreign_key="account.id", index=True)  # spec 015
     permission: str = "member"  # spec 015
+    avatar_url: str | None = None  # spec 015, FR-005 amended
 
 
 class SprintTable(SQLModel, table=True):
@@ -210,6 +211,7 @@ class AccountTable(SQLModel, table=True):
     hours_per_week: int = 20
     skills: list[str] = Field(default_factory=list, sa_column=Column(JSON))
     github_username: str | None = None
+    avatar_url: str | None = None  # FR-005 amended
     created_at: datetime = Field(default_factory=_now)
 
 
