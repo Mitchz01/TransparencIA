@@ -177,7 +177,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Agile Planner", lifespan=lifespan)
+app = FastAPI(title="TransparencIA", lifespan=lifespan)
 # Credentials: the session cookie (spec 015) when the frontend is served from another origin.
 app.add_middleware(
     CORSMiddleware, allow_origins=CORS_ORIGINS, allow_credentials=True, allow_methods=["*"], allow_headers=["*"]

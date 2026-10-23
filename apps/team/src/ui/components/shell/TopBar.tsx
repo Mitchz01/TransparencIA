@@ -9,11 +9,11 @@ import { SectionMenu } from './SectionNav'
 
 export function Brand({ withName = false, className }: { withName?: boolean; className?: string }) {
   return (
-    <Link to="/" className={`inline-flex shrink-0 items-center gap-2.5 rounded-pill ${className ?? ''}`} aria-label="Agile Planner, todos los proyectos">
+    <Link to="/" className={`inline-flex shrink-0 items-center gap-2.5 rounded-pill ${className ?? ''}`} aria-label="TransparencIA, todos los proyectos">
       <span className="inline-flex size-9 items-center justify-center rounded-sm bg-primary text-on-primary">
         <Icon icon={Tick02Icon} />
       </span>
-      {withName && <span className="text-label font-semibold">Agile Planner</span>}
+      {withName && <span className="text-label font-semibold">TransparencIA</span>}
     </Link>
   )
 }

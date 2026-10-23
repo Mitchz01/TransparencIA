@@ -25,7 +25,7 @@ export function ProjectRail({ projectId, canManage }: { projectId: number; canMa
   const themeLabel = theme === 'dark' ? 'Usar tema claro' : 'Usar tema oscuro'
   return (
     <aside className="fixed top-3 bottom-3 left-3 z-40 hidden w-[72px] flex-col items-center rounded-lg bg-surface py-3 md:flex">
-      <Link to="/" aria-label="Agile Planner, todos los proyectos" className="mb-6 inline-flex size-10 items-center justify-center rounded-sm bg-primary text-on-primary">
+      <Link to="/" aria-label="TransparencIA, todos los proyectos" className="mb-6 inline-flex size-10 items-center justify-center rounded-sm bg-primary text-on-primary">
         <Icon icon={Tick02Icon} />
       </Link>
       <nav aria-label="Secciones" className="flex flex-col gap-2">

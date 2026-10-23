@@ -1,4 +1,4 @@
-// The portal's frame, the public side of Agile Planner: the same brand, theme toggle and look as the team app.
+// The portal's frame, the public side of TransparencIA: the same brand, theme toggle and look as the team app.
 import { buttonClasses, cn, Drawer, Icon, IconButton } from '@agile/ui'
 import { Login01Icon, Menu01Icon, Moon02Icon, Sun03Icon, Tick02Icon } from '@agile/ui/icons'
 import { useEffect, useState } from 'react'
@@ -13,13 +13,13 @@ const LINKS = [
 
 function Brand() {
   return (
-    <Link to="/" className="inline-flex shrink-0 items-center gap-2.5 rounded-pill" aria-label="Agile Planner Transparencia, inicio">
+    <Link to="/" className="inline-flex shrink-0 items-center gap-2.5 rounded-pill" aria-label="TransparencIA, inicio">
       <span className="inline-flex size-9 items-center justify-center rounded-sm bg-primary text-on-primary">
         <Icon icon={Tick02Icon} />
       </span>
       <span className="grid leading-tight">
-        <span className="text-label font-semibold">Agile Planner</span>
-        <span className="text-caption text-ink-muted">Transparencia</span>
+        <span className="text-label font-semibold">TransparencIA</span>
+        <span className="text-caption text-ink-muted">Portal ciudadano</span>
       </span>
     </Link>
   )
