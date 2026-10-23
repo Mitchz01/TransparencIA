@@ -89,6 +89,7 @@ Domain errors live in `backend/app/domain/errors.py`; `adapters/inbound/http/err
 | `PlanningNotStartable` | 409 | `planning_not_startable` | 002 |
 | `StageNotRetryable` | 409 | `stage_not_retryable` | 002 |
 | `ProposalAlreadyResolved` | 409 | `proposal_already_resolved` | 005 |
+| `ProposalNotRetryable` | 409 | `proposal_not_retryable` | 005 |
 | `SprintClosed` | 409 | `sprint_closed` | 003 |
 | `CapacityNotApplicable` | 409 | `capacity_not_applicable` | 003 |
 | `RegenerationInProgress` | 409 | `regeneration_in_progress` | 006 |
@@ -112,13 +113,13 @@ Domain errors live in `backend/app/domain/errors.py`; `adapters/inbound/http/err
 
 ## Server-Sent Events
 
-`GET /api/projects/{id}/events` (spec 002) is the only streaming endpoint:
+`GET /api/projects/{id}/events` (spec 005) is the only streaming endpoint:
 
-- Request: `Accept: text/event-stream`.
+- Request: `Accept: text/event-stream`; `Last-Event-ID: <seq>` on reconnect (the browser's `EventSource` sends it), or `?after=<seq>` on the first connection.
 - Response headers: `Content-Type: text/event-stream`, `Cache-Control: no-cache`, `X-Accel-Buffering: no`.
-- One SSE event per domain event: `event:` is the event `type`, `data:` is the event as JSON.
+- One SSE message per domain event: `id:` is the event's `seq`, `event:` its `type`, `data:` the event as JSON.
+- Replay: events after the given `seq` are sent first. If there are more than 200, a single `resync` event is sent instead and the client refetches its state with the regular `GET` endpoints.
 - A comment line (`: ping`) every 15 s keeps proxies from closing the connection.
-- There is no replay: after a reconnect the client refetches the state with the regular `GET` endpoints.
 
 ## Implementation checklist
 

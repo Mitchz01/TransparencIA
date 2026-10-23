@@ -133,16 +133,9 @@ No body. `key` is a stage key (`analysis`, `methodology`, `architecture`, `roadm
 | `404` | Unknown stage key | Error `stage_not_found` |
 | `409` | The stage isn't waiting for the leader (it's running, pending approval or already approved) | Error `stage_not_retryable` |
 
-### `GET /api/projects/{id}/events` — live events (SSE, UC-14)
+### Events on `GET /api/projects/{id}/events` (SSE, UC-14)
 
-Request headers: `Accept: text/event-stream`. Response headers and keep-alive as in the conventions.
-
-| Status | When | Body |
-|---|---|---|
-| `200` | Stream opened | `text/event-stream` |
-| `404` | Unknown project (checked before the stream starts) | Error `project_not_found` (JSON) |
-
-Each event is `event: <type>` + `data: <json>`. Events this spec publishes:
+The endpoint (headers, status codes, replay with `Last-Event-ID`) is spec 005's contract. If this plan lands first, T009 creates it with the same contract. Each message is `id: <seq>` + `event: <type>` + `data: <json>`; spec 005 adds the common fields (`seq`, `occurred_at`, `actor`, `summary`, `ref`). Events this spec publishes:
 
 | `event` | `data` |
 |---|---|
@@ -157,8 +150,9 @@ Each event is `event: <type>` + `data: <json>`. Events this spec publishes:
 Other specs add their own types (`plan_applied`, `task_status_changed`, `team_changed`…) on the same stream; the client ignores types it doesn't know.
 
 ```text
+id: 1520
 event: agent_started
-data: {"type":"agent_started","project_id":12,"agent":"analysis","title":"Product analyst"}
+data: {"seq":1520,"type":"agent_started","project_id":12,"agent":"analysis","title":"Product analyst"}
 
 : ping
 ```

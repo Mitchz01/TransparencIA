@@ -209,6 +209,185 @@ Errors: `ProposalAlreadyResolved` → `409` (already mapped), `ValidationFailed`
 
 ---
 
+## API Contract
+
+Follows [plan/api-conventions.md](../../plan/api-conventions.md) (headers, error body, status codes) and details the [API](#api) table above. The API tests assert every status row below.
+
+New domain errors: `ProposalNotRetryable` (409 `proposal_not_retryable`); `ProposalAlreadyResolved` (409 `proposal_already_resolved`) already exists; `ProposalNotFound` (404 `proposal_not_found`).
+
+### Shared shapes
+
+**Proposal** (spec 002's shape plus what this spec and 008 add)
+
+```json
+{
+  "id": 41,
+  "project_id": 12,
+  "kind": "plan_stage",
+  "key": "methodology",
+  "agent": "Agile coach",
+  "content": { /* schema of the subject */ },
+  "rationale": "…",
+  "status": "pending",
+  "adjusted_content": null,
+  "rejection_reason": null,
+  "auto_approved": false,
+  "origin": "leader",
+  "apply_failed": false,
+  "apply_error": null,
+  "created_at": "2026-10-23T14:06:10Z",
+  "resolved_at": null
+}
+```
+
+`status`: `pending` | `approved` | `adjusted` | `rejected` | `discarded`. `origin`: `leader` | `automatic`. `apply_failed` + `apply_error` describe a failed application of an approved/adjusted proposal (it can be retried).
+
+**ActivityEvent**: any domain event with the common fields this spec adds.
+
+```json
+{
+  "seq": 1532,
+  "type": "proposal_resolved",
+  "project_id": 12,
+  "occurred_at": "2026-10-23T14:07:00Z",
+  "actor": "person",
+  "summary": "Ana approved the methodology",
+  "ref": { "kind": "proposal", "id": 41 },
+  "proposal_id": 41, "kind": "plan_stage", "key": "methodology", "status": "approved", "auto": false, "reason": null
+}
+```
+
+`actor`: `agent` | `person` | `github` | `system`. Fields after `ref` depend on `type`.
+
+### `GET /api/projects/{id}/proposals` — list proposals (US1)
+
+Query: `status` (optional, one value; `pending` to show the inbox). Newest first.
+
+| Status | When | Body |
+|---|---|---|
+| `200` | Always (empty list if none) | `Proposal[]` |
+| `404` | Unknown project | Error `project_not_found` |
+| `422` | `status` isn't a valid status | Error `validation_failed` with `errors` (`field: "status"`) |
+
+### `GET /api/proposals/{id}` — read a proposal (US1)
+
+| Status | When | Body |
+|---|---|---|
+| `200` | Exists | `Proposal` |
+| `404` | Unknown proposal | Error `proposal_not_found` |
+
+### `POST /api/proposals/{id}/approve` — approve (US2)
+
+No body. The decision is saved in the request; applying it (next stage, board, issues…) runs in the background and reports through events.
+
+| Status | When | Body |
+|---|---|---|
+| `200` | Approved | `Proposal` (`status: "approved"`) |
+| `404` | Unknown proposal | Error `proposal_not_found` |
+| `409` | Not `pending` (already decided, by someone else or by auto-approve) | Error `proposal_already_resolved`, plus `"status": "approved"` |
+
+### `POST /api/proposals/{id}/adjust` — approve with changes (US2, US4)
+
+Request headers: `Content-Type: application/json`
+
+```json
+{ "content": { /* the whole edited content, same schema as the proposal's content */ } }
+```
+
+Also allowed on the newest **rejected** proposal of a subject after 3 consecutive rejections (US4).
+
+| Status | When | Body |
+|---|---|---|
+| `200` | Saved as `adjusted` | `Proposal` |
+| `400` | Body isn't JSON | Error `malformed_request` |
+| `404` | Unknown proposal | Error `proposal_not_found` |
+| `409` | Not `pending`, and not the capped rejected case | Error `proposal_already_resolved` |
+| `422` | `content` missing or doesn't match the subject's schema; nothing is saved | Error `validation_failed`, `errors[].field` prefixed with `content.` (e.g. `content.sprint_length_weeks`) |
+
+### `POST /api/proposals/{id}/reject` — reject with a reason (US4)
+
+Request headers: `Content-Type: application/json`
+
+```json
+{ "reason": "Two-week sprints are too long for this team." }
+```
+
+| Status | When | Body |
+|---|---|---|
+| `200` | Rejected; the owner spec decides what happens next (e.g. 002 redoes the stage) | `Proposal` (`status: "rejected"`) |
+| `400` | Body isn't JSON | Error `malformed_request` |
+| `404` | Unknown proposal | Error `proposal_not_found` |
+| `409` | Not `pending` | Error `proposal_already_resolved` |
+| `422` | `reason` missing, empty after trimming or > 1000 chars (FR-007) | Error `validation_failed` with `errors` |
+
+### `POST /api/proposals/{id}/apply` — retry a failed application (US2)
+
+No body.
+
+| Status | When | Body |
+|---|---|---|
+| `202` | Applying again in the background | `{"proposal_id": 41, "status": "applying"}` |
+| `404` | Unknown proposal | Error `proposal_not_found` |
+| `409` | Not `approved`/`adjusted`, or `apply_failed` is `false` | Error `proposal_not_retryable` |
+
+### `POST /api/projects/{id}/proposals/approve` — approve several (US7)
+
+Request headers: `Content-Type: application/json`
+
+```json
+{ "ids": [52, 53, 54] }
+```
+
+Each id is decided on its own; one failing doesn't stop the others.
+
+| Status | When | Body |
+|---|---|---|
+| `200` | Processed (even if some failed) | `[{"id": 52, "ok": true, "error": null}, {"id": 53, "ok": false, "error": {"code": "proposal_already_resolved", "detail": "…"}}]` |
+| `400` | Body isn't JSON | Error `malformed_request` |
+| `404` | Unknown project | Error `project_not_found` |
+| `422` | `ids` missing, empty, more than 100, or not integers | Error `validation_failed` with `errors` |
+
+An id from another project comes back as `{"ok": false, "error": {"code": "proposal_not_found"}}`.
+
+### `GET /api/projects/{id}/activity` — activity history (US6)
+
+Query: `before` (optional `seq`, exclusive), `limit` (1–200, default 50). Newest first; to load older items, pass the last item's `seq` as `before`.
+
+| Status | When | Body |
+|---|---|---|
+| `200` | Always (empty list at the end) | `ActivityEvent[]` |
+| `404` | Unknown project | Error `project_not_found` |
+| `422` | `before` or `limit` invalid | Error `validation_failed` with `errors` |
+
+### `GET /api/projects/{id}/events` — live events with replay (US3)
+
+This spec owns the SSE endpoint (spec 002, T009 is skipped or moved here).
+
+Request headers: `Accept: text/event-stream`; `Last-Event-ID: <seq>` (set by `EventSource` on reconnect). `?after=<seq>` does the same for the first connection.
+
+| Status | When | Body |
+|---|---|---|
+| `200` | Stream opened | `text/event-stream` |
+| `404` | Unknown project (before the stream starts) | Error `project_not_found` (JSON) |
+| `422` | `Last-Event-ID` / `after` isn't an integer | Error `validation_failed` |
+
+Stream:
+
+1. If `Last-Event-ID`/`after` is given, the events after it are sent first, in order. If there are more than 200, a single `resync` event is sent instead and the client refetches everything (FR-015).
+2. Then live events, without duplicates.
+3. Every message carries `id: <seq>`, `event: <type>`, `data: <ActivityEvent json>`. `: ping` every 15 s.
+
+```text
+id: 1532
+event: proposal_resolved
+data: {"seq":1532,"type":"proposal_resolved","project_id":12,…}
+
+event: resync
+data: {"type":"resync","project_id":12}
+```
+
+---
+
 ## Phase 1: Setup (Shared Infrastructure)
 
 **Purpose**: reuse what spec 002 sets up

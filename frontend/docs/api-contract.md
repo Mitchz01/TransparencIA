@@ -111,6 +111,7 @@ Field paths match the request body, so for the project form `members[1].name` is
 | `project_not_found`, `task_not_found`, `sprint_not_found`, `member_not_found`, `document_not_found`, `proposal_not_found`, `stage_not_found`, `version_not_found` | 404 | all | Not-found page or toast + refetch |
 | `methodology_locked` | 409 | 001 | Disable the methodology select and explain that planning already started |
 | `planning_already_running` | 409 | 002 | Go to the planning page; it's already in progress |
+| `proposal_not_retryable` | 409 | 005 | Refetch the proposal; hide "Retry" |
 | `planning_not_startable` | 409 | 002 | The plan is done: offer "Replan" (spec 008) instead |
 | `stage_not_retryable` | 409 | 002 | Refetch the stepper; the stage changed state |
 | `proposal_already_resolved` | 409 | 005 | Refetch the proposal; someone (or auto-approve) resolved it |
@@ -188,8 +189,56 @@ export interface Proposal {
   adjusted_content: Record<string, unknown> | null
   rejection_reason: string | null // new, spec 002
   auto_approved: boolean
+  origin: 'leader' | 'automatic' // new, spec 008: automatic ones are never auto-approved
+  apply_failed: boolean // new, spec 005: decided but applying failed → offer "Retry"
+  apply_error: string | null // new, spec 005
   created_at: string
   resolved_at: string | null
+}
+
+// ---------- Plan views (spec 004) ----------
+export type ViewStatus = 'not_generated' | 'pending' | 'approved'
+
+export interface ViewOrigin {
+  agent: string
+  rationale: string
+  approved_at: string
+  decision: 'leader' | 'adjusted' | 'auto'
+}
+
+export interface StageView<T> {
+  status: ViewStatus
+  origin: ViewOrigin | null // only when approved
+  content: T | null // only when approved; pending content is never sent
+}
+
+export interface Progress {
+  tasks: number
+  tasks_done: number
+  points: number
+  points_done: number
+}
+
+export interface RoadmapView {
+  phases: {
+    name: string
+    goal: string
+    start_week: number
+    end_week: number
+    deliverables: string[]
+    epics: { key: string; title: string; description: string; progress: Progress; has_tasks: boolean }[]
+    progress: Progress
+  }[]
+  progress: Progress
+  current_week: number | null // null until the board exists
+  current_phase: string | null
+  overdue: boolean
+}
+
+export interface PlanViews {
+  roadmap: StageView<RoadmapView>
+  methodology: StageView<{ decision: StageOutputs['methodology']; chosen_by: 'leader' | 'agents' }>
+  architecture: StageView<StageOutputs['architecture']>
 }
 
 // ---------- Board (spec 003) ----------
@@ -321,6 +370,7 @@ Each block is one gateway in `src/application/ports.ts`. "Errors" lists the code
 | `list()` | `GET /api/projects` | — | `200` `ProjectSummary[]` (newest first) | — |
 | `get(id)` | `GET /api/projects/{id}` | — | `200` `Project` | `404 project_not_found` |
 | `update(id, body)` | `PATCH /api/projects/{id}` | `ProjectUpdate` | `200` `Project` | `404 project_not_found`, `409 methodology_locked`, `422 validation_failed` |
+| `getPlanViews(id)` | `GET /api/projects/{id}/plan` | — | `200` `PlanViews` | `404 project_not_found` |
 
 ```ts
 export interface MemberInput {
@@ -363,6 +413,33 @@ Validation (`422`, `errors[].field` → message). Mirror these rules in the form
 | `members[i].id` | Must be a member of this project (PATCH) |
 
 `requested_methodology` can only change while `status === 'draft'`; disable the select otherwise.
+
+`getPlanViews` (spec 004) feeds the roadmap, methodology and architecture screens in one request. A view that isn't `approved` shows "Not generated yet" or "Waiting for approval" (link to the proposal), never its content.
+
+### ProposalGateway (spec 005)
+
+| Method | Endpoint | Request | Success | Errors |
+|---|---|---|---|---|
+| `list(projectId, status?)` | `GET /api/projects/{id}/proposals?status=pending` | — | `200` `Proposal[]` (newest first) | `404 project_not_found`, `422 validation_failed` |
+| `get(id)` | `GET /api/proposals/{id}` | — | `200` `Proposal` | `404 proposal_not_found` |
+| `approve(id)` | `POST /api/proposals/{id}/approve` | — | `200` `Proposal` | `404 proposal_not_found`, `409 proposal_already_resolved` |
+| `adjust(id, content)` | `POST /api/proposals/{id}/adjust` | `{content: object}` | `200` `Proposal` | `404 proposal_not_found`, `409 proposal_already_resolved`, `422 validation_failed` |
+| `reject(id, reason)` | `POST /api/proposals/{id}/reject` | `{reason: string}` (1–1000 chars) | `200` `Proposal` | `404 proposal_not_found`, `409 proposal_already_resolved`, `422 validation_failed` |
+| `retryApply(id)` | `POST /api/proposals/{id}/apply` | — | `202` `{proposal_id, status: "applying"}` | `404 proposal_not_found`, `409 proposal_not_retryable` |
+| `approveMany(projectId, ids)` | `POST /api/projects/{id}/proposals/approve` | `{ids: number[]}` (1–100) | `200` `{id, ok, error: ApiErrorBody \| null}[]` | `404 project_not_found`, `422 validation_failed` |
+
+- Approving returns right away; what the approval triggers (next stage, board, issues…) arrives as events. Show "Applying…" until then, and "Retry" when `apply_failed` is `true`.
+- `adjust` sends the **whole** edited content, with the same schema as `content`. `422` paths start with `content.` (e.g. `content.sprint_length_weeks`), so map them to the editor fields.
+- `adjust` is also allowed on the newest rejected proposal of a stage after 3 rejections (the stage shows "needs you").
+- `approveMany` never fails as a whole: show each item's result.
+
+### ActivityGateway (spec 005)
+
+| Method | Endpoint | Request | Success | Errors |
+|---|---|---|---|---|
+| `list(projectId, before?, limit?)` | `GET /api/projects/{id}/activity?before={seq}&limit=50` | — | `200` `DomainEvent[]` (newest first) | `404 project_not_found`, `422 validation_failed` |
+
+Pagination: pass the `seq` of the last item you have as `before`; an empty list means there's nothing older. `limit` is 1–200.
 
 ### PlanningGateway (spec 002, replan from spec 008)
 
@@ -433,17 +510,24 @@ Always send the `version` you loaded as `base_version`. The regenerated text doe
 
 ## 5. Live events (SSE)
 
-`EventStream` (`src/adapters/http/eventStream.ts`) opens `GET /api/projects/{id}/events` with `EventSource` and stays open while a project page is mounted.
+`EventStream` (`src/adapters/http/eventStream.ts`) opens `GET /api/projects/{id}/events` with `EventSource` and stays open while a project page is mounted. The endpoint is spec 005's.
 
-- One SSE event per domain event: `event:` is the `type`, `data:` is the JSON below (it includes `type` too).
+- One SSE message per domain event: `id:` is its `seq`, `event:` its `type`, `data:` the JSON below (it includes `type` too). Listen with `addEventListener(type, …)` for each type you handle.
+- **Replay**: when `EventSource` reconnects it sends `Last-Event-ID` by itself, and the server sends what you missed first. For the first connection, open `/events?after={seq}` with the newest `seq` you already loaded (e.g. from the activity list) to avoid a gap.
+- **`resync`**: you missed more than 200 events. Refetch everything the page shows (project, board, proposals).
 - `: ping` comments arrive every 15 s; `EventSource` ignores them.
-- **No replay**: on `error`/reconnect, refetch what the page shows (project, board, proposals). Events only tell you *what changed*; refetch the resource when you need full data.
+- Events tell you *what changed*; refetch the resource when you need its full data.
 - `404 project_not_found` comes back as a normal JSON response before the stream starts: `EventSource` reports it as an error, so check the project exists before opening it.
 - Ignore event types you don't know (new specs add more).
 
 ```ts
 interface BaseEvent {
+  seq: number // increasing; use the highest one you've seen as `after`
   project_id: number
+  occurred_at: string
+  actor: 'agent' | 'person' | 'github' | 'system'
+  summary: string // one line, ready to show in the activity feed
+  ref: { kind: string; id: number } | null // what the event is about, to link it
 }
 
 export type DomainEvent = BaseEvent &
@@ -451,8 +535,11 @@ export type DomainEvent = BaseEvent &
     // spec 002: planning
     | { type: 'agent_started'; agent: string; title: string }
     | { type: 'agent_finished'; agent: string; title: string; output: Record<string, unknown> }
-    | { type: 'proposal_created'; proposal_id: number }
-    | { type: 'proposal_resolved'; proposal_id: number; status: ProposalStatus }
+    | { type: 'proposal_created'; proposal_id: number; kind: ProposalKind; key: string; agent: string }
+    | { type: 'proposal_resolved'; proposal_id: number; kind: ProposalKind; key: string; status: ProposalStatus; auto: boolean; reason: string | null }
+    // spec 005: proposals and stream
+    | { type: 'proposal_apply_failed'; proposal_id: number; error: string }
+    | { type: 'resync' }
     | { type: 'stage_needs_leader'; stage: string; rejections: number }
     | { type: 'plan_failed'; agent: string; error: string }
     | { type: 'plan_completed' }
@@ -479,7 +566,9 @@ What to refetch per event:
 | Event | Refetch |
 |---|---|
 | `agent_started`, `agent_finished`, `stage_needs_leader`, `plan_failed`, `plan_completed` | Planning stepper state |
-| `proposal_created`, `proposal_resolved` | That proposal / the pending proposals list |
+| `proposal_created`, `proposal_resolved`, `proposal_apply_failed` | That proposal / the pending proposals list |
+| `resync` | Everything the page shows |
+| Any event | Prepend it to the activity feed (it already has `summary`, `actor` and `ref`) |
 | `team_changed` | Project |
 | `plan_applied`, `task_status_changed`, `task_updated`, `objective_closed`, `sprint_closed`, `replan_applied` | Board |
 | `documents_generated` | Documents list |
@@ -487,6 +576,5 @@ What to refetch per event:
 
 ## 6. Not defined yet
 
-- **ProposalGateway (spec 005)**: listing proposals and approving, adjusting and rejecting them. Planning, documents, GitHub actions and replans all depend on it, but spec 005 has no plan yet. Until it lands, the demo runs with auto-approve. Add its endpoints here when 005's plan defines them.
-- **Roadmap views (spec 004)**: no plan yet. They will most likely read `Project.plan` from `GET /api/projects/{id}` and need no new endpoint.
 - Exact payloads of `team_changed`, `plan_applied` and `documents_generated` are owned by specs 001, 003 and 006; the shapes above follow their plans and may get extra fields.
+- What happens after rejecting a `document` proposal isn't named in spec 006's plan yet (spec 005, Risks).
