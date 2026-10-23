@@ -1,6 +1,9 @@
 import '@testing-library/jest-dom/vitest'
-import { cleanup } from '@testing-library/react'
+import { cleanup, configure } from '@testing-library/react'
 import { afterEach } from 'vitest'
+
+// Screens load with their route; the first import of a page can take more than the default second.
+configure({ asyncUtilTimeout: 4000 })
 
 afterEach(() => {
   cleanup()

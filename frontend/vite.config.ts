@@ -7,6 +7,10 @@ export default defineConfig({
   server: {
     proxy: { '/api': 'http://localhost:8000' },
   },
+  build: {
+    // The diagram renderer's own chunks load only when a diagram is opened.
+    chunkSizeWarningLimit: 700,
+  },
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],

@@ -13,6 +13,7 @@ describe('New project', () => {
   it('starts with two member rows filled with the defaults, and adds and removes rows', async () => {
     const user = userEvent.setup()
     renderApp('/projects/new', backend)
+    await screen.findByRole('list', { name: 'Miembros del equipo' })
 
     expect(rows()).toHaveLength(2)
     await user.click(screen.getByRole('button', { name: 'Agregar miembro' }))
@@ -28,6 +29,7 @@ describe('New project', () => {
   it('shows a repeated name under the second row, keeps the text, and creates the project once fixed', async () => {
     const user = userEvent.setup()
     const { router } = renderApp('/projects/new', backend)
+    await screen.findByRole('list', { name: 'Miembros del equipo' })
 
     await user.type(screen.getByRole('textbox', { name: 'Nombre del proyecto' }), 'Online store')
     await user.type(screen.getByRole('textbox', { name: 'Descripción' }), 'A store for handmade furniture.')
