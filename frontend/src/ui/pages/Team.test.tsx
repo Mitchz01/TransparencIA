@@ -41,7 +41,7 @@ describe('Join with the link (spec 015, US4)', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/projects/1/board'))
     expect(backend.store.projects.get(1)!.members.at(-1)).toMatchObject({ name: 'Carla Pérez', role: 'Diseño', permission: 'member' })
     expect(backend.store.events.at(-1)).toMatchObject({ type: 'team_changed', joined: ['Carla Pérez'] })
-  })
+  }, 15_000) // A long typed flow: close to the 5 s default when the whole suite runs in parallel.
 
   it('says an old or wrong link isn’t valid anymore, with a way home', async () => {
     renderApp('/join/not-a-token', seeded())
@@ -113,7 +113,8 @@ describe('Team screen (spec 015, US4 and US6)', () => {
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/'))
     expect(backend.store.projects.get(1)!.members.some((m) => m.account_id === 2)).toBe(false)
-    expect(await screen.findByRole('link', { name: /Tienda online/ })).toBeInTheDocument()
+    const panel = await screen.findByRole('region', { name: 'Tus proyectos' })
+    expect(await within(panel).findByRole('link', { name: /Tienda online/ })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /Agile Planner \(demo\)/ })).not.toBeInTheDocument()
   })
 })

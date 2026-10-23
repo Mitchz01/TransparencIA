@@ -50,6 +50,9 @@ Status: **Approved** (2026-10-23): palette, type and components.
 | `card-inset` | `#E8EAE2` | `#383D31` | Something inside a task card: initials, the progress track |
 | `lane-blue`, `lane-amber`, `lane-teal` | `#E8EEFD`, `#FBF0DA`, `#E0F4EF` | `#111829`, `#1D180E`, `#0E1D19` | Tinted board columns: in progress, in review, done (spec 014). In light the hue's soft fill; in dark a darker tint, because the soft fills are as light as a `card` there |
 
+| `mesh-1` to `mesh-6` | `#C2EF2E`, `#D9E86A`, `#F4D35E`, `#7BC043`, `#1F3A12`, `#FAF7E1` | `#C6F432`, `#B9CC45`, `#E9BF3F`, `#4F8F2A`, `#0A0B09`, `#3D5A18` | The home hero's mango biche mesh and the project covers only (spec 016). `mesh-5` is the gradient's dark top |
+| `on-mesh` | `#FFFFFF` | `#FFFFFF` | The greeting and the agents' pill on the mesh's dark top |
+
 Lime on the light background is **1.2:1**, so in light mode lime is always a fill with dark text on it, never text, an icon or a thin line on `bg`. Use `accent-ink` for accent text in both themes.
 
 ### Categories and states
@@ -161,6 +164,16 @@ Added for the first round of screens; all of them are in [preview.html](preview.
 | Agents' mark | A spark of eleven uneven rays in `currentColor`; `solid` at icon size, `line` large and quiet behind content | Brand art, not an icon: icons still come only from Hugeicons. On the sign in screens, inside a `surface` circle in the cut of a notched panel |
 | Account menu | The avatar as a 40px pill that opens a menu with the name and email on top (not choices), then "Mi perfil" and "Cerrar sesión" | In both top bars. `Menu` takes a `header` and can drop its chevron |
 | Sign in layout | The form in a 400px column on the left, with the screen's one glow behind it; a `primary-soft` notched panel on the right with what the agents do (a carousel with `surface` and `inverse` round buttons) and how the team joins | Under 1024px only the form. Fields on the page background use `surface` (in light, `inset` is the same color as `bg`). The Google, GitHub and SSO buttons are secondary pills with the Hugeicons logos |
+
+## The home launchpad (spec 016)
+
+The home is the one screen outside these rules for motion and color, on purpose: it's the door to the app.
+
+1. **The only animated gradient.** The home hero is a mesh of six soft blobs in `mesh-1` to `mesh-6` with a static grain on top. It moves only with `transform` (18 to 32 s, alternate), pauses while the tab is hidden and stays still under reduced motion. No other surface animates a gradient.
+2. **It replaces the glow.** The home uses no `glow`; the two never share a screen.
+3. **The greeting** is `on-mesh` over a veil of `mesh-5`, dark in both themes, and grows to 48 px from 768 px.
+4. **Project covers** are a small static mesh derived from the project's id, with the agents' mark in `line` on top.
+5. **Frame**: outside a project, a 260 px sidebar on `bg` (no lines, pill rows, the active one `primary`) and the screen in a `radius-xl` panel with a `space-3` margin. Under 1024 px the sidebar is a drawer.
 
 ## Interaction and accessibility
 

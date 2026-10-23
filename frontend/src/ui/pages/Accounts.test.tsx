@@ -61,7 +61,7 @@ describe('Sign in (spec 015, US1)', () => {
   it('goes to sign in with `next` when any call answers 401 (the session ended)', async () => {
     const backend = createFakeBackend({ store: new FakeStore(), stageDelayMs: 10 })
     const { router } = renderApp('/', backend)
-    await screen.findByRole('link', { name: /Tienda online/ })
+    await within(await screen.findByRole('region', { name: 'Tus proyectos' })).findByRole('link', { name: /Tienda online/ })
 
     backend.store.session = null // the session expires while the list is open
     await router.navigate('/projects/2/board')

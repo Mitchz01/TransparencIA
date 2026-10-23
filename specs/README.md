@@ -18,6 +18,7 @@ Each person **owns an area end to end** (spec → plan → code) and **reviews**
 | [013](013-board-density/spec.md) | A board you read at a glance | UI of UC-05, UC-06 | Mitchz01 | codigotpx | 4 |
 | [014](014-board-views-quick-add/spec.md) | Board views, filters and quick add | UC-05, UC-06 | Mitchz01 | codigotpx | 4 |
 | [015](015-accounts-invitations/spec.md) | Accounts, invitations and project roles | UC-15, UC-16, UC-17 | Mitchz01 | codigotpx | 4 |
+| [016](016-home-launchpad/spec.md) | Home launchpad | UI of UC-01 | Mitchz01 | codigotpx | 4 |
 
 ## Areas
 

@@ -62,6 +62,15 @@
   --lane-amber: #fbf0da;
   --lane-teal: #e0f4ef;
 
+  /* Home hero mesh (spec 016): mango biche. mesh-5 is the dark top, so on-mesh text passes AA */
+  --mesh-1: #c2ef2e;
+  --mesh-2: #d9e86a;
+  --mesh-3: #f4d35e;
+  --mesh-4: #7bc043;
+  --mesh-5: #1f3a12;
+  --mesh-6: #faf7e1;
+  --on-mesh: #ffffff;
+
   /* Type */
   --font-sans: "Geist Variable", "Geist", "Segoe UI", system-ui, sans-serif;
   --text-display: 600 2.25rem/1.15 var(--font-sans);
@@ -147,6 +156,14 @@
   --lane-blue: #111829;
   --lane-amber: #1d180e;
   --lane-teal: #0e1d19;
+
+  --mesh-1: #c6f432;
+  --mesh-2: #b9cc45;
+  --mesh-3: #e9bf3f;
+  --mesh-4: #4f8f2a;
+  --mesh-5: #0a0b09;
+  --mesh-6: #3d5a18;
+  --on-mesh: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -200,5 +217,13 @@
     --lane-blue: #111829;
     --lane-amber: #1d180e;
     --lane-teal: #0e1d19;
+
+    --mesh-1: #c6f432;
+    --mesh-2: #b9cc45;
+    --mesh-3: #e9bf3f;
+    --mesh-4: #4f8f2a;
+    --mesh-5: #0a0b09;
+    --mesh-6: #3d5a18;
+    --on-mesh: #ffffff;
   }
 }
