@@ -9,7 +9,7 @@ const story = (
   priority: Story['priority'] = 'medium', type: Story['type'] = 'feature',
 ): Story => ({
   key, epic_key: epic, title, points, role, priority, type,
-  description: `Como usuario quiero ${title.toLowerCase()} para avanzar con el producto.`,
+  description: `Como usuario quiero ${title[0].toLowerCase()}${title.slice(1)} para avanzar con el producto.`,
   acceptance_criteria: ['Funciona en escritorio y en el celular', 'Tiene pruebas básicas'],
 })
 

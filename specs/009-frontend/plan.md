@@ -201,17 +201,17 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ### Tests for User Story 3
 
-- [ ] T031 [P] [US3] Tests for `wipWarnings`, `sprintLoad`, `checklistProgress` and `filterTasks` in `frontend/src/domain/rules.test.ts`
-- [ ] T032 [P] [US3] Tests for `useMoveTask`: optimistic update, revert and toast on failure, warnings kept, in `frontend/src/application/use-cases/useMoveTask.test.tsx`
+- [x] T031 [P] [US3] Tests for `wipWarnings`, `sprintLoad`, `checklistProgress` and `filterTasks` in `frontend/src/domain/rules.test.ts`
+- [x] T032 [P] [US3] Tests for `useMoveTask`: optimistic update, revert and toast on failure, warnings kept, in `frontend/src/application/use-cases/useMoveTask.test.tsx`
 
 ### Implementation for User Story 3
 
-- [ ] T033 [US3] Add the board rules to `frontend/src/domain/rules.ts` (capacity mirrors spec 002's rule) and create `useBoard` and `useMoveTask` (TanStack Query optimistic mutation)
-- [ ] T034 [US3] Create `KanbanBoard`, `Column` (name + count in words, add button, WIP warning as icon + word) and `TaskCard` (title, description cut to two lines, key and points with tabular numbers, checklist progress, assignee or "Missing role", priority pill) in `frontend/src/ui/components/board/`
-- [ ] T035 [US3] Wire dnd-kit: pointer and keyboard sensors, `SortableContext` per column, drag overlay with `shadow-float` and a slight tilt, announcements for screen readers
-- [ ] T036 [US3] Create `TaskDrawer` and `Checklist` (edit fields, check/add/edit/remove items, "Move to review?" suggestion)
-- [ ] T037 [US3] Create `SprintSelector` (defaults to the first sprint with unfinished work), `CapacityBar` (points vs capacity, overload warning, capacity override) and `BoardFilters` (mine, priority, epic; kept in the URL)
-- [ ] T038 [US3] Create `BoardPage` at `/projects/:id/board`, with the continuous layout when `continuous` is true and an empty state linking to planning when there's no board yet
+- [x] T033 [US3] Add the board rules to `frontend/src/domain/rules.ts` (capacity mirrors spec 002's rule) and create `useBoard` and `useMoveTask` (TanStack Query optimistic mutation)
+- [x] T034 [US3] Create `KanbanBoard`, `Column` (name + count in words, add button, WIP warning as icon + word) and `TaskCard` (title, description cut to two lines, key and points with tabular numbers, checklist progress, assignee or "Missing role", priority pill) in `frontend/src/ui/components/board/`
+- [x] T035 [US3] Wire dnd-kit: pointer and keyboard sensors, `SortableContext` per column, drag overlay with `shadow-float` and a slight tilt, announcements for screen readers
+- [x] T036 [US3] Create `TaskDrawer` and `Checklist` (edit fields, check/add/edit/remove items, "Move to review?" suggestion)
+- [x] T037 [US3] Create `SprintSelector` (sprints as views in the top bar, defaults to the first sprint with unfinished work), `CapacityBar` (points vs capacity, overload warning, capacity override) and `BoardFilters` (assignee, priority, epic; kept in the URL; there is no signed-in person, so "mine" is picking an assignee)
+- [x] T038 [US3] Create `BoardPage` at `/projects/:id/board`, with the continuous layout when `continuous` is true and an empty state linking to planning when there's no board yet
 
 **Checkpoint**: the round 1 demo (project → plan → approval → board) works end to end on the fake service
 
@@ -258,7 +258,7 @@ This spec adds no endpoints. It consumes [frontend/docs/api-contract.md](../../f
 
 ### Implementation for User Story 6
 
-- [ ] T046 [US6] Create `ProjectsPage` at `/`: project cards (name, status pill, duration, member count) and "New project"
+- [x] T046 [US6] Create `ProjectsPage` at `/`: project cards (name, status pill, duration, member count) and "New project"
 - [ ] T047 [US6] Create `SettingsPage` at `/projects/:id/settings` reusing `ProjectForm` in edit mode (`PATCH` with only the changed fields; methodology disabled with a short reason when not in draft; `methodology_locked` handled)
 
 **Checkpoint**: User Stories 1–6 work independently

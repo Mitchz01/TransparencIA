@@ -28,6 +28,11 @@ function useModal(panel: RefObject<HTMLElement | null>, onClose: () => void, ini
         return
       }
       if (event.key !== 'Tab' || !node) return
+      if (!node.contains(document.activeElement)) {
+        event.preventDefault()
+        node.querySelector<HTMLElement>(FOCUSABLE)?.focus()
+        return
+      }
       const items = [...node.querySelectorAll<HTMLElement>(FOCUSABLE)]
       if (items.length === 0) return
       const [head, tail] = [items[0], items[items.length - 1]]
@@ -39,9 +44,10 @@ function useModal(panel: RefObject<HTMLElement | null>, onClose: () => void, ini
         head.focus()
       }
     }
-    node?.addEventListener('keydown', onKeyDown)
+    // On the document: Escape still closes when the focused element inside was removed.
+    document.addEventListener('keydown', onKeyDown)
     return () => {
-      node?.removeEventListener('keydown', onKeyDown)
+      document.removeEventListener('keydown', onKeyDown)
       document.body.style.overflow = overflow
       previous?.focus?.()
     }

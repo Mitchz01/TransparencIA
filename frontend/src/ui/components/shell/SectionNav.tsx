@@ -12,7 +12,7 @@ export function SectionMenu({ projectId }: { projectId: number }) {
       label={`Sección: ${current?.label ?? 'Ajustes'}`}
       icon={current?.icon}
       className="w-full"
-      buttonClassName="w-full justify-start bg-surface [&>span]:flex-1 [&>span]:text-left"
+      buttonClassName="w-full justify-start bg-surface! [&>span]:flex-1 [&>span]:text-left"
       items={SECTIONS.map((s) => ({
         key: s.path,
         label: s.label,
