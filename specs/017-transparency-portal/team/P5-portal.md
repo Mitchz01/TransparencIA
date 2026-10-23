@@ -12,7 +12,8 @@ UI text in Spanish (spec 009). Phone first: design at 390 px wide, then check de
 
 - `apps/portal/` (the whole app; spec 018 left `PublicPortalPage`, its http gateway, `usePortal` and a test)
 - `packages/ui/src/transparency/`: `TrafficLight.tsx`, `ProgressBars.tsx`,
-  `BudgetLines.tsx`, `WeeklyTimeline.tsx`, `EvidenceList.tsx`, `AlertList.tsx`, `CitizenChat.tsx`
+  `BudgetLines.tsx`, `WeeklyTimeline.tsx`, `EvidenceList.tsx`, `AlertList.tsx` (`CitizenChat.tsx` lives in
+  `apps/portal/src/ui/components/`, since it calls the portal's gateway)
   (props fixed in the [README](README.md#frontend--read-only-components-packagesuisrctransparency-owner-p5): don't change them without telling P4).
   Exported as `@agile/ui/transparency`, so the team tab and the portal render the same ones.
 - Docs: `plan/api-conventions.md`, `apps/team/docs/api-contract.md`, `plan/context.md`, `README.md`
