@@ -326,7 +326,7 @@ Sync points:
 
 - [x] T000 Skeleton commit: every shared file and every new file with the team README's signatures (team/README.md)
 - [ ] T001 `qrcode` on the frontend; `PUBLIC_APP_URL` (backend) and `VITE_PUBLIC_APP_URL` (frontend)
-- [ ] T002 Demo files in `apps/api/demo/`: a seedlings invoice, a restaurant invoice, a field photo of planting
+- [x] T002 Demo files in `apps/api/demo/`: a seedlings invoice, a restaurant invoice, a field photo of planting
 
 ## Phase 2: Foundational (~40 min)
 
@@ -336,16 +336,16 @@ Sync points:
 - [x] T005 Rules: `budget_summary`, `traffic_light` with reasons, `weekly_timeline`, `rule_alerts`
 - [x] T006 Unit tests: the spec's 40%/25% case, each red and yellow trigger, no tasks, overspend, line
   overspend, date outside the period, a week with tasks and no spending, answered alerts still counting
-- [ ] T007 Port `TransparencyAgents`
+- [x] T007 Port `TransparencyAgents`
 - [ ] T008 Repository ports, UoW members, persistence (budget lines as a JSON column, expense, alert,
   stored_file), `Project.public` / `public_slug`
-- [ ] T009 Mock and ADK adapters with the evidence and chat prompts (D7), wired in `main.py`
+- [x] T009 Mock and ADK adapters with the evidence and chat prompts (D7), wired in `main.py`
 
 **Checkpoint**: rules tested; agents callable in mock and real mode.
 
 ## Phase 3: US6 — Plans for any kind of project (~15 min, in parallel)
 
-- [ ] T010 [US6] Generalize `adk/prompts.py` (D8); plan the mangrove description with the real key and check
+- [x] T010 [US6] Generalize `adk/prompts.py` (D8); plan the mangrove description with the real key and check
   the board has no software tasks or roles
 
 ## Phase 4: US1 — Project budget (~20 min)
