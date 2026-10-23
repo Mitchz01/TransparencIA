@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTheme } from '../../../application/theme'
 import { Icon, IconButton } from '../ds'
@@ -23,9 +23,17 @@ export function ThemeToggle() {
   return <IconButton icon={theme === 'dark' ? Sun03Icon : Moon02Icon} label={label} tooltipAlign="end" onClick={toggle} />
 }
 
+/** Transparent over the page header (so the glow shows), with a fill once the page scrolls under it. */
 function Bar({ children }: { children: ReactNode }) {
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const update = () => setScrolled(window.scrollY > 4)
+    update()
+    window.addEventListener('scroll', update, { passive: true })
+    return () => window.removeEventListener('scroll', update)
+  }, [])
   return (
-    <header className="sticky top-0 z-30 bg-bg/85 backdrop-blur-md">
+    <header className={`sticky top-0 z-30 transition-[background-color] duration-150 ${scrolled ? 'bg-bg/90 backdrop-blur-md' : ''}`}>
       <div className="mx-auto w-full max-w-[1440px] px-4 py-3 md:px-8">{children}</div>
     </header>
   )

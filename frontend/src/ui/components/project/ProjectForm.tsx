@@ -27,7 +27,7 @@ interface ProjectFormProps {
 
 function Section({ title, description, children }: { title: string; description: string; children: ReactNode }) {
   return (
-    <Card padding="lg" className="grid gap-5">
+    <Card padding="lg" className="grid min-w-0 gap-5 [&>*]:min-w-0">
       <div className="grid gap-1">
         <h2 className="text-heading">{title}</h2>
         <p className="text-body text-ink-muted">{description}</p>
@@ -78,7 +78,7 @@ export function ProjectForm({ initial, submitLabel, submitIcon, onSubmit, second
   }
 
   return (
-    <form ref={form} noValidate onSubmit={submit} className="grid gap-3">
+    <form ref={form} noValidate onSubmit={submit} className="grid min-w-0 gap-3 [&>*]:min-w-0">
       {errors[''] && <FieldError>{errors['']}</FieldError>}
       <Section title="Proyecto" description="Qué quieres construir, para quién y todo lo que los agentes deban saber.">
         <TextField label="Nombre del proyecto" value={draft.name} error={errors.name} placeholder="Tienda online" onChange={(e) => change({ name: e.target.value })} />

@@ -85,7 +85,7 @@ export function KanbanBoard({ columns, tasks, visible, sprintId, members, wipLim
       }}
     >
       <div
-        className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-4 md:-mx-8 md:px-8 lg:mx-0 lg:grid lg:overflow-visible lg:px-0"
+        className="-mx-4 flex snap-x scroll-px-4 gap-4 overflow-x-auto px-4 pb-4 md:mx-0 md:scroll-px-0 md:px-0 lg:grid lg:overflow-visible"
         style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))` }}
       >
         {columns.map((status) => (
